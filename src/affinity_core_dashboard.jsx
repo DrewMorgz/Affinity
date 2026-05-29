@@ -73,6 +73,64 @@ const ONBOARDING = [
 
 const modColors = {Compliance:{bg:"#FBEAF0",color:"#72243E"},KYC:{bg:"#FCEBEB",color:"#A32D2D"},Invoicing:{bg:"#EAF3DE",color:"#27500A"},Timesheets:{bg:"#E6F7FB",color:"#0077A8"},Onboarding:{bg:"#E6F1FB",color:"#0C447C"},Documents:{bg:"#F1EFE8",color:"#444441"},Statutory:{bg:"#FAEEDA",color:"#633806"},System:{bg:"#F1EFE8",color:"#888"},Accounts:{bg:"#EAF3DE",color:"#27500A"}};
 
+
+// ── Shared staff/events data ──────────────────────────────────
+const TODAY = { day:14, month:7 }; // July 14 — matches app date
+
+const STAFF_PROFILES = [
+  { name:"Andy Morgan",    birthday:{d:22,m:8},  joined:{d:1,m:3,y:2015},  role:"Group CEO",        av:"AM", c:"#00B4D8" },
+  { name:"Roxy Sheeley",   birthday:{d:14,m:7},  joined:{d:15,m:6,y:2017}, role:"MD — IOM",         av:"RS", c:"#7C5CBF" },
+  { name:"Garry Crossan",  birthday:{d:3,m:9},   joined:{d:1,m:9,y:2018},  role:"Director — Cayman",av:"GC", c:"#1A7FBF" },
+  { name:"Joanne Fenech",  birthday:{d:29,m:11}, joined:{d:10,m:1,y:2020}, role:"Director — Malta", av:"JF", c:"#4A7C6F" },
+  { name:"Neil Kelly",     birthday:{d:7,m:7},   joined:{d:14,m:7,y:2016}, role:"Group CFO",        av:"NK", c:"#BF5C7A" },
+  { name:"Gary Harrison",  birthday:{d:19,m:10}, joined:{d:1,m:4,y:2017},  role:"CCO / MLRO",       av:"GH", c:"#7B4F1D" },
+  { name:"Sarah Cole",     birthday:{d:14,m:7},  joined:{d:2,m:8,y:2021},  role:"Administrator",    av:"SC", c:"#5C8E3C" },
+  { name:"Maria Borg",     birthday:{d:5,m:12},  joined:{d:15,m:7,y:2025}, role:"Administrator — Malta", av:"MB", c:"#2E7A8A" },
+  { name:"Carlos Reyes",   birthday:{d:25,m:3},  joined:{d:10,m:3,y:2023}, role:"Director — Miami", av:"CR", c:"#8A4A6E" },
+];
+
+const GROUP_ANNOUNCEMENTS = [
+  { id:1, title:"ISO 27001 audit — 18–19 August 2025",      author:"Gary Harrison",  date:"14/07/2025", priority:"urgent", preview:"The external ISO 27001 surveillance audit is scheduled for 18–19 August. All staff must ensure their DMS filing is up to date." },
+  { id:2, title:"Q3 billing deadline — all timesheets by 17:00 Friday", author:"Neil Kelly", date:"08/07/2025", priority:"urgent", preview:"All fee-earners must submit Q3 timesheets by 17:00 this Friday. Neil Kelly will run the billing batch on Monday morning." },
+  { id:3, title:"Welcome — Maria Borg joins Malta team",    author:"Joanne Fenech", date:"01/07/2025", priority:"normal",  preview:"We are pleased to welcome Maria Borg to the Malta office as Administrator. Maria joins from Fenlex." },
+  { id:4, title:"New office hours — Cayman — effective 1 August", author:"Garry Crossan", date:"10/07/2025", priority:"normal", preview:"Following the team expansion in Cayman, office hours will extend to 08:00–18:00 local time from 1 August." },
+];
+
+function getHappenings() {
+  const events = [];
+  const d = TODAY.day, m = TODAY.month;
+
+  STAFF_PROFILES.forEach(s => {
+    // Birthday today
+    if (s.birthday.d === d && s.birthday.m === m) {
+      events.push({ type:"birthday", person:s, text:`It's ${s.name.split(" ")[0]}'s birthday today! 🎂`, av:s.av, c:s.c });
+    }
+    // Birthday in next 7 days
+    else {
+      const bDay = s.birthday.d, bMon = s.birthday.m;
+      for (let i=1; i<=7; i++) {
+        let nd = d+i, nm = m;
+        if (nd > 31) { nd -= 31; nm++; }
+        if (nd === bDay && nm === bMon) {
+          const days = i;
+          events.push({ type:"birthday_soon", person:s, text:`${s.name.split(" ")[0]}'s birthday in ${days} day${days>1?"s":""}`, av:s.av, c:s.c });
+          break;
+        }
+      }
+    }
+
+    // Work anniversary
+    const years = TODAY.month > s.joined.m || (TODAY.month === s.joined.m && TODAY.day >= s.joined.d)
+      ? new Date().getFullYear() - s.joined.y
+      : new Date().getFullYear() - s.joined.y - 1;
+    if (s.joined.d === d && s.joined.m === m && years > 0) {
+      events.push({ type:"anniversary", person:s, text:`${s.name.split(" ")[0]} is celebrating ${years} year${years>1?"s":""} at Affinity! 🎉`, av:s.av, c:s.c });
+    }
+  });
+
+  return events;
+}
+
 export default function Dashboard({userId, onNav}) {
   const [inboxFilter,setInboxFilter] = useState("mine");
   const [taskFilter,setTaskFilter]   = useState("mine");
@@ -112,6 +170,50 @@ export default function Dashboard({userId, onNav}) {
           {critCount>0&&<span style={{color:"#EF4444",marginLeft:8}}>&#9888; {critCount} critical item{critCount>1?"s":""} require your attention.</span>}
         </div>
       </div>
+
+      {/* What's happening at Affinity */}
+      {(()=>{
+        const happenings = getHappenings();
+        const announcements = GROUP_ANNOUNCEMENTS.slice(0,2);
+        const hasContent = happenings.length > 0 || announcements.length > 0;
+        if (!hasContent) return null;
+        return (
+          <div style={{background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:10,padding:14,marginBottom:14}}>
+            <div style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.5px",color:"#888",marginBottom:12}}>
+              What's happening at Affinity
+            </div>
+
+            {/* Birthdays & anniversaries */}
+            {happenings.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:announcements.length>0?12:0}}>
+              {happenings.map((h,i)=>(
+                <div key={i} style={{display:"flex",alignItems:"center",gap:8,background:h.type==="birthday"?"#FFF8E7":h.type==="anniversary"?"#E6F7FB":"#F9F9F9",borderRadius:8,padding:"8px 12px",flex:"1 1 200px"}}>
+                  <div style={{width:32,height:32,borderRadius:"50%",background:h.c+"22",color:h.c,fontSize:12,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{h.av}</div>
+                  <div>
+                    <div style={{fontSize:12,fontWeight:500,color:"#111"}}>{h.text}</div>
+                    <div style={{fontSize:10,color:"#999",marginTop:1}}>{h.person.role}</div>
+                  </div>
+                </div>
+              ))}
+            </div>}
+
+            {/* Announcements */}
+            {announcements.length>0&&<div>
+              {happenings.length>0&&<div style={{borderTop:"0.5px solid #f0f0f0",marginBottom:10}}/>}
+              {announcements.map((a,i)=>(
+                <div key={a.id} style={{display:"flex",gap:10,alignItems:"flex-start",padding:"6px 0",borderBottom:i<announcements.length-1?"0.5px solid #f5f5f5":"none"}}>
+                  <span style={{fontSize:15,flexShrink:0}}>{a.priority==="urgent"?"📢":"📣"}</span>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:12,fontWeight:600,color:"#111",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.title}</div>
+                    <div style={{fontSize:11,color:"#666",marginTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.preview}</div>
+                    <div style={{fontSize:10,color:"#aaa",marginTop:2}}>{a.author} · {a.date}</div>
+                  </div>
+                  {a.priority==="urgent"&&<span style={{display:"inline-block",padding:"2px 8px",borderRadius:20,fontSize:9,fontWeight:600,background:"#FAEEDA",color:"#633806",flexShrink:0}}>Urgent</span>}
+                </div>
+              ))}
+            </div>}
+          </div>
+        );
+      })()}
 
       {/* Timesheet alert */}
       {userId===4&&<div style={{background:"#FCEBEB22",border:"0.5px solid #EF4444",borderRadius:8,padding:"10px 14px",marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontSize:12,fontWeight:600,color:"#A32D2D"}}>&#9888; Timesheet not submitted — Wednesday, Thursday missing</div><button style={{padding:"5px 12px",borderRadius:5,border:"none",background:"#EF4444",color:"#fff",fontSize:11,cursor:"pointer"}}>Submit now</button></div>}
