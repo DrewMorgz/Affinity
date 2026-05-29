@@ -309,7 +309,7 @@ function SubstanceTab({entity}) {
   </div>;
 }
 
-export default function AffinityCoreEntityAdmin() {
+export default function AffinityCoreEntityAdmin({ officeFilter="" }) {
   const [sel, setSel]       = useState(1);
   const [tab, setTab]       = useState("overview");
   const [search, setSearch] = useState("");
@@ -318,10 +318,18 @@ export default function AffinityCoreEntityAdmin() {
   const [statF, setStatF]   = useState("");
   const [modal, setModal]   = useState(null);
 
+  // Map office name to jurisdiction for cross-filter
+  const officeToJur = {
+    "Isle of Man":"Isle of Man","Malta":"Malta",
+    "Cayman Islands":"Cayman Islands","United Kingdom":"United Kingdom",
+    "Miami":"United States","Cyprus":"Cyprus"
+  };
+  const activeJurF = officeFilter && officeFilter !== "All" ? officeToJur[officeFilter] : jurF;
+
   const filtered = useMemo(()=>ENTITIES.filter(e=>
     (!search||e.name.toLowerCase().includes(search.toLowerCase())||e.ref.toLowerCase().includes(search.toLowerCase()))&&
-    (!jurF||e.jur===jurF)&&(!typeF||e.type===typeF)&&(!statF||e.status===statF)
-  ),[search,jurF,typeF,statF]);
+    (!activeJurF||e.jur===activeJurF)&&(!typeF||e.type===typeF)&&(!statF||e.status===statF)
+  ),[search,activeJurF,typeF,statF,jurF,officeFilter]);
 
   const entity   = ENTITIES.find(e=>e.id===sel);
   const dirs     = ENTITY_DATA.directors[sel]||[];
