@@ -195,8 +195,16 @@ export default function AffinityCore(){
   const [uid,setUid]=useState(1);
   const [nOpen,setN]=useState(false);
   const [uOpen,setU]=useState(false);
+  const [mobile,setMobile]=useState(window.innerWidth<768);
   const user=USERS.find(u=>u.id===uid);
   const navLabel=NAV.flatMap(s=>s.items).find(i=>i.id===mod)?.label||mod;
+
+  // Track screen size
+  useState(()=>{
+    const handleResize=()=>setMobile(window.innerWidth<768);
+    window.addEventListener("resize",handleResize);
+    return ()=>window.removeEventListener("resize",handleResize);
+  });
 
   const content=()=>{
     switch(mod){
@@ -225,8 +233,16 @@ export default function AffinityCore(){
     }
   };
 
-  return <div style={{display:"flex",height:"100vh",fontFamily:"'DM Sans',system-ui,sans-serif",overflow:"hidden"}} onClick={()=>{if(nOpen)setN(false);if(uOpen)setU(false);}}>
-    <div style={{width:208,minWidth:208,background:NAVY,display:"flex",flexDirection:"column",overflow:"hidden",flexShrink:0}}>
+  const [sideOpen, setSideOpen] = useState(false);
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+
+  const navTo = (id) => { setMod(id); setSideOpen(false); };
+
+  return <div style={{display:"flex",height:"100vh",fontFamily:"'DM Sans',system-ui,sans-serif",overflow:"hidden",position:"relative"}} onClick={()=>{if(nOpen)setN(false);if(uOpen)setU(false);}}>
+
+    {/* Mobile overlay */}
+    {sideOpen && <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:40}} onClick={()=>setSideOpen(false)}/>}
+    <div style={{width:208,minWidth:208,background:NAVY,display:"flex",flexDirection:"column",overflow:"hidden",flexShrink:0,position:"fixed",top:0,left:0,bottom:0,zIndex:50,transform:mobile?(sideOpen?"translateX(0)":"translateX(-100%)"):"translateX(0)",transition:"transform 0.25s ease"}}>
       <div style={{padding:"14px 14px 10px",borderBottom:"0.5px solid rgba(255,255,255,0.08)"}}>
         <div style={{fontSize:18,fontWeight:500,color:CY}}>Affinity <span style={{color:"#fff",fontWeight:300}}>Core</span></div>
         <div style={{fontSize:9,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:"1px",marginTop:2}}>Corporate & Trust Services</div>
@@ -234,7 +250,7 @@ export default function AffinityCore(){
       <div style={{flex:1,overflowY:"auto",paddingBottom:6}}>
         {NAV.map(sec=><div key={sec.s}>
           <div style={{fontSize:9,fontWeight:500,color:"rgba(255,255,255,0.28)",textTransform:"uppercase",letterSpacing:"1px",padding:"10px 14px 4px"}}>{sec.s}</div>
-          {sec.items.map(item=><div key={item.id} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 12px",cursor:"pointer",borderRadius:5,margin:"1px 6px",background:mod===item.id?"rgba(0,180,216,0.18)":"transparent",color:mod===item.id?"#fff":"rgba(255,255,255,0.52)",fontSize:12,fontWeight:mod===item.id?500:400}} onClick={()=>setMod(item.id)}>
+          {sec.items.map(item=><div key={item.id} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 12px",cursor:"pointer",borderRadius:5,margin:"1px 6px",background:mod===item.id?"rgba(0,180,216,0.18)":"transparent",color:mod===item.id?"#fff":"rgba(255,255,255,0.52)",fontSize:12,fontWeight:mod===item.id?500:400}} onClick={()=>navTo(item.id)}>
             <span style={{fontSize:13}}>{item.icon}</span>
             <span>{item.label}</span>
             {item.b&&<span style={{background:"#EF4444",color:"#fff",borderRadius:10,padding:"1px 5px",fontSize:9,fontWeight:700,marginLeft:"auto"}}>{item.b}</span>}
@@ -257,14 +273,16 @@ export default function AffinityCore(){
         </div>}
       </div>
     </div>
-    <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 20px",height:48,borderBottom:"0.5px solid #e5e5e5",flexShrink:0,background:"#fff"}}>
+    <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",marginLeft:mobile?0:208,transition:"margin 0.25s ease"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 16px",height:48,borderBottom:"0.5px solid #e5e5e5",flexShrink:0,background:"#fff"}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
+          {/* Hamburger — mobile only */}
+          <button onClick={e=>{e.stopPropagation();setSideOpen(!sideOpen);}} style={{display:mobile?"flex":"none",alignItems:"center",justifyContent:"center",width:36,height:36,borderRadius:6,border:"0.5px solid #e5e5e5",background:"transparent",cursor:"pointer",fontSize:18,flexShrink:0}}>&#9776;</button>
           <div style={{fontSize:14,fontWeight:500}}>{navLabel}</div>
-          <span style={{display:"inline-block",padding:"2px 8px",borderRadius:20,fontSize:10,fontWeight:600,background:offC[user.office]?.bg||"#eee",color:offC[user.office]?.color||"#666"}}>{user.office}</span>
+          <span style={{display:mobile?"none":"inline-block",padding:"2px 8px",borderRadius:20,fontSize:10,fontWeight:600,background:offC[user.office]?.bg||"#eee",color:offC[user.office]?.color||"#666"}}>{user.office}</span>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8,position:"relative"}}>
-          <span style={{fontSize:11,color:"#999"}}>14 Jul 2025</span>
+          <span style={{display:mobile?"none":"inline",fontSize:11,color:"#999"}}>14 Jul 2025</span>
           <button onClick={e=>{e.stopPropagation();setN(!nOpen);}} style={{position:"relative",width:32,height:32,borderRadius:6,border:"0.5px solid #e5e5e5",background:"transparent",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15}}>
             &#128276;<div style={{position:"absolute",top:6,right:6,width:7,height:7,borderRadius:"50%",background:"#EF4444"}}/>
           </button>
