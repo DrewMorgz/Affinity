@@ -423,6 +423,23 @@ export default function AffinityCore(){
       <div style={{padding:"14px 14px 10px",borderBottom:"0.5px solid rgba(255,255,255,0.08)"}}>
         <div style={{fontSize:18,fontWeight:500,color:CY}}>Affinity <span style={{color:"#fff",fontWeight:300}}>Core</span></div>
         <div style={{fontSize:9,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:"1px",marginTop:2}}>Made by Affinity, for Affinity</div>
+        {/* Office filter — always visible in sidebar */}
+        <div style={{marginTop:12}}>
+          <div style={{fontSize:9,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Office filter</div>
+          <div style={{display:"flex",flexDirection:"column",gap:2}}>
+            {["All","Isle of Man","Malta","Cayman Islands","United Kingdom","Miami","Cyprus"].map(o=>{
+              const flags={"Isle of Man":"🇮🇲","Malta":"🇲🇹","Cayman Islands":"🇰🇾","United Kingdom":"🇬🇧","Miami":"🇺🇸","Cyprus":"🇨🇾","All":"🌍"};
+              const oc=officeColors[o];
+              const active=officeFilter===o;
+              return <button key={o} onClick={()=>{setOfficeFilter(o);if(mobile)setSideOpen(false);}}
+                style={{display:"flex",alignItems:"center",gap:8,padding:"6px 8px",borderRadius:5,border:"none",background:active?(oc?.bg||"rgba(0,180,216,0.2)"):"transparent",cursor:"pointer",textAlign:"left",width:"100%"}}>
+                <span style={{fontSize:13}}>{flags[o]}</span>
+                <span style={{fontSize:11,fontWeight:active?600:400,color:active?(oc?.color||CY):"rgba(255,255,255,0.55)"}}>{o==="All"?"All offices":o}</span>
+                {active&&<span style={{marginLeft:"auto",color:oc?.color||CY,fontSize:11}}>✓</span>}
+              </button>;
+            })}
+          </div>
+        </div>
       </div>
       <div style={{flex:1,overflowY:"auto",paddingBottom:6}}>
         {NAV.map(sec=><div key={sec.s}>
@@ -464,29 +481,9 @@ export default function AffinityCore(){
           <button onClick={e=>{e.stopPropagation();setSearchOpen(true);}} style={{display:"flex",alignItems:"center",gap:8,height:32,padding:"0 12px",borderRadius:6,border:"0.5px solid #e5e5e5",background:dark?"#252540":"#f9f9f9",cursor:"pointer",color:"#999",fontSize:11,whiteSpace:"nowrap"}}>
             🔍 {!mobile&&<span>Search <span style={{color:"#ccc",fontSize:10}}>⌘K</span></span>}
           </button>
-          {/* Office filter */}
-          {!mobile&&<div style={{position:"relative"}}>
-            <button onClick={e=>{e.stopPropagation();setU(false);setN(false);document.getElementById("offDropdown").style.display=document.getElementById("offDropdown").style.display==="block"?"none":"block";}}
-              style={{display:"flex",alignItems:"center",gap:6,height:32,padding:"0 10px",borderRadius:6,border:`1.5px solid ${officeFilter==="All"?"#e5e5e5":offC2.color}`,background:officeFilter==="All"?"transparent":offC2.bg,cursor:"pointer",fontSize:11,fontWeight:officeFilter==="All"?400:600,color:officeFilter==="All"?"#666":offC2.color,whiteSpace:"nowrap"}}>
-              {officeFilter==="All"?"🌍 All offices":`${{"Isle of Man":"🇮🇲","Malta":"🇲🇹","Cayman Islands":"🇰🇾","United Kingdom":"🇬🇧","Miami":"🇺🇸","Cyprus":"🇨🇾"}[officeFilter]} ${officeFilter}`}
-              <span style={{fontSize:9,opacity:0.6}}>▼</span>
-            </button>
-            <div id="offDropdown" style={{display:"none",position:"absolute",top:38,right:0,background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:10,zIndex:200,overflow:"hidden",boxShadow:"0 8px 30px rgba(0,0,0,0.12)",minWidth:180}} onClick={e=>e.stopPropagation()}>
-              <div style={{padding:"8px 12px 4px",fontSize:10,fontWeight:600,color:"#aaa",textTransform:"uppercase",letterSpacing:"0.5px"}}>Filter by office</div>
-              {["All","Isle of Man","Malta","Cayman Islands","United Kingdom","Miami","Cyprus"].map(o=>{
-                const flags={"Isle of Man":"🇮🇲","Malta":"🇲🇹","Cayman Islands":"🇰🇾","United Kingdom":"🇬🇧","Miami":"🇺🇸","Cyprus":"🇨🇾","All":"🌍"};
-                const oc=officeColors[o];
-                return <div key={o} onClick={()=>{setOfficeFilter(o);document.getElementById("offDropdown").style.display="none";}}
-                  style={{display:"flex",alignItems:"center",gap:10,padding:"9px 14px",cursor:"pointer",background:officeFilter===o?oc?.bg||"#f5f5f5":"transparent",borderBottom:"0.5px solid #f5f5f5"}}>
-                  <span style={{fontSize:15}}>{flags[o]}</span>
-                  <span style={{fontSize:12,fontWeight:officeFilter===o?600:400,color:officeFilter===o?oc?.color||"#333":"#333"}}>{o==="All"?"All offices":o}</span>
-                  {officeFilter===o&&<span style={{marginLeft:"auto",color:oc?.color||CY,fontWeight:700,fontSize:13}}>✓</span>}
-                </div>;
-              })}
-              {officeFilter!=="All"&&<div style={{padding:"8px 14px",borderTop:"0.5px solid #f0f0f0"}}>
-                <button onClick={()=>{setOfficeFilter("All");document.getElementById("offDropdown").style.display="none";}} style={{width:"100%",padding:"6px",borderRadius:5,border:"0.5px solid #ccc",background:"transparent",fontSize:11,cursor:"pointer",color:"#666"}}>Clear filter</button>
-              </div>}
-            </div>
+          {/* Office filter indicator — desktop only (filter is in sidebar) */}
+          {!mobile&&officeFilter!=="All"&&<div style={{display:"flex",alignItems:"center",gap:6,height:32,padding:"0 10px",borderRadius:6,border:`1.5px solid ${offC2.color}`,background:offC2.bg,fontSize:11,fontWeight:600,color:offC2.color,cursor:"pointer"}} onClick={()=>setOfficeFilter("All")}>
+            {{"Isle of Man":"🇮🇲","Malta":"🇲🇹","Cayman Islands":"🇰🇾","United Kingdom":"🇬🇧","Miami":"🇺🇸","Cyprus":"🇨🇾"}[officeFilter]} {officeFilter} <span style={{opacity:0.6,fontSize:10}}>× clear</span>
           </div>}
           {/* Shortcuts help */}
           {!mobile&&<button onClick={e=>{e.stopPropagation();setShortcutsOpen(p=>!p);}} title="Keyboard shortcuts" style={{width:32,height:32,borderRadius:6,border:"0.5px solid #e5e5e5",background:"transparent",cursor:"pointer",fontSize:13,color:"#999",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:600}}>?</button>}
