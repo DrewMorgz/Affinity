@@ -190,7 +190,72 @@ function Tasks(){
   </div>;
 }
 
+function SplashScreen({ onDone }) {
+  const [fade, setFade] = useState(false);
+  useState(() => {
+    const t1 = setTimeout(() => setFade(true), 1800);
+    const t2 = setTimeout(() => onDone(), 2400);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  });
+  return (
+    <div style={{
+      position:"fixed", inset:0, background:NAVY,
+      display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+      zIndex:999, opacity:fade?0:1, transition:"opacity 0.6s ease", fontFamily:"'DM Sans',system-ui,sans-serif"
+    }}>
+      {/* Logo */}
+      <div style={{ marginBottom:32, textAlign:"center" }}>
+        <div style={{ fontSize:42, fontWeight:600, color:CY, letterSpacing:"-0.5px" }}>
+          Affinity <span style={{ color:"#fff", fontWeight:200 }}>Core</span>
+        </div>
+        <div style={{ fontSize:12, color:"rgba(255,255,255,0.35)", textTransform:"uppercase", letterSpacing:"3px", marginTop:8 }}>
+          Made by Affinity, for Affinity
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div style={{ width:48, height:1, background:"rgba(0,180,216,0.4)", marginBottom:32 }} />
+
+      {/* Jurisdictions */}
+      <div style={{ display:"flex", gap:12, flexWrap:"wrap", justifyContent:"center", maxWidth:420, marginBottom:40 }}>
+        {[
+          { flag:"🇮🇲", name:"Isle of Man" },
+          { flag:"🇲🇹", name:"Malta" },
+          { flag:"🇰🇾", name:"Cayman Islands" },
+          { flag:"🇬🇧", name:"United Kingdom" },
+          { flag:"🇺🇸", name:"Miami" },
+          { flag:"🇨🇾", name:"Cyprus" },
+        ].map(j => (
+          <div key={j.name} style={{
+            display:"flex", alignItems:"center", gap:7,
+            background:"rgba(255,255,255,0.06)", border:"0.5px solid rgba(255,255,255,0.1)",
+            borderRadius:30, padding:"7px 14px"
+          }}>
+            <span style={{ fontSize:16 }}>{j.flag}</span>
+            <span style={{ fontSize:12, color:"rgba(255,255,255,0.7)", fontWeight:400 }}>{j.name}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Tagline */}
+      <div style={{ fontSize:11, color:"rgba(255,255,255,0.2)", letterSpacing:"1px", textTransform:"uppercase" }}>
+        Corporate &amp; Trust Services
+      </div>
+
+      {/* Loading bar */}
+      <div style={{ position:"absolute", bottom:0, left:0, right:0, height:2, background:"rgba(255,255,255,0.05)" }}>
+        <div style={{ height:"100%", background:CY, width:"100%", transformOrigin:"left", animation:"grow 1.8s ease forwards" }} />
+      </div>
+
+      <style>{`
+        @keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+      `}</style>
+    </div>
+  );
+}
+
 export default function AffinityCore(){
+  const [splash, setSplash] = useState(true);
   const [mod,setMod]=useState("dashboard");
   const [uid,setUid]=useState(1);
   const [nOpen,setN]=useState(false);
@@ -237,6 +302,8 @@ export default function AffinityCore(){
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
   const navTo = (id) => { setMod(id); setSideOpen(false); };
+
+  if (splash) return <SplashScreen onDone={() => setSplash(false)} />;
 
   return <div style={{display:"flex",height:"100vh",fontFamily:"'DM Sans',system-ui,sans-serif",overflow:"hidden",position:"relative"}} onClick={()=>{if(nOpen)setN(false);if(uOpen)setU(false);}}>
 
