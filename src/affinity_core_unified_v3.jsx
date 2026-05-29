@@ -14,6 +14,11 @@ import Notifications from "./affinity_core_notifications";
 import SystemAdmin   from "./affinity_core_system_admin";
 import Chatbot      from "./affinity_core_chatbot";
 import Intranet     from "./affinity_core_intranet";
+import Compliance   from "./affinity_core_compliance";
+import EGaming      from "./affinity_core_egaming";
+import JurCompliance from "./affinity_core_jurisdiction_compliance";
+import Statutory    from "./affinity_core_statutory_registers";
+import GenerateDoc  from "./affinity_core_generate_document";
 
 const CY = "#00B4D8";
 const NAVY = "#0D1B2A";
@@ -66,7 +71,16 @@ const NAV = [
     {id:"reporting",    label:"Reporting",     icon:"\uD83D\uDCC8",b:null},
   ]},
   {s:"Governance", items:[
+    {id:"compliance",   label:"Compliance",    icon:"\u2713",b:null},
+    {id:"statutory",    label:"Statutory",     icon:"\uD83D\uDCCB",b:null},
     {id:"procedures",   label:"Procedures",    icon:"\u2699",b:null},
+    {id:"generate",     label:"Generate doc",  icon:"\uD83D\uDCC4",b:null},
+    {id:"egaming",      label:"eGaming / OGRA", icon:"\uD83C\uDFB0",b:null},
+    {id:"jurcompliance",label:"Jur. compliance", icon:"\uD83C\uDF0D",b:null},
+  ]},
+  {s:"People", items:[
+    {id:"intranet",     label:"Intranet",      icon:"\uD83C\uDFE0",b:null},
+    {id:"chatbot",      label:"Assistant",     icon:"\uD83E\uDD16",b:null},
   ]},
   {s:"System",     items:[
     {id:"notifications",label:"Notifications", icon:"\uD83D\uDD14",b:8},
@@ -202,6 +216,11 @@ export default function AffinityCore(){
       case "chatbot":      return <Chatbot/>;
       case "intranet":     return <Intranet/>;
       case "system":       return <SystemAdmin/>;
+      case "compliance":   return <Compliance/>;
+      case "statutory":    return <Statutory/>;
+      case "generate":     return <GenerateDoc/>;
+      case "egaming":      return <EGaming/>;
+      case "jurcompliance": return <JurCompliance/>;
       default:             return <Dashboard userId={uid} onNav={setMod}/>;
     }
   };
