@@ -1,0 +1,376 @@
+import { useState, useMemo } from "react";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+const CY = "#00B4D8";
+const Badge = ({ label, colors }) => (<span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:600, background:colors?.bg||"#eee", color:colors?.color||"#333", whiteSpace:"nowrap" }}>{label}</span>);
+const fmt = (n,s="£") => s+Math.abs(Number(n||0)).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const th = { padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:600, color:"#666", textTransform:"uppercase", letterSpacing:"0.4px", borderBottom:"0.5px solid #e5e5e5", background:"var(--bg-secondary,#f9f9f9)", whiteSpace:"nowrap" };
+const td = { padding:"8px 12px", fontSize:11, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", borderBottom:"0.5px solid #e5e5e5" };
+
+const ENTITIES = [
+  { id:1,  name:"Meridian Holdings Ltd",          currency:"GBP", sym:"£", jur:"Isle of Man",    yearEnd:"31/03" },
+  { id:3,  name:"Caledonian Ventures Ltd",         currency:"USD", sym:"$", jur:"Cayman Islands", yearEnd:"31/12" },
+  { id:4,  name:"Azure Mediterranean Foundation",  currency:"EUR", sym:"€", jur:"Malta",          yearEnd:"31/12" },
+  { id:6,  name:"Pacific Wealth Trust",            currency:"USD", sym:"$", jur:"Cayman Islands", yearEnd:"31/12" },
+  { id:10, name:"Apex Growth Fund Ltd",            currency:"USD", sym:"$", jur:"Cayman Islands", yearEnd:"31/12" },
+  { id:9,  name:"Rosewood Legacy Trust",           currency:"GBP", sym:"£", jur:"Isle of Man",    yearEnd:"05/04" },
+];
+
+const TXNS = {
+  1:[
+    { id:1, date:"01/04/2025", desc:"Opening balance",               type:"Balance",  dr:0,     cr:0,      ref:"OB-2025",  account:"Current account",  status:"Locked"   },
+    { id:2, date:"01/04/2025", desc:"Q1 retainer fee — Affinity",    type:"Income",   dr:0,     cr:2000,   ref:"INV-041",  account:"Current account",  status:"Posted"   },
+    { id:3, date:"15/04/2025", desc:"Registered office disbursement",type:"Expense",  dr:250,   cr:0,      ref:"DIS-001",  account:"Current account",  status:"Posted"   },
+    { id:4, date:"30/04/2025", desc:"Bank charges — April",          type:"Expense",  dr:45,    cr:0,      ref:"BANK-APR", account:"Current account",  status:"Posted"   },
+    { id:5, date:"01/07/2025", desc:"Q2 retainer fee — Affinity",    type:"Income",   dr:0,     cr:2000,   ref:"INV-041",  account:"Current account",  status:"Posted"   },
+    { id:6, date:"14/07/2025", desc:"Directors fee — July 2025",     type:"Expense",  dr:1500,  cr:0,      ref:"DIR-JUL",  account:"Current account",  status:"Draft"    },
+    { id:7, date:"14/07/2025", desc:"Q2 retainer received",          type:"Receipt",  dr:0,     cr:2000,   ref:"REC-001",  account:"Current account",  status:"Posted"   },
+  ],
+  3:[
+    { id:1, date:"01/01/2025", desc:"Opening balance",               type:"Balance",  dr:0,     cr:0,      ref:"OB-2025",  account:"USD account",      status:"Locked"   },
+    { id:2, date:"01/04/2025", desc:"Q1 retainer fee",               type:"Income",   dr:0,     cr:3600,   ref:"INV-019",  account:"USD account",      status:"Posted"   },
+    { id:3, date:"10/04/2025", desc:"Legal fees — asset sale",       type:"Expense",  dr:4200,  cr:0,      ref:"LEG-001",  account:"USD account",      status:"Posted"   },
+    { id:4, date:"14/04/2025", desc:"Asset sale proceeds",           type:"Income",   dr:0,     cr:250000, ref:"SALE-001", account:"USD account",      status:"Posted"   },
+    { id:5, date:"01/07/2025", desc:"Q2 retainer fee",               type:"Income",   dr:0,     cr:5100,   ref:"INV-019",  account:"USD account",      status:"Posted"   },
+  ],
+};
+
+const PNL = {
+  1:{ income:16000, expenses:7650,  net:8350,   currency:"GBP", sym:"£" },
+  3:{ income:262700,expenses:4200,  net:258500, currency:"USD", sym:"$" },
+  4:{ income:3600,  expenses:320,   net:3280,   currency:"EUR", sym:"€" },
+  6:{ income:7200,  expenses:1200,  net:6000,   currency:"USD", sym:"$" },
+  10:{ income:11000,expenses:850,   net:10150,  currency:"USD", sym:"$" },
+  9:{ income:4800,  expenses:5000,  net:-200,   currency:"GBP", sym:"£" },
+};
+
+const BANKS = {
+  1:[{ name:"Current account", bank:"Barclays Bank",        currency:"GBP", balance:18240.50, asAt:"14/07/2025" },{ name:"Deposit account",bank:"Barclays Bank",currency:"GBP",balance:50000,asAt:"14/07/2025" }],
+  3:[{ name:"USD account",     bank:"First Caribbean Bank", currency:"USD", balance:312480,   asAt:"14/07/2025" }],
+  4:[{ name:"EUR account",     bank:"Bank of Valletta",     currency:"EUR", balance:9240.80,  asAt:"14/07/2025" }],
+  6:[{ name:"USD account",     bank:"Scotiabank Cayman",    currency:"USD", balance:28640,    asAt:"14/07/2025" }],
+  10:[{ name:"USD account",    bank:"Butterfield Bank",     currency:"USD", balance:88340,    asAt:"14/07/2025" }],
+  9:[{ name:"GBP account",     bank:"Lloyds Bank",          currency:"GBP", balance:7640,     asAt:"14/07/2025" }],
+};
+
+const wipTrend = [
+  { month:"Feb", wip:38200 },{ month:"Mar", wip:41500 },{ month:"Apr", wip:44800 },
+  { month:"May", wip:42100 },{ month:"Jun", wip:46300 },{ month:"Jul", wip:48320 },
+];
+
+const VIEWS = ["ledger","pnl","banks","journals","reports"];
+const VLABELS = ["Entity ledger","P&L summary","Bank accounts","Journals","Reports"];
+
+export default function AffinityBookkeeping() {
+  const [view, setView]     = useState("ledger");
+  const [entityId, setEId]  = useState(1);
+  const [search, setSearch] = useState("");
+  const [modal, setModal]   = useState(null);
+
+  const entity = ENTITIES.find(e=>e.id===entityId);
+  const txns   = TXNS[entityId]||[];
+  const pnl    = PNL[entityId];
+  const banks  = BANKS[entityId]||[];
+  const sym    = entity?.sym||"£";
+
+  const filtered = useMemo(()=>txns.filter(t=>
+    !search||t.desc.toLowerCase().includes(search.toLowerCase())||t.ref.toLowerCase().includes(search.toLowerCase())
+  ),[txns, search]);
+
+  let running = 0;
+  const withBal = filtered.map(t=>{ running+=(t.cr-t.dr); return {...t,balance:running}; });
+
+  const nb  = { padding:"5px 12px", fontSize:11, borderRadius:5, border:"0.5px solid #e5e5e5", background:"transparent", color:"#666", cursor:"pointer" };
+  const nba = { ...nb, background:CY, color:"#fff", border:`0.5px solid ${CY}`, fontWeight:500 };
+  const sc  = { background:"var(--bg-secondary,#f9f9f9)", borderRadius:6, padding:"10px 12px" };
+  const sel = { height:30, padding:"0 8px", fontSize:11, borderRadius:5, border:"0.5px solid #ccc", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)", cursor:"pointer" };
+
+  const Toolbar = () => (
+    <div style={{ display:"flex", gap:8, padding:"10px 20px", borderBottom:"0.5px solid #e5e5e5", flexWrap:"wrap", alignItems:"center" }}>
+      <select style={{ ...sel, minWidth:220, fontWeight:500 }} value={entityId} onChange={e=>setEId(Number(e.target.value))}>
+        {ENTITIES.map(e=><option key={e.id} value={e.id}>{e.name}</option>)}
+      </select>
+      <div style={{ display:"flex", alignItems:"center", gap:6, background:"var(--bg-primary,#fff)", border:"0.5px solid #ccc", borderRadius:5, padding:"0 10px", flex:1 }}>
+        <span style={{ color:"#aaa" }}>🔍</span>
+        <input style={{ border:"none", background:"transparent", fontSize:12, outline:"none", width:"100%", height:30, color:"var(--text-primary,#111)" }} placeholder="Search transactions..." value={search} onChange={e=>setSearch(e.target.value)} />
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ fontFamily:"'DM Sans',system-ui,sans-serif", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)", minHeight:600 }}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 20px", borderBottom:"0.5px solid #e5e5e5" }}>
+        <div style={{ fontSize:18, fontWeight:500, color:CY }}>Affinity <span style={{ color:"var(--text-primary,#111)", fontWeight:300 }}>Core</span><small style={{ fontSize:11, color:"#999", fontWeight:300, marginLeft:8 }}>Bookkeeping</small></div>
+        <div style={{ display:"flex", gap:5 }}>
+          {["Entities","Timesheets","Invoicing","Reporting"].map(n=><button key={n} style={nb}>{n}</button>)}
+          <button style={nba}>Bookkeeping</button>
+        </div>
+      </div>
+      <div style={{ display:"flex", gap:4, padding:"8px 20px", borderBottom:"0.5px solid #e5e5e5", background:"var(--bg-secondary,#f9f9f9)", flexWrap:"wrap" }}>
+        {VIEWS.map((v,i)=><button key={v} style={{ padding:"4px 12px", fontSize:11, borderRadius:20, border:`0.5px solid ${view===v?"#ccc":"#e5e5e5"}`, background:view===v?"var(--bg-primary,#fff)":"transparent", color:view===v?"var(--text-primary,#111)":"#666", cursor:"pointer", fontWeight:view===v?500:400 }} onClick={()=>setView(v)}>{VLABELS[i]}</button>)}
+      </div>
+
+      {view==="ledger"&&(<>
+        <Toolbar />
+        {pnl&&<div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:10, padding:"12px 20px", borderBottom:"0.5px solid #e5e5e5" }}>
+          {[
+            { l:"Total income YTD",   v:fmt(pnl.income,sym),                                                   c:CY },
+            { l:"Total expenses YTD", v:fmt(pnl.expenses,sym),                                                 c:null },
+            { l:"Net position",       v:(pnl.net>=0?"+":"")+fmt(pnl.net,sym),                                  c:pnl.net>=0?"#4CAF7D":"#EF4444" },
+            { l:"Currency",           v:entity?.currency,                                                       c:null },
+            { l:"Year end",           v:entity?.yearEnd,                                                        c:null },
+          ].map(k=><div key={k.l} style={sc}><div style={{ fontSize:10, color:"#666", marginBottom:3 }}>{k.l}</div><div style={{ fontSize:18, fontWeight:500, color:k.c||"var(--text-primary,#111)" }}>{k.v}</div></div>)}
+        </div>}
+        <div style={{ overflowX:"auto" }}>
+          <table style={{ width:"100%", borderCollapse:"collapse", tableLayout:"fixed" }}>
+            <thead><tr>
+              <th style={{ ...th, width:"10%" }}>Date</th>
+              <th style={{ ...th, width:"28%" }}>Description</th>
+              <th style={{ ...th, width:"13%" }}>Account</th>
+              <th style={{ ...th, width:"9%" }}>Ref</th>
+              <th style={{ ...th, width:"8%" }}>Type</th>
+              <th style={{ ...th, width:"9%", textAlign:"right" }}>Debit</th>
+              <th style={{ ...th, width:"9%", textAlign:"right" }}>Credit</th>
+              <th style={{ ...th, width:"10%", textAlign:"right" }}>Balance</th>
+              <th style={{ ...th, width:"8%" }}>Status</th>
+            </tr></thead>
+            <tbody>
+              {withBal.map(t=>(
+                <tr key={t.id} style={{ borderBottom:"0.5px solid #e5e5e5", background:t.type==="Balance"?"var(--bg-secondary,#f9f9f9)":undefined }}>
+                  <td style={{ ...td, color:"#666" }}>{t.date}</td>
+                  <td style={{ ...td, fontWeight:t.type==="Balance"?600:400 }}>{t.desc}</td>
+                  <td style={{ ...td, fontSize:10, color:"#999" }}>{t.account}</td>
+                  <td style={{ ...td, fontSize:10, color:"#666" }}>{t.ref}</td>
+                  <td style={td}><Badge label={t.type} colors={{ Income:{bg:"#EAF3DE",color:"#27500A"}, Expense:{bg:"#FCEBEB",color:"#A32D2D"}, Balance:{bg:"#E6F7FB",color:"#0077A8"}, Receipt:{bg:"#EEF0FB",color:"#3C3489"} }[t.type]||{bg:"#eee",color:"#666"}} /></td>
+                  <td style={{ ...td, textAlign:"right", color:t.dr?"var(--text-primary,#111)":"#ddd" }}>{t.dr?fmt(t.dr,sym):"—"}</td>
+                  <td style={{ ...td, textAlign:"right", color:t.cr?"#27500A":"#ddd" }}>{t.cr?fmt(t.cr,sym):"—"}</td>
+                  <td style={{ ...td, textAlign:"right", fontWeight:600, color:t.balance>=0?"var(--text-primary,#111)":"#EF4444" }}>{fmt(Math.abs(t.balance),sym)}</td>
+                  <td style={td}><Badge label={t.status} colors={{ Posted:{bg:"#EAF3DE",color:"#27500A"}, Draft:{bg:"#FAEEDA",color:"#633806"}, Locked:{bg:"#F1EFE8",color:"#888"} }[t.status]||{bg:"#eee",color:"#666"}} /></td>
+                </tr>
+              ))}
+              {withBal.length===0&&<tr><td colSpan={9} style={{ ...td, textAlign:"center", color:"#aaa", padding:30 }}>No transactions found</td></tr>}
+            </tbody>
+          </table>
+        </div>
+        <div style={{ padding:"8px 20px", display:"flex", justifyContent:"flex-end", gap:8 }}>
+          <button style={nb} onClick={()=>setModal("journal")}>＋ Post journal</button>
+          <button style={nba}>Export ledger ↗</button>
+        </div>
+      </>)}
+
+      {view==="pnl"&&(<>
+        <Toolbar />
+        <div style={{ padding:"16px 20px" }}>
+          {pnl&&entity&&(
+            <div style={{ background:"var(--bg-primary,#fff)", border:"0.5px solid #e5e5e5", borderRadius:10, padding:18, marginBottom:16, borderLeft:`3px solid ${CY}` }}>
+              <div style={{ fontSize:14, fontWeight:600, marginBottom:14 }}>{entity.name} — P&L YTD 2025</div>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
+                <div>
+                  <div style={{ fontSize:10, color:"#aaa", marginBottom:8, textTransform:"uppercase", letterSpacing:"0.4px" }}>Income</div>
+                  {(TXNS[entityId]||[]).filter(t=>t.type==="Income").map(t=>(
+                    <div key={t.id} style={{ display:"flex", justifyContent:"space-between", padding:"5px 0", borderBottom:"0.5px solid #e5e5e5", fontSize:12 }}>
+                      <span style={{ color:"#666" }}>{t.desc}</span>
+                      <span style={{ fontWeight:500, color:"#27500A" }}>{fmt(t.cr,sym)}</span>
+                    </div>
+                  ))}
+                  <div style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", fontSize:13, fontWeight:600, borderTop:"1px solid #ccc", marginTop:4 }}>
+                    <span>Total income</span><span style={{ color:"#27500A" }}>{fmt(pnl.income,sym)}</span>
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize:10, color:"#aaa", marginBottom:8, textTransform:"uppercase", letterSpacing:"0.4px" }}>Expenses</div>
+                  {(TXNS[entityId]||[]).filter(t=>t.type==="Expense").map(t=>(
+                    <div key={t.id} style={{ display:"flex", justifyContent:"space-between", padding:"5px 0", borderBottom:"0.5px solid #e5e5e5", fontSize:12 }}>
+                      <span style={{ color:"#666" }}>{t.desc}</span>
+                      <span style={{ fontWeight:500, color:"#A32D2D" }}>{fmt(t.dr,sym)}</span>
+                    </div>
+                  ))}
+                  <div style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", fontSize:13, fontWeight:600, borderTop:"1px solid #ccc", marginTop:4 }}>
+                    <span>Total expenses</span><span style={{ color:"#A32D2D" }}>{fmt(pnl.expenses,sym)}</span>
+                  </div>
+                </div>
+              </div>
+              <div style={{ display:"flex", justifyContent:"space-between", padding:"12px 16px", marginTop:14, background:pnl.net>=0?"#EAF3DE":"#FCEBEB", borderRadius:8, fontSize:14, fontWeight:600 }}>
+                <span>Net position</span>
+                <span style={{ color:pnl.net>=0?"#27500A":"#A32D2D" }}>{pnl.net>=0?"+":""}{fmt(pnl.net,sym)}</span>
+              </div>
+            </div>
+          )}
+          <div style={{ fontSize:13, fontWeight:500, marginBottom:10 }}>All entities — P&L summary</div>
+          <table style={{ width:"100%", borderCollapse:"collapse", tableLayout:"fixed" }}>
+            <thead><tr>
+              <th style={{ ...th, width:"28%" }}>Entity</th>
+              <th style={{ ...th, width:"10%" }}>Currency</th>
+              <th style={{ ...th, width:"16%", textAlign:"right" }}>Income</th>
+              <th style={{ ...th, width:"16%", textAlign:"right" }}>Expenses</th>
+              <th style={{ ...th, width:"18%", textAlign:"right" }}>Net position</th>
+            </tr></thead>
+            <tbody>
+              {ENTITIES.map(e=>{ const p=PNL[e.id]; if(!p) return null; return (
+                <tr key={e.id} onClick={()=>setEId(e.id)} style={{ borderBottom:"0.5px solid #e5e5e5", cursor:"pointer", background:entityId===e.id?"var(--bg-secondary,#f9f9f9)":undefined }}>
+                  <td style={{ ...td, fontWeight:500 }}>{e.name}</td>
+                  <td style={{ ...td, color:"#666" }}>{p.currency}</td>
+                  <td style={{ ...td, textAlign:"right", color:"#27500A", fontWeight:500 }}>{fmt(p.income,p.sym)}</td>
+                  <td style={{ ...td, textAlign:"right", color:"#A32D2D", fontWeight:500 }}>{fmt(p.expenses,p.sym)}</td>
+                  <td style={{ ...td, textAlign:"right", fontWeight:600, color:p.net>=0?"#27500A":"#EF4444" }}>{p.net>=0?"+":""}{fmt(p.net,p.sym)}</td>
+                </tr>
+              );})}
+            </tbody>
+          </table>
+        </div>
+      </>)}
+
+      {view==="banks"&&(<>
+        <Toolbar />
+        <div style={{ padding:"16px 20px" }}>
+          <div style={{ fontSize:12, fontWeight:500, marginBottom:12 }}>Bank accounts — {entity?.name}</div>
+          {banks.length>0?(
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:20 }}>
+              {banks.map((b,i)=>(
+                <div key={i} style={{ background:"var(--bg-primary,#fff)", border:"0.5px solid #e5e5e5", borderRadius:10, padding:16, borderLeft:`3px solid ${CY}` }}>
+                  <div style={{ fontSize:13, fontWeight:600, marginBottom:6 }}>{b.name}</div>
+                  <div style={{ fontSize:11, color:"#999", marginBottom:10 }}>{b.bank} · {b.currency}</div>
+                  {[["Balance",fmt(b.balance,b.currency==="USD"?"$":b.currency==="EUR"?"€":"£")],["Currency",b.currency],["As at",b.asAt]].map(([k,v])=>(
+                    <div key={k} style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", borderBottom:"0.5px solid #e5e5e5", fontSize:12 }}>
+                      <span style={{ color:"#666" }}>{k}</span><span style={{ fontWeight:600, color:k==="Balance"?CY:undefined }}>{v}</span>
+                    </div>
+                  ))}
+                  <div style={{ display:"flex", gap:6, marginTop:10 }}>
+                    <button style={{ ...nb, fontSize:10 }}>Reconcile ↗</button>
+                    <button style={{ ...nb, fontSize:10 }}>Statement ↗</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ):(
+            <div style={{ color:"#aaa", fontSize:12, padding:"20px 0", textAlign:"center" }}>No bank accounts configured for this entity. <button style={{ ...nba, fontSize:11 }} onClick={()=>setModal("bank")}>Add account</button></div>
+          )}
+          <div style={{ fontSize:12, fontWeight:500, marginBottom:10 }}>All entities — bank account summary</div>
+          <table style={{ width:"100%", borderCollapse:"collapse", tableLayout:"fixed" }}>
+            <thead><tr>
+              <th style={{ ...th, width:"28%" }}>Entity</th>
+              <th style={{ ...th, width:"18%" }}>Bank</th>
+              <th style={{ ...th, width:"14%" }}>Account</th>
+              <th style={{ ...th, width:"10%" }}>Currency</th>
+              <th style={{ ...th, width:"18%", textAlign:"right" }}>Balance</th>
+              <th style={{ ...th, width:"12%" }}>As at</th>
+            </tr></thead>
+            <tbody>
+              {ENTITIES.flatMap(e=>(BANKS[e.id]||[]).map((b,j)=>({ ...b, eName:e.name, eId:e.id, key:`${e.id}-${j}` }))).map(b=>(
+                <tr key={b.key} onClick={()=>setEId(b.eId)} style={{ borderBottom:"0.5px solid #e5e5e5", cursor:"pointer", background:entityId===b.eId?"var(--bg-secondary,#f9f9f9)":undefined }}>
+                  <td style={{ ...td, fontWeight:500 }}>{b.eName}</td>
+                  <td style={{ ...td, color:"#666", fontSize:10 }}>{b.bank}</td>
+                  <td style={{ ...td, color:"#666" }}>{b.name}</td>
+                  <td style={{ ...td, color:"#666" }}>{b.currency}</td>
+                  <td style={{ ...td, textAlign:"right", fontWeight:600, color:CY }}>{fmt(b.balance, b.currency==="USD"?"$":b.currency==="EUR"?"€":"£")}</td>
+                  <td style={{ ...td, color:"#666" }}>{b.asAt}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </>)}
+
+      {view==="journals"&&(
+        <div style={{ padding:"16px 20px" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+            <div style={{ fontSize:13, fontWeight:500 }}>Journal entries</div>
+            <button style={nba} onClick={()=>setModal("journal")}>＋ Post journal</button>
+          </div>
+          <div style={{ background:"var(--bg-secondary,#f9f9f9)", borderRadius:6, padding:"10px 12px", fontSize:11, color:"#666", marginBottom:14 }}>
+            ℹ️ All journals are double-entry — debits must equal credits. Auto-journals are posted by the system when invoices are raised or payments received. Manual journals require preparer and approver sign-off.
+          </div>
+          {[
+            { ref:"JNL-2025-007", date:"01/07/2025", entity:"Meridian Holdings Ltd",    desc:"Q3 retainer accrual",           dr:"Debtors £2,000",      cr:"Income £2,000",     by:"Neil Kelly",   status:"Posted", auto:false },
+            { ref:"JNL-2025-006", date:"30/06/2025", entity:"Rosewood Legacy Trust",    desc:"Trust distribution — Q2 2025", dr:"Trust capital £5,000",cr:"Bank £5,000",       by:"Roxy Sheeley", status:"Posted", auto:false },
+            { ref:"JNL-2025-005", date:"14/04/2025", entity:"Caledonian Ventures Ltd",  desc:"Asset sale proceeds",           dr:"Bank $250,000",       cr:"Asset disposal $250,000",by:"Garry Crossan",status:"Posted",auto:false },
+            { ref:"AUTO-2025-041",date:"01/07/2025", entity:"Meridian Holdings Ltd",    desc:"Auto-journal — invoice raised", dr:"Debtors £2,000",      cr:"Income £2,000",     by:"System",       status:"Posted", auto:true  },
+            { ref:"JNL-2025-008", date:"14/07/2025", entity:"Stonebridge Capital Ltd",  desc:"Director fee accrual",          dr:"Expenses €1,200",     cr:"Creditors €1,200",  by:"Joanne Fenech",status:"Draft",  auto:false },
+          ].map((j,i)=>(
+            <div key={i} style={{ background:"var(--bg-primary,#fff)", border:"0.5px solid #e5e5e5", borderRadius:8, padding:"12px 14px", marginBottom:10 }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
+                <div>
+                  <div style={{ fontSize:12, fontWeight:600 }}>{j.ref} — {j.entity}</div>
+                  <div style={{ fontSize:11, color:"#999", marginTop:2 }}>{j.date} · {j.desc} · Posted by: {j.by}</div>
+                </div>
+                <div style={{ display:"flex", gap:6 }}>
+                  {j.auto&&<Badge label="Auto" colors={{ bg:"#EAF3DE", color:"#27500A" }} />}
+                  <Badge label={j.status} colors={{ Posted:{bg:"#EAF3DE",color:"#27500A"}, Draft:{bg:"#FAEEDA",color:"#633806"} }[j.status]||{bg:"#eee",color:"#666"}} />
+                </div>
+              </div>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+                <div style={{ background:"#FCEBEB22", borderRadius:6, padding:"6px 10px", fontSize:11 }}><span style={{ color:"#A32D2D", fontWeight:600 }}>DR </span>{j.dr}</div>
+                <div style={{ background:"#EAF3DE44", borderRadius:6, padding:"6px 10px", fontSize:11 }}><span style={{ color:"#27500A", fontWeight:600 }}>CR </span>{j.cr}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {view==="reports"&&(
+        <div style={{ padding:"16px 20px" }}>
+          <div style={{ fontSize:13, fontWeight:500, marginBottom:14 }}>Financial reports</div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+            {["Trial balance","Profit & loss statement","Balance sheet","Bank reconciliation","Cash flow statement","Aged creditors","Aged debtors","Consolidated group P&L"].map(r=>(
+              <div key={r} style={{ background:"var(--bg-primary,#fff)", border:"0.5px solid #e5e5e5", borderRadius:8, padding:"12px 14px" }}>
+                <div style={{ fontSize:12, fontWeight:600, marginBottom:8 }}>{r}</div>
+                <div style={{ display:"flex", gap:6 }}>
+                  <select style={{ ...sel, flex:1, height:28, fontSize:11 }}><option>YTD 2025</option><option>Q2 2025</option><option>FY 2024</option></select>
+                  <select style={{ ...sel, flex:1, height:28, fontSize:11 }}><option>All entities</option>{ENTITIES.map(e=><option key={e.id}>{e.name}</option>)}</select>
+                  <button style={nba}>Generate ↗</button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop:16 }}>
+            <div style={{ fontSize:12, fontWeight:500, marginBottom:10 }}>WIP trend — all entities</div>
+            <div style={{ background:"var(--bg-primary,#fff)", border:"0.5px solid #e5e5e5", borderRadius:8, padding:14 }}>
+              <ResponsiveContainer width="100%" height={180}>
+                <LineChart data={wipTrend} margin={{ top:0, right:10, left:-10, bottom:0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
+                  <XAxis dataKey="month" tick={{ fontSize:10 }} />
+                  <YAxis tick={{ fontSize:10 }} tickFormatter={v=>"£"+(v/1000).toFixed(0)+"k"} />
+                  <Tooltip formatter={v=>["£"+Number(v).toLocaleString(),"WIP"]} />
+                  <Line type="monotone" dataKey="wip" stroke={CY} strokeWidth={2.5} dot={{ fill:CY, r:4 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modal&&(
+        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(13,27,42,0.45)", display:"flex", alignItems:"flex-start", justifyContent:"center", paddingTop:40, zIndex:100 }} onClick={e=>e.target===e.currentTarget&&setModal(null)}>
+          <div style={{ background:"var(--bg-primary,#fff)", borderRadius:10, border:"0.5px solid #e5e5e5", padding:22, width:480, maxWidth:"96vw" }}>
+            <div style={{ fontSize:14, fontWeight:600, marginBottom:16 }}>{modal==="journal"?"Post journal entry":"Add bank account"}</div>
+            {modal==="journal"&&(
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                {[["Entity","select",ENTITIES.map(e=>e.name)],["Journal reference","text","JNL-2025-"],["Date","text","DD/MM/YYYY"],["Description","text","Narrative"],["Debit account","text","e.g. Debtors"],["Debit amount","number","0.00"],["Credit account","text","e.g. Income"],["Credit amount","number","0.00"],["Currency","select",["GBP","USD","EUR"]]].map(([l,t,opts])=>(
+                  <div key={l} style={{ display:"flex", flexDirection:"column", gap:3 }}>
+                    <label style={{ fontSize:11, color:"#666" }}>{l}</label>
+                    {t==="select"?<select style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)" }}>{(Array.isArray(opts)?opts:[]).map(o=><option key={o}>{o}</option>)}</select>
+                    :<input type={t} style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)" }} placeholder={typeof opts==="string"?opts:""} />}
+                  </div>
+                ))}
+              </div>
+            )}
+            {modal==="bank"&&(
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                {[["Bank name","text"],["Account name","text"],["Currency","select",["GBP","USD","EUR"]],["Opening balance","number"],["Balance date","text"]].map(([l,t,opts])=>(
+                  <div key={l} style={{ display:"flex", flexDirection:"column", gap:3 }}>
+                    <label style={{ fontSize:11, color:"#666" }}>{l}</label>
+                    {t==="select"?<select style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)" }}>{(Array.isArray(opts)?opts:[]).map(o=><option key={o}>{o}</option>)}</select>
+                    :<input type={t} style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)" }} />}
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ display:"flex", gap:8, justifyContent:"flex-end", marginTop:14 }}>
+              <button style={nb} onClick={()=>setModal(null)}>Cancel</button>
+              <button style={nba} onClick={()=>setModal(null)}>{modal==="journal"?"Post journal":"Save account"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

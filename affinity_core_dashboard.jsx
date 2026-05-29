@@ -1,0 +1,260 @@
+import { useState } from "react";
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+
+const CY = "#00B4D8";
+const NAVY = "#0D1B2A";
+
+const Bx = ({label,colors}) => <span style={{display:"inline-block",padding:"2px 8px",borderRadius:20,fontSize:10,fontWeight:600,background:colors?.bg||"#eee",color:colors?.color||"#333",whiteSpace:"nowrap"}}>{label}</span>;
+const fmt = (n,s="£") => s+Math.abs(Number(n||0)).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0});
+const Card = ({title,children,action,border}) => <div style={{background:"#fff",border:`0.5px solid ${border||"#e5e5e5"}`,borderRadius:8,padding:14,marginBottom:12}}>{title&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><div style={{fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.4px",color:"#666"}}>{title}</div>{action}</div>}{children}</div>;
+
+const USERS = [
+  {id:1,name:"Andy Morgan",  role:"Super Admin",       office:"Group",         av:"AM",c:"#00B4D8",isManager:true, team:["Roxy Sheeley","Garry Crossan","Joanne Fenech","Neil Kelly","Gary Harrison"]},
+  {id:2,name:"Roxy Sheeley", role:"Managing Director", office:"Isle of Man",   av:"RS",c:"#7C5CBF",isManager:true, team:["Sarah Cole","Patrick Walsh"]},
+  {id:3,name:"Garry Crossan",role:"Director",          office:"Cayman Islands",av:"GC",c:"#1A7FBF",isManager:false,team:[]},
+  {id:4,name:"Joanne Fenech",role:"Director",          office:"Malta",         av:"JF",c:"#4A7C6F",isManager:true, team:["Maria Borg"]},
+  {id:5,name:"Neil Kelly",   role:"CFO",               office:"Group",         av:"NK",c:"#BF5C7A",isManager:false,team:[]},
+  {id:6,name:"Gary Harrison",role:"CCO",               office:"Group",         av:"GH",c:"#7B4F1D",isManager:false,team:[]},
+];
+
+const ALL_TASKS = [
+  {id:1, title:"Harrington Trust — CPR overdue",          assignee:"Roxy Sheeley",  module:"Compliance",priority:"Critical",due:"Today",    entity:"Harrington Family Trust"},
+  {id:2, title:"Apex Growth Fund — sanctions MLRO review",assignee:"Gary Harrison", module:"Compliance",priority:"Critical",due:"Today",    entity:"Apex Growth Fund Ltd"},
+  {id:3, title:"Emma Harrington — KYC expired",           assignee:"Roxy Sheeley",  module:"KYC",       priority:"Critical",due:"Overdue",  entity:"Harrington Family Trust"},
+  {id:4, title:"Q3 retainer invoices — approve batch",    assignee:"Neil Kelly",    module:"Invoicing", priority:"High",    due:"15/07",    entity:"All entities"},
+  {id:5, title:"Sarah Cole — missing timesheet",          assignee:"Roxy Sheeley",  module:"Timesheets",priority:"High",    due:"Today",    entity:"—"},
+  {id:6, title:"North Star — sign off attrition form",    assignee:"Andy Morgan",   module:"Onboarding",priority:"High",    due:"15/07",    entity:"North Star Holdings Ltd"},
+  {id:7, title:"Pacific Wealth Trust — EDD outstanding",  assignee:"Garry Crossan", module:"Compliance",priority:"High",    due:"18/07",    entity:"Pacific Wealth Trust"},
+  {id:8, title:"Stonebridge — director appointment res",  assignee:"Joanne Fenech", module:"Documents", priority:"Medium",  due:"18/07",    entity:"Stonebridge Capital Ltd"},
+  {id:9, title:"Maria Borg — timesheet missing",          assignee:"Joanne Fenech", module:"Timesheets",priority:"High",    due:"Today",    entity:"—"},
+  {id:10,title:"Meridian Holdings — annual return prep",  assignee:"Roxy Sheeley",  module:"Statutory", priority:"Medium",  due:"12/09",    entity:"Meridian Holdings Ltd"},
+  {id:11,title:"Garry Crossan — enforce MFA",             assignee:"Andy Morgan",   module:"System",    priority:"Medium",  due:"14/07",    entity:"—"},
+  {id:12,title:"Azure Mediterranean — Q2 accounts",       assignee:"Joanne Fenech", module:"Accounts",  priority:"Low",     due:"30/09",    entity:"Azure Mediterranean Fdn"},
+];
+
+const INBOX_ITEMS = [
+  {id:1, from:"James Harrington",     entity:"Harrington Family Trust",   subject:"Renewal of passport — scan attached",       received:"14/07/2025",type:"Scan",    read:false, assignee:"Roxy Sheeley",  daysOld:0},
+  {id:2, from:"Postroom — IOM office",entity:"Meridian Holdings Ltd",      subject:"Companies Registry confirmation — annual return",received:"07/07/2025",type:"Post",   read:false, assignee:"Roxy Sheeley",  daysOld:7},
+  {id:3, from:"Cayman CIMA",          entity:"Apex Growth Fund Ltd",       subject:"Regulatory notice — Q2 2025",               received:"10/07/2025",type:"Post",    read:true,  assignee:"Garry Crossan", daysOld:4},
+  {id:4, from:"Postroom — IOM office",entity:"Rosewood Legacy Trust",      subject:"Letter from HMRC re: trust registration",    received:"05/07/2025",type:"Post",    read:false, assignee:"Roxy Sheeley",  daysOld:9},
+  {id:5, from:"Wei Chen",             entity:"Pacific Wealth Trust",       subject:"Source of wealth — updated documentation",   received:"11/07/2025",type:"Scan",    read:false, assignee:"Garry Crossan", daysOld:3},
+  {id:6, from:"Postroom — Malta",     entity:"Stonebridge Capital Ltd",    subject:"MFSA letter — director appointment acknowledgement",received:"04/07/2025",type:"Post",read:false,assignee:"Joanne Fenech", daysOld:10},
+  {id:7, from:"IOMFSA",               entity:"All entities",               subject:"AML guidance update — July 2025",            received:"08/07/2025",type:"Post",    read:true,  assignee:"Gary Harrison", daysOld:6},
+  {id:8, from:"Carlos Reyes",         entity:"Suncoast Ventures LLC",      subject:"Signed accounts — FY2024",                   received:"12/07/2025",type:"Scan",    read:false, assignee:"Andy Morgan",   daysOld:2},
+];
+
+const DEBTORS = {
+  2:[{entity:"Harrington Family Trust",amount:1750,age:"60d+",status:"Overdue"},{entity:"North Star Holdings Ltd",amount:600,age:"90d+",status:"Overdue"},{entity:"Rosewood Legacy Trust",amount:2400,age:"Current",status:"Sent"},{entity:"Meridian Holdings Ltd",amount:2000,age:"Current",status:"Sent"}],
+  3:[{entity:"Pacific Wealth Trust",amount:4200,age:"Current",status:"Sent"},{entity:"Apex Growth Fund Ltd",amount:5500,age:"Current",status:"Sent"}],
+  5:[{entity:"Harrington Family Trust",amount:2250,age:"60d+",status:"Overdue"},{entity:"North Star Holdings Ltd",amount:600,age:"90d+",status:"Overdue"},{entity:"Pacific Wealth Trust",amount:4200,age:"Current",status:"Sent"},{entity:"Apex Growth Fund Ltd",amount:5500,age:"Current",status:"Sent"},{entity:"Meridian Holdings Ltd",amount:2000,age:"Current",status:"Sent"},{entity:"Azure Mediterranean Fdn",amount:900,age:"Partial",status:"Partial"}],
+};
+
+const RECENT = [
+  {name:"Group management report — July",    type:"Report",   date:"14/07/2025"},
+  {name:"Apex Growth Fund — sanctions case", type:"Compliance",date:"12/07/2025"},
+  {name:"Q3 invoice batch — review",         type:"Invoicing", date:"11/07/2025"},
+  {name:"Board pack — July 2025",            type:"Documents", date:"10/07/2025"},
+];
+
+const REVC = [
+  {month:"Jan",IOM:18200,Malta:9400,Cayman:24600,UK:6200,Miami:3100},
+  {month:"Mar",IOM:19400,Malta:11000,Cayman:25800,UK:7100,Miami:4200},
+  {month:"May",IOM:18900,Malta:12200,Cayman:27200,UK:7400,Miami:5100},
+  {month:"Jul",IOM:19800,Malta:10900,Cayman:26100,UK:7800,Miami:5400},
+];
+
+const ONBOARDING = [
+  {name:"Pinnacle Trading Ltd",      pct:35,overdue:false},
+  {name:"Solaris Family Trust",      pct:65,overdue:true},
+  {name:"Verona Digital Holdings",   pct:80,overdue:false},
+  {name:"Beaumont Wealth Structures",pct:90,overdue:false},
+  {name:"Osprey Aviation Partners",  pct:10,overdue:false},
+];
+
+const modColors = {Compliance:{bg:"#FBEAF0",color:"#72243E"},KYC:{bg:"#FCEBEB",color:"#A32D2D"},Invoicing:{bg:"#EAF3DE",color:"#27500A"},Timesheets:{bg:"#E6F7FB",color:"#0077A8"},Onboarding:{bg:"#E6F1FB",color:"#0C447C"},Documents:{bg:"#F1EFE8",color:"#444441"},Statutory:{bg:"#FAEEDA",color:"#633806"},System:{bg:"#F1EFE8",color:"#888"},Accounts:{bg:"#EAF3DE",color:"#27500A"}};
+
+export default function Dashboard({userId, onNav}) {
+  const [inboxFilter,setInboxFilter] = useState("mine");
+  const [taskFilter,setTaskFilter]   = useState("mine");
+
+  const user = USERS.find(u=>u.id===userId)||USERS[0];
+  const isManager = user.isManager || userId===1;
+
+  // My tasks vs team tasks
+  const myTasks   = ALL_TASKS.filter(t=>t.assignee===user.name);
+  const teamTasks = isManager ? ALL_TASKS.filter(t=>user.team.includes(t.assignee)) : [];
+  const shownTasks = taskFilter==="mine" ? myTasks : taskFilter==="team" ? teamTasks : ALL_TASKS;
+
+  // My inbox vs team inbox
+  const myInbox   = INBOX_ITEMS.filter(i=>i.assignee===user.name);
+  const teamInbox = isManager ? INBOX_ITEMS.filter(i=>user.team.includes(i.assignee)) : [];
+  const shownInbox = inboxFilter==="mine" ? myInbox : inboxFilter==="team" ? teamInbox : INBOX_ITEMS;
+  const overdueInbox = shownInbox.filter(i=>i.daysOld>=7);
+
+  const myDebtors = DEBTORS[userId]||[];
+  const debtTotal = myDebtors.reduce((s,d)=>s+d.amount,0);
+  const wip = userId===2?18240:userId===3?16800:userId===4?8138:userId===6?0:48320;
+  const util = userId===1?56:userId===2?76:userId===3?82:userId===4?74:userId===5?75:77;
+  const critCount = myTasks.filter(t=>t.priority==="Critical").length;
+
+  const KPIS = userId===6
+    ? [{l:"Overdue reviews",v:3,c:"#EF4444"},{l:"Open cases",v:5,c:"#F59E0B"},{l:"Expired KYC",v:2,c:"#EF4444"},{l:"My inbox",v:myInbox.length,c:CY},{l:"Team inbox",v:teamInbox.length}]
+    : userId===5
+    ? [{l:"Outstanding debt",v:fmt(debtTotal),c:"#EF4444"},{l:"Invoiced YTD",v:fmt(297000)},{l:"My WIP",v:fmt(wip),c:CY},{l:"My inbox",v:myInbox.length,c:CY},{l:"Utilisation",v:util+"%",c:util>=75?"#4CAF7D":"#F59E0B"}]
+    : [{l:"My tasks",v:myTasks.length,c:critCount>0?"#EF4444":CY},{l:"My entities",v:userId===1?300:userId===2?4:userId===3?4:2},{l:"My WIP",v:fmt(wip),c:CY},{l:"My debtors",v:debtTotal>0?fmt(debtTotal):"—",c:debtTotal>3000?"#EF4444":null},{l:"Utilisation",v:util+"%",c:util>=75?"#4CAF7D":"#F59E0B"}];
+
+  return (
+    <div style={{padding:18,fontFamily:"'DM Sans',system-ui,sans-serif"}}>
+      {/* Greeting */}
+      <div style={{marginBottom:14}}>
+        <div style={{fontSize:18,fontWeight:700}}>Good morning, {user.name.split(" ")[0]}.</div>
+        <div style={{fontSize:12,color:"#666",marginTop:3}}>{user.office} &middot; {user.role}
+          {critCount>0&&<span style={{color:"#EF4444",marginLeft:8}}>&#9888; {critCount} critical item{critCount>1?"s":""} require your attention.</span>}
+        </div>
+      </div>
+
+      {/* Timesheet alert */}
+      {userId===4&&<div style={{background:"#FCEBEB22",border:"0.5px solid #EF4444",borderRadius:8,padding:"10px 14px",marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontSize:12,fontWeight:600,color:"#A32D2D"}}>&#9888; Timesheet not submitted — Wednesday, Thursday missing</div><button style={{padding:"5px 12px",borderRadius:5,border:"none",background:"#EF4444",color:"#fff",fontSize:11,cursor:"pointer"}}>Submit now</button></div>}
+
+      {/* Inbox 7d+ alert */}
+      {overdueInbox.length>0&&<div style={{background:"#FAEEDA22",border:"0.5px solid #F59E0B",borderRadius:8,padding:"10px 14px",marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontSize:12,fontWeight:500,color:"#633806"}}>&#9993; {overdueInbox.length} item{overdueInbox.length>1?"s":""} in your inbox have been waiting 7+ days and need attention.</div><button onClick={()=>setInboxFilter("mine")} style={{padding:"5px 12px",borderRadius:5,border:"none",background:"#F59E0B",color:"#fff",fontSize:11,cursor:"pointer"}}>View inbox</button></div>}
+
+      {/* KPIs */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10,marginBottom:14}}>
+        {KPIS.map(k=><div key={k.l} style={{background:"#f9f9f9",borderRadius:6,padding:"10px 14px"}}><div style={{fontSize:10,color:"#666",marginBottom:3}}>{k.l}</div><div style={{fontSize:20,fontWeight:600,color:k.c||"#111"}}>{k.v}</div></div>)}
+      </div>
+
+      {/* Main grid */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+
+        {/* Tasks */}
+        <Card title={
+          <div style={{display:"flex",alignItems:"center",gap:6}}>
+            Tasks
+            {isManager&&<div style={{display:"flex",gap:3}}>
+              {["mine","team"].map(f=><button key={f} onClick={()=>setTaskFilter(f)} style={{padding:"2px 8px",borderRadius:20,border:`0.5px solid ${taskFilter===f?"#ccc":"#e5e5e5"}`,background:taskFilter===f?"#fff":"transparent",color:taskFilter===f?"#111":"#aaa",cursor:"pointer",fontSize:10}}>{f==="mine"?"Mine":"My team"}{f==="team"&&<span style={{marginLeft:3,fontWeight:600,color:teamTasks.filter(t=>t.priority==="Critical").length>0?"#EF4444":"#F59E0B"}}>({teamTasks.length})</span>}</button>)}
+            </div>}
+          </div>
+        } action={<button onClick={()=>onNav&&onNav("tasks")} style={{padding:"4px 10px",borderRadius:5,border:"0.5px solid #e5e5e5",background:"transparent",fontSize:11,cursor:"pointer"}}>View all &#8599;</button>}>
+          {shownTasks.slice(0,6).map(t=>(
+            <div key={t.id} style={{display:"flex",alignItems:"flex-start",gap:8,padding:"6px 0",borderBottom:"0.5px solid #e5e5e5"}}>
+              <div style={{width:7,height:7,borderRadius:"50%",marginTop:4,flexShrink:0,background:t.priority==="Critical"?"#EF4444":t.priority==="High"?"#F59E0B":CY}}/>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:12,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.title}</div>
+                <div style={{fontSize:10,color:"#999",marginTop:2}}>{taskFilter==="team"?t.assignee+" · ":""}{t.due} &middot; {t.entity}</div>
+              </div>
+              <Bx label={t.module} colors={modColors[t.module]||{bg:"#eee",color:"#666"}}/>
+            </div>
+          ))}
+          {shownTasks.length===0&&<div style={{fontSize:12,color:"#4CAF7D",padding:"10px 0"}}>&#10003; No outstanding tasks</div>}
+        </Card>
+
+        {/* Inbox */}
+        <Card title={
+          <div style={{display:"flex",alignItems:"center",gap:6}}>
+            Inbox — post &amp; scanned documents
+            {isManager&&<div style={{display:"flex",gap:3}}>
+              {["mine","team"].map(f=><button key={f} onClick={()=>setInboxFilter(f)} style={{padding:"2px 8px",borderRadius:20,border:`0.5px solid ${inboxFilter===f?"#ccc":"#e5e5e5"}`,background:inboxFilter===f?"#fff":"transparent",color:inboxFilter===f?"#111":"#aaa",cursor:"pointer",fontSize:10}}>{f==="mine"?"Mine":"My team"}{f==="team"&&<span style={{marginLeft:3,fontWeight:600,color:"#F59E0B"}}>({teamInbox.length})</span>}</button>)}
+            </div>}
+          </div>
+        } action={<button onClick={()=>onNav&&onNav("documents")} style={{padding:"4px 10px",borderRadius:5,border:"0.5px solid #e5e5e5",background:"transparent",fontSize:11,cursor:"pointer"}}>Open DMS &#8599;</button>}
+        border={overdueInbox.length>0?"#F59E0B":"#e5e5e5"}>
+          {shownInbox.length===0&&<div style={{fontSize:12,color:"#aaa",padding:"10px 0"}}>No items in inbox.</div>}
+          {shownInbox.slice(0,6).map(i=>(
+            <div key={i.id} style={{display:"flex",alignItems:"flex-start",gap:8,padding:"6px 0",borderBottom:"0.5px solid #e5e5e5",opacity:i.read?0.6:1}}>
+              <div style={{width:7,height:7,borderRadius:"50%",marginTop:4,flexShrink:0,background:i.daysOld>=7?"#EF4444":i.daysOld>=4?"#F59E0B":"#4CAF7D"}}/>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:2}}>
+                  <Bx label={i.type} colors={i.type==="Scan"?{bg:"#E6F7FB",color:"#0077A8"}:{bg:"#EEF0FB",color:"#3C3489"}}/>
+                  <span style={{fontSize:12,fontWeight:i.read?400:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{i.subject}</span>
+                </div>
+                <div style={{fontSize:10,color:"#999"}}>{i.from} &middot; {i.entity} &middot; <span style={{color:i.daysOld>=7?"#EF4444":i.daysOld>=4?"#F59E0B":"#999",fontWeight:i.daysOld>=7?600:400}}>{i.daysOld===0?"Today":i.daysOld===1?"Yesterday":i.daysOld+"d ago"}{i.daysOld>=7?" — action needed":""}</span></div>
+                {inboxFilter==="team"&&<div style={{fontSize:10,color:"#aaa",marginTop:1}}>Assigned to {i.assignee}</div>}
+              </div>
+              <div style={{display:"flex",gap:4,flexShrink:0}}>
+                <button style={{padding:"3px 7px",borderRadius:4,border:"0.5px solid #e5e5e5",background:"transparent",fontSize:10,cursor:"pointer"}}>File &#8599;</button>
+              </div>
+            </div>
+          ))}
+        </Card>
+      </div>
+
+      {/* Second row */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+        {/* Revenue or compliance stats */}
+        {userId!==6?<Card title="Revenue by office — YTD 2025">
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={REVC} margin={{top:0,right:0,left:-15,bottom:0}}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5"/>
+              <XAxis dataKey="month" tick={{fontSize:10}}/>
+              <YAxis tick={{fontSize:10}} tickFormatter={v=>"£"+(v/1000).toFixed(0)+"k"}/>
+              <Tooltip formatter={(v,n)=>["£"+Number(v).toLocaleString(),n]}/>
+              <Bar dataKey="IOM"    name="Isle of Man"    stackId="a" fill={CY}/>
+              <Bar dataKey="Malta"  name="Malta"          stackId="a" fill="#7C5CBF"/>
+              <Bar dataKey="Cayman" name="Cayman Islands" stackId="a" fill="#1A7FBF"/>
+              <Bar dataKey="UK"     name="UK"             stackId="a" fill="#4A7C6F"/>
+              <Bar dataKey="Miami"  name="Miami"          stackId="a" fill="#BF5C7A"/>
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>:
+        <Card title="Compliance overview">
+          {[{l:"Overdue reviews",v:3,c:"#EF4444"},{l:"Due this month",v:2,c:"#F59E0B"},{l:"Expired KYC",v:2,c:"#EF4444"},{l:"Open cases",v:5,c:"#F59E0B"},{l:"Completion rate",v:"94%",c:"#4CAF7D"}].map(k=><div key={k.l} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:"0.5px solid #e5e5e5",fontSize:12}}><span style={{color:"#666"}}>{k.l}</span><span style={{fontWeight:600,color:k.c}}>{k.v}</span></div>)}
+        </Card>}
+
+        {/* Onboarding pipeline */}
+        <Card title="Onboarding pipeline" action={<button onClick={()=>onNav&&onNav("onboarding")} style={{padding:"4px 10px",borderRadius:5,border:"0.5px solid #e5e5e5",background:"transparent",fontSize:11,cursor:"pointer"}}>View &#8599;</button>}>
+          {ONBOARDING.map(o=>(
+            <div key={o.name} style={{marginBottom:8}}>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:2}}>
+                <span style={{fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:200}}>{o.name}</span>
+                <span style={{color:o.overdue?"#EF4444":"#666",flexShrink:0,marginLeft:6}}>{o.pct}%{o.overdue&&" ⚠"}</span>
+              </div>
+              <div style={{height:5,background:"#f9f9f9",borderRadius:3}}><div style={{height:"100%",width:`${o.pct}%`,background:o.overdue?"#EF4444":CY,borderRadius:3}}/></div>
+            </div>
+          ))}
+        </Card>
+      </div>
+
+      {/* Third row */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+        {/* Debtors or recently accessed */}
+        {myDebtors.length>0?<Card title="My debtors" action={<button onClick={()=>onNav&&onNav("invoicing")} style={{padding:"4px 10px",borderRadius:5,border:"0.5px solid #e5e5e5",background:"transparent",fontSize:11,cursor:"pointer"}}>View all &#8599;</button>}>
+          {myDebtors.map((d,i)=>(
+            <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:"0.5px solid #e5e5e5",fontSize:12}}>
+              <div><div style={{fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:180}}>{d.entity}</div><div style={{fontSize:10,color:"#999",marginTop:2}}>{d.age}</div></div>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <span style={{fontWeight:600,color:d.status==="Overdue"?"#EF4444":CY}}>{fmt(d.amount)}</span>
+                <Bx label={d.status} colors={{Overdue:{bg:"#FCEBEB",color:"#A32D2D"},Sent:{bg:"#E6F1FB",color:"#0C447C"},Partial:{bg:"#FAEEDA",color:"#633806"}}[d.status]||{bg:"#eee",color:"#666"}}/>
+              </div>
+            </div>
+          ))}
+          <div style={{display:"flex",justifyContent:"space-between",padding:"8px 0",fontSize:13,fontWeight:700}}><span>Total outstanding</span><span style={{color:"#EF4444"}}>{fmt(debtTotal)}</span></div>
+        </Card>:
+        <Card title="Pending approvals">
+          {[{item:"Q3 retainer invoices",type:"Invoicing",count:7},{item:"Time entries — week 28",type:"Timesheets",count:4},{item:"North Star attrition",type:"Onboarding",count:1}].map((a,i)=>(
+            <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"0.5px solid #e5e5e5",fontSize:12}}>
+              <div><div style={{fontWeight:500}}>{a.item}</div><Bx label={a.type} colors={modColors[a.type]||{bg:"#eee",color:"#666"}}/></div>
+              <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontWeight:600,color:CY}}>{a.count} item{a.count>1?"s":""}</span><button style={{padding:"4px 10px",borderRadius:5,border:"none",background:CY,color:"#fff",fontSize:11,cursor:"pointer"}}>Open &#8599;</button></div>
+            </div>
+          ))}
+        </Card>}
+
+        {/* Recently accessed */}
+        <Card title="Recently accessed">
+          {RECENT.map((r,i)=>(
+            <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:"0.5px solid #e5e5e5",fontSize:12}}>
+              <div><div style={{fontWeight:500}}>{r.name}</div><Bx label={r.type} colors={modColors[r.type]||{bg:"#eee",color:"#666"}}/></div>
+              <span style={{fontSize:10,color:"#aaa",flexShrink:0,marginLeft:8}}>{r.date}</span>
+            </div>
+          ))}
+          <div style={{marginTop:10}}>
+            <div style={{fontSize:10,color:"#aaa",marginBottom:6,textTransform:"uppercase",letterSpacing:"0.4px"}}>Quick links</div>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+              {["Entity Admin","Timesheets","Invoicing","Compliance"].map(l=><button key={l} onClick={()=>onNav&&onNav(l.toLowerCase().replace(" ",""))} style={{padding:"4px 10px",borderRadius:20,border:"0.5px solid #e5e5e5",background:"transparent",fontSize:11,cursor:"pointer",color:"#666"}}>{l} &#8599;</button>)}
+            </div>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}
