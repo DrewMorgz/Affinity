@@ -245,7 +245,7 @@ export default function AffinityCore(){
     <div style={{width:208,minWidth:208,background:NAVY,display:"flex",flexDirection:"column",overflow:"hidden",flexShrink:0,position:"fixed",top:0,left:0,bottom:0,zIndex:50,transform:mobile?(sideOpen?"translateX(0)":"translateX(-100%)"):"translateX(0)",transition:"transform 0.25s ease"}}>
       <div style={{padding:"14px 14px 10px",borderBottom:"0.5px solid rgba(255,255,255,0.08)"}}>
         <div style={{fontSize:18,fontWeight:500,color:CY}}>Affinity <span style={{color:"#fff",fontWeight:300}}>Core</span></div>
-        <div style={{fontSize:9,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:"1px",marginTop:2}}>Corporate & Trust Services</div>
+        <div style={{fontSize:9,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:"1px",marginTop:2}}>Made by Affinity, for Affinity</div>
       </div>
       <div style={{flex:1,overflowY:"auto",paddingBottom:6}}>
         {NAV.map(sec=><div key={sec.s}>
@@ -278,7 +278,8 @@ export default function AffinityCore(){
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           {/* Hamburger — mobile only */}
           <button onClick={e=>{e.stopPropagation();setSideOpen(!sideOpen);}} style={{display:mobile?"flex":"none",alignItems:"center",justifyContent:"center",width:36,height:36,borderRadius:6,border:"0.5px solid #e5e5e5",background:"transparent",cursor:"pointer",fontSize:18,flexShrink:0}}>&#9776;</button>
-          <div style={{fontSize:14,fontWeight:500}}>{navLabel}</div>
+          {mobile&&<div style={{fontSize:16,fontWeight:500,color:CY}}>Affinity <span style={{color:"#111",fontWeight:300}}>Core</span></div>}
+          {!mobile&&<div style={{fontSize:14,fontWeight:500}}>{navLabel}</div>}
           <span style={{display:mobile?"none":"inline-block",padding:"2px 8px",borderRadius:20,fontSize:10,fontWeight:600,background:offC[user.office]?.bg||"#eee",color:offC[user.office]?.color||"#666"}}>{user.office}</span>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8,position:"relative"}}>
