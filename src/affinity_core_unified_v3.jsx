@@ -321,6 +321,7 @@ export default function AffinityCore(){
   const [uOpen,setU]=useState(false);
   const [mobile,setMobile]=useState(window.innerWidth<768);
   const [dark,setDark]=useState(false);
+  const [officeFilter,setOfficeFilter]=useState("All");
   const [searchOpen,setSearchOpen]=useState(false);
   const [searchQ,setSearchQ]=useState("");
   const [shortcutsOpen,setShortcutsOpen]=useState(false);
@@ -365,21 +366,30 @@ export default function AffinityCore(){
     return () => window.removeEventListener("keydown", handler);
   });
 
-  // Dark mode CSS vars
-  const dm = dark ? {
-    "--bg-primary":"#1a1a2e","--bg-secondary":"#0f0f1e","--text-primary":"#e8e8f0",
-    "--text-secondary":"#9999b8","--border":"#2a2a4a","--border-tertiary":"#252540"
-  } : {};
+  // Dark mode CSS vars (kept for future)
+  const dm = {};
+
+  // Office filter — badge colors
+  const officeColors = {
+    "All":            { bg:"#E8E8F0", color:"#333" },
+    "Isle of Man":    { bg:"#E6F7FB", color:"#0077A8" },
+    "Malta":          { bg:"#EEF0FB", color:"#3C3489" },
+    "Cayman Islands": { bg:"#E6EEF7", color:"#0D4A7A" },
+    "United Kingdom": { bg:"#EAF3DE", color:"#27500A" },
+    "Miami":          { bg:"#FBEAF0", color:"#72243E" },
+    "Cyprus":         { bg:"#F3E5F5", color:"#6A1B9A" },
+  };
+  const offC2 = officeColors[officeFilter] || officeColors["All"];
 
   const content=()=>{
     switch(mod){
-      case "dashboard":    return <Dashboard userId={uid} onNav={setMod}/>;
+      case "dashboard":    return <Dashboard userId={uid} onNav={setMod} officeFilter={officeFilter}/>;
       case "tasks":        return <Tasks/>;
-      case "entities":     return <EntityAdmin/>;
+      case "entities":     return <EntityAdmin officeFilter={officeFilter}/>;
       case "crm":          return <CRM/>;
       case "documents":    return <Documents/>;
       case "onboarding":   return <Onboarding/>;
-      case "timesheets":   return <Timesheets/>;
+      case "timesheets":   return <Timesheets officeFilter={officeFilter}/>;
       case "invoicing":    return <Invoicing/>;
       case "bookkeeping":  return <Bookkeeping/>;
       case "budgeting":    return <Budgeting/>;
@@ -389,8 +399,8 @@ export default function AffinityCore(){
       case "chatbot":      return <Chatbot/>;
       case "intranet":     return <Intranet/>;
       case "system":       return <SystemAdmin/>;
-      case "compliance":   return <Compliance/>;
-      case "statutory":    return <Statutory/>;
+      case "compliance":   return <Compliance officeFilter={officeFilter}/>;
+      case "statutory":    return <Statutory officeFilter={officeFilter}/>;
       case "generate":     return <GenerateDoc/>;
       case "egaming":      return <EGaming/>;
       case "jurcompliance": return <JurCompliance/>;
@@ -454,10 +464,30 @@ export default function AffinityCore(){
           <button onClick={e=>{e.stopPropagation();setSearchOpen(true);}} style={{display:"flex",alignItems:"center",gap:8,height:32,padding:"0 12px",borderRadius:6,border:"0.5px solid #e5e5e5",background:dark?"#252540":"#f9f9f9",cursor:"pointer",color:"#999",fontSize:11,whiteSpace:"nowrap"}}>
             🔍 {!mobile&&<span>Search <span style={{color:"#ccc",fontSize:10}}>⌘K</span></span>}
           </button>
-          {/* Dark mode toggle */}
-          <button onClick={e=>{e.stopPropagation();setDark(p=>!p);}} title={dark?"Light mode":"Dark mode"} style={{width:32,height:32,borderRadius:6,border:"0.5px solid #e5e5e5",background:"transparent",cursor:"pointer",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center"}}>
-            {dark?"☀️":"🌙"}
-          </button>
+          {/* Office filter */}
+          {!mobile&&<div style={{position:"relative"}}>
+            <button onClick={e=>{e.stopPropagation();setU(false);setN(false);document.getElementById("offDropdown").style.display=document.getElementById("offDropdown").style.display==="block"?"none":"block";}}
+              style={{display:"flex",alignItems:"center",gap:6,height:32,padding:"0 10px",borderRadius:6,border:`1.5px solid ${officeFilter==="All"?"#e5e5e5":offC2.color}`,background:officeFilter==="All"?"transparent":offC2.bg,cursor:"pointer",fontSize:11,fontWeight:officeFilter==="All"?400:600,color:officeFilter==="All"?"#666":offC2.color,whiteSpace:"nowrap"}}>
+              {officeFilter==="All"?"🌍 All offices":`${{"Isle of Man":"🇮🇲","Malta":"🇲🇹","Cayman Islands":"🇰🇾","United Kingdom":"🇬🇧","Miami":"🇺🇸","Cyprus":"🇨🇾"}[officeFilter]} ${officeFilter}`}
+              <span style={{fontSize:9,opacity:0.6}}>▼</span>
+            </button>
+            <div id="offDropdown" style={{display:"none",position:"absolute",top:38,right:0,background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:10,zIndex:200,overflow:"hidden",boxShadow:"0 8px 30px rgba(0,0,0,0.12)",minWidth:180}} onClick={e=>e.stopPropagation()}>
+              <div style={{padding:"8px 12px 4px",fontSize:10,fontWeight:600,color:"#aaa",textTransform:"uppercase",letterSpacing:"0.5px"}}>Filter by office</div>
+              {["All","Isle of Man","Malta","Cayman Islands","United Kingdom","Miami","Cyprus"].map(o=>{
+                const flags={"Isle of Man":"🇮🇲","Malta":"🇲🇹","Cayman Islands":"🇰🇾","United Kingdom":"🇬🇧","Miami":"🇺🇸","Cyprus":"🇨🇾","All":"🌍"};
+                const oc=officeColors[o];
+                return <div key={o} onClick={()=>{setOfficeFilter(o);document.getElementById("offDropdown").style.display="none";}}
+                  style={{display:"flex",alignItems:"center",gap:10,padding:"9px 14px",cursor:"pointer",background:officeFilter===o?oc?.bg||"#f5f5f5":"transparent",borderBottom:"0.5px solid #f5f5f5"}}>
+                  <span style={{fontSize:15}}>{flags[o]}</span>
+                  <span style={{fontSize:12,fontWeight:officeFilter===o?600:400,color:officeFilter===o?oc?.color||"#333":"#333"}}>{o==="All"?"All offices":o}</span>
+                  {officeFilter===o&&<span style={{marginLeft:"auto",color:oc?.color||CY,fontWeight:700,fontSize:13}}>✓</span>}
+                </div>;
+              })}
+              {officeFilter!=="All"&&<div style={{padding:"8px 14px",borderTop:"0.5px solid #f0f0f0"}}>
+                <button onClick={()=>{setOfficeFilter("All");document.getElementById("offDropdown").style.display="none";}} style={{width:"100%",padding:"6px",borderRadius:5,border:"0.5px solid #ccc",background:"transparent",fontSize:11,cursor:"pointer",color:"#666"}}>Clear filter</button>
+              </div>}
+            </div>
+          </div>}
           {/* Shortcuts help */}
           {!mobile&&<button onClick={e=>{e.stopPropagation();setShortcutsOpen(p=>!p);}} title="Keyboard shortcuts" style={{width:32,height:32,borderRadius:6,border:"0.5px solid #e5e5e5",background:"transparent",cursor:"pointer",fontSize:13,color:"#999",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:600}}>?</button>}
           <span style={{display:mobile?"none":"inline",fontSize:11,color:"#999"}}>14 Jul 2025</span>
@@ -479,7 +509,14 @@ export default function AffinityCore(){
           <div style={{width:30,height:30,borderRadius:"50%",background:user.c,color:"#fff",fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{user.av}</div>
         </div>
       </div>
-      <div style={{flex:1,overflowY:"auto",background:dark?"#1a1a2e":"#fff"}}>{content()}</div>
+      {officeFilter!=="All"&&<div style={{padding:"6px 16px",background:offC2.bg,borderBottom:`1px solid ${offC2.color}22`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,fontSize:11,color:offC2.color,fontWeight:500}}>
+          <span>{{"Isle of Man":"🇮🇲","Malta":"🇲🇹","Cayman Islands":"🇰🇾","United Kingdom":"🇬🇧","Miami":"🇺🇸","Cyprus":"🇨🇾"}[officeFilter]}</span>
+          <span>Showing data for <strong>{officeFilter}</strong> only</span>
+        </div>
+        <button onClick={()=>setOfficeFilter("All")} style={{fontSize:10,color:offC2.color,background:"transparent",border:`0.5px solid ${offC2.color}66`,borderRadius:4,padding:"2px 8px",cursor:"pointer"}}>Clear ×</button>
+      </div>}
+      <div style={{flex:1,overflowY:"auto",background:"#fff"}}>{content()}</div>
     </div>
 
     {/* ── GLOBAL SEARCH MODAL ──────────────────────────────── */}
