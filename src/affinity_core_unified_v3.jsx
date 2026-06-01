@@ -70,7 +70,7 @@ const NAV = [
   {s:"Insights",   items:[
     {id:"reporting",    label:"Reporting",     icon:"\uD83D\uDCC8",b:null},
   ]},
-  {s:{s:"Governance", items:[
+  {s:"Governance", items:[
     {id:"compliance",   label:"Compliance",    icon:"\u2713",b:null},
     {id:"statutory",    label:"Statutory",     icon:"\uD83D\uDCCB",b:null},
     {id:"procedures",   label:"Procedures",    icon:"\u2699",b:null},
