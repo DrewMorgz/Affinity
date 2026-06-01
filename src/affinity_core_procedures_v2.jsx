@@ -94,8 +94,6 @@ export default function AffinityProcedures() {
   const [sel, setSel]         = useState(null);
   const [runProc, setRunProc] = useState(null);
   const [runStep, setRunStep] = useState(null);
-  const [modal, setModal]     = useState(null);
-
   const selProc = sel ? PROCEDURES.find(p=>p.id===sel) : null;
   const selSteps = sel ? (PROCEDURE_STEPS[sel]||[]) : [];
   const filteredProcs = PROCEDURES.filter(p=>!catF||p.category===catF);
