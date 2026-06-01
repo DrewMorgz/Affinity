@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
-const CY = "#00B4D8";
+const CY = "#00C4CC";
 const fmt = (n, s="£") => s + Math.abs(Number(n||0)).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0});
 
 const Badge = ({label,colors}) => <span style={{display:"inline-block",padding:"2px 8px",borderRadius:20,fontSize:10,fontWeight:600,background:colors?.bg||"#eee",color:colors?.color||"#333",whiteSpace:"nowrap"}}>{label}</span>;
@@ -79,7 +79,7 @@ export default function AffinityBudgeting() {
   const td = {padding:"8px 12px",fontSize:11,borderBottom:"0.5px solid #e5e5e5",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"};
 
   return (
-    <div style={{fontFamily:"'DM Sans',system-ui,sans-serif",background:"#fff",color:"#111",minHeight:"100vh"}}>
+    <div style={{fontFamily:"'Catamaran',system-ui,sans-serif",background:"#fff",color:"#111",minHeight:"100vh"}}>
       {/* Header */}
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 20px",borderBottom:"0.5px solid #e5e5e5"}}>
         <div style={{fontSize:18,fontWeight:500,color:CY}}>Affinity <span style={{color:"#111",fontWeight:300}}>Core</span><small style={{fontSize:11,color:"#999",fontWeight:300,marginLeft:8}}>Budgeting</small></div>
