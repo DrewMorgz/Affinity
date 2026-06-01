@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
-const CY = "#00B4D8";
-const NAVY = "#0D1B2A";
+const CY = "#00C4CC";
+const NAVY = "#001242";
 
 const Bx = ({label,colors}) => <span style={{display:"inline-block",padding:"2px 8px",borderRadius:20,fontSize:10,fontWeight:600,background:colors?.bg||"#eee",color:colors?.color||"#333",whiteSpace:"nowrap"}}>{label}</span>;
 const fmt = (n,s="£") => s+Math.abs(Number(n||0)).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0});
 const Card = ({title,children,action,border}) => <div style={{background:"#fff",border:`0.5px solid ${border||"#e5e5e5"}`,borderRadius:8,padding:14,marginBottom:12}}>{title&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><div style={{fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.4px",color:"#666"}}>{title}</div>{action}</div>}{children}</div>;
 
 const USERS = [
-  {id:1,name:"Andy Morgan",  role:"Super Admin",       office:"Group",         av:"AM",c:"#00B4D8",isManager:true, team:["Roxy Sheeley","Garry Crossan","Joanne Fenech","Neil Kelly","Gary Harrison"]},
+  {id:1,name:"Andy Morgan",  role:"Super Admin",       office:"Group",         av:"AM",c:"#00C4CC",isManager:true, team:["Roxy Sheeley","Garry Crossan","Joanne Fenech","Neil Kelly","Gary Harrison"]},
   {id:2,name:"Roxy Sheeley", role:"Managing Director", office:"Isle of Man",   av:"RS",c:"#7C5CBF",isManager:true, team:["Sarah Cole","Patrick Walsh"]},
   {id:3,name:"Garry Crossan",role:"Director",          office:"Cayman Islands",av:"GC",c:"#1A7FBF",isManager:false,team:[]},
   {id:4,name:"Joanne Fenech",role:"Director",          office:"Malta",         av:"JF",c:"#4A7C6F",isManager:true, team:["Maria Borg"]},
@@ -78,7 +78,7 @@ const modColors = {Compliance:{bg:"#FBEAF0",color:"#72243E"},KYC:{bg:"#FCEBEB",c
 const TODAY = { day:14, month:7 }; // July 14 — matches app date
 
 const STAFF_PROFILES = [
-  { name:"Andy Morgan",    birthday:{d:22,m:8},  joined:{d:1,m:3,y:2015},  role:"Group CEO",        av:"AM", c:"#00B4D8" },
+  { name:"Andy Morgan",    birthday:{d:22,m:8},  joined:{d:1,m:3,y:2015},  role:"Group CEO",        av:"AM", c:"#00C4CC" },
   { name:"Roxy Sheeley",   birthday:{d:14,m:7},  joined:{d:15,m:6,y:2017}, role:"MD — IOM",         av:"RS", c:"#7C5CBF" },
   { name:"Garry Crossan",  birthday:{d:3,m:9},   joined:{d:1,m:9,y:2018},  role:"Director — Cayman",av:"GC", c:"#1A7FBF" },
   { name:"Joanne Fenech",  birthday:{d:29,m:11}, joined:{d:10,m:1,y:2020}, role:"Director — Malta", av:"JF", c:"#4A7C6F" },
@@ -162,7 +162,7 @@ export default function Dashboard({userId, onNav}) {
     : [{l:"My tasks",v:myTasks.length,c:critCount>0?"#EF4444":CY},{l:"My entities",v:userId===1?300:userId===2?4:userId===3?4:2},{l:"My WIP",v:fmt(wip),c:CY},{l:"My debtors",v:debtTotal>0?fmt(debtTotal):"—",c:debtTotal>3000?"#EF4444":null},{l:"Utilisation",v:util+"%",c:util>=75?"#4CAF7D":"#F59E0B"}];
 
   return (
-    <div style={{padding:18,fontFamily:"'DM Sans',system-ui,sans-serif"}}>
+    <div style={{padding:18,fontFamily:"'Catamaran',system-ui,sans-serif"}}>
       {/* Greeting */}
       <div style={{marginBottom:14}}>
         <div style={{fontSize:18,fontWeight:700}}>Good morning, {user.name.split(" ")[0]}.</div>
