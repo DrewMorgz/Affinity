@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
-const CY = "#00B4D8";
-const NAVY = "#0D1B2A";
+const CY = "#00C4CC";
+const NAVY = "#001242";
 
 const Badge = ({ label, colors }) => (
   <span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:600, background:colors?.bg||"#eee", color:colors?.color||"#333", whiteSpace:"nowrap" }}>{label}</span>
@@ -20,7 +20,7 @@ const riskColors = { "Very High":{bg:"#F7C1C1",color:"#501313"}, High:{bg:"#FCEB
 const statusBadge = s => ({ Active:{bg:"#EAF3DE",color:"#27500A"}, Dormant:{bg:"#FAEEDA",color:"#633806"}, "In liquidation":{bg:"#FCEBEB",color:"#A32D2D"}, Dissolved:{bg:"#F1EFE8",color:"#888"}, "Pending incorporation":{bg:"#E6F7FB",color:"#0077A8"} }[s]||{bg:"#eee",color:"#666"});
 
 const ENTITIES = [
-  { id:1,  name:"Meridian Holdings Ltd",          ref:"AC-2024-001", type:"Company",    jur:"Isle of Man",    status:"Active",        risk:"Medium",   admin:"Roxy Sheeley",  manager:"Roxy Sheeley",  director:"Andy Morgan", group:"Meridian Group",   principalActivity:"Holding company", yearEnd:"31/03", currency:"GBP", regNo:"117843C",    incorporated:"12/03/2018" },
+  { id:1,  name:"Meridian Holdings Ltd",          ref:"AC-2024-001", type:"Company",    jur:"Isle of Man",    status:"Active",        risk:"Medium",   admin:"Roxy Sheeley",  manager:"Roxy Sheeley",  director:"Andy Morgan", group:"Meridian Group",   principalActivity:"Holding company", yearEnd:"31/03", currency:"GBP", regNo:"117843C",    incorporated:"12/03/2018", isGaming:false },
   { id:2,  name:"Harrington Family Trust",        ref:"AC-2019-014", type:"Trust",      jur:"Isle of Man",    status:"Active",        risk:"High",     admin:"Roxy Sheeley",  manager:"Roxy Sheeley",  director:"Andy Morgan", group:"Harrington Family",principalActivity:"Family trust",    yearEnd:"05/04", currency:"GBP", regNo:"T-4421",     incorporated:"05/07/2019" },
   { id:3,  name:"Caledonian Ventures Ltd",        ref:"AC-2021-032", type:"Company",    jur:"Cayman Islands", status:"Active",        risk:"Medium",   admin:"Garry Crossan", manager:"Garry Crossan", director:"Andy Morgan", group:"Caledonian Group", principalActivity:"Investment holding",yearEnd:"31/12",currency:"USD", regNo:"CY-88341",   incorporated:"22/01/2021" },
   { id:4,  name:"Azure Mediterranean Foundation", ref:"AC-2020-008", type:"Foundation", jur:"Malta",          status:"Active",        risk:"Low",      admin:"Joanne Fenech", manager:"Joanne Fenech", director:"Andy Morgan", group:"Azure Group",      principalActivity:"Philanthropy",    yearEnd:"31/12", currency:"EUR", regNo:"MLT-F-2201", incorporated:"14/09/2020" },
@@ -32,6 +32,8 @@ const ENTITIES = [
   { id:10, name:"Apex Growth Fund Ltd",           ref:"AC-2023-052", type:"Company",    jur:"Cayman Islands", status:"Active",        risk:"Very High",admin:"Garry Crossan", manager:"Garry Crossan", director:"Andy Morgan", group:"Apex Group",       principalActivity:"Fund management", yearEnd:"31/12", currency:"USD", regNo:"CY-99102",   incorporated:"12/08/2023" },
   { id:11, name:"Suncoast Ventures LLC",          ref:"AC-2024-007", type:"Company",    jur:"Miami",          status:"Active",        risk:"Low",      admin:"Andy Morgan",   manager:"Andy Morgan",   director:"Andy Morgan", group:"Suncoast Group",   principalActivity:"Ventures",        yearEnd:"31/12", currency:"USD", regNo:"FL-2024-881", incorporated:"01/03/2024" },
   { id:12, name:"Bluewater Family Trust",         ref:"AC-2020-031", type:"Trust",      jur:"Cayman Islands", status:"Active",        risk:"Medium",   admin:"Garry Crossan", manager:"Garry Crossan", director:"Andy Morgan", group:"Okafor Family",    principalActivity:"Family trust",    yearEnd:"31/12", currency:"USD", regNo:"T-CY-9921",  incorporated:"19/06/2020" },
+  { id:13, name:"Phoenix eGaming Ltd",             ref:"AC-2025-061", type:"Company",    jur:"Isle of Man",    status:"Active",        risk:"High",     admin:"Roxy Sheeley",  manager:"Roxy Sheeley",  director:"Andy Morgan", group:"Phoenix Group",    principalActivity:"eGaming operator", yearEnd:"31/12", currency:"GBP", regNo:"GSC-2025-0441",incorporated:"01/03/2025", isGaming:true },
+  { id:14, name:"Meridian Digital Ltd",            ref:"AC-2023-058", type:"Company",    jur:"Isle of Man",    status:"Active",        risk:"Medium",   admin:"Roxy Sheeley",  manager:"Roxy Sheeley",  director:"Andy Morgan", group:"Meridian Group",   principalActivity:"B2B platform supply",yearEnd:"31/12",currency:"GBP",regNo:"GSC-2023-0218",incorporated:"01/06/2023", isGaming:true },
 ];
 
 const ENTITY_DATA = {
@@ -112,10 +114,11 @@ const TABS = [
   { id:"crs",        label:"CRS",                     group:"Regulatory" },
   { id:"substance",  label:"Substance",               group:"Regulatory" },
   { id:"registers",  label:"Generate registers",      group:"Admin" },
+  { id:"egaming",    label:"eGaming / OGRA",          group:"Regulatory", gamingOnly:true },
 ];
 
 const s = {
-  wrap:  { fontFamily:"'DM Sans',system-ui,sans-serif", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)", height:"100vh", display:"flex", flexDirection:"column", overflow:"hidden" },
+  wrap:  { fontFamily:"'Catamaran',system-ui,sans-serif", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)", height:"100vh", display:"flex", flexDirection:"column", overflow:"hidden" },
   hdr:   { display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 20px", borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)", flexShrink:0 },
   logo:  { fontSize:18, fontWeight:500, color:CY },
   body:  { display:"flex", flex:1, overflow:"hidden" },
@@ -191,7 +194,7 @@ function FATCATab({entity}) {
   return <div>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
       <div><div style={{fontSize:14,fontWeight:600}}>FATCA — Foreign Account Tax Compliance Act</div><div style={{fontSize:11,color:"#666",marginTop:2}}>US reporting obligation status for {entity?.name}</div></div>
-      {isApplicable&&<button onClick={()=>setModal("fatca")} style={{padding:"5px 14px",borderRadius:5,border:"none",background:"#00B4D8",color:"#fff",fontSize:11,cursor:"pointer"}}>&#43; Add/edit FATCA data</button>}
+      {isApplicable&&<button onClick={()=>setModal("fatca")} style={{padding:"5px 14px",borderRadius:5,border:"none",background:"#00C4CC",color:"#fff",fontSize:11,cursor:"pointer"}}>&#43; Add/edit FATCA data</button>}
     </div>
     {!isApplicable?<div style={{background:"#f9f9f9",borderRadius:8,padding:20,textAlign:"center",color:"#aaa",fontSize:12}}>FATCA reporting is not applicable for entities in {entity?.jur}.</div>:
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
@@ -208,7 +211,7 @@ function FATCATab({entity}) {
         ))}
         <div style={{marginTop:12,display:"flex",gap:6}}>
           <button style={{flex:1,padding:"6px",borderRadius:5,border:"0.5px solid #ccc",background:"transparent",fontSize:11,cursor:"pointer"}}>View return &#8599;</button>
-          <button style={{flex:1,padding:"6px",borderRadius:5,border:"none",background:"#00B4D8",color:"#fff",fontSize:11,cursor:"pointer"}}>File return &#8599;</button>
+          <button style={{flex:1,padding:"6px",borderRadius:5,border:"none",background:"#00C4CC",color:"#fff",fontSize:11,cursor:"pointer"}}>File return &#8599;</button>
         </div>
       </div>
     </div>}
@@ -225,7 +228,7 @@ function CRSTab({entity}) {
   return <div>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
       <div><div style={{fontSize:14,fontWeight:600}}>CRS — Common Reporting Standard</div><div style={{fontSize:11,color:"#666",marginTop:2}}>OECD automatic exchange of financial information</div></div>
-      {isApplicable&&<button style={{padding:"5px 14px",borderRadius:5,border:"none",background:"#00B4D8",color:"#fff",fontSize:11,cursor:"pointer"}}>&#43; Add/edit CRS data</button>}
+      {isApplicable&&<button style={{padding:"5px 14px",borderRadius:5,border:"none",background:"#00C4CC",color:"#fff",fontSize:11,cursor:"pointer"}}>&#43; Add/edit CRS data</button>}
     </div>
     {!isApplicable?<div style={{background:"#f9f9f9",borderRadius:8,padding:20,textAlign:"center",color:"#aaa",fontSize:12}}>CRS reporting does not apply to entities in {entity?.jur}.</div>:
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
@@ -264,7 +267,7 @@ function SubstanceTab({entity}) {
   return <div>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
       <div><div style={{fontSize:14,fontWeight:600}}>Substance requirements</div><div style={{fontSize:11,color:"#666",marginTop:2}}>Economic substance test — {entity?.jur}</div></div>
-      {isApplicable&&<button style={{padding:"5px 14px",borderRadius:5,border:"none",background:"#00B4D8",color:"#fff",fontSize:11,cursor:"pointer"}}>&#43; Update substance data</button>}
+      {isApplicable&&<button style={{padding:"5px 14px",borderRadius:5,border:"none",background:"#00C4CC",color:"#fff",fontSize:11,cursor:"pointer"}}>&#43; Update substance data</button>}
     </div>
     {!isApplicable?<div style={{background:"#f9f9f9",borderRadius:8,padding:20,textAlign:"center",color:"#aaa",fontSize:12}}>
       {entity?.type==="Trust"||entity?.type==="Foundation"?"Substance requirements do not apply to "+entity?.type.toLowerCase()+"s.":"Substance requirements do not apply to entities in "+entity?.jur+"."}
@@ -276,7 +279,7 @@ function SubstanceTab({entity}) {
           <div style={{marginBottom:10}}>
             <div style={{fontSize:11,color:"#666",marginBottom:6}}>Relevant activities (select all that apply):</div>
             {activities.map(a=><div key={a} style={{display:"flex",alignItems:"center",gap:8,padding:"4px 0",borderBottom:"0.5px solid #f5f5f5",fontSize:12}}>
-              <div style={{width:14,height:14,borderRadius:3,border:"1px solid #ccc",background:a===entityActivity||a==="Holding company"?"#00B4D8":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <div style={{width:14,height:14,borderRadius:3,border:"1px solid #ccc",background:a===entityActivity||a==="Holding company"?"#00C4CC":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                 {(a===entityActivity||a==="Holding company")&&<span style={{color:"#fff",fontSize:9}}>&#10003;</span>}
               </div>
               <span style={{color:a===entityActivity||a==="Holding company"?"#111":"#666"}}>{a}</span>
@@ -810,6 +813,84 @@ export default function AffinityCoreEntityAdmin({ officeFilter="" }) {
           </div>
         </div>
       );
+
+      case "egaming": {
+        const entity = ENTITIES.find(e=>e.id===sel);
+        return (
+          <div>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:14 }}>
+              <div>
+                <div style={{ fontSize:13, fontWeight:600, marginBottom:2 }}>eGaming & OGRA licence</div>
+                <div style={{ fontSize:11, color:"var(--text-secondary,#666)" }}>Gambling Supervision Commission — Isle of Man</div>
+              </div>
+              <button style={{ padding:"5px 14px", borderRadius:5, border:"none", background:"#00C4CC", color:"#fff", fontSize:11, cursor:"pointer" }}>Update licence data</button>
+            </div>
+
+            {/* Licence summary */}
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:14 }}>
+              <div style={{ background:"var(--bg-secondary,#f9f9f9)", borderRadius:8, padding:14 }}>
+                <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.4px", color:"#888", marginBottom:10 }}>Licence details</div>
+                {[
+                  ["Licence reference", entity?.regNo||"—"],
+                  ["Licence type", entity?.id===13?"B2C — Casino":"B2B — Platform supply"],
+                  ["Status", entity?.id===13?"Application — stage 2":"Live"],
+                  ["Issued", entity?.id===13?"Pending":"01/06/2023"],
+                  ["Expiry", entity?.id===13?"Pending":"31/05/2026"],
+                  ["Annual return due", entity?.id===13?"N/A":"30/11/2025"],
+                ].map(([k,v])=>(
+                  <div key={k} style={{ display:"flex", justifyContent:"space-between", padding:"5px 0", borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)", fontSize:12 }}>
+                    <span style={{ color:"var(--text-secondary,#666)" }}>{k}</span>
+                    <span style={{ fontWeight:500 }}>{v}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ background:"var(--bg-secondary,#f9f9f9)", borderRadius:8, padding:14 }}>
+                <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.4px", color:"#888", marginBottom:10 }}>OGRA obligations</div>
+                {[
+                  ["AML/CFT policy",       "Current",    "#4CAF7D"],
+                  ["Responsible gambling", "Current",    "#4CAF7D"],
+                  ["Technical standards",  entity?.id===13?"Pending":"Current", entity?.id===13?"#F59E0B":"#4CAF7D"],
+                  ["Suitability — directors","Current",  "#4CAF7D"],
+                  ["Financial resources",  "Confirmed",  "#4CAF7D"],
+                  ["RNG certification",    entity?.id===13?"Pending":"Current", entity?.id===13?"#F59E0B":"#4CAF7D"],
+                ].map(([k,v,c])=>(
+                  <div key={k} style={{ display:"flex", justifyContent:"space-between", padding:"5px 0", borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)", fontSize:12 }}>
+                    <span style={{ color:"var(--text-secondary,#666)" }}>{k}</span>
+                    <span style={{ fontWeight:600, color:c }}>{v}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Application checklist if applicable */}
+            {entity?.id===13&&(
+              <div style={{ background:"var(--bg-secondary,#f9f9f9)", borderRadius:8, padding:14 }}>
+                <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.4px", color:"#888", marginBottom:10 }}>OGRA application checklist</div>
+                {[
+                  { step:"Operator information form (OIF)",            status:"Complete" },
+                  { step:"Business plan — 3 year projection",          status:"Complete" },
+                  { step:"AML/CFT policy",                             status:"Complete" },
+                  { step:"Responsible gambling policy",                status:"Complete" },
+                  { step:"Suitability — all directors",                status:"In progress" },
+                  { step:"System technical standards certification",   status:"Pending" },
+                  { step:"RNG / game certification",                   status:"Pending" },
+                  { step:"Financial resources evidence",               status:"Complete" },
+                  { step:"IT & security assessment",                   status:"Pending" },
+                  { step:"OGRA suitability decision",                  status:"Pending" },
+                ].map((c,i)=>(
+                  <div key={i} style={{ display:"flex", gap:10, padding:"7px 0", borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)", alignItems:"center" }}>
+                    <div style={{ width:22, height:22, borderRadius:"50%", background:c.status==="Complete"?"#4CAF7D":c.status==="In progress"?"#00C4CC":"#f0f0f0", color:c.status==="Complete"||c.status==="In progress"?"#fff":"#aaa", display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, fontWeight:700, flexShrink:0 }}>
+                      {c.status==="Complete"?"✓":i+1}
+                    </div>
+                    <div style={{ flex:1, fontSize:12 }}>{c.step}</div>
+                    <span style={{ display:"inline-block", padding:"2px 8px", borderRadius:20, fontSize:10, fontWeight:600, background:c.status==="Complete"?"#EAF3DE":c.status==="In progress"?"#E6F7FB":"#f0f0f0", color:c.status==="Complete"?"#27500A":c.status==="In progress"?"#0077A8":"#aaa" }}>{c.status}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      }
 
       default: return <div style={{ color:"var(--text-secondary,#666)", fontSize:12, padding:"20px 0", textAlign:"center" }}>Content for {tab} tab.</div>;
     }
