@@ -75,8 +75,6 @@ const NAV = [
     {id:"statutory",    label:"Statutory",     icon:"\uD83D\uDCCB",b:null},
     {id:"procedures",   label:"Procedures",    icon:"\u2699",b:null},
     {id:"generate",     label:"Generate doc",  icon:"\uD83D\uDCC4",b:null},
-    {id:"egaming",      label:"eGaming / OGRA", icon:"\uD83C\uDFB0",b:null},
-    {id:"jurcompliance",label:"Jur. compliance", icon:"\uD83C\uDF0D",b:null},
   ]},
   {s:"People", items:[
     {id:"intranet",     label:"Intranet",      icon:"\uD83C\uDFE0",b:null},
