@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 
-const CY = "#00B4D8";
+const CY = "#00C4CC";
 
 const Badge = ({ label, colors }) => (
   <span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:600, background:colors?.bg||"#eee", color:colors?.color||"#333", whiteSpace:"nowrap" }}>{label}</span>
@@ -30,7 +30,7 @@ const officeColors = {
   "Cayman Islands": { bg:"#E6EEF7", color:"#0D4A7A" },
   "United Kingdom": { bg:"#F1EFE8", color:"#444441" },
   "Miami":          { bg:"#FBEAF0", color:"#72243E" },
-  "Group":          { bg:"#0D1B2A22", color:"#0D1B2A" },
+  "Group":          { bg:"#00124222", color:"#001242" },
 };
 
 const notificationsData = [
@@ -76,11 +76,14 @@ const rulesData = [
   { id:14, trigger:"Attrition approval pending 7+ days",severity:"Low",    recipients:"Pending approver",            timing:"After 7 days unactioned",          active:true },
 ];
 
+// Notifications: acts as an audit trail and rule engine for all system alerts.
+// Different from dashboard (which shows today's actions) — this is the full history,
+// preferences, and automated rule configuration for compliance-driven alerts.
 const VIEWS = ["inbox","all","rules","digest","history"];
 const VIEW_LABELS = ["Inbox","All notifications","Alert rules","Daily digest","History"];
 
 const s = {
-  wrap:{ fontFamily:"'DM Sans',system-ui,sans-serif", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)", minHeight:600 },
+  wrap:{ fontFamily:"'Catamaran',system-ui,sans-serif", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)", minHeight:600 },
   header:{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 20px", borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)" },
   logo:{ fontSize:18, fontWeight:500, color:CY },
   subnav:{ display:"flex", gap:4, padding:"10px 20px", borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)", background:"var(--bg-secondary,#f9f9f9)", flexWrap:"wrap", alignItems:"center" },
