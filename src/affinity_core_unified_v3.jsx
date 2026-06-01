@@ -20,11 +20,11 @@ import JurCompliance from "./affinity_core_jurisdiction_compliance";
 import Statutory    from "./affinity_core_statutory_registers";
 import GenerateDoc  from "./affinity_core_generate_document";
 
-const CY = "#00B4D8";
-const NAVY = "#0D1B2A";
+const CY = "#00C4CC";
+const NAVY = "#001242";
 
 const USERS = [
-  {id:1,name:"Andy Morgan",  role:"Super Admin",      office:"Group",         av:"AM",c:"#00B4D8"},
+  {id:1,name:"Andy Morgan",  role:"Super Admin",      office:"Group",         av:"AM",c:"#00C4CC"},
   {id:2,name:"Roxy Sheeley", role:"Managing Director",office:"Isle of Man",   av:"RS",c:"#7C5CBF"},
   {id:3,name:"Garry Crossan",role:"Director",         office:"Cayman Islands",av:"GC",c:"#1A7FBF"},
   {id:4,name:"Joanne Fenech",role:"Director",         office:"Malta",         av:"JF",c:"#4A7C6F"},
@@ -201,7 +201,7 @@ function SplashScreen({ onDone }) {
     <div style={{
       position:"fixed", inset:0, background:NAVY,
       display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
-      zIndex:999, opacity:fade?0:1, transition:"opacity 0.6s ease", fontFamily:"'DM Sans',system-ui,sans-serif"
+      zIndex:999, opacity:fade?0:1, transition:"opacity 0.6s ease", fontFamily:"'Catamaran',system-ui,sans-serif"
     }}>
       {/* Logo */}
       <div style={{ marginBottom:32, textAlign:"center" }}>
@@ -248,6 +248,8 @@ function SplashScreen({ onDone }) {
       </div>
 
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Catamaran:wght@300;400;500;600;700&display=swap');
+        * { font-family: 'Catamaran', system-ui, sans-serif !important; }
         @keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
         @media print {
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -415,7 +417,7 @@ export default function AffinityCore(){
 
   if (splash) return <SplashScreen onDone={() => setSplash(false)} />;
 
-  return <div style={{display:"flex",height:"100vh",fontFamily:"'DM Sans',system-ui,sans-serif",overflow:"hidden",position:"relative",background:dark?"#1a1a2e":"#fff",...dm}} onClick={()=>{if(nOpen)setN(false);if(uOpen)setU(false);setSearchOpen(false);}}>
+  return <div style={{display:"flex",height:"100vh",fontFamily:"'Catamaran',system-ui,sans-serif",overflow:"hidden",position:"relative",background:dark?"#1a1a2e":"#fff",...dm}} onClick={()=>{if(nOpen)setN(false);if(uOpen)setU(false);setSearchOpen(false);}}>
 
     {/* Mobile overlay */}
     {sideOpen && <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:40}} onClick={()=>setSideOpen(false)}/>}
