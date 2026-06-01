@@ -1,6 +1,6 @@
 import { useState } from "react";
-const CY = "#00B4D8";
-const NAVY = "#0D1B2A";
+const CY = "#00C4CC";
+const NAVY = "#001242";
 
 const Badge = ({ label, colors }) => (
   <span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:600, background:colors?.bg||"#eee", color:colors?.color||"#333", whiteSpace:"nowrap" }}>{label}</span>
@@ -91,7 +91,7 @@ export default function AffinityJurisdictionCompliance() {
   const overdueCount = data.obligations.filter(o=>o.status==="Overdue").length;
 
   return (
-    <div style={{ fontFamily:"'DM Sans',system-ui,sans-serif", background:"#f8f9fc", color:"#111", minHeight:"100vh" }}>
+    <div style={{ fontFamily:"'Catamaran',system-ui,sans-serif", background:"#f8f9fc", color:"#111", minHeight:"100vh" }}>
       <div style={{ background:NAVY, padding:"12px 24px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
           <span style={{ color:"#fff", fontWeight:700, fontSize:17 }}>Affinity <span style={{ fontWeight:300 }}>Core</span></span>
