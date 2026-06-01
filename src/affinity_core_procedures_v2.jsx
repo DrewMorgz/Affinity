@@ -374,5 +374,34 @@ export default function AffinityProcedures() {
         </div>
       )}
     </div>
-        );
+      {/* Create task from procedure modal */}
+      {taskModal&&(
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.4)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:100 }} onClick={e=>e.target===e.currentTarget&&setModal(null)}>
+          <div style={{ background:"#fff", borderRadius:12, padding:24, width:460, maxWidth:"95vw" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+              <h3 style={{ margin:0, fontSize:15, fontWeight:600 }}>Create task from procedure</h3>
+              <button onClick={()=>setModal(null)} style={{ background:"none", border:"none", fontSize:20, cursor:"pointer", color:"#888" }}>×</button>
+            </div>
+            <div style={{ background:"#f0f8fb", borderRadius:6, padding:"8px 12px", marginBottom:14, fontSize:11, color:"#0077A8" }}>
+              📋 Linked procedure: <strong>{taskModal.ref} — {taskModal.title}</strong>
+            </div>
+            {[["Task title","text",taskModal.title],["Entity","text",""],["Assign to","select",""],["Due date","text","DD/MM/YYYY"],["Notes","text",""]].map(([l,t,def],i)=>(
+              <div key={l} style={{ marginBottom:10 }}>
+                <label style={{ display:"block", fontSize:11, fontWeight:600, color:"#555", marginBottom:3 }}>{l}</label>
+                {l==="Assign to"
+                  ?<select style={{ width:"100%", padding:"8px 10px", border:"1.5px solid #e0e0e0", borderRadius:6, fontSize:12, outline:"none" }}>
+                    {["Andy Morgan","Roxy Sheeley","Garry Crossan","Joanne Fenech","Neil Kelly","Gary Harrison","Sarah Cole","Maria Borg"].map(s=><option key={s}>{s}</option>)}
+                  </select>
+                  :<input defaultValue={def} style={{ width:"100%", padding:"8px 10px", border:"1.5px solid #e0e0e0", borderRadius:6, fontSize:12, outline:"none", boxSizing:"border-box" }} />
+                }
+              </div>
+            ))}
+            <button onClick={()=>setModal(null)} style={{ width:"100%", background:"#00C4CC", color:"#fff", border:"none", borderRadius:8, padding:10, fontSize:13, fontWeight:600, cursor:"pointer" }}>
+              Create task ↗
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
