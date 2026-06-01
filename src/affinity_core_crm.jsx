@@ -1,300 +1,455 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
+const CY = "#00C4CC";
+const NAVY = "#001242";
 
-const STAGES = ["Prospect", "Lead", "Proposal", "Client", "Inactive"];
+const Badge = ({ label, colors }) => (
+  <span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:600, background:colors?.bg||"#eee", color:colors?.color||"#333", whiteSpace:"nowrap" }}>{label}</span>
+);
 
+// Per review: new status stages
+const STAGES = ["Initial Call","Proposal Sent","Proposal Accepted","KYC Arriving","KYC Approved","Fees Paid","Declined","Withdrawn"];
 const STAGE_COLORS = {
-  Prospect: { bg: "#E6F7FB", color: "#0077A8" },
-  Lead: { bg: "#FFF3E0", color: "#E65100" },
-  Proposal: { bg: "#F3E5F5", color: "#6A1B9A" },
-  Client: { bg: "#E8F5E9", color: "#2E7D32" },
-  Inactive: { bg: "#F5F5F5", color: "#757575" },
+  "Initial Call":      { bg:"#E6F7FB", color:"#0077A8" },
+  "Proposal Sent":     { bg:"#EEF0FB", color:"#3C3489" },
+  "Proposal Accepted": { bg:"#FAEEDA", color:"#633806" },
+  "KYC Arriving":      { bg:"#F3E5F5", color:"#6A1B9A" },
+  "KYC Approved":      { bg:"#E6F7FB", color:"#00796B" },
+  "Fees Paid":         { bg:"#EAF3DE", color:"#27500A" },
+  "Declined":          { bg:"#FCEBEB", color:"#A32D2D" },
+  "Withdrawn":         { bg:"#F5F5F5", color:"#757575" },
 };
 
-const INITIAL_CONTACTS = [
-  { id: 1, name: "Harrington Trust", owner: "Andy", type: "Trust", stage: "Client", email: "ht@example.com", phone: "+44 7700 900001", notes: "Long-standing client" },
-  { id: 2, name: "Cayman Holdings Ltd", owner: "Sarah", type: "Company", stage: "Prospect", email: "ch@example.com", phone: "+1 345 000 0001", notes: "Initial enquiry received" },
-  { id: 3, name: "Vantage Fund SPC", owner: "Andy", type: "Fund", stage: "Proposal", email: "vf@example.com", phone: "+1 305 000 0002", notes: "Proposal sent 20 May" },
-  { id: 4, name: "Malta Ventures", owner: "Sarah", type: "Company", stage: "Lead", email: "mv@example.com", phone: "+356 2000 0001", notes: "AML/KYC in progress" },
+// Per review: extended type list
+const TYPES = ["Company","Trust","Foundation","Fund","LLC","Individual","B2B","B2C","Aviation","Yachting","Sports"];
+
+// Per review: full office list
+const OFFICES = ["Isle of Man","Malta","Cayman Islands","Cyprus","USA","United Kingdom","Gaming Gateway","Nav"];
+
+const SOURCE_COLORS = {
+  "Referral":        { bg:"#EAF3DE", color:"#27500A" },
+  "Cold outreach":   { bg:"#E6F7FB", color:"#0077A8" },
+  "Trade show":      { bg:"#FAEEDA", color:"#633806" },
+  "Existing client": { bg:"#EEF0FB", color:"#3C3489" },
+  "Website":         { bg:"#F1EFE8", color:"#555" },
+};
+
+const officeC = {
+  "Isle of Man":    { bg:"#E6F7FB", color:"#0077A8" },
+  "Malta":          { bg:"#EEF0FB", color:"#3C3489" },
+  "Cayman Islands": { bg:"#E6EEF7", color:"#0D4A7A" },
+  "Cyprus":         { bg:"#F3E5F5", color:"#6A1B9A" },
+  "USA":            { bg:"#FBEAF0", color:"#72243E" },
+  "United Kingdom": { bg:"#EAF3DE", color:"#27500A" },
+  "Gaming Gateway": { bg:"#FAEEDA", color:"#633806" },
+  "Nav":            { bg:"#F1EFE8", color:"#555" },
+};
+
+const riskC = {
+  "Low":       { bg:"#EAF3DE", color:"#27500A" },
+  "Medium":    { bg:"#FAEEDA", color:"#633806" },
+  "High":      { bg:"#FCEBEB", color:"#A32D2D" },
+  "Very High": { bg:"#F7C1C1", color:"#501313" },
+};
+
+const PROSPECTS = [
+  { id:1, firstName:"James", lastName:"Harrington", company:"Caledonian Futures Ltd", type:"Company", jur:"Cayman Islands", office:"Cayman Islands", source:"Referral", stage:"Fees Paid", bd:"Garry Crossan", annualFee:18000, setupFee:2500, adminFee:500, conversionDate:"01/08/2025", risk:"Medium", website:"calefutures.com", address:"PO Box 1234, George Town, Cayman Islands", notes:"Ready to convert. LOE signed.", services:["Company administration","Registered office","Director services"] },
+  { id:2, firstName:"William", lastName:"Westbridge", company:"Westbridge Holdings Trust", type:"Trust", jur:"Isle of Man", office:"Isle of Man", source:"Existing client", stage:"KYC Arriving", bd:"Andy Morgan", annualFee:24000, setupFee:3000, adminFee:600, conversionDate:"15/08/2025", risk:"High", website:"", address:"14 Athol Street, Douglas, Isle of Man", notes:"EDD required before acceptance.", services:["Trust administration","Compliance support"] },
+  { id:3, firstName:"Marco", lastName:"Verano", company:"Verano Maritime SA", type:"Yachting", jur:"Malta", office:"Malta", source:"Trade show", stage:"Proposal Sent", bd:"Joanne Fenech", annualFee:12000, setupFee:1500, adminFee:300, conversionDate:"30/09/2025", risk:"Low", website:"veranomaritime.com", address:"Level 3, Quantum House, Malta", notes:"Met at Monaco Yacht Show.", services:["Yachting administration","VAT registration"] },
+  { id:4, firstName:"David", lastName:"Silver", company:"Silverstone Capital Fund", type:"Fund", jur:"Cayman Islands", office:"Cayman Islands", source:"Cold outreach", stage:"Initial Call", bd:"Garry Crossan", annualFee:45000, setupFee:5000, adminFee:1000, conversionDate:"31/12/2025", risk:"Medium", website:"silverstonecap.com", address:"Harbour Place, George Town", notes:"Awaiting business plan.", services:["Fund administration","FATCA/CRS"] },
+  { id:5, firstName:"Sofia", lastName:"Adriatic", company:"Adriatic Holdings Ltd", type:"Company", jur:"Malta", office:"Malta", source:"Referral", stage:"Initial Call", bd:"Joanne Fenech", annualFee:9500, setupFee:1200, adminFee:250, conversionDate:"30/10/2025", risk:"Low", website:"", address:"Valletta, Malta", notes:"Referred by Meridian Holdings.", services:["Company administration","Bookkeeping"] },
+  { id:6, firstName:"Tom", lastName:"Phoenix", company:"Phoenix eGaming Ltd", type:"B2C", jur:"Isle of Man", office:"Gaming Gateway", source:"Website", stage:"KYC Approved", bd:"Roxy Sheeley", annualFee:32000, setupFee:4000, adminFee:800, conversionDate:"01/09/2025", risk:"High", website:"phoenixegaming.io", address:"Douglas, Isle of Man", notes:"B2C licence application. Two-strand process.", services:["eGaming onboarding","GSC licence","Company admin"] },
+  { id:7, firstName:"Chen", lastName:"Riviera", company:"Riviera Trust", type:"Trust", jur:"Cayman Islands", office:"Cayman Islands", source:"Referral", stage:"Fees Paid", bd:"Garry Crossan", annualFee:28000, setupFee:3500, adminFee:700, conversionDate:"01/07/2025", risk:"Medium", website:"", address:"George Town, Cayman Islands", notes:"Converted. Onboarding in progress.", services:["Trust administration","Compliance","FATCA/CRS"] },
 ];
 
-const INITIAL_INTERACTIONS = {
-  1: [{ date: "2026-05-10", type: "Call", note: "Annual review discussion" }],
-  2: [{ date: "2026-05-20", type: "Email", note: "Sent intro pack" }],
-  3: [{ date: "2026-05-22", type: "Meeting", note: "Proposal walkthrough call" }],
-  4: [{ date: "2026-05-25", type: "Email", note: "KYC docs requested" }],
+const INTERACTIONS = {
+  1:[
+    { id:1, date:"10/07/2025", type:"Call",    by:"Garry Crossan", note:"Fees confirmed. Ready to proceed.", next:"Send onboarding pack" },
+    { id:2, date:"20/06/2025", type:"Meeting", by:"Garry Crossan", note:"In-person George Town. Structure agreed.", next:"Draft LOE" },
+  ],
+  2:[
+    { id:1, date:"12/07/2025", type:"Email",   by:"Andy Morgan",   note:"EDD pack sent. Awaiting response.", next:"Chase EDD docs" },
+  ],
+  6:[
+    { id:1, date:"14/07/2025", type:"Call",    by:"Roxy Sheeley",  note:"KYC approved. Moving to fees.", next:"Send fee invoice" },
+  ],
 };
 
-const Badge = ({ stage }) => (
-  <span style={{
-    background: STAGE_COLORS[stage]?.bg || "#eee",
-    color: STAGE_COLORS[stage]?.color || "#333",
-    padding: "3px 10px",
-    borderRadius: 20,
-    fontSize: 11,
-    fontWeight: 600,
-    letterSpacing: "0.3px",
-  }}>{stage}</span>
-);
+const PIPELINE_STAGES = ["Initial Call","Proposal Sent","Proposal Accepted","KYC Arriving","KYC Approved","Fees Paid"];
+const VIEWS = ["pipeline","prospects","interactions","performance","convert"];
+const VLBLS = ["Pipeline","All prospects","Interactions","Performance","Convert"];
+const fmt = n => "£"+Number(n||0).toLocaleString();
 
-const Modal = ({ title, onClose, children }) => (
-  <div style={{
-    position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)",
-    display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000,
-  }}>
-    <div style={{
-      background: "#fff", borderRadius: 12, width: 480, maxWidth: "95vw",
-      padding: 28, boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
-    }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-        <h3 style={{ margin: 0, fontSize: 17, fontWeight: 600, color: "#1a1a2e" }}>{title}</h3>
-        <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#888" }}>×</button>
-      </div>
-      {children}
+// Calculate prorated fee based on conversion date
+const prorateFee = (annual, convDate) => {
+  if (!convDate) return 0;
+  const parts = convDate.split("/");
+  if (parts.length !== 3) return annual;
+  const month = parseInt(parts[1]);
+  const remainingMonths = 13 - month;
+  return Math.round((annual / 12) * remainingMonths);
+};
+
+function Input({ label, value, onChange, type="text", options, placeholder="" }) {
+  const s = { width:"100%", padding:"8px 10px", border:"1.5px solid #e0e0e0", borderRadius:6, fontSize:12, outline:"none", boxSizing:"border-box", fontFamily:"inherit" };
+  return (
+    <div style={{ marginBottom:12 }}>
+      <label style={{ display:"block", fontSize:11, fontWeight:600, color:"#555", marginBottom:4 }}>{label}</label>
+      {options ? <select value={value} onChange={e=>onChange(e.target.value)} style={s}>{options.map(o=><option key={o}>{o}</option>)}</select>
+               : <input type={type} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} style={s} />}
     </div>
-  </div>
-);
+  );
+}
 
-const Input = ({ label, value, onChange, type = "text", options }) => (
-  <div style={{ marginBottom: 14 }}>
-    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#555", marginBottom: 5 }}>{label}</label>
-    {options ? (
-      <select value={value} onChange={e => onChange(e.target.value)} style={inputStyle}>
-        {options.map(o => <option key={o}>{o}</option>)}
-      </select>
-    ) : (
-      <input type={type} value={value} onChange={e => onChange(e.target.value)} style={inputStyle} />
-    )}
-  </div>
-);
-
-const inputStyle = {
-  width: "100%", padding: "9px 12px", border: "1.5px solid #e0e0e0",
-  borderRadius: 8, fontSize: 13, outline: "none", boxSizing: "border-box",
-  fontFamily: "inherit", color: "#1a1a2e",
-};
+function Modal({ title, onClose, children }) {
+  return (
+    <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.4)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100 }} onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div style={{ background:"#fff",borderRadius:12,padding:24,width:540,maxWidth:"95vw",maxHeight:"90vh",overflowY:"auto" }}>
+        <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18 }}>
+          <h3 style={{ margin:0,fontSize:16,fontWeight:600 }}>{title}</h3>
+          <button onClick={onClose} style={{ background:"none",border:"none",fontSize:20,cursor:"pointer",color:"#888" }}>×</button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export default function AffinityCRM() {
-  const [contacts, setContacts] = useState(INITIAL_CONTACTS);
-  const [interactions, setInteractions] = useState(INITIAL_INTERACTIONS);
-  const [selected, setSelected] = useState(null);
-  const [search, setSearch] = useState("");
-  const [filterStage, setFilterStage] = useState("");
-  const [filterType, setFilterType] = useState("");
-  const [modal, setModal] = useState(null); // "add-contact" | "add-interaction" | "edit-contact"
-  const [form, setForm] = useState({});
+  const [view,setView]   = useState("pipeline");
+  const [sel,setSel]     = useState(null);
+  const [modal,setModal] = useState(null);
+  const [sF,setSF]       = useState("");
+  const [oF,setOF]       = useState("");
+  const [srch,setSrch]   = useState("");
+  const [form,setForm]   = useState({});
+  const [prospects,setProspects] = useState(PROSPECTS);
 
-  const filtered = contacts.filter(c =>
-    (!search || c.name.toLowerCase().includes(search.toLowerCase()) || c.owner.toLowerCase().includes(search.toLowerCase())) &&
-    (!filterStage || c.stage === filterStage) &&
-    (!filterType || c.type === filterType)
-  );
+  const nb  = { padding:"5px 12px", fontSize:11, borderRadius:5, border:"0.5px solid #e5e5e5", background:"transparent", color:"#666", cursor:"pointer" };
+  const nba = { ...nb, background:CY, color:"#fff", border:`0.5px solid ${CY}`, fontWeight:500 };
 
-  const selectedContact = contacts.find(c => c.id === selected);
-  const contactInteractions = selected ? (interactions[selected] || []) : [];
+  const pipeline = prospects.filter(p=>!["Declined","Withdrawn"].includes(p.stage));
+  const totalVal = pipeline.reduce((s,p)=>s+p.annualFee,0);
 
-  const openAddContact = () => {
-    setForm({ name: "", owner: "", type: "Company", stage: "Prospect", email: "", phone: "", notes: "" });
-    setModal("add-contact");
-  };
+  const filtered = useMemo(()=>prospects.filter(p=>
+    (!sF||p.stage===sF)&&(!oF||p.office===oF)&&
+    (!srch||`${p.firstName} ${p.lastName} ${p.company}`.toLowerCase().includes(srch.toLowerCase()))
+  ),[prospects,sF,oF,srch]);
 
-  const openEditContact = () => {
-    setForm({ ...selectedContact });
-    setModal("edit-contact");
-  };
+  const sp = prospects.find(p=>p.id===sel);
+  const si = sel?(INTERACTIONS[sel]||[]):[];
 
-  const openAddInteraction = () => {
-    setForm({ date: new Date().toISOString().slice(0, 10), type: "Call", note: "" });
-    setModal("add-interaction");
-  };
-
-  const saveContact = () => {
-    if (!form.name) return;
-    if (modal === "add-contact") {
-      const newContact = { ...form, id: Date.now() };
-      setContacts(prev => [...prev, newContact]);
+  const saveProspect = () => {
+    if (modal==="add") {
+      setProspects(prev=>[...prev,{...form,id:Date.now(),annualFee:Number(form.annualFee||0),setupFee:Number(form.setupFee||0),adminFee:Number(form.adminFee||0)}]);
     } else {
-      setContacts(prev => prev.map(c => c.id === form.id ? form : c));
+      setProspects(prev=>prev.map(p=>p.id===form.id?{...form,annualFee:Number(form.annualFee||0),setupFee:Number(form.setupFee||0),adminFee:Number(form.adminFee||0)}:p));
     }
     setModal(null);
   };
 
-  const saveInteraction = () => {
-    if (!form.note) return;
-    setInteractions(prev => ({
-      ...prev,
-      [selected]: [form, ...(prev[selected] || [])],
-    }));
-    setModal(null);
-  };
-
-  const types = [...new Set(contacts.map(c => c.type))];
-
   return (
-    <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: "#f8f9fc", minHeight: "100vh", color: "#1a1a2e" }}>
-      {/* Header */}
-      <div style={{ background: "#1a1a2e", padding: "16px 28px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div>
-          <span style={{ color: "#fff", fontWeight: 700, fontSize: 18 }}>Affinity Core</span>
-          <span style={{ color: "#8892b0", fontSize: 14, marginLeft: 12 }}>CRM</span>
+    <div style={{ fontFamily:"'Catamaran',system-ui,sans-serif", background:"#f8f9fc", color:"#111", minHeight:"100vh" }}>
+      <div style={{ background:NAVY, padding:"12px 24px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <span style={{ color:"#fff", fontWeight:700, fontSize:17 }}>Affinity <span style={{ fontWeight:300 }}>Core</span></span>
+          <span style={{ color:"#8892b0", fontSize:13 }}>CRM & Business Development</span>
         </div>
-        <button onClick={openAddContact} style={{
-          background: "#4f8ef7", color: "#fff", border: "none", borderRadius: 8,
-          padding: "8px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer",
-        }}>+ Add Contact</button>
+        <button style={{ ...nba, background:"#4CAF7D", borderColor:"#4CAF7D" }} onClick={()=>{ setForm({stage:"Initial Call",type:"Company",office:"Isle of Man",source:"Referral",risk:"Medium"}); setModal("add"); }}>＋ Add prospect</button>
       </div>
 
-      <div style={{ display: "flex", height: "calc(100vh - 57px)" }}>
-        {/* Left panel */}
-        <div style={{ width: 380, borderRight: "1px solid #e8eaf0", background: "#fff", display: "flex", flexDirection: "column" }}>
-          {/* Filters */}
-          <div style={{ padding: "16px 16px 12px", borderBottom: "1px solid #f0f2f8" }}>
-            <input
-              placeholder="Search contacts..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              style={{ ...inputStyle, marginBottom: 10 }}
-            />
-            <div style={{ display: "flex", gap: 8 }}>
-              <select value={filterStage} onChange={e => setFilterStage(e.target.value)} style={{ ...inputStyle, flex: 1 }}>
-                <option value="">All Stages</option>
-                {STAGES.map(s => <option key={s}>{s}</option>)}
-              </select>
-              <select value={filterType} onChange={e => setFilterType(e.target.value)} style={{ ...inputStyle, flex: 1 }}>
-                <option value="">All Types</option>
-                {types.map(t => <option key={t}>{t}</option>)}
-              </select>
+      <div style={{ background:"#fff", borderBottom:"0.5px solid #e5e5e5", padding:"0 24px", display:"flex", gap:2 }}>
+        {VIEWS.map((v,i)=><button key={v} onClick={()=>setView(v)} style={{ padding:"10px 14px", fontSize:12, border:"none", borderBottom:`2px solid ${view===v?CY:"transparent"}`, background:"transparent", color:view===v?CY:"#666", cursor:"pointer", fontWeight:view===v?600:400 }}>{VLBLS[i]}</button>)}
+      </div>
+
+      <div style={{ background:"#fff", minHeight:"calc(100vh - 89px)" }}>
+
+        {/* PIPELINE */}
+        {view==="pipeline"&&(
+          <div style={{ padding:"16px 20px" }}>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:20 }}>
+              {[{l:"Active prospects",v:pipeline.length,c:CY},{l:"Total annual value",v:fmt(totalVal)+"/yr",c:"#111"},{l:"Fees paid",v:prospects.filter(p=>p.stage==="Fees Paid").length,c:"#4CAF7D"},{l:"KYC in progress",v:prospects.filter(p=>["KYC Arriving","KYC Approved"].includes(p.stage)).length,c:"#F59E0B"}].map(k=>(
+                <div key={k.l} style={{ background:"#f9f9f9", borderRadius:8, padding:"12px 14px" }}>
+                  <div style={{ fontSize:10, color:"#666", marginBottom:4 }}>{k.l}</div>
+                  <div style={{ fontSize:20, fontWeight:700, color:k.c }}>{k.v}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display:"flex", gap:0, overflowX:"auto" }}>
+              {PIPELINE_STAGES.map((stage,i)=>{
+                const inS=prospects.filter(p=>p.stage===stage);
+                return (
+                  <div key={stage} style={{ flex:1, minWidth:160, borderRight:i<PIPELINE_STAGES.length-1?"0.5px solid #e5e5e5":"none", padding:"0 8px 10px" }}>
+                    <div style={{ padding:"8px 4px 10px" }}>
+                      <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.4px", color:"#666" }}>{stage}</div>
+                      <div style={{ fontSize:10, color:"#aaa", marginTop:2 }}>{inS.length} · {fmt(inS.reduce((s,p)=>s+p.annualFee,0))}/yr</div>
+                    </div>
+                    {inS.map(p=>(
+                      <div key={p.id} onClick={()=>{ setSel(p.id); setView("prospects"); }} style={{ background:"#fff", border:"0.5px solid #e5e5e5", borderRadius:8, padding:"10px 12px", marginBottom:8, cursor:"pointer" }}>
+                        <div style={{ fontSize:11, fontWeight:600, marginBottom:2 }}>{p.company}</div>
+                        <div style={{ fontSize:10, color:"#666", marginBottom:6 }}>{p.firstName} {p.lastName}</div>
+                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                          <Badge label={p.office.split(" ")[0]} colors={officeC[p.office]||{bg:"#eee",color:"#666"}} />
+                          <span style={{ fontSize:11, fontWeight:600, color:"#4CAF7D" }}>{fmt(p.annualFee)}</span>
+                        </div>
+                      </div>
+                    ))}
+                    {inS.length===0&&<div style={{ fontSize:11, color:"#ddd", textAlign:"center", padding:"16px 0" }}>—</div>}
+                  </div>
+                );
+              })}
             </div>
           </div>
+        )}
 
-          {/* Contact list */}
-          <div style={{ overflowY: "auto", flex: 1 }}>
-            {filtered.length === 0 && (
-              <div style={{ padding: 24, color: "#aaa", fontSize: 13, textAlign: "center" }}>No contacts found</div>
-            )}
-            {filtered.map(c => (
-              <div
-                key={c.id}
-                onClick={() => setSelected(c.id)}
-                style={{
-                  padding: "14px 16px",
-                  borderBottom: "1px solid #f0f2f8",
-                  cursor: "pointer",
-                  background: selected === c.id ? "#f0f4ff" : "#fff",
-                  borderLeft: selected === c.id ? "3px solid #4f8ef7" : "3px solid transparent",
-                  transition: "background 0.15s",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 3 }}>{c.name}</div>
-                    <div style={{ fontSize: 12, color: "#888" }}>{c.type} · {c.owner}</div>
-                  </div>
-                  <Badge stage={c.stage} />
+        {/* PROSPECTS */}
+        {view==="prospects"&&(
+          <div style={{ display:"flex", height:"calc(100vh - 120px)" }}>
+            <div style={{ width:320, borderRight:"0.5px solid #e5e5e5", display:"flex", flexDirection:"column" }}>
+              <div style={{ padding:"10px 14px", borderBottom:"0.5px solid #e5e5e5" }}>
+                <input placeholder="Search by name or company…" value={srch} onChange={e=>setSrch(e.target.value)}
+                  style={{ width:"100%", height:30, padding:"0 10px", border:"0.5px solid #e5e5e5", borderRadius:5, fontSize:11, outline:"none", boxSizing:"border-box" }} />
+                <div style={{ display:"flex", gap:6, marginTop:6 }}>
+                  <select value={sF} onChange={e=>setSF(e.target.value)} style={{ flex:1, height:28, padding:"0 6px", border:"0.5px solid #e5e5e5", borderRadius:4, fontSize:10 }}>
+                    <option value="">All stages</option>{STAGES.map(s=><option key={s}>{s}</option>)}
+                  </select>
+                  <select value={oF} onChange={e=>setOF(e.target.value)} style={{ flex:1, height:28, padding:"0 6px", border:"0.5px solid #e5e5e5", borderRadius:4, fontSize:10 }}>
+                    <option value="">All offices</option>{OFFICES.map(o=><option key={o}>{o}</option>)}
+                  </select>
                 </div>
               </div>
-            ))}
-          </div>
-
-          {/* Summary bar */}
-          <div style={{ padding: "12px 16px", borderTop: "1px solid #f0f2f8", background: "#fafbfe", fontSize: 12, color: "#888", display: "flex", gap: 16 }}>
-            <span><b style={{ color: "#1a1a2e" }}>{contacts.filter(c => c.stage === "Client").length}</b> Clients</span>
-            <span><b style={{ color: "#1a1a2e" }}>{contacts.filter(c => c.stage === "Prospect").length}</b> Prospects</span>
-            <span><b style={{ color: "#1a1a2e" }}>{contacts.length}</b> Total</span>
-          </div>
-        </div>
-
-        {/* Right panel */}
-        <div style={{ flex: 1, overflowY: "auto", padding: 28 }}>
-          {!selectedContact ? (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#bbb", fontSize: 14 }}>
-              Select a contact to view details
-            </div>
-          ) : (
-            <>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
-                <div>
-                  <h2 style={{ margin: "0 0 6px", fontSize: 22, fontWeight: 700 }}>{selectedContact.name}</h2>
-                  <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                    <Badge stage={selectedContact.stage} />
-                    <span style={{ fontSize: 13, color: "#888" }}>{selectedContact.type}</span>
-                    <span style={{ fontSize: 13, color: "#888" }}>· {selectedContact.owner}</span>
-                  </div>
-                </div>
-                <button onClick={openEditContact} style={{
-                  background: "#f0f4ff", color: "#4f8ef7", border: "none", borderRadius: 8,
-                  padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer",
-                }}>Edit</button>
-              </div>
-
-              {/* Contact details */}
-              <div style={{ background: "#fff", borderRadius: 12, padding: 20, marginBottom: 20, border: "1px solid #e8eaf0" }}>
-                <h4 style={{ margin: "0 0 14px", fontSize: 13, fontWeight: 600, color: "#888", textTransform: "uppercase", letterSpacing: "0.5px" }}>Contact Details</h4>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  {[
-                    ["Email", selectedContact.email],
-                    ["Phone", selectedContact.phone],
-                    ["Notes", selectedContact.notes],
-                  ].map(([label, val]) => (
-                    <div key={label}>
-                      <div style={{ fontSize: 11, color: "#aaa", fontWeight: 600, marginBottom: 3 }}>{label}</div>
-                      <div style={{ fontSize: 13, color: "#1a1a2e" }}>{val || "—"}</div>
+              <div style={{ flex:1, overflowY:"auto" }}>
+                {filtered.map(p=>(
+                  <div key={p.id} onClick={()=>setSel(p.id)} style={{ padding:"12px 14px", borderBottom:"0.5px solid #f0f0f0", cursor:"pointer", background:sel===p.id?"#f0f8fb":"transparent", borderLeft:`3px solid ${sel===p.id?CY:"transparent"}` }}>
+                    <div style={{ fontSize:12, fontWeight:600, marginBottom:2 }}>{p.company}</div>
+                    <div style={{ fontSize:11, color:"#666", marginBottom:4 }}>{p.firstName} {p.lastName}</div>
+                    <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
+                      <Badge label={p.stage} colors={STAGE_COLORS[p.stage]} />
+                      <Badge label={p.office.split(" ")[0]} colors={officeC[p.office]||{bg:"#eee",color:"#666"}} />
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Interactions */}
-              <div style={{ background: "#fff", borderRadius: 12, padding: 20, border: "1px solid #e8eaf0" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                  <h4 style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#888", textTransform: "uppercase", letterSpacing: "0.5px" }}>Interactions</h4>
-                  <button onClick={openAddInteraction} style={{
-                    background: "#f0f4ff", color: "#4f8ef7", border: "none", borderRadius: 6,
-                    padding: "6px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer",
-                  }}>+ Log</button>
-                </div>
-                {contactInteractions.length === 0 ? (
-                  <div style={{ color: "#bbb", fontSize: 13 }}>No interactions yet</div>
-                ) : contactInteractions.map((i, idx) => (
-                  <div key={idx} style={{ padding: "10px 0", borderBottom: idx < contactInteractions.length - 1 ? "1px solid #f0f2f8" : "none" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: "#4f8ef7" }}>{i.type}</span>
-                      <span style={{ fontSize: 12, color: "#aaa" }}>{i.date}</span>
-                    </div>
-                    <div style={{ fontSize: 13, color: "#333" }}>{i.note}</div>
                   </div>
                 ))}
               </div>
-            </>
-          )}
-        </div>
+              <div style={{ padding:"8px 14px", borderTop:"0.5px solid #e5e5e5", fontSize:10, color:"#aaa" }}>{filtered.length} prospects</div>
+            </div>
+
+            <div style={{ flex:1, overflowY:"auto", padding:"20px 24px" }}>
+              {!sp ? <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100%", color:"#bbb", fontSize:13 }}>Select a prospect</div> : (
+                <>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:20 }}>
+                    <div>
+                      <h2 style={{ margin:"0 0 4px", fontSize:20, fontWeight:700 }}>{sp.company}</h2>
+                      <div style={{ fontSize:13, color:"#666", marginBottom:8 }}>{sp.firstName} {sp.lastName}{sp.website&&<> · <a href={`https://${sp.website}`} target="_blank" rel="noreferrer" style={{ color:CY }}>{sp.website}</a></>}</div>
+                      <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                        <Badge label={sp.stage} colors={STAGE_COLORS[sp.stage]} />
+                        <Badge label={sp.type} colors={{ bg:"#f0f0f0", color:"#555" }} />
+                        <Badge label={sp.office} colors={officeC[sp.office]||{bg:"#eee",color:"#666"}} />
+                        <Badge label={sp.risk+" risk"} colors={riskC[sp.risk]||{bg:"#eee",color:"#666"}} />
+                      </div>
+                    </div>
+                    <div style={{ display:"flex", gap:6 }}>
+                      {["Fees Paid","KYC Approved"].includes(sp.stage)&&<button style={{ ...nba, background:"#4CAF7D", borderColor:"#4CAF7D" }} onClick={()=>setView("convert")}>Convert ↗</button>}
+                      <button style={nb} onClick={()=>setModal("interaction")}>＋ Log</button>
+                      <button style={nb} onClick={()=>{ setForm({...sp}); setModal("edit"); }}>Edit</button>
+                    </div>
+                  </div>
+
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:16 }}>
+                    {/* Contact */}
+                    <div style={{ background:"#fff", border:"0.5px solid #e5e5e5", borderRadius:10, padding:14 }}>
+                      <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.4px", color:"#888", marginBottom:10 }}>Contact</div>
+                      {[["Name",`${sp.firstName} ${sp.lastName}`],["Address",sp.address],["Website",sp.website||"—"],["BD lead",sp.bd],["Source",sp.source]].map(([k,v])=>(
+                        <div key={k} style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", borderBottom:"0.5px solid #f5f5f5", fontSize:11 }}>
+                          <span style={{ color:"#666" }}>{k}</span><span style={{ fontWeight:500, textAlign:"right", maxWidth:140, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{v}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Fees */}
+                    <div style={{ background:"#fff", border:"0.5px solid #e5e5e5", borderRadius:10, padding:14 }}>
+                      <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.4px", color:"#888", marginBottom:10 }}>Fees</div>
+                      {[
+                        ["Annual fee", fmt(sp.annualFee)+"/yr"],
+                        ["Setup fee",  fmt(sp.setupFee)+" (one-off)"],
+                        ["Admin fee",  fmt(sp.adminFee)+"/mo"],
+                        ["Conv. date", sp.conversionDate||"TBC"],
+                        ["Prorated",   fmt(prorateFee(sp.annualFee, sp.conversionDate))+" est."],
+                      ].map(([k,v])=>(
+                        <div key={k} style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", borderBottom:"0.5px solid #f5f5f5", fontSize:11 }}>
+                          <span style={{ color:"#666" }}>{k}</span><span style={{ fontWeight:600, color:k==="Annual fee"||k==="Prorated"?"#4CAF7D":"#111" }}>{v}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Services & notes */}
+                    <div style={{ background:"#fff", border:"0.5px solid #e5e5e5", borderRadius:10, padding:14 }}>
+                      <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.4px", color:"#888", marginBottom:10 }}>Services</div>
+                      {(sp.services||[]).map(s=><div key={s} style={{ padding:"4px 0", borderBottom:"0.5px solid #f5f5f5", fontSize:11, display:"flex", gap:6 }}><span style={{ color:CY }}>✓</span><span>{s}</span></div>)}
+                      <div style={{ marginTop:10, fontSize:11, color:"#444", lineHeight:1.5 }}>{sp.notes}</div>
+                    </div>
+                  </div>
+
+                  {/* Interactions */}
+                  <div style={{ background:"#fff", border:"0.5px solid #e5e5e5", borderRadius:10, padding:14 }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+                      <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.4px", color:"#888" }}>Interactions</div>
+                      <button style={{ ...nb, fontSize:10 }} onClick={()=>setModal("interaction")}>＋ Log</button>
+                    </div>
+                    {si.length===0 ? <div style={{ fontSize:12, color:"#bbb" }}>No interactions recorded.</div> : si.map(i=>(
+                      <div key={i.id} style={{ padding:"8px 0", borderBottom:"0.5px solid #f5f5f5" }}>
+                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
+                          <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+                            <Badge label={i.type} colors={{ Call:{bg:"#E6F7FB",color:"#0077A8"},Email:{bg:"#EAF3DE",color:"#27500A"},Meeting:{bg:"#EEF0FB",color:"#3C3489"} }[i.type]||{bg:"#eee",color:"#666"}} />
+                            <span style={{ fontSize:11, fontWeight:500 }}>{i.by}</span>
+                          </div>
+                          <span style={{ fontSize:10, color:"#aaa" }}>{i.date}</span>
+                        </div>
+                        <div style={{ fontSize:12, color:"#444", lineHeight:1.5 }}>{i.note}</div>
+                        {i.next&&<div style={{ fontSize:11, color:CY, marginTop:3 }}>→ {i.next}</div>}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* INTERACTIONS */}
+        {view==="interactions"&&(
+          <div style={{ padding:"16px 20px" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", marginBottom:14 }}>
+              <div style={{ fontSize:13, fontWeight:500 }}>All interactions</div>
+              <button style={nba} onClick={()=>setModal("interaction")}>＋ Log interaction</button>
+            </div>
+            <table style={{ width:"100%", borderCollapse:"collapse" }}>
+              <thead><tr style={{ background:"#f9f9f9" }}>
+                {["Date","Type","Prospect","BD","Note","Next action"].map(h=><th key={h} style={{ padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:600, color:"#666", textTransform:"uppercase", letterSpacing:"0.4px", borderBottom:"0.5px solid #e5e5e5" }}>{h}</th>)}
+              </tr></thead>
+              <tbody>
+                {Object.entries(INTERACTIONS).flatMap(([pid,ints])=>ints.map(i=>({...i,pr:prospects.find(p=>p.id===parseInt(pid))}))).sort((a,b)=>b.date.split("/").reverse().join("").localeCompare(a.date.split("/").reverse().join(""))).map((i,idx)=>(
+                  <tr key={idx} style={{ borderBottom:"0.5px solid #f0f0f0" }}>
+                    <td style={{ padding:"8px 12px", fontSize:11, color:"#666" }}>{i.date}</td>
+                    <td style={{ padding:"8px 12px" }}><Badge label={i.type} colors={{ Call:{bg:"#E6F7FB",color:"#0077A8"},Email:{bg:"#EAF3DE",color:"#27500A"},Meeting:{bg:"#EEF0FB",color:"#3C3489"} }[i.type]||{bg:"#eee",color:"#666"}} /></td>
+                    <td style={{ padding:"8px 12px", fontSize:11, fontWeight:500, color:CY, cursor:"pointer" }} onClick={()=>{ setSel(i.pr?.id); setView("prospects"); }}>{i.pr?.company}</td>
+                    <td style={{ padding:"8px 12px", fontSize:11, color:"#666" }}>{i.by}</td>
+                    <td style={{ padding:"8px 12px", fontSize:11, color:"#444", maxWidth:260, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{i.note}</td>
+                    <td style={{ padding:"8px 12px", fontSize:11, color:CY }}>{i.next}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* PERFORMANCE */}
+        {view==="performance"&&(
+          <div style={{ padding:"16px 20px" }}>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+              <div style={{ background:"#fff", border:"0.5px solid #e5e5e5", borderRadius:10, padding:14 }}>
+                <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.4px", color:"#888", marginBottom:12 }}>Pipeline by office</div>
+                {OFFICES.map(o=>{
+                  const inOffice = prospects.filter(p=>p.office===o&&!["Declined","Withdrawn"].includes(p.stage));
+                  if (inOffice.length===0) return null;
+                  return (
+                    <div key={o} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"7px 0", borderBottom:"0.5px solid #f5f5f5" }}>
+                      <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+                        <Badge label={o} colors={officeC[o]||{bg:"#eee",color:"#666"}} />
+                        <span style={{ fontSize:11, color:"#aaa" }}>{inOffice.length}</span>
+                      </div>
+                      <span style={{ fontSize:12, fontWeight:600, color:"#4CAF7D" }}>{fmt(inOffice.reduce((s,p)=>s+p.annualFee,0))}/yr</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ background:"#fff", border:"0.5px solid #e5e5e5", borderRadius:10, padding:14 }}>
+                <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.4px", color:"#888", marginBottom:12 }}>Stage funnel</div>
+                {PIPELINE_STAGES.map(stage=>{
+                  const count = prospects.filter(p=>p.stage===stage).length;
+                  const pct = Math.round((count/prospects.length)*100);
+                  return (
+                    <div key={stage} style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8 }}>
+                      <div style={{ width:140, fontSize:11, color:"#444", flexShrink:0 }}>{stage}</div>
+                      <div style={{ flex:1, background:"#f0f0f0", borderRadius:4, height:12 }}>
+                        <div style={{ width:`${pct}%`, background:CY, height:"100%", borderRadius:4 }} />
+                      </div>
+                      <div style={{ width:20, fontSize:11, fontWeight:600, color:CY, textAlign:"right" }}>{count}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* CONVERT */}
+        {view==="convert"&&(
+          <div style={{ padding:"16px 20px" }}>
+            <div style={{ fontSize:13, fontWeight:600, marginBottom:4 }}>Convert prospect → onboarding</div>
+            <div style={{ fontSize:11, color:"#666", marginBottom:16 }}>All CRM data flows into the onboarding record. No re-entry required.</div>
+            {prospects.filter(p=>["Fees Paid","KYC Approved"].includes(p.stage)).map(p=>(
+              <div key={p.id} style={{ background:"#fff", border:`0.5px solid ${p.stage==="Fees Paid"?"#4CAF7D":"#e5e5e5"}`, borderRadius:10, padding:14, marginBottom:10, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                <div>
+                  <div style={{ fontSize:13, fontWeight:600 }}>{p.company}</div>
+                  <div style={{ fontSize:11, color:"#666", marginTop:2 }}>{p.firstName} {p.lastName} · {p.office} · Annual: {fmt(p.annualFee)} · Setup: {fmt(p.setupFee)} · Prorated: {fmt(prorateFee(p.annualFee,p.conversionDate))}</div>
+                  <div style={{ display:"flex", gap:6, marginTop:6 }}>
+                    <Badge label={p.stage} colors={STAGE_COLORS[p.stage]} />
+                    <Badge label={p.risk+" risk"} colors={riskC[p.risk]||{bg:"#eee",color:"#666"}} />
+                  </div>
+                </div>
+                <button style={nba} onClick={()=>setModal("convert")}>Convert ↗</button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Modals */}
-      {(modal === "add-contact" || modal === "edit-contact") && (
-        <Modal title={modal === "add-contact" ? "Add Contact" : "Edit Contact"} onClose={() => setModal(null)}>
-          <Input label="Name" value={form.name || ""} onChange={v => setForm(p => ({ ...p, name: v }))} />
-          <Input label="Type" value={form.type || "Company"} onChange={v => setForm(p => ({ ...p, type: v }))} options={["Company", "Trust", "Fund", "Individual"]} />
-          <Input label="Stage" value={form.stage || "Prospect"} onChange={v => setForm(p => ({ ...p, stage: v }))} options={STAGES} />
-          <Input label="Owner" value={form.owner || ""} onChange={v => setForm(p => ({ ...p, owner: v }))} />
-          <Input label="Email" value={form.email || ""} onChange={v => setForm(p => ({ ...p, email: v }))} />
-          <Input label="Phone" value={form.phone || ""} onChange={v => setForm(p => ({ ...p, phone: v }))} />
-          <Input label="Notes" value={form.notes || ""} onChange={v => setForm(p => ({ ...p, notes: v }))} />
-          <button onClick={saveContact} style={{
-            width: "100%", background: "#4f8ef7", color: "#fff", border: "none",
-            borderRadius: 8, padding: "10px", fontSize: 14, fontWeight: 600, cursor: "pointer", marginTop: 6,
-          }}>Save</button>
+      {/* ADD / EDIT MODAL */}
+      {(modal==="add"||modal==="edit")&&(
+        <Modal title={modal==="add"?"Add prospect":"Edit prospect"} onClose={()=>setModal(null)}>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0 12px" }}>
+            <Input label="First name" value={form.firstName||""} onChange={v=>setForm(p=>({...p,firstName:v}))} />
+            <Input label="Last name"  value={form.lastName||""}  onChange={v=>setForm(p=>({...p,lastName:v}))} />
+          </div>
+          <Input label="Company / entity name" value={form.company||""} onChange={v=>setForm(p=>({...p,company:v}))} />
+          <Input label="Address" value={form.address||""} onChange={v=>setForm(p=>({...p,address:v}))} />
+          <Input label="Website" value={form.website||""} onChange={v=>setForm(p=>({...p,website:v}))} placeholder="e.g. example.com" />
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0 12px" }}>
+            <Input label="Type" value={form.type||"Company"} onChange={v=>setForm(p=>({...p,type:v}))} options={TYPES} />
+            <Input label="Status" value={form.stage||"Initial Call"} onChange={v=>setForm(p=>({...p,stage:v}))} options={STAGES} />
+            <Input label="Office" value={form.office||"Isle of Man"} onChange={v=>setForm(p=>({...p,office:v}))} options={OFFICES} />
+            <Input label="Source" value={form.source||"Referral"} onChange={v=>setForm(p=>({...p,source:v}))} options={["Referral","Cold outreach","Trade show","Existing client","Website","Other"]} />
+            <Input label="BD lead" value={form.bd||""} onChange={v=>setForm(p=>({...p,bd:v}))} options={["Andy Morgan","Roxy Sheeley","Garry Crossan","Joanne Fenech","Neil Kelly"]} />
+            <Input label="Risk" value={form.risk||"Medium"} onChange={v=>setForm(p=>({...p,risk:v}))} options={["Low","Medium","High","Very High"]} />
+          </div>
+          <div style={{ fontSize:11, fontWeight:700, color:"#888", textTransform:"uppercase", letterSpacing:"0.4px", margin:"8px 0 6px" }}>Fees</div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"0 12px" }}>
+            <Input label="Annual fee (£)" value={form.annualFee||""} onChange={v=>setForm(p=>({...p,annualFee:v}))} type="number" />
+            <Input label="Setup fee (£)"  value={form.setupFee||""}  onChange={v=>setForm(p=>({...p,setupFee:v}))}  type="number" />
+            <Input label="Admin fee (£/mo)" value={form.adminFee||""} onChange={v=>setForm(p=>({...p,adminFee:v}))} type="number" />
+          </div>
+          <Input label="Expected conversion date" value={form.conversionDate||""} onChange={v=>setForm(p=>({...p,conversionDate:v}))} placeholder="DD/MM/YYYY" />
+          <Input label="Notes" value={form.notes||""} onChange={v=>setForm(p=>({...p,notes:v}))} />
+          <button onClick={saveProspect} style={{ width:"100%", background:CY, color:"#fff", border:"none", borderRadius:8, padding:10, fontSize:14, fontWeight:600, cursor:"pointer" }}>Save</button>
         </Modal>
       )}
 
-      {modal === "add-interaction" && (
-        <Modal title="Log Interaction" onClose={() => setModal(null)}>
-          <Input label="Date" value={form.date || ""} onChange={v => setForm(p => ({ ...p, date: v }))} type="date" />
-          <Input label="Type" value={form.type || "Call"} onChange={v => setForm(p => ({ ...p, type: v }))} options={["Call", "Email", "Meeting", "Note"]} />
-          <Input label="Note" value={form.note || ""} onChange={v => setForm(p => ({ ...p, note: v }))} />
-          <button onClick={saveInteraction} style={{
-            width: "100%", background: "#4f8ef7", color: "#fff", border: "none",
-            borderRadius: 8, padding: "10px", fontSize: 14, fontWeight: 600, cursor: "pointer", marginTop: 6,
-          }}>Save</button>
+      {modal==="interaction"&&(
+        <Modal title="Log interaction" onClose={()=>setModal(null)}>
+          <Input label="Prospect" value={form.prospect||sp?.company||""} onChange={v=>setForm(p=>({...p,prospect:v}))} options={prospects.map(p=>p.company)} />
+          <Input label="Type" value={form.type||"Call"} onChange={v=>setForm(p=>({...p,type:v}))} options={["Call","Email","Meeting","Note"]} />
+          <Input label="Date" value={form.date||""} onChange={v=>setForm(p=>({...p,date:v}))} type="date" />
+          <Input label="Summary" value={form.note||""} onChange={v=>setForm(p=>({...p,note:v}))} />
+          <Input label="Next action" value={form.next||""} onChange={v=>setForm(p=>({...p,next:v}))} />
+          <button onClick={()=>setModal(null)} style={{ width:"100%", background:CY, color:"#fff", border:"none", borderRadius:8, padding:10, fontSize:14, fontWeight:600, cursor:"pointer" }}>Save</button>
+        </Modal>
+      )}
+
+      {modal==="convert"&&(
+        <Modal title="Convert to onboarding" onClose={()=>setModal(null)}>
+          <div style={{ background:"#EAF3DE22", border:"0.5px solid #4CAF7D", borderRadius:8, padding:"10px 14px", marginBottom:16, fontSize:12, color:"#27500A" }}>✓ All CRM data will be pre-populated automatically.</div>
+          <Input label="Assign administrator" value={form.admin||"Roxy Sheeley"} onChange={v=>setForm(p=>({...p,admin:v}))} options={["Roxy Sheeley","Garry Crossan","Joanne Fenech","Neil Kelly","Andy Morgan"]} />
+          <Input label="Target completion date" value={form.target||""} onChange={v=>setForm(p=>({...p,target:v}))} type="date" />
+          <button onClick={()=>setModal(null)} style={{ width:"100%", background:"#4CAF7D", color:"#fff", border:"none", borderRadius:8, padding:10, fontSize:14, fontWeight:600, cursor:"pointer" }}>Convert & create onboarding case ↗</button>
         </Modal>
       )}
     </div>
