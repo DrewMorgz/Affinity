@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-const CY = "#00B4D8";
+const CY = "#00C4CC";
 const Badge = ({ label, colors }) => (<span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:600, background:colors?.bg||"#eee", color:colors?.color||"#333", whiteSpace:"nowrap" }}>{label}</span>);
 const fmt = (n,s="£") => s+Math.abs(Number(n||0)).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
 const th = { padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:600, color:"#666", textTransform:"uppercase", letterSpacing:"0.4px", borderBottom:"0.5px solid #e5e5e5", background:"var(--bg-secondary,#f9f9f9)", whiteSpace:"nowrap" };
@@ -37,8 +37,8 @@ const officeColors = {
 const jurShort = { "Isle of Man":"IOM","Malta":"MLT","Cayman Islands":"CYM","United Kingdom":"UK","Miami":"MIA" };
 const invStatus = { Draft:{bg:"#FAEEDA",color:"#633806"}, Sent:{bg:"#E6F1FB",color:"#0C447C"}, Paid:{bg:"#EAF3DE",color:"#27500A"}, Overdue:{bg:"#FCEBEB",color:"#A32D2D"}, Partial:{bg:"#FAEEDA",color:"#633806"} };
 
-const VIEWS = ["invoices","client","bookkeeping","aged","retainers","credit"];
-const VLABELS = ["Invoice ledger","By client","Auto-bookkeeping","Aged debt","Retainers","Credit control"];
+const VIEWS = ["raise","invoices","client","bookkeeping","aged","retainers","credit"];
+const VLABELS = ["Raise invoice","Invoice ledger","By client","Auto-bookkeeping","Aged debt","Retainers","Credit control"];
 
 export default function AffinityInvoicing() {
   const [view, setView] = useState("invoices");
@@ -77,7 +77,7 @@ export default function AffinityInvoicing() {
   const sc  = { background:"var(--bg-secondary,#f9f9f9)", borderRadius:6, padding:"10px 12px" };
 
   return (
-    <div style={{ fontFamily:"'DM Sans',system-ui,sans-serif", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)", minHeight:600 }}>
+    <div style={{ fontFamily:"'Catamaran',system-ui,sans-serif", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)", minHeight:600 }}>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 20px", borderBottom:"0.5px solid #e5e5e5" }}>
         <div style={{ fontSize:18, fontWeight:500, color:CY }}>Affinity <span style={{ color:"var(--text-primary,#111)", fontWeight:300 }}>Core</span><small style={{ fontSize:11, color:"#999", fontWeight:300, marginLeft:8 }}>Invoicing</small></div>
         <div style={{ display:"flex", gap:5 }}>
@@ -91,6 +91,83 @@ export default function AffinityInvoicing() {
       </div>
 
       {/* INVOICE LEDGER */}
+      {view==="raise"&&(
+        <div style={{padding:"16px 20px",maxWidth:800}}>
+          <div style={{fontSize:13,fontWeight:600,marginBottom:4}}>Raise invoice</div>
+          <div style={{fontSize:11,color:"#666",marginBottom:16}}>Create a new invoice. All fields pre-populate from entity and retainer data where available.</div>
+
+          <div style={{background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:10,padding:20,marginBottom:14}}>
+            <div style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.4px",color:"#888",marginBottom:14}}>Invoice details</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 16px"}}>
+              {[
+                ["Entity","select",["Meridian Holdings Ltd","Harrington Family Trust","Caledonian Ventures Ltd","Pacific Wealth Trust","Stonebridge Capital Ltd","North Star Holdings Ltd","Azure Mediterranean Fdn","Rosewood Legacy Trust","Apex Growth Fund Ltd"]],
+                ["Invoice date","date"],
+                ["Due date","date"],
+                ["Invoice number","text","Auto-generated: INV-2025-0041"],
+                ["Currency","select",["GBP","USD","EUR","CHF"]],
+                ["Office","select",["Isle of Man","Malta","Cayman Islands","Cyprus","USA","United Kingdom"]],
+              ].map(([l,t,opts])=>(
+                <div key={l} style={{marginBottom:14}}>
+                  <label style={{display:"block",fontSize:11,fontWeight:600,color:"#555",marginBottom:4}}>{l}</label>
+                  {t==="select"
+                    ?<select style={{width:"100%",padding:"8px 10px",border:"1.5px solid #e0e0e0",borderRadius:6,fontSize:12,outline:"none"}}>
+                      {(opts||[]).map(o=><option key={o}>{o}</option>)}
+                    </select>
+                    :<input type={t} placeholder={typeof opts==="string"?opts:""} style={{width:"100%",padding:"8px 10px",border:"1.5px solid #e0e0e0",borderRadius:6,fontSize:12,outline:"none",boxSizing:"border-box"}}/>}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:10,padding:20,marginBottom:14}}>
+            <div style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.4px",color:"#888",marginBottom:14}}>Line items</div>
+            <table style={{width:"100%",borderCollapse:"collapse",marginBottom:12}}>
+              <thead><tr style={{background:"#f9f9f9"}}>
+                {["Description","Type","Units","Rate","Amount",""].map(h=><th key={h} style={{padding:"7px 10px",textAlign:"left",fontSize:10,fontWeight:600,color:"#666",textTransform:"uppercase",letterSpacing:"0.4px",borderBottom:"0.5px solid #e5e5e5"}}>{h}</th>)}
+              </tr></thead>
+              <tbody>
+                {[
+                  {desc:"Annual administration fee — FY2025/26",type:"Annual fee",units:1,rate:19800,amount:19800},
+                  {desc:"Director services — Q3 2025",type:"Disbursement",units:1,rate:3600,amount:3600},
+                  {desc:"Compliance review — periodic",type:"Time",units:3,rate:250,amount:750},
+                ].map((item,i)=>(
+                  <tr key={i} style={{borderBottom:"0.5px solid #f0f0f0"}}>
+                    <td style={{padding:"8px 10px"}}><input defaultValue={item.desc} style={{width:"100%",border:"none",fontSize:12,outline:"none",background:"transparent"}}/></td>
+                    <td style={{padding:"8px 10px"}}><select defaultValue={item.type} style={{border:"none",fontSize:11,outline:"none",background:"transparent",color:"#666"}}><option>Annual fee</option><option>Time</option><option>Disbursement</option><option>One-off</option></select></td>
+                    <td style={{padding:"8px 10px"}}><input defaultValue={item.units} type="number" style={{width:50,border:"none",fontSize:12,outline:"none",background:"transparent",textAlign:"center"}}/></td>
+                    <td style={{padding:"8px 10px"}}><input defaultValue={"£"+item.rate.toLocaleString()} style={{width:80,border:"none",fontSize:12,outline:"none",background:"transparent"}}/></td>
+                    <td style={{padding:"8px 10px",fontWeight:600}}>{"£"+item.amount.toLocaleString()}</td>
+                    <td style={{padding:"8px 10px"}}><button style={{background:"none",border:"none",color:"#EF4444",cursor:"pointer",fontSize:14}}>×</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <button style={{padding:"6px 14px",borderRadius:5,border:"0.5px solid #00C4CC",background:"transparent",color:"#00C4CC",fontSize:11,cursor:"pointer"}}>＋ Add line item</button>
+
+            <div style={{marginTop:16,display:"flex",justifyContent:"flex-end"}}>
+              <div style={{minWidth:220}}>
+                {[["Subtotal","£24,150"],["VAT (0%)","£0"],["Total","£24,150"]].map(([l,v],i)=>(
+                  <div key={l} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:i<2?"0.5px solid #f0f0f0":"none",fontWeight:i===2?700:400,fontSize:i===2?14:12,color:i===2?"#001242":"#444"}}>
+                    <span>{l}</span><span>{v}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div style={{background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:10,padding:20,marginBottom:14}}>
+            <div style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.4px",color:"#888",marginBottom:12}}>Notes & payment details</div>
+            <textarea rows={3} placeholder="Payment terms, bank details, or additional notes…" style={{width:"100%",padding:"8px 10px",border:"1.5px solid #e0e0e0",borderRadius:6,fontSize:12,outline:"none",fontFamily:"inherit",resize:"vertical",boxSizing:"border-box"}}/>
+          </div>
+
+          <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
+            <button style={{padding:"9px 20px",borderRadius:6,border:"0.5px solid #e5e5e5",background:"transparent",fontSize:13,cursor:"pointer",color:"#666"}}>Save draft</button>
+            <button style={{padding:"9px 20px",borderRadius:6,border:"0.5px solid #00C4CC",background:"transparent",fontSize:13,cursor:"pointer",color:"#00C4CC",fontWeight:600}}>Preview PDF ↗</button>
+            <button style={{padding:"9px 20px",borderRadius:6,border:"none",background:"#00C4CC",color:"#fff",fontSize:13,cursor:"pointer",fontWeight:600}}>Issue invoice ↗</button>
+          </div>
+        </div>
+      )}
+
       {view==="invoices"&&(<>
         <div style={{ display:"flex", gap:8, padding:"10px 20px", borderBottom:"0.5px solid #e5e5e5", flexWrap:"wrap" }}>
           <div style={{ display:"flex", alignItems:"center", gap:6, background:"var(--bg-primary,#fff)", border:"0.5px solid #ccc", borderRadius:5, padding:"0 10px", flex:1 }}>
