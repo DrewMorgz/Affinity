@@ -1,8 +1,8 @@
 import { useState } from "react";
 
-const CY = "#00B4D8";
+const CY = "#00C4CC";
 const TEAL = "#006D77";
-const NAVY = "#0D1B2A";
+const NAVY = "#001242";
 
 const OFFICES = [
   {city:"Douglas",        country:"Isle of Man",    tz:"Europe/London",   offset:0},
@@ -221,7 +221,7 @@ export default function AffinityIntranet() {
       <div style={{fontSize:20,fontWeight:700,color:NAVY,marginBottom:4}}>Get to Know Us</div>
       <div style={{fontSize:12,color:"#666",marginBottom:20}}>Meet the Affinity team across our global offices.</div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
-        {[{name:"Andy Morgan",title:"Group CEO",office:"Group",av:"AM",c:"#00B4D8",bio:"Founded Affinity in 2009. Passionate about building a truly boutique global business."},
+        {[{name:"Andy Morgan",title:"Group CEO",office:"Group",av:"AM",c:"#00C4CC",bio:"Founded Affinity in 2009. Passionate about building a truly boutique global business."},
           {name:"Roxy Sheeley",title:"Managing Director — IOM",office:"Isle of Man",av:"RS",c:"#7C5CBF",bio:"Leads the Isle of Man operation. Specialist in trust and estate administration."},
           {name:"Garry Crossan",title:"Director — Cayman",office:"Cayman Islands",av:"GC",c:"#1A7FBF",bio:"Heads the Cayman Islands office. Expert in fund structures and investment holdings."},
           {name:"Joanne Fenech",title:"Director — Malta",office:"Malta",av:"JF",c:"#4A7C6F",bio:"Leads the Malta team. Specialist in MFSA-regulated structures and foundations."},
@@ -253,7 +253,7 @@ export default function AffinityIntranet() {
   };
 
   return (
-    <div style={{fontFamily:"'DM Sans',system-ui,sans-serif",background:"#f5f7fa",minHeight:"100vh",color:"#111"}}>
+    <div style={{fontFamily:"'Catamaran',system-ui,sans-serif",background:"#f5f7fa",minHeight:"100vh",color:"#111"}}>
       {/* Nav */}
       <div style={{background:"#fff",borderBottom:"0.5px solid #e5e5e5",padding:"0 28px",display:"flex",alignItems:"center",gap:0,height:44,flexShrink:0}}>
         <div style={{fontSize:14,fontWeight:700,color:TEAL,marginRight:24}}>Affinity Group</div>
