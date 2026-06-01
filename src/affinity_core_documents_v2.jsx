@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const CY = "#00B4D8";
+const CY = "#00C4CC";
 
 const Bx = ({label,colors}) => <span style={{display:"inline-block",padding:"2px 8px",borderRadius:20,fontSize:10,fontWeight:600,background:colors?.bg||"#eee",color:colors?.color||"#333",whiteSpace:"nowrap"}}>{label}</span>;
 const Btn = ({primary,children,onClick,sx={}}) => <button onClick={onClick} style={{padding:"5px 12px",borderRadius:5,border:primary?"none":"0.5px solid #ccc",background:primary?CY:"transparent",color:primary?"#fff":"#111",fontSize:11,cursor:"pointer",whiteSpace:"nowrap",...sx}}>{children}</button>;
@@ -8,23 +8,23 @@ const Md = ({title,onClose,children}) => <div style={{position:"fixed",top:0,lef
 
 // Full folder structure per brief
 const FOLDER_TREE = [
-  {name:"Accounts",       icon:"&#128194;",subs:["AEOI","Budgets/Funding Requests","Captains Cash","Financial Statements","Management Accounts","Payroll","Player Reconciliations","Substance","Year End"]},
-  {name:"Aircraft/Yacht", icon:"&#128194;",subs:["Aircraft/Yacht Documents","Charter","Construction","Crew","Import & Export","Purchase","Radio/EPIRB","Registration","Sale"]},
-  {name:"Bank",           icon:"&#128194;",subs:["Application Forms/Mandate","Payments","Source of Funds","Statements"]},
-  {name:"Correspondence", icon:"&#128194;",subs:["Correspondence","Emails"]},
-  {name:"Data Protection",icon:"&#128194;",subs:["DPIA's","Policy and Procedures","Registration/Renewals"]},
-  {name:"Delete Documents",icon:"&#128194;",subs:["Delete"]},
-  {name:"Duty & Taxes",   icon:"&#128194;",subs:["GDR","Tax","VAT"]},
-  {name:"E-Gaming",       icon:"&#128194;",subs:["License Applications","Licenses","OGRA Regulatory Returns","Policies & Procedures","Registers","Regulation","Regulatory Inspection","Technological Risk Assessments","Test Certificates"]},
-  {name:"FINTECH",        icon:"&#128194;",subs:["DBA Applications","Policies & Procedures","Registers","Regulation"]},
-  {name:"Insurance",      icon:"&#128194;",subs:["Insurance"]},
-  {name:"Investments",    icon:"&#128194;",subs:["Portfolio Statements","Share Certificates"]},
-  {name:"Invoices",       icon:"&#128194;",subs:["Purchase Invoices — Q1","Purchase Invoices — Q2","Purchase Invoices — Q3","Purchase Invoices — Q4","Sales Invoices — Q1","Sales Invoices — Q2","Sales Invoices — Q3","Sales Invoices — Q4"]},
-  {name:"KYC",            icon:"&#128194;",subs:["CDD","LOE/Fees","Onboarding","Ongoing Monitoring","Source of Wealth"]},
-  {name:"Permanent",      icon:"&#128194;",subs:["Agreements","Dividend Vouchers","Legal"]},
-  {name:"Property",       icon:"&#128194;",subs:["Licences","Management","Purchase","Sale"]},
-  {name:"Statutory",      icon:"&#128194;",subs:["Certificate of Incorporation/Name Change","Memorandum & Articles of Association","Minutes of Meetings","Powers of Attorney","Shares","Statutory Documents"]},
-  {name:"Group",          icon:"&#128194;",subs:["Brand","Competitor Fees","Insurance","Marketing and Business Development","Proposals","Strategy","Travel"]},
+  {name:"Accounts",subs:["AEOI","Budgets/Funding Requests","Captains Cash","Financial Statements","Management Accounts","Payroll","Player Reconciliations","Substance","Year End"]},
+  {name:"Aircraft/Yacht", subs:["Aircraft/Yacht Documents","Charter","Construction","Crew","Import & Export","Purchase","Radio/EPIRB","Registration","Sale"]},
+  {name:"Bank",           subs:["Application Forms/Mandate","Payments","Source of Funds","Statements"]},
+  {name:"Correspondence", subs:["Correspondence","Emails"]},
+  {name:"Data Protection",subs:["DPIA's","Policy and Procedures","Registration/Renewals"]},
+  {name:"Delete Documents",subs:["Delete"]},
+  {name:"Duty & Taxes",   subs:["GDR","Tax","VAT"]},
+  {name:"E-Gaming",subs:["License Applications","Licenses","OGRA Regulatory Returns","Policies & Procedures","Registers","Regulation","Regulatory Inspection","Technological Risk Assessments","Test Certificates"]},
+  {name:"FINTECH",        subs:["DBA Applications","Policies & Procedures","Registers","Regulation"]},
+  {name:"Insurance",      subs:["Insurance"]},
+  {name:"Investments",    subs:["Portfolio Statements","Share Certificates"]},
+  {name:"Invoices",subs:["Purchase Invoices — Q1","Purchase Invoices — Q2","Purchase Invoices — Q3","Purchase Invoices — Q4","Sales Invoices — Q1","Sales Invoices — Q2","Sales Invoices — Q3","Sales Invoices — Q4"]},
+  {name:"KYC",            subs:["CDD","LOE/Fees","Onboarding","Ongoing Monitoring","Source of Wealth"]},
+  {name:"Permanent",      subs:["Agreements","Dividend Vouchers","Legal"]},
+  {name:"Property",subs:["Licences","Management","Purchase","Sale"]},
+  {name:"Statutory",      subs:["Certificate of Incorporation/Name Change","Memorandum & Articles of Association","Minutes of Meetings","Powers of Attorney","Shares","Statutory Documents"]},
+  {name:"Group",          subs:["Brand","Competitor Fees","Insurance","Marketing and Business Development","Proposals","Strategy","Travel"]},
 ];
 
 // Sample documents per folder
@@ -51,10 +51,10 @@ const statusColors = {
   Expired:      {bg:"#FCEBEB",color:"#A32D2D"},
 };
 
-const ENTITIES = ["All entities","Meridian Holdings Ltd","Harrington Family Trust","Caledonian Ventures Ltd","Azure Mediterranean Fdn","Pacific Wealth Trust","Stonebridge Capital Ltd","North Star Holdings Ltd","Rosewood Legacy Trust","Apex Growth Fund Ltd"];
+const ENTITIES = ["Meridian Holdings Ltd","Harrington Family Trust","Caledonian Ventures Ltd","Azure Mediterranean Fdn","Pacific Wealth Trust","Stonebridge Capital Ltd","North Star Holdings Ltd","Rosewood Legacy Trust","Apex Growth Fund Ltd"];
 
 export default function AffinityDMS() {
-  const [entity,setEntity]   = useState("All entities");
+  const [entity,setEntity]   = useState("Meridian Holdings Ltd");
   const [openFolders,setOpen] = useState({"KYC":true});
   const [selFolder,setSelF]   = useState({folder:"KYC",sub:"CDD"});
   const [sel,setSel]          = useState(null);
@@ -66,7 +66,7 @@ export default function AffinityDMS() {
   const toggleFolder = name => setOpen(p=>({...p,[name]:!p[name]}));
 
   const folderDocs = DOCS.filter(d=>
-    (entity==="All entities"||d.entity===entity)&&
+    d.entity===entity&&
     (!selFolder.folder||d.folder===selFolder.folder)&&
     (!selFolder.sub||d.subfolder===selFolder.sub)
   );
@@ -78,14 +78,17 @@ export default function AffinityDMS() {
   const tabs = ["Document folders","Expiring / expired","Approvals","Generate document","Email filing"];
 
   return (
-    <div style={{fontFamily:"'DM Sans',system-ui,sans-serif",background:"#fff",color:"#111",height:"calc(100vh - 48px)",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+    <div style={{fontFamily:"'Catamaran',system-ui,sans-serif",background:"#fff",color:"#111",height:"calc(100vh - 48px)",display:"flex",flexDirection:"column",overflow:"hidden"}}>
 
       {/* Toolbar */}
       <div style={{padding:"8px 16px",borderBottom:"0.5px solid #e5e5e5",display:"flex",gap:6,alignItems:"center",flexShrink:0,flexWrap:"wrap"}}>
         {tabs.map((t,i)=><button key={i} style={{padding:"4px 12px",fontSize:11,borderRadius:20,border:`0.5px solid ${tab===i?"#ccc":"#e5e5e5"}`,background:tab===i?"#fff":"transparent",color:tab===i?"#111":"#666",cursor:"pointer",fontWeight:tab===i?500:400,whiteSpace:"nowrap"}} onClick={()=>setTab(i)}>{t}{i===2&&DOCS.filter(d=>d.status==="Under review"||d.status==="Draft").length>0&&<span style={{marginLeft:4,background:"#EF4444",color:"#fff",borderRadius:10,padding:"1px 5px",fontSize:9,fontWeight:700}}>{DOCS.filter(d=>d.status==="Under review"||d.status==="Draft").length}</span>}</button>)}
-        <select style={{height:28,padding:"0 8px",fontSize:11,borderRadius:5,border:"0.5px solid #ccc",background:"#fff",color:"#111",marginLeft:"auto",minWidth:200}} value={entity} onChange={e=>setEntity(e.target.value)}>
-          {ENTITIES.map(e=><option key={e}>{e}</option>)}
-        </select>
+        <div style={{position:"relative",marginLeft:"auto"}}>
+          <input list="dms-entities" value={entity} onChange={e=>setEntity(e.target.value)}
+            placeholder="Search entity…"
+            style={{height:28,padding:"0 10px",fontSize:11,borderRadius:5,border:"0.5px solid #ccc",background:"#fff",color:"#111",minWidth:200,outline:"none"}}/>
+          <datalist id="dms-entities">{ENTITIES.map(e=><option key={e} value={e}/>)}</datalist>
+        </div>
         <Btn primary onClick={()=>setModal("upload")}>&#8593; Upload</Btn>
       </div>
 
@@ -102,12 +105,12 @@ export default function AffinityDMS() {
               <div key={f.name}>
                 <div onClick={()=>toggleFolder(f.name)} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 12px",cursor:"pointer",background:selFolder.folder===f.name&&!selFolder.sub?"#fff":"transparent",borderBottom:"0.5px solid #e5e5e5",fontSize:12}}>
                   <span style={{fontSize:10,color:"#aaa",width:12,flexShrink:0}}>{openFolders[f.name]?"&#9660;":"&#9658;"}</span>
-                  <span style={{fontSize:14}}>&#128194;</span>
+                  
                   <span style={{fontWeight:selFolder.folder===f.name?600:400,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.name}</span>
-                  <span style={{marginLeft:"auto",fontSize:9,color:"#aaa",flexShrink:0}}>{DOCS.filter(d=>d.folder===f.name&&(entity==="All entities"||d.entity===entity)).length||""}</span>
+                  <span style={{marginLeft:"auto",fontSize:9,color:"#aaa",flexShrink:0}}>{DOCS.filter(d=>d.folder===f.name&&d.entity===entity).length||""}</span>
                 </div>
                 {openFolders[f.name]&&f.subs.map(sub=>{
-                  const count = DOCS.filter(d=>d.folder===f.name&&d.subfolder===sub&&(entity==="All entities"||d.entity===entity)).length;
+                  const count = DOCS.filter(d=>d.folder===f.name&&d.subfolder===sub&&d.entity===entity).length;
                   if(!isAdmin&&count===0) return null; // hide empty folders for non-admins
                   return (
                     <div key={sub} onClick={()=>setSelF({folder:f.name,sub})} style={{display:"flex",alignItems:"center",gap:6,padding:"5px 12px 5px 32px",cursor:"pointer",background:selFolder.folder===f.name&&selFolder.sub===sub?"#E6F7FB":"transparent",fontSize:11,borderBottom:"0.5px solid #f0f0f0"}}>
