@@ -1,5 +1,5 @@
 import { useState } from "react";
-const CY = "#00B4D8";
+const CY = "#00C4CC";
 const Badge = ({ label, colors }) => (<span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:600, background:colors?.bg||"#eee", color:colors?.color||"#333", whiteSpace:"nowrap" }}>{label}</span>);
 const th = { padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:600, color:"#666", textTransform:"uppercase", letterSpacing:"0.4px", borderBottom:"0.5px solid #e5e5e5", background:"var(--bg-secondary,#f9f9f9)", whiteSpace:"nowrap" };
 const td = { padding:"8px 12px", fontSize:11, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", borderBottom:"0.5px solid #e5e5e5" };
@@ -15,14 +15,14 @@ const PROCEDURES = [
   { id:"3.08", title:"New business AML / KYC assessment",       category:"Compliance",   office:"All",          owner:"CCO",              steps:7,  avgTime:"3 days",  activeRuns:2 },
   { id:"3.09", title:"Enhanced due diligence (EDD)",            category:"Compliance",   office:"All",          owner:"MLRO",             steps:9,  avgTime:"10 days", activeRuns:1 },
   { id:"3.10", title:"Suspicious activity — STR procedure",     category:"Compliance",   office:"All",          owner:"MLRO",             steps:6,  avgTime:"3 days",  activeRuns:0 },
-  { id:"3.11", title:"Director appointment — IOM company",      category:"Corporate",    office:"Isle of Man",  owner:"Administrator",    steps:7,  avgTime:"2 days",  activeRuns:1 },
-  { id:"3.12", title:"Director appointment — Malta company",    category:"Corporate",    office:"Malta",        owner:"Administrator",    steps:8,  avgTime:"5 days",  activeRuns:0 },
-  { id:"3.13", title:"Director appointment — Cayman company",   category:"Corporate",    office:"Cayman Islands",owner:"Administrator",   steps:7,  avgTime:"3 days",  activeRuns:0 },
-  { id:"3.14", title:"Share transfer — IOM company",            category:"Corporate",    office:"Isle of Man",  owner:"Administrator",    steps:9,  avgTime:"5 days",  activeRuns:0 },
+  { id:"3.11", title:"Director appointment — IOM company",      category:"Statutory",    office:"Isle of Man",  owner:"Administrator",    steps:7,  avgTime:"2 days",  activeRuns:1 },
+  { id:"3.12", title:"Director appointment — Malta company",    category:"Statutory",    office:"Malta",        owner:"Administrator",    steps:8,  avgTime:"5 days",  activeRuns:0 },
+  { id:"3.13", title:"Director appointment — Cayman company",   category:"Statutory",    office:"Cayman Islands",owner:"Administrator",   steps:7,  avgTime:"3 days",  activeRuns:0 },
+  { id:"3.14", title:"Share transfer — IOM company",            category:"Statutory",    office:"Isle of Man",  owner:"Administrator",    steps:9,  avgTime:"5 days",  activeRuns:0 },
   { id:"3.15", title:"Annual return filing — IOM",              category:"Statutory",    office:"Isle of Man",  owner:"Administrator",    steps:6,  avgTime:"2 days",  activeRuns:4 },
   { id:"3.16", title:"Annual return filing — Malta",            category:"Statutory",    office:"Malta",        owner:"Administrator",    steps:7,  avgTime:"3 days",  activeRuns:2 },
   { id:"3.17", title:"Annual return filing — Cayman",           category:"Statutory",    office:"Cayman Islands",owner:"Administrator",   steps:6,  avgTime:"2 days",  activeRuns:3 },
-  { id:"3.18", title:"Registered office change",                category:"Corporate",    office:"All",          owner:"Administrator",    steps:5,  avgTime:"3 days",  activeRuns:0 },
+  { id:"3.18", title:"Registered office change",                category:"Statutory",    office:"All",          owner:"Administrator",    steps:5,  avgTime:"3 days",  activeRuns:0 },
   { id:"3.19", title:"Bank account opening",                    category:"Banking",      office:"All",          owner:"Administrator",    steps:8,  avgTime:"14 days", activeRuns:1 },
   { id:"3.20", title:"Invoice raising and credit control",      category:"Finance",      office:"All",          owner:"CFO",              steps:6,  avgTime:"Ongoing", activeRuns:0 },
   { id:"3.21", title:"Month end close procedure",               category:"Finance",      office:"All",          owner:"CFO",              steps:10, avgTime:"3 days",  activeRuns:0 },
@@ -113,7 +113,7 @@ export default function AffinityProcedures() {
     const step = runSteps.find(s=>s.step===currentStep);
     const proc = PROCEDURES.find(p=>p.id===runProc);
     return (
-      <div style={{ fontFamily:"'DM Sans',system-ui,sans-serif", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)", minHeight:600 }}>
+      <div style={{ fontFamily:"'Catamaran',system-ui,sans-serif", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)", minHeight:600 }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 20px", borderBottom:"0.5px solid #e5e5e5" }}>
           <div style={{ fontSize:16, fontWeight:500, color:CY }}>Affinity <span style={{ color:"var(--text-primary,#111)", fontWeight:300 }}>Core</span><small style={{ fontSize:11, color:"#999", fontWeight:300, marginLeft:8 }}>Procedure runner</small></div>
           <button style={nb} onClick={()=>{ setRunProc(null); setRunStep(null); }}>← Back to procedures</button>
@@ -192,7 +192,7 @@ export default function AffinityProcedures() {
   }
 
   return (
-    <div style={{ fontFamily:"'DM Sans',system-ui,sans-serif", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)", minHeight:600 }}>
+    <div style={{ fontFamily:"'Catamaran',system-ui,sans-serif", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)", minHeight:600 }}>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 20px", borderBottom:"0.5px solid #e5e5e5" }}>
         <div style={{ fontSize:18, fontWeight:500, color:CY }}>Affinity <span style={{ color:"var(--text-primary,#111)", fontWeight:300 }}>Core</span><small style={{ fontSize:11, color:"#999", fontWeight:300, marginLeft:8 }}>Procedure Automation</small></div>
         <div style={{ display:"flex", gap:5 }}>
@@ -371,6 +371,35 @@ export default function AffinityProcedures() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+    </div>
+      {/* Create task from procedure modal */}
+      {taskModal&&(
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.4)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:100 }} onClick={e=>e.target===e.currentTarget&&setModal(null)}>
+          <div style={{ background:"#fff", borderRadius:12, padding:24, width:460, maxWidth:"95vw" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+              <h3 style={{ margin:0, fontSize:15, fontWeight:600 }}>Create task from procedure</h3>
+              <button onClick={()=>setModal(null)} style={{ background:"none", border:"none", fontSize:20, cursor:"pointer", color:"#888" }}>×</button>
+            </div>
+            <div style={{ background:"#f0f8fb", borderRadius:6, padding:"8px 12px", marginBottom:14, fontSize:11, color:"#0077A8" }}>
+              📋 Linked procedure: <strong>{taskModal.ref} — {taskModal.title}</strong>
+            </div>
+            {[["Task title","text",taskModal.title],["Entity","text",""],["Assign to","select",""],["Due date","text","DD/MM/YYYY"],["Notes","text",""]].map(([l,t,def],i)=>(
+              <div key={l} style={{ marginBottom:10 }}>
+                <label style={{ display:"block", fontSize:11, fontWeight:600, color:"#555", marginBottom:3 }}>{l}</label>
+                {l==="Assign to"
+                  ?<select style={{ width:"100%", padding:"8px 10px", border:"1.5px solid #e0e0e0", borderRadius:6, fontSize:12, outline:"none" }}>
+                    {["Andy Morgan","Roxy Sheeley","Garry Crossan","Joanne Fenech","Neil Kelly","Gary Harrison","Sarah Cole","Maria Borg"].map(s=><option key={s}>{s}</option>)}
+                  </select>
+                  :<input defaultValue={def} style={{ width:"100%", padding:"8px 10px", border:"1.5px solid #e0e0e0", borderRadius:6, fontSize:12, outline:"none", boxSizing:"border-box" }} />
+                }
+              </div>
+            ))}
+            <button onClick={()=>setModal(null)} style={{ width:"100%", background:"#00C4CC", color:"#fff", border:"none", borderRadius:8, padding:10, fontSize:13, fontWeight:600, cursor:"pointer" }}>
+              Create task ↗
+            </button>
+          </div>
         </div>
       )}
     </div>
