@@ -1,13 +1,13 @@
 import { useState } from "react";
 
-const CY = "#00B4D8";
+const CY = "#00C4CC";
 
 const Badge = ({ label, colors }) => (
   <span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:600, background:colors?.bg||"#eee", color:colors?.color||"#333", whiteSpace:"nowrap" }}>{label}</span>
 );
 
 const roleColors = {
-  "Super Admin":    { bg:"#0D1B2A", color:"#fff" },
+  "Super Admin":    { bg:"#001242", color:"#fff" },
   "Group Director": { bg:"#E6F7FB", color:"#0077A8" },
   "Managing Director":{ bg:"#E6F1FB", color:"#0C447C" },
   "Director":       { bg:"#EEF0FB", color:"#3C3489" },
@@ -25,7 +25,7 @@ const officeColors = {
   "Cayman Islands": { bg:"#E6EEF7", color:"#0D4A7A" },
   "United Kingdom": { bg:"#F1EFE8", color:"#444441" },
   "Miami":          { bg:"#FBEAF0", color:"#72243E" },
-  "Group":          { bg:"#0D1B2A26", color:"#0D1B2A" },
+  "Group":          { bg:"#00124226", color:"#001242" },
 };
 
 const usersData = [
@@ -101,7 +101,7 @@ const VIEWS = ["users","roles","offices","fees","audit","config"];
 const VIEW_LABELS = ["Users","Roles & permissions","Offices","Fee schedules","Audit log","System config"];
 
 const s = {
-  wrap:{ fontFamily:"'DM Sans',system-ui,sans-serif", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)", minHeight:600 },
+  wrap:{ fontFamily:"'Catamaran',system-ui,sans-serif", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)", minHeight:600 },
   header:{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 20px", borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)" },
   logo:{ fontSize:18, fontWeight:500, color:CY },
   subnav:{ display:"flex", gap:4, padding:"10px 20px", borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)", background:"var(--bg-secondary,#f9f9f9)", flexWrap:"wrap" },
