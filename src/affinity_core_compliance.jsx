@@ -1,5 +1,5 @@
 import { useState } from "react";
-const CY = "#00B4D8";
+const CY = "#00C4CC";
 const Badge = ({ label, colors }) => (
   <span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:600, background:colors?.bg||"#eee", color:colors?.color||"#333", whiteSpace:"nowrap" }}>{label}</span>
 );
@@ -52,7 +52,7 @@ export default function AffinityIOMCompliance() {
   const fgi = { fontSize:13, borderRadius:6, border:"0.5px solid #ccc", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)", padding:"0 10px", height:34, outline:"none" };
 
   return (
-    <div style={{ fontFamily:"'DM Sans',system-ui,sans-serif", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)", minHeight:600 }}>
+    <div style={{ fontFamily:"'Catamaran',system-ui,sans-serif", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)", minHeight:600 }}>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 20px", borderBottom:"0.5px solid #e5e5e5" }}>
         <div style={{ fontSize:18, fontWeight:500, color:CY }}>Affinity <span style={{ color:"var(--text-primary,#111)", fontWeight:400 }}>Core</span><small style={{ fontSize:11, color:"#999", fontWeight:400, marginLeft:8 }}>Isle of Man — Compliance Framework</small></div>
         <div style={{ display:"flex", gap:8, alignItems:"center" }}>
