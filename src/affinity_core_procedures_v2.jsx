@@ -373,5 +373,6 @@ export default function AffinityProcedures() {
       )}
     </div>
     </div>
+    </div>
   );
 }
