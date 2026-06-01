@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 
-const CY = "#00B4D8";
-const NAVY = "#0D1B2A";
+const CY = "#00C4CC";
+const NAVY = "#001242";
 
 // Internal knowledge base — answers come from system data only
 const KB = {
@@ -125,7 +125,7 @@ export default function AffinityChatbot() {
   };
 
   return (
-    <div style={{fontFamily:"'DM Sans',system-ui,sans-serif",display:"flex",flexDirection:"column",height:"calc(100vh - 48px)",background:"#f5f7fa"}}>
+    <div style={{fontFamily:"'Catamaran',system-ui,sans-serif",display:"flex",flexDirection:"column",height:"calc(100vh - 48px)",background:"#f5f7fa"}}>
       {/* Header */}
       <div style={{background:"#fff",borderBottom:"0.5px solid #e5e5e5",padding:"12px 20px",flexShrink:0}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
