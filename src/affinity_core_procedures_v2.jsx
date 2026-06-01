@@ -374,7 +374,7 @@ export default function AffinityProcedures() {
         </div>
       )}
     </div>
-      {/* Create task from procedure modal */}
+    {/* Create task from procedure modal */}
       {taskModal&&(
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.4)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:100 }} onClick={e=>e.target===e.currentTarget&&setModal(null)}>
           <div style={{ background:"#fff", borderRadius:12, padding:24, width:460, maxWidth:"95vw" }}>
@@ -402,6 +402,6 @@ export default function AffinityProcedures() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
