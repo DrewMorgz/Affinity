@@ -508,7 +508,7 @@ export default function AffinityCore(){
 
   const navTo = (id) => { setMod(id); setSideOpen(false); };
 
-  if (!loggedIn) return <AffinityLoginPage onLogin={(id)=>{ setUid(id); setLoggedIn(true); }}/>;
+  if (!loggedIn) return <AffinityLoginPage onLogin={(id)=>{ setUid(id); setLoggedIn(true); setSplash(false); }}/>;
   if (splash) return <SplashScreen onDone={() => setSplash(false)} />;
 
   return <div style={{display:"flex",height:"100vh",fontFamily:"'Catamaran',system-ui,sans-serif",overflow:"hidden",position:"relative",background:dark?"#1a1a2e":"#fff",...dm}} onClick={()=>{if(nOpen)setN(false);if(uOpen)setU(false);setSearchOpen(false);}}>
