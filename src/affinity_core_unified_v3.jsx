@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AffinityLoginPage from "./affinity_login_page";
 import Dashboard     from "./affinity_core_dashboard";
 import EntityAdmin   from "./affinity_core_entity_admin";
@@ -285,11 +285,11 @@ function Tasks(){
 
 function SplashScreen({ onDone }) {
   const [fade, setFade] = useState(false);
-  useState(() => {
+  useEffect(() => {
     const t1 = setTimeout(() => setFade(true), 3200);
     const t2 = setTimeout(() => onDone(), 4000);
     return () => { clearTimeout(t1); clearTimeout(t2); };
-  });
+  }, []);
   return (
     <div style={{
       position:"fixed", inset:0, background:NAVY,
