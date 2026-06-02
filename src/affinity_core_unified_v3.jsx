@@ -66,6 +66,7 @@ const NAV = [
     {id:"invoicing",    label:"Invoicing",     icon:"\uD83D\uDCB7",b:null},
     {id:"bookkeeping",  label:"Bookkeeping",   icon:"\uD83D\uDCCA",b:null},
     {id:"budgeting",    label:"Budgeting",     icon:"\uD83D\uDCB0",b:null},
+    {id:"attrition",    label:"Attrition",     icon:"\uD83D\uDDD1",b:null},
   ]},
   {s:"Insights",   items:[
     {id:"reporting",    label:"Reporting",     icon:"\uD83D\uDCC8",b:null},
