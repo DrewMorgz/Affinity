@@ -50,6 +50,7 @@ const VALUES = [
 ];
 
 export default function AffinityLoginPage({ onLogin }) {
+  const [showSplash, setShowSplash] = useState(true);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
@@ -58,6 +59,68 @@ export default function AffinityLoginPage({ onLogin }) {
   const [scrollY, setScrollY] = useState(0);
   const [heroPhoto, setHeroPhoto] = useState(0);
   const [imgErrors, setImgErrors] = useState({});
+
+  useEffect(() => {
+    // Dismiss splash after handwrite animation completes
+    const timer = setTimeout(() => setShowSplash(false), 3200);
+    if (showSplash) return (
+    <div onClick={() => setShowSplash(false)} style={{
+      minHeight: "100vh", background: NAVY, display: "flex", alignItems: "center",
+      justifyContent: "center", flexDirection: "column", cursor: "pointer",
+      fontFamily: "'Catamaran', system-ui, sans-serif"
+    }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
+        @keyframes writeOn { 0% { width:0; } 100% { width:100%; } }
+        @keyframes cursorBlink { 0%,100%{opacity:1} 50%{opacity:0} }
+        @keyframes fadeInUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+        .hw { display:inline-block; overflow:hidden; white-space:nowrap; animation: writeOn 2s cubic-bezier(0.4,0,0.2,1) 0.4s forwards; width:0; }
+        .cur::after { content:'|'; animation:cursorBlink 0.7s step-end infinite; color:rgba(0,196,204,0.7); margin-left:1px; }
+      `}</style>
+
+      {/* Animated logo line */}
+      <div style={{ textAlign: "center", marginBottom: 40 }}>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 0 }}>
+          {/* "Affinity" in handwriting */}
+          <span className="hw cur" style={{
+            fontFamily: "'Dancing Script', cursive",
+            fontSize: "clamp(72px, 12vw, 120px)",
+            fontWeight: 700,
+            color: "#fff",
+            letterSpacing: "-2px",
+            lineHeight: 1.1,
+          }}>Affinity</span>
+        </div>
+
+        {/* Subtitle fades in after handwriting */}
+        <div style={{
+          fontSize: 12, color: "rgba(255,255,255,0.3)", textTransform: "uppercase",
+          letterSpacing: "4px", marginTop: 16,
+          animation: "fadeInUp 0.8s ease 2.4s both"
+        }}>
+          Corporate &amp; Trust Services
+        </div>
+      </div>
+
+      {/* Cyan underline draws in */}
+      <div style={{
+        height: 2, background: CY, borderRadius: 2,
+        animation: "writeOn 1s ease 1.8s both",
+        width: 0, maxWidth: 200
+      }} />
+
+      <div style={{
+        fontSize: 11, color: "rgba(255,255,255,0.2)", marginTop: 48,
+        animation: "fadeInUp 0.6s ease 2.8s both",
+        letterSpacing: "1px"
+      }}>
+        Tap to continue
+      </div>
+    </div>
+  );
+
+  return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrollY(window.scrollY);
@@ -103,9 +166,37 @@ export default function AffinityLoginPage({ onLogin }) {
   return (
     <div style={{ fontFamily: "'Catamaran', system-ui, sans-serif", background: "#fff", minHeight: "100vh", color: "#111" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Catamaran:wght@300;400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Catamaran:wght@300;400;500;600;700;800&family=Dancing+Script:wght@700&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes writeOn {
+          0% { width: 0; opacity: 1; }
+          100% { width: 100%; opacity: 1; }
+        }
+        @keyframes cursorBlink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0; }
+        }
+        @keyframes handwriteFadeIn {
+          0% { opacity: 0; transform: translateY(8px) rotate(-1deg); }
+          100% { opacity: 1; transform: translateY(0) rotate(-1deg); }
+        }
+        .handwrite-word {
+          display: inline-block;
+          overflow: hidden;
+          white-space: nowrap;
+          animation: writeOn 1.8s cubic-bezier(0.4,0,0.2,1) forwards;
+          animation-delay: 0.3s;
+          width: 0;
+        }
+        .handwrite-cursor::after {
+          content: '|';
+          animation: cursorBlink 0.8s step-end infinite;
+          color: rgba(0,196,204,0.8);
+          font-family: monospace;
+          font-size: 0.8em;
+          margin-left: 2px;
+        }
         @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
         @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.6; } }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -168,7 +259,7 @@ export default function AffinityLoginPage({ onLogin }) {
             <div className="fade-up" style={{ animationDelay: "0.1s" }}>
               <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(0,196,204,0.2)", border: "0.5px solid rgba(0,196,204,0.4)", borderRadius: 20, padding: "5px 14px", marginBottom: 24 }}>
                 <div style={{ width: 6, height: 6, borderRadius: "50%", background: CY, animation: "pulse 2s infinite" }} />
-                <span style={{ fontSize: 11, color: CY, fontWeight: 600, textTransform: "uppercase", letterSpacing: "1.5px" }}>Made by Affinity, for Affinity</span>
+                <span style={{ fontSize: 11, color: CY, fontWeight: 600, textTransform: "uppercase", letterSpacing: "1.5px" }}>Corporate &amp; Trust Services · Since 2004</span>
               </div>
             </div>
 
@@ -347,7 +438,7 @@ export default function AffinityLoginPage({ onLogin }) {
           Affinity <span style={{ color: CY, fontWeight: 300 }}>Core</span>
         </div>
         <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", textAlign: "center" }}>
-          Made by Affinity, for Affinity · Internal use only · All rights reserved
+          Internal use only · Authorised staff only · © Affinity Group 2025
         </div>
         <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>
           © Affinity Group 2025
