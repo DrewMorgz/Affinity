@@ -50,6 +50,7 @@ const VALUES = [
   { icon: "🏆", title: "Award winning", desc: "Recognised by Citywealth and industry peers for excellence in wealth management services." },
 ];
 
+
 export default function AffinityLoginPage({ onLogin }) {
   const [showSplash, setShowSplash] = useState(true);
   const [username, setUsername] = useState("");
@@ -61,49 +62,20 @@ export default function AffinityLoginPage({ onLogin }) {
   const [heroPhoto, setHeroPhoto] = useState(0);
   const [imgErrors, setImgErrors] = useState({});
 
+  // Dismiss splash after animation
   useEffect(() => {
     const timer = setTimeout(() => setShowSplash(false), 3200);
-    if (showSplash) return (
-    <div onClick={() => setShowSplash(false)} style={{
-      minHeight: "100vh", background: NAVY, display: "flex", alignItems: "center",
-      justifyContent: "center", flexDirection: "column", cursor: "pointer",
-      fontFamily: "'Catamaran', system-ui, sans-serif"
-    }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
-        @keyframes writeOn { 0%{width:0} 100%{width:100%} }
-        @keyframes cursorBlink { 0%,100%{opacity:1} 50%{opacity:0} }
-        @keyframes fadeInUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-        .hw { display:inline-block; overflow:hidden; white-space:nowrap; animation:writeOn 2s cubic-bezier(0.4,0,0.2,1) 0.4s forwards; width:0; }
-        .cur::after { content:'|'; animation:cursorBlink 0.7s step-end infinite; color:rgba(0,196,204,0.7); margin-left:1px; }
-      `}</style>
-      <div style={{ textAlign:"center", marginBottom:40 }}>
-        <div style={{ display:"flex", alignItems:"baseline", justifyContent:"center" }}>
-          <span className="hw cur" style={{ fontFamily:"'Dancing Script',cursive", fontSize:"clamp(72px,12vw,120px)", fontWeight:700, color:"#fff", letterSpacing:"-2px", lineHeight:1.1 }}>Affinity</span>
-        </div>
-        <div style={{ display:"flex", alignItems:"center", gap:10, marginTop:20, justifyContent:"center", animation:"fadeInUp 0.8s ease 2.4s both" }}>
-          <div style={{ width:30, height:1, background:"rgba(0,196,204,0.4)" }} />
-          <span style={{ fontSize:11, color:CY, fontWeight:700, textTransform:"uppercase", letterSpacing:"4px" }}>Corporate &amp; Trust Services</span>
-          <div style={{ width:30, height:1, background:"rgba(0,196,204,0.4)" }} />
-        </div>
-      </div>
-      <div style={{ height:2, background:CY, borderRadius:2, animation:"writeOn 1s ease 1.8s both", width:0, maxWidth:200 }} />
-      <div style={{ fontSize:11, color:"rgba(255,255,255,0.2)", marginTop:48, animation:"fadeInUp 0.6s ease 2.8s both", letterSpacing:"1px" }}>
-        Tap to continue
-      </div>
-    </div>
-  );
-
-  return () => clearTimeout(timer);
+    return () => clearTimeout(timer);
   }, []);
 
+  // Scroll tracking
   useEffect(() => {
     const onScroll = () => setScrollY(window.scrollY);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Rotate hero photo every 4 seconds
+  // Rotate hero photo
   useEffect(() => {
     const interval = setInterval(() => {
       setHeroPhoto(p => (p + 1) % PHOTOS.length);
@@ -123,6 +95,36 @@ export default function AffinityLoginPage({ onLogin }) {
       }
     }, 800);
   };
+
+  // Splash screen
+  if (showSplash) return (
+    <div onClick={() => setShowSplash(false)} style={{
+      minHeight: "100vh", background: NAVY, display: "flex", alignItems: "center",
+      justifyContent: "center", flexDirection: "column", cursor: "pointer",
+      fontFamily: "'Catamaran', system-ui, sans-serif"
+    }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
+        @keyframes writeOn { 0%{width:0} 100%{width:100%} }
+        @keyframes cursorBlink { 0%,100%{opacity:1} 50%{opacity:0} }
+        @keyframes fadeInUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+        .hw { display:inline-block; overflow:hidden; white-space:nowrap; animation:writeOn 2s cubic-bezier(0.4,0,0.2,1) 0.4s forwards; width:0; }
+        .cur::after { content:'|'; animation:cursorBlink 0.7s step-end infinite; color:rgba(0,196,204,0.7); margin-left:1px; }
+      `}</style>
+      <div style={{ textAlign:"center", marginBottom:40 }}>
+        <div style={{ display:"flex", alignItems:"baseline", justifyContent:"center" }}>
+          <span className="hw cur" style={{ fontFamily:"'Dancing Script',cursive", fontSize:"clamp(72px,12vw,120px)", fontWeight:700, color:"#fff", letterSpacing:"-2px", lineHeight:1.1 }}>Affinity</span>
+        </div>
+        <div style={{ display:"flex", alignItems:"center", gap:10, marginTop:20, justifyContent:"center", animation:"fadeInUp 0.8s ease 2.4s both" }}>
+          <div style={{ width:30, height:1, background:"rgba(0,196,204,0.4)" }} />
+          <span style={{ fontSize:11, color:"#00C4CC", fontWeight:700, textTransform:"uppercase", letterSpacing:"4px" }}>Corporate &amp; Trust Services</span>
+          <div style={{ width:30, height:1, background:"rgba(0,196,204,0.4)" }} />
+        </div>
+      </div>
+      <div style={{ height:2, background:"#00C4CC", borderRadius:2, animation:"writeOn 1s ease 1.8s both", width:0, maxWidth:200 }} />
+      <div style={{ fontSize:11, color:"rgba(255,255,255,0.2)", marginTop:48, animation:"fadeInUp 0.6s ease 2.8s both", letterSpacing:"1px" }}>Tap to continue</div>
+    </div>
+  );
 
   const handleImgError = (idx) => {
     setImgErrors(prev => ({ ...prev, [idx]: true }));
