@@ -9,21 +9,21 @@ const NAVY = "#001242";
 // For now we build the layout with the affinityco.com image paths
 
 const PHOTOS = [
-  { src: "/photos/p01_team_beach_group.jpg",   caption: "Team Day — Port Erin, Isle of Man",       tag: "IOM" },
-  { src: "/photos/p13_iom_office_team.jpg",    caption: "Isle of Man Office Team",                  tag: "IOM" },
-  { src: "/photos/p06_nav_event.jpg",          caption: "Affinity Nav — Atlantic Event",            tag: "Events" },
-  { src: "/photos/p12_cayman_beach.jpg",       caption: "Affinity Cayman — Turtle Beach",           tag: "Cayman" },
-  { src: "/photos/p04_malta_green.jpg",        caption: "Malta Team — Green Fingers Club",          tag: "Malta" },
-  { src: "/photos/p05_citywealth_award.jpg",   caption: "Citywealth Award Win",                     tag: "Awards" },
-  { src: "/photos/p02_team_beach_tug.jpg",     caption: "Annual Team Day — Tug of War",             tag: "IOM" },
-  { src: "/photos/p07_team_dinner.jpg",        caption: "Team Dinner",                              tag: "Events" },
-  { src: "/photos/p10_christmas_party.jpg",    caption: "Affinity Christmas Party",                 tag: "Events" },
-  { src: "/photos/p09_black_tie.jpg",          caption: "Black Tie Gala",                           tag: "Awards" },
-  { src: "/photos/p11_monaco_event.jpg",       caption: "Monaco — Affinity Nav",                    tag: "Events" },
-  { src: "/photos/p08_about_us.jpg",           caption: "Founded in the Isle of Man, 2004",         tag: "Story" },
-  { src: "/photos/p14_adventure_hoodies.jpg",  caption: "The Adventure — Affinity",                 tag: "Culture" },
-  { src: "/photos/p15_christmas_ladies.jpg",   caption: "Affinity Christmas Party",                 tag: "Events" },
-  { src: "/photos/p03_adventure_logo.jpg",     caption: "The Adventure — Affinity",                 tag: "Culture" },
+  { src: "/photos/p04_beach_group.jpg",         caption: "Team Day — Port Erin, Isle of Man",       tag: "IOM" },
+  { src: "/photos/p02_iom_office_team.jpg",     caption: "Isle of Man Office Team",                  tag: "IOM" },
+  { src: "/photos/p08_nav_event.jpg",           caption: "Affinity Nav — Atlantic Event",            tag: "Events" },
+  { src: "/photos/p05_cayman_beach.jpg",        caption: "Affinity Cayman — Turtle Beach",           tag: "Cayman" },
+  { src: "/photos/p06_malta_green.jpg",         caption: "Malta Team — Green Fingers Club",          tag: "Malta" },
+  { src: "/photos/p07_citywealth.jpg",          caption: "Citywealth Award Win",                     tag: "Awards" },
+  { src: "/photos/p09_team_harbour.jpg",        caption: "Team Day — Port Erin Harbour",             tag: "IOM" },
+  { src: "/photos/p11_black_tie.jpg",           caption: "Black Tie Gala",                           tag: "Awards" },
+  { src: "/photos/p12_christmas_party.jpg",     caption: "Affinity Christmas Party",                 tag: "Events" },
+  { src: "/photos/p13_monaco_event.jpg",        caption: "Monaco — Affinity Nav",                    tag: "Events" },
+  { src: "/photos/p01_christmas_miami.jpg",     caption: "Affinity Miami — Christmas",               tag: "Events" },
+  { src: "/photos/p10_about_us.jpg",            caption: "Founded in the Isle of Man, 2004",         tag: "Story" },
+  { src: "/photos/p14_adventure_hoodies.jpg",   caption: "The Adventure — Affinity",                 tag: "Culture" },
+  { src: "/photos/p15_christmas_ladies.jpg",    caption: "Affinity Christmas Party",                 tag: "Events" },
+  { src: "/photos/p03_adventure_logo.jpg",      caption: "The Adventure — Affinity",                 tag: "Culture" },
 ];
 
 const STATS = [
