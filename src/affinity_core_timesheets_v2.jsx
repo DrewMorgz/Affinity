@@ -95,8 +95,40 @@ export default function AffinityTimesheets() {
             {STAFF.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
           <select style={sel}><option>{weekF}</option><option>W/C 07 Jul 2025</option><option>W/C 30 Jun 2025</option></select>
-          <button style={{ ...nb, marginLeft:"auto" }} onClick={()=>setModal("entry")}>＋ Add time entry</button>
+          <button style={{ ...nb, marginLeft:"auto" }} onClick={()=>setModal("entry")}>＋ Manual entry</button>
           <button style={nba}>Submit timesheet ↗</button>
+        </div>
+
+        {/* Live timer bar */}
+        <div style={{ padding:"10px 20px", background:timerRunning?"#f0fff8":"#f9f9f9", borderBottom:"0.5px solid #e5e5e5", display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
+          <div style={{ fontSize:28, fontWeight:700, color:timerRunning?CY:"#ccc", fontVariantNumeric:"tabular-nums", minWidth:110 }}>
+            {fmtTimer(timerSeconds)}
+          </div>
+          <div style={{ display:"flex", gap:6, flex:1, flexWrap:"wrap" }}>
+            <select value={timerEntity} onChange={e=>setTimerEntity(e.target.value)} style={{ height:30, padding:"0 8px", border:"0.5px solid #e5e5e5", borderRadius:5, fontSize:11, minWidth:160 }}>
+              <option value="">Select entity…</option>
+              {["Meridian Holdings Ltd","Harrington Family Trust","Pacific Wealth Trust","Caledonian Ventures Ltd","Azure Mediterranean Fdn","North Star Holdings Ltd"].map(e=><option key={e}>{e}</option>)}
+            </select>
+            <input value={timerMatter} onChange={e=>setTimerMatter(e.target.value)} placeholder="Matter description…" style={{ height:30, padding:"0 10px", border:"0.5px solid #e5e5e5", borderRadius:5, fontSize:11, minWidth:160, outline:"none" }}/>
+            <select value={timerType} onChange={e=>setTimerType(e.target.value)} style={{ height:30, padding:"0 8px", border:"0.5px solid #e5e5e5", borderRadius:5, fontSize:11 }}>
+              {["Administration","Compliance","Legal","Accounts","Meetings","Client liaison","New Business — non-billable","Client — non-billable"].map(t=><option key={t}>{t}</option>)}
+            </select>
+          </div>
+          <div style={{ display:"flex", gap:6, flexShrink:0 }}>
+            <button onClick={startTimer} style={{ padding:"6px 16px", borderRadius:6, border:"none", background:timerRunning?"#F59E0B":CY, color:"#fff", fontSize:12, fontWeight:600, cursor:"pointer" }}>
+              {timerRunning?"⏸ Pause":"▶ Start timer"}
+            </button>
+            {timerSeconds > 0 && !timerRunning && (
+              <button onClick={stopAndLog} style={{ padding:"6px 16px", borderRadius:6, border:"none", background:"#4CAF7D", color:"#fff", fontSize:12, fontWeight:600, cursor:"pointer" }}>
+                ✓ Log time
+              </button>
+            )}
+            {timerSeconds > 0 && (
+              <button onClick={()=>{ if(timerRef)clearInterval(timerRef); setTimerSeconds(0); setTimerRunning(false); }} style={{ padding:"6px 10px", borderRadius:6, border:"0.5px solid #e5e5e5", background:"transparent", color:"#aaa", fontSize:12, cursor:"pointer" }}>
+                ✕
+              </button>
+            )}
+          </div>
         </div>
 
         <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:10, padding:"12px 20px", borderBottom:"0.5px solid #e5e5e5" }}>
@@ -135,7 +167,7 @@ export default function AffinityTimesheets() {
                   <td style={{ ...td, textAlign:"center", color:"#666" }}>{e.hours.toFixed(1)}</td>
                   <td style={{ ...td, textAlign:"right", fontWeight:500, color:e.billable?CY:"#aaa" }}>{e.billable?fmt(e.value):"—"}</td>
                   <td style={td}><Badge label={e.status} colors={{ Submitted:{bg:"#FAEEDA",color:"#633806"}, Approved:{bg:"#EAF3DE",color:"#27500A"}, Locked:{bg:"#F1EFE8",color:"#888"} }[e.status]||{bg:"#eee",color:"#666"}} /></td>
-                  <td style={td}><button style={{ ...nb, padding:"2px 8px", fontSize:10 }}>Edit</button></td>
+                  <td style={td}><button style={{ ...nb, padding:"2px 8px", fontSize:10 }} onClick={()=>{ setEditEntry(e); setModal("editEntry"); }}>Edit ✏️</button></td>
                 </tr>
               ))}
             </tbody>
@@ -284,6 +316,53 @@ export default function AffinityTimesheets() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {modal==="logTimer"&&(
+        <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.4)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100 }} onClick={e=>e.target===e.currentTarget&&setModal(null)}>
+          <div style={{ background:"#fff",borderRadius:12,padding:24,width:460,maxWidth:"95vw" }}>
+            <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16 }}>
+              <h3 style={{ margin:0,fontSize:15,fontWeight:600 }}>Log timed entry</h3>
+              <button onClick={()=>setModal(null)} style={{ background:"none",border:"none",fontSize:20,cursor:"pointer",color:"#888" }}>×</button>
+            </div>
+            <div style={{ background:"#f0fff8",border:"0.5px solid #4CAF7D",borderRadius:8,padding:"10px 14px",marginBottom:16,display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+              <span style={{ fontSize:13,fontWeight:600,color:"#27500A" }}>⏱ {fmtTimer(timerSeconds)}</span>
+              <span style={{ fontSize:12,color:"#27500A" }}>{Math.ceil(timerSeconds/600)} units · {(timerSeconds/3600).toFixed(2)} hours</span>
+            </div>
+            {[["Entity","select",["Meridian Holdings Ltd","Harrington Family Trust","Pacific Wealth Trust","Caledonian Ventures Ltd","North Star Holdings Ltd"]],["Matter","text","e.g. Annual review preparation"],["Work type","select",["Administration","Compliance","Legal","Accounts","Meetings","Client liaison","New Business — non-billable","Client — non-billable"]]].map(([l,t,opts])=>(
+              <div key={l} style={{ marginBottom:12 }}>
+                <label style={{ display:"block",fontSize:11,fontWeight:600,color:"#555",marginBottom:4 }}>{l}</label>
+                {t==="select"?<select defaultValue={l==="Entity"?timerEntity:l==="Work type"?timerType:""} style={{ width:"100%",padding:"8px 10px",border:"1.5px solid #e0e0e0",borderRadius:6,fontSize:12,outline:"none" }}>{(Array.isArray(opts)?opts:[]).map(o=><option key={o}>{o}</option>)}</select>
+                :<input defaultValue={timerMatter} style={{ width:"100%",padding:"8px 10px",border:"1.5px solid #e0e0e0",borderRadius:6,fontSize:12,outline:"none",boxSizing:"border-box" }} placeholder={typeof opts==="string"?opts:""} />}
+              </div>
+            ))}
+            <button onClick={()=>{ setModal(null); setTimerSeconds(0); }} style={{ width:"100%",background:"#4CAF7D",color:"#fff",border:"none",borderRadius:8,padding:10,fontSize:13,fontWeight:600,cursor:"pointer" }}>Save time entry</button>
+          </div>
+        </div>
+      )}
+
+      {modal==="editEntry"&&editEntry&&(
+        <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.4)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100 }} onClick={e=>e.target===e.currentTarget&&setModal(null)}>
+          <div style={{ background:"#fff",borderRadius:12,padding:24,width:460,maxWidth:"95vw" }}>
+            <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16 }}>
+              <h3 style={{ margin:0,fontSize:15,fontWeight:600 }}>Edit time entry</h3>
+              <button onClick={()=>setModal(null)} style={{ background:"none",border:"none",fontSize:20,cursor:"pointer",color:"#888" }}>×</button>
+            </div>
+            {[["Date","text",editEntry.date],["Entity","select"],["Matter","text",editEntry.matter],["Units","number",editEntry.units],["Work type","select"]].map(([l,t,def])=>(
+              <div key={l} style={{ marginBottom:12 }}>
+                <label style={{ display:"block",fontSize:11,fontWeight:600,color:"#555",marginBottom:4 }}>{l}</label>
+                {t==="select"?<select defaultValue={l==="Entity"?editEntry.entity:editEntry.type} style={{ width:"100%",padding:"8px 10px",border:"1.5px solid #e0e0e0",borderRadius:6,fontSize:12,outline:"none" }}>
+                  {(l==="Entity"?["Meridian Holdings Ltd","Harrington Family Trust","Pacific Wealth Trust","Caledonian Ventures Ltd","North Star Holdings Ltd"]:["Administration","Compliance","Legal","Accounts","Meetings","Client liaison","New Business — non-billable","Client — non-billable"]).map(o=><option key={o}>{o}</option>)}
+                </select>
+                :<input type={t} defaultValue={def} style={{ width:"100%",padding:"8px 10px",border:"1.5px solid #e0e0e0",borderRadius:6,fontSize:12,outline:"none",boxSizing:"border-box" }} />}
+              </div>
+            ))}
+            <div style={{ display:"flex",gap:8 }}>
+              <button onClick={()=>setModal(null)} style={{ flex:1,background:"#f5f5f5",color:"#333",border:"none",borderRadius:8,padding:10,fontSize:13,fontWeight:600,cursor:"pointer" }}>Cancel</button>
+              <button onClick={()=>setModal(null)} style={{ flex:2,background:CY,color:"#fff",border:"none",borderRadius:8,padding:10,fontSize:13,fontWeight:600,cursor:"pointer" }}>Save changes</button>
+            </div>
           </div>
         </div>
       )}
