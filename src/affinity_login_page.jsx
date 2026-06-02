@@ -3,24 +3,6 @@ import { useState, useEffect } from "react";
 const CY = "#00C4CC";
 const NAVY = "#001242";
 
-const PHOTOS = [
-  { src: "/photos/p04_beach_group.jpg",         caption: "Team Day — Port Erin, Isle of Man",       tag: "IOM" },
-  { src: "/photos/p02_iom_office_team.jpg",     caption: "Isle of Man Office Team",                  tag: "IOM" },
-  { src: "/photos/p08_nav_event.jpg",           caption: "Affinity Nav — Atlantic Event",            tag: "Events" },
-  { src: "/photos/p05_cayman_beach.jpg",        caption: "Affinity Cayman — Turtle Beach",           tag: "Cayman" },
-  { src: "/photos/p06_malta_green.jpg",         caption: "Malta Team — Green Fingers Club",          tag: "Malta" },
-  { src: "/photos/p07_citywealth.jpg",          caption: "Citywealth Award Win",                     tag: "Awards" },
-  { src: "/photos/p09_team_harbour.jpg",        caption: "Team Day — Port Erin Harbour",             tag: "IOM" },
-  { src: "/photos/p11_black_tie.jpg",           caption: "Black Tie Gala",                           tag: "Awards" },
-  { src: "/photos/p12_christmas_party.jpg",     caption: "Affinity Christmas Party",                 tag: "Events" },
-  { src: "/photos/p13_monaco_event.jpg",        caption: "Monaco — Affinity Nav",                    tag: "Events" },
-  { src: "/photos/p01_christmas_miami.jpg",     caption: "Affinity Miami — Christmas",               tag: "Events" },
-  { src: "/photos/p10_about_us.jpg",            caption: "Founded in the Isle of Man, 2004",         tag: "Story" },
-  { src: "/photos/p14_adventure_hoodies.jpg",   caption: "The Adventure — Affinity",                 tag: "Culture" },
-  { src: "/photos/p15_christmas_ladies.jpg",    caption: "Affinity Christmas Party",                 tag: "Events" },
-  { src: "/photos/p03_adventure_logo.jpg",      caption: "The Adventure — Affinity",                 tag: "Culture" },
-];
-
 const STATS = [
   { v: "20+",  l: "Years established" },
   { v: "6",    l: "Global offices" },
@@ -52,19 +34,10 @@ export default function AffinityLoginPage({ onLogin }) {
   const [showPass, setShowPass]     = useState(false);
   const [error, setError]           = useState("");
   const [loading, setLoading]       = useState(false);
-  const [heroPhoto, setHeroPhoto]   = useState(0);
-  const [imgErrors, setImgErrors]   = useState({});
 
   useEffect(() => {
     const timer = setTimeout(() => setShowSplash(false), 3200);
     return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setHeroPhoto(p => (p + 1) % PHOTOS.length);
-    }, 4000);
-    return () => clearInterval(interval);
   }, []);
 
   const handleLogin = () => {
@@ -78,10 +51,6 @@ export default function AffinityLoginPage({ onLogin }) {
         setLoading(false);
       }
     }, 800);
-  };
-
-  const handleImgError = (idx) => {
-    setImgErrors(prev => ({ ...prev, [idx]: true }));
   };
 
   // ── SPLASH SCREEN (block-letter Affinity wordmark, pure CSS) ──
@@ -153,8 +122,6 @@ export default function AffinityLoginPage({ onLogin }) {
         @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.6; } }
         @keyframes spin { to { transform: rotate(360deg); } }
         .fade-up { animation: fadeUp 0.7s ease forwards; }
-        .photo-card:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 20px 40px rgba(0,0,0,0.15) !important; }
-        .photo-card { transition: all 0.3s ease; }
         .office-card:hover { background: ${NAVY} !important; color: #fff !important; }
         .office-card:hover .office-flag { transform: scale(1.2); }
         .office-flag { transition: transform 0.2s ease; display: inline-block; }
@@ -165,7 +132,6 @@ export default function AffinityLoginPage({ onLogin }) {
         @media (max-width: 768px) {
           .hero-grid { grid-template-columns: 1fr !important; }
           .stats-grid { grid-template-columns: 1fr 1fr !important; }
-          .photos-grid { grid-template-columns: 1fr 1fr !important; }
           .offices-grid { grid-template-columns: 1fr 1fr !important; }
           .values-grid { grid-template-columns: 1fr !important; }
         }
@@ -174,21 +140,8 @@ export default function AffinityLoginPage({ onLogin }) {
       {/* ── HERO SECTION ─────────────────────────────── */}
       <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", position: "relative", overflow: "hidden" }}>
 
-        <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
-          {PHOTOS.map((p, i) => (
-            <div key={i} style={{
-              position: "absolute", inset: 0,
-              opacity: i === heroPhoto ? 1 : 0,
-              transition: "opacity 1s ease",
-              background: imgErrors[i] ? `linear-gradient(135deg, ${NAVY}, #0a3a6e)` : undefined,
-            }}>
-              {!imgErrors[i] && (
-                <img src={p.src} alt="" onError={() => handleImgError(i)}
-                  style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }} />
-              )}
-              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,18,66,0.75) 0%, rgba(0,18,66,0.4) 50%, rgba(0,18,66,0.85) 100%)" }} />
-            </div>
-          ))}
+        <div style={{ position: "absolute", inset: 0, zIndex: 0, background: NAVY }}>
+          <div style={{ position: "absolute", inset: 0, background: `radial-gradient(120% 90% at 85% 12%, rgba(0,196,204,0.18) 0%, rgba(0,196,204,0) 55%), radial-gradient(110% 80% at 8% 92%, rgba(46,230,206,0.10) 0%, rgba(0,18,66,0) 50%), linear-gradient(160deg, #001242 0%, #001a52 58%, #001242 100%)` }} />
         </div>
 
         <div style={{ position: "relative", zIndex: 10, padding: "20px 40px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -227,13 +180,9 @@ export default function AffinityLoginPage({ onLogin }) {
               </p>
             </div>
 
-            <div className="fade-up" style={{ animationDelay: "0.4s", display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ display: "flex", gap: 4 }}>
-                {PHOTOS.map((_, i) => (
-                  <div key={i} onClick={() => setHeroPhoto(i)} style={{ width: i === heroPhoto ? 24 : 6, height: 6, borderRadius: 3, background: i === heroPhoto ? CY : "rgba(255,255,255,0.3)", cursor: "pointer", transition: "all 0.3s ease" }} />
-                ))}
-              </div>
-              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>{PHOTOS[heroPhoto].caption}</span>
+            <div className="fade-up" style={{ animationDelay: "0.4s", display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ width: 32, height: 2, background: CY, borderRadius: 2, flexShrink: 0 }} />
+              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", letterSpacing: "0.5px" }}>Isle of Man · Malta · Cayman · UK · Miami · Cyprus</span>
             </div>
           </div>
 
@@ -296,23 +245,6 @@ export default function AffinityLoginPage({ onLogin }) {
               <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 6, textTransform: "uppercase", letterSpacing: "0.8px" }}>{s.l}</div>
             </div>
           ))}
-        </div>
-      </div>
-
-      {/* ── PHOTO GRID (photo-only, cropped, no captions) ── */}
-      <div style={{ background: "#000" }}>
-        <div className="photos-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 4 }}>
-          {PHOTOS.map((p, i) => {
-            const tall = i === 0 || i === 4 || i === 8;
-            return (
-              <div key={i} className="photo-card" style={{ overflow: "hidden", gridRow: tall ? "span 2" : "span 1", position: "relative", height: tall ? 420 : 200, background: NAVY }}>
-                {!imgErrors[i] && (
-                  <img src={p.src} alt={p.caption} onError={() => handleImgError(i)}
-                    style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center", position: "absolute", inset: 0, display: "block" }} />
-                )}
-              </div>
-            );
-          })}
         </div>
       </div>
 
