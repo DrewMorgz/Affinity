@@ -1017,6 +1017,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="" }) {
               <div style={{ ...s.sw, flex:1 }}>
                 <i className="ti ti-search" style={{ fontSize:13, color:"var(--text-secondary,#666)" }} />
                 <input list="ea-entity-list" style={s.swI} placeholder="Search by name or ref…" value={search} onChange={e=>setSearch(e.target.value)} />
+                <datalist id="ea-entity-list">{ENTITIES.map(e=><option key={e.id} value={e.name}/>)}</datalist>
               </div>
               <button style={{ ...s.btn(true), height:30 }} onClick={()=>setModal("newEntity")}>＋</button>
             </div>
