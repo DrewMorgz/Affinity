@@ -1,4 +1,5 @@
 import { useState } from "react";
+import AffinityLoginPage from "./affinity_login_page";
 import Dashboard     from "./affinity_core_dashboard";
 import EntityAdmin   from "./affinity_core_entity_admin";
 import CRM          from "./affinity_core_crm";
