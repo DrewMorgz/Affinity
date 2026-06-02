@@ -350,6 +350,7 @@ export default function AffinityLoginPage({ onLogin }) {
                 </div>
               );
             })}
+          </div>
         </div>
       </div>
 
