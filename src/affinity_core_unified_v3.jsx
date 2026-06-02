@@ -38,15 +38,24 @@ const USERS = [
 
 // ── Login screen ─────────────────────────────────────────
 function LoginScreen({ onLogin }) {
-  const [selUser, setSelUser] = useState(null);
-  const [pass, setPass]       = useState("");
-  const [error, setError]     = useState("");
-  const [showPass, setShow]   = useState(false);
+  const [username, setUsername] = useState("");
+  const [pass, setPass]         = useState("");
+  const [error, setError]       = useState("");
+  const [showPass, setShow]     = useState(false);
+  const [selUser, setSelUser]   = useState(null);
 
   const handleLogin = () => {
-    if (!selUser) { setError("Please select your profile"); return; }
-    if (pass !== selUser.pass) { setError("Incorrect password. Try again."); return; }
-    onLogin(selUser.id);
+    // Temporary single login
+    if (username.trim().toLowerCase() === "admin" && pass === "Madebyus") {
+      onLogin(1); return;
+    }
+    // Per-user login
+    const found = USERS.find(u => u.pass === pass && (
+      username.toLowerCase() === u.name.split(" ")[0].toLowerCase() ||
+      username.toLowerCase() === u.name.toLowerCase()
+    ));
+    if (found) { onLogin(found.id); return; }
+    setError("Incorrect username or password. Try again.");
   };
 
   return (
@@ -66,46 +75,42 @@ function LoginScreen({ onLogin }) {
           <div style={{ fontSize:18, fontWeight:600, color:"#fff", marginBottom:6 }}>Sign in</div>
           <div style={{ fontSize:13, color:"rgba(255,255,255,0.4)", marginBottom:28 }}>Select your profile and enter your password</div>
 
-          {/* User selector */}
-          <div style={{ marginBottom:20 }}>
-            <label style={{ display:"block", fontSize:11, fontWeight:600, color:"rgba(255,255,255,0.5)", textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:10 }}>Your profile</label>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
-              {USERS.map(u => (
-                <div key={u.id} onClick={() => { setSelUser(u); setError(""); setPass(""); }}
-                  style={{ padding:"10px 8px", borderRadius:10, border:`1.5px solid ${selUser?.id===u.id?CY:"rgba(255,255,255,0.1)"}`, background:selUser?.id===u.id?"rgba(0,196,204,0.12)":"rgba(255,255,255,0.03)", cursor:"pointer", textAlign:"center", transition:"all 0.15s" }}>
-                  <div style={{ width:36, height:36, borderRadius:"50%", background:u.c, color:"#fff", fontSize:12, fontWeight:700, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 6px" }}>{u.av}</div>
-                  <div style={{ fontSize:11, fontWeight:600, color:"#fff", lineHeight:1.2 }}>{u.name.split(" ")[0]}</div>
-                  <div style={{ fontSize:9, color:"rgba(255,255,255,0.4)", marginTop:2 }}>{u.role.split(" ")[0]}</div>
-                </div>
-              ))}
-            </div>
+          {/* Username */}
+          <div style={{ marginBottom:16 }}>
+            <label style={{ display:"block", fontSize:11, fontWeight:600, color:"rgba(255,255,255,0.5)", textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:8 }}>Username</label>
+            <input
+              type="text"
+              value={username}
+              onChange={e => { setUsername(e.target.value); setError(""); }}
+              onKeyDown={e => e.key==="Enter" && handleLogin()}
+              placeholder="Enter your username"
+              autoFocus
+              style={{ width:"100%", padding:"12px 14px", background:"rgba(255,255,255,0.07)", border:`1.5px solid ${error?"#EF4444":"rgba(255,255,255,0.15)"}`, borderRadius:8, color:"#fff", fontSize:14, outline:"none", boxSizing:"border-box", fontFamily:"inherit" }}
+            />
           </div>
 
           {/* Password */}
-          {selUser && (
-            <div style={{ marginBottom:20 }}>
-              <label style={{ display:"block", fontSize:11, fontWeight:600, color:"rgba(255,255,255,0.5)", textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:8 }}>Password</label>
-              <div style={{ position:"relative" }}>
-                <input
-                  type={showPass?"text":"password"}
-                  value={pass}
-                  onChange={e => { setPass(e.target.value); setError(""); }}
-                  onKeyDown={e => e.key==="Enter" && handleLogin()}
-                  placeholder={`Enter password for ${selUser.name.split(" ")[0]}`}
-                  autoFocus
-                  style={{ width:"100%", padding:"12px 44px 12px 14px", background:"rgba(255,255,255,0.07)", border:`1.5px solid ${error?"#EF4444":"rgba(255,255,255,0.15)"}`, borderRadius:8, color:"#fff", fontSize:14, outline:"none", boxSizing:"border-box", fontFamily:"inherit" }}
-                />
-                <button onClick={() => setShow(p=>!p)} style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", color:"rgba(255,255,255,0.4)", fontSize:16 }}>
-                  {showPass?"🙈":"👁"}
-                </button>
-              </div>
-              {error && <div style={{ fontSize:12, color:"#EF4444", marginTop:6 }}>{error}</div>}
+          <div style={{ marginBottom:20 }}>
+            <label style={{ display:"block", fontSize:11, fontWeight:600, color:"rgba(255,255,255,0.5)", textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:8 }}>Password</label>
+            <div style={{ position:"relative" }}>
+              <input
+                type={showPass?"text":"password"}
+                value={pass}
+                onChange={e => { setPass(e.target.value); setError(""); }}
+                onKeyDown={e => e.key==="Enter" && handleLogin()}
+                placeholder="Enter your password"
+                style={{ width:"100%", padding:"12px 44px 12px 14px", background:"rgba(255,255,255,0.07)", border:`1.5px solid ${error?"#EF4444":"rgba(255,255,255,0.15)"}`, borderRadius:8, color:"#fff", fontSize:14, outline:"none", boxSizing:"border-box", fontFamily:"inherit" }}
+              />
+              <button onClick={() => setShow(p=>!p)} style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", color:"rgba(255,255,255,0.4)", fontSize:16 }}>
+                {showPass?"🙈":"👁"}
+              </button>
             </div>
-          )}
+            {error && <div style={{ fontSize:12, color:"#EF4444", marginTop:6 }}>{error}</div>}
+          </div>
 
           <button onClick={handleLogin}
-            style={{ width:"100%", padding:"13px", background:selUser?CY:"rgba(255,255,255,0.1)", color:selUser?"#fff":"rgba(255,255,255,0.3)", border:"none", borderRadius:8, fontSize:15, fontWeight:700, cursor:selUser?"pointer":"default", fontFamily:"inherit", transition:"all 0.15s" }}>
-            {selUser ? `Sign in as ${selUser.name.split(" ")[0]} →` : "Select a profile to continue"}
+            style={{ width:"100%", padding:"13px", background:CY, color:"#fff", border:"none", borderRadius:8, fontSize:15, fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>
+            Sign in →
           </button>
         </div>
 
