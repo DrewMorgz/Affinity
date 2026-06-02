@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { AFFINITY_LOGO } from "./affinity_core_unified_v3";
 
 const CY = "#00C4CC";
 const NAVY = "#001242";
@@ -85,7 +84,7 @@ export default function AffinityLoginPage({ onLogin }) {
     setImgErrors(prev => ({ ...prev, [idx]: true }));
   };
 
-  // ── SPLASH SCREEN (block-letter Affinity logo on navy) ─────
+  // ── SPLASH SCREEN (block-letter Affinity wordmark, pure CSS) ──
   if (showSplash) return (
     <div onClick={() => setShowSplash(false)} style={{
       minHeight: "100vh", background: NAVY, display: "flex", alignItems: "center",
@@ -93,13 +92,26 @@ export default function AffinityLoginPage({ onLogin }) {
       fontFamily: "'Catamaran', system-ui, sans-serif", position: "relative", overflow: "hidden"
     }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Catamaran:wght@300;400;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Catamaran:wght@300;400;700;800;900&display=swap');
         @keyframes fadeInUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
         @keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
       `}</style>
 
       <div style={{ marginBottom: 32, textAlign: "center", animation: "fadeInUp 0.8s ease 0.3s both" }}>
-        <img src={AFFINITY_LOGO} alt="Affinity" style={{ width: 280, maxWidth: "80vw" }} />
+        <div style={{
+          fontFamily: "'Catamaran', system-ui, sans-serif",
+          fontWeight: 900,
+          fontSize: "clamp(52px, 11vw, 96px)",
+          letterSpacing: "-2px",
+          lineHeight: 1,
+          background: `linear-gradient(135deg, #00C4CC 0%, #2EE6CE 50%, #00C4CC 100%)`,
+          WebkitBackgroundClip: "text",
+          backgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          color: CY,
+        }}>
+          Affinity
+        </div>
         <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "3px", marginTop: 16 }}>
           Made by Affinity, for Affinity
         </div>
@@ -126,25 +138,15 @@ export default function AffinityLoginPage({ onLogin }) {
       </div>
 
       <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 2, background: "rgba(255,255,255,0.05)" }}>
-        <div style={{ height: "100%", background: "#00C4CC", transformOrigin: "left", animation: "grow 3s ease forwards" }} />
+        <div style={{ height: "100%", background: CY, transformOrigin: "left", animation: "grow 3s ease forwards" }} />
       </div>
     </div>
   );
 
-  const tagColors = {
-    IOM:     { bg: "#E6F7FB", color: "#0077A8" },
-    Malta:   { bg: "#EEF0FB", color: "#3C3489" },
-    Cayman:  { bg: "#E6EEF7", color: "#0D4A7A" },
-    Awards:  { bg: "#FAEEDA", color: "#633806" },
-    Events:  { bg: "#EAF3DE", color: "#27500A" },
-    Culture: { bg: "#F3E5F5", color: "#6A1B9A" },
-    Story:   { bg: "#FFF8E7", color: "#7A5C00" },
-  };
-
   return (
     <div style={{ fontFamily: "'Catamaran', system-ui, sans-serif", background: "#fff", minHeight: "100vh", color: "#111" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Catamaran:wght@300;400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Catamaran:wght@300;400;500;600;700;800;900&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
         @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
