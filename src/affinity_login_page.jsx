@@ -350,10 +350,10 @@ export default function AffinityLoginPage({ onLogin }) {
               const tc = tagColors[p.tag] || { bg: "#eee", color: "#666" };
               const tall = i === 0 || i === 4 || i === 8;
               return (
-                <div key={i} className="photo-card" style={{ borderRadius: 16, overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.08)", gridRow: tall ? "span 2" : "span 1", position: "relative", minHeight: tall ? 420 : 200, background: imgErrors[i] ? `linear-gradient(135deg, ${NAVY}, #0a3a6e)` : "#e0e0e0" }}>
+                <div key={i} className="photo-card" style={{ borderRadius: 16, overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.08)", gridRow: tall ? "span 2" : "span 1", position: "relative", minHeight: tall ? 420 : 200, background: imgErrors[i] ? `linear-gradient(135deg, ${NAVY}, #0a3a6e)` : NAVY }}>
                   {!imgErrors[i] && (
                     <img src={p.src} alt={p.caption} onError={() => handleImgError(i)}
-                      style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }} />
+                      style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center", position: "absolute", inset: 0, display: "block" }} />
                   )}
                   {imgErrors[i] && (
                     <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
