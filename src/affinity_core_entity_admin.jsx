@@ -54,8 +54,8 @@ const ENTITY_DATA = {
     10:[{type:"Registered office",address:"Harbour Place, 103 South Church Street, George Town, Cayman Islands",from:"12/08/2023",to:null},{type:"Principal office",address:"12 Rue de Rivoli, Paris, France",from:"12/08/2023",to:null}],
   },
   bankAccounts: {
-    1:[{id:1,bank:"Barclays Bank",account:"Current account",number:"****4421",currency:"GBP",resolution:"12/03/2018",closed:null}],
-    3:[{id:1,bank:"First Caribbean Bank",account:"USD account",number:"****8821",currency:"USD",resolution:"22/01/2021",closed:null}],
+    1:[{id:1,bank:"Barclays Bank",account:"Current account",number:"****4421",currency:"GBP",signatories:"Andy Morgan, Roxy Sheeley",resolution:"12/03/2018",closed:null}],
+    3:[{id:1,bank:"First Caribbean Bank",account:"USD account",number:"****8821",currency:"USD",signatories:"Garry Crossan, Andy Morgan",resolution:"22/01/2021",closed:null}],
     10:[{id:1,bank:"Butterfield Bank",account:"USD account",number:"****9102",currency:"USD",resolution:"12/08/2023",closed:null}],
   },
   charges: {
@@ -108,9 +108,9 @@ const TABS = [
   { id:"relations",  label:"Relations",               group:"Entity" },
   { id:"meetings",   label:"Meetings",                group:"Entity" },
   { id:"fileNotes",  label:"File notes",              group:"Entity" },
-  { id:"safe",       label:"Safe custody",            group:"Entity" },
+  { id:"safe",       label:"Archiving & safe custody",            group:"Entity" },
   { id:"compliance", label:"Compliance register",     group:"Regulatory" },
-  { id:"fatca",      label:"FATCA",                   group:"Regulatory" },
+  { id:"fatca",      label:"FATCA / CRS",                   group:"Regulatory" },
   { id:"crs",        label:"CRS",                     group:"Regulatory" },
   { id:"substance",  label:"Substance",               group:"Regulatory" },
   { id:"registers",  label:"Generate registers",      group:"Admin" },
