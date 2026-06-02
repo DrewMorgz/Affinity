@@ -335,17 +335,9 @@ export default function AffinityLoginPage({ onLogin }) {
       </div>
 
       {/* ── PHOTO GRID ────────────────────────────────── */}
-      <div style={{ padding: "80px 40px", background: "#f8f9fc" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div style={{ marginBottom: 48, display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: CY, textTransform: "uppercase", letterSpacing: "2px", marginBottom: 10 }}>Our story</div>
-              <h2 style={{ fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 800, color: NAVY, letterSpacing: "-1px", lineHeight: 1.1 }}>Life at Affinity</h2>
-            </div>
-            <p style={{ fontSize: 14, color: "#666", maxWidth: 360, lineHeight: 1.7 }}>From our shores in the Isle of Man to the beaches of Cayman — we work hard and celebrate together.</p>
-          </div>
-
-          <div className="photos-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16 }}>
+      <div style={{ background: "#000" }}>
+        <div>
+          <div className="photos-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 4 }}>
             {PHOTOS.map((p, i) => {
               const tc = tagColors[p.tag] || { bg: "#eee", color: "#666" };
               const tall = i === 0 || i === 4 || i === 8;
@@ -358,7 +350,6 @@ export default function AffinityLoginPage({ onLogin }) {
                 </div>
               );
             })}
-          </div>
         </div>
       </div>
 
