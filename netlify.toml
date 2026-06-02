@@ -4,4 +4,5 @@
 
 [build.environment]
   NODE_VERSION = "18"
-# deploy trigger v13
+  NODE_OPTIONS = "--openssl-legacy-provider"
+# deploy trigger v14
