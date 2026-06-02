@@ -22,7 +22,7 @@ import JurCompliance from "./affinity_core_jurisdiction_compliance";
 import Statutory    from "./affinity_core_statutory_registers";
 import GenerateDoc  from "./affinity_core_generate_document";
 
-const AFFINITY_LOGO = "/affinity_logo.png";
+const AFFINITY_LOGO = "/affinity_logo_v2.png";
 
 const CY = "#00C4CC";
 const NAVY = "#001242";
