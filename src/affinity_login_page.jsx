@@ -95,11 +95,12 @@ export default function AffinityLoginPage({ onLogin }) {
 
         {/* Subtitle fades in after handwriting */}
         <div style={{
-          fontSize: 12, color: "rgba(255,255,255,0.3)", textTransform: "uppercase",
-          letterSpacing: "4px", marginTop: 16,
+          display: "flex", alignItems: "center", gap: 10, marginTop: 20, justifyContent: "center",
           animation: "fadeInUp 0.8s ease 2.4s both"
         }}>
-          Corporate &amp; Trust Services
+          <div style={{ width: 30, height: 1, background: "rgba(0,196,204,0.4)" }} />
+          <span style={{ fontSize: 11, color: CY, fontWeight: 700, textTransform: "uppercase", letterSpacing: "4px" }}>Corporate &amp; Trust Services</span>
+          <div style={{ width: 30, height: 1, background: "rgba(0,196,204,0.4)" }} />
         </div>
       </div>
 
@@ -258,9 +259,12 @@ export default function AffinityLoginPage({ onLogin }) {
           {/* Left — tagline */}
           <div style={{ paddingRight: 60 }}>
             <div className="fade-up" style={{ animationDelay: "0.1s" }}>
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(0,196,204,0.2)", border: "0.5px solid rgba(0,196,204,0.4)", borderRadius: 20, padding: "5px 14px", marginBottom: 24 }}>
-                <div style={{ width: 6, height: 6, borderRadius: "50%", background: CY, animation: "pulse 2s infinite" }} />
-                <span style={{ fontSize: 11, color: CY, fontWeight: 600, textTransform: "uppercase", letterSpacing: "1.5px" }}>Corporate &amp; Trust Services · Since 2004</span>
+              <div style={{ marginBottom: 28, display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{ width: 3, height: 36, background: CY, borderRadius: 2, flexShrink: 0 }} />
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#fff", textTransform: "uppercase", letterSpacing: "3px", lineHeight: 1.2 }}>Corporate &amp; Trust Services</div>
+                  <div style={{ fontSize: 12, color: CY, fontWeight: 600, letterSpacing: "2px", marginTop: 3 }}>Est. 2004</div>
+                </div>
               </div>
             </div>
 
