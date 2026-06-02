@@ -27,10 +27,11 @@ const PHOTOS = [
 ];
 
 const STATS = [
-  { v: "20+", l: "Years established" },
-  { v: "6", l: "Global offices" },
+  { v: "20+",  l: "Years established" },
+  { v: "6",    l: "Global offices" },
+  { v: "£2B+", l: "Assets under management" },
   { v: "300+", l: "Entities under management" },
-  { v: "50+", l: "Team members worldwide" },
+  { v: "50+",  l: "Team members worldwide" },
 ];
 
 const OFFICES = [
@@ -344,7 +345,7 @@ export default function AffinityLoginPage({ onLogin }) {
 
       {/* ── STATS BAR ─────────────────────────────────── */}
       <div style={{ background: NAVY, padding: "40px 40px" }}>
-        <div className="stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 0, maxWidth: 1200, margin: "0 auto" }}>
+        <div className="stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 0, maxWidth: 1200, margin: "0 auto" }}>
           {STATS.map((s, i) => (
             <div key={i} style={{ textAlign: "center", padding: "20px", borderRight: i < STATS.length - 1 ? "0.5px solid rgba(255,255,255,0.1)" : "none" }}>
               <div style={{ fontSize: 42, fontWeight: 800, color: CY, letterSpacing: "-2px", lineHeight: 1 }}>{s.v}</div>
