@@ -350,22 +350,11 @@ export default function AffinityLoginPage({ onLogin }) {
               const tc = tagColors[p.tag] || { bg: "#eee", color: "#666" };
               const tall = i === 0 || i === 4 || i === 8;
               return (
-                <div key={i} className="photo-card" style={{ borderRadius: 16, overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.08)", gridRow: tall ? "span 2" : "span 1", position: "relative", minHeight: tall ? 420 : 200, background: imgErrors[i] ? `linear-gradient(135deg, ${NAVY}, #0a3a6e)` : NAVY }}>
+                <div key={i} className="photo-card" style={{ borderRadius: 16, overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.08)", gridRow: tall ? "span 2" : "span 1", position: "relative", minHeight: tall ? 420 : 200, background: NAVY }}>
                   {!imgErrors[i] && (
                     <img src={p.src} alt={p.caption} onError={() => handleImgError(i)}
                       style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center", position: "absolute", inset: 0, display: "block" }} />
                   )}
-                  {imgErrors[i] && (
-                    <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                      <div style={{ fontSize: 32, marginBottom: 8 }}>📸</div>
-                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", textAlign: "center", padding: "0 16px" }}>{p.caption}</div>
-                    </div>
-                  )}
-                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 50%)" }} />
-                  <div style={{ position: "absolute", bottom: 12, left: 12, right: 12, display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-                    <span style={{ fontSize: 12, color: "#fff", fontWeight: 500, lineHeight: 1.3 }}>{p.caption}</span>
-                    <span style={{ padding: "3px 8px", borderRadius: 20, fontSize: 10, fontWeight: 700, background: tc.bg, color: tc.color, flexShrink: 0, marginLeft: 8 }}>{p.tag}</span>
-                  </div>
                 </div>
               );
             })}
