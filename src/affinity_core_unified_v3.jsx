@@ -23,6 +23,7 @@ import Statutory    from "./affinity_core_statutory_registers";
 import GenerateDoc  from "./affinity_core_generate_document";
 
 const NAVY = "#001242";
+const AFFINITY_LOGO = "https://cdn.prod.website-files.com/680f471059835ea8d579b7e8/680f87c089dc0cf0630d7c8d_Affinity%20grad.svg";
 
 const CY = "#00C4CC";
 
@@ -297,15 +298,9 @@ function SplashScreen({ onDone }) {
     }}>
       {/* Logo */}
       <div style={{ marginBottom:32, textAlign:"center" }}>
-        <div style={{
-          fontFamily: "'Catamaran', system-ui, sans-serif",
-          fontWeight: 700,
-          fontSize: "clamp(52px, 11vw, 96px)",
-          letterSpacing: "-2px",
-          lineHeight: 1,
-          color: "#fff",
-        }}>
-          Affinity <span style={{ color:"#00C4CC", fontWeight:300 }}>Core</span>
+        <img src={AFFINITY_LOGO} alt="Affinity" style={{ width:"clamp(220px, 60vw, 340px)", display:"block", margin:"0 auto" }} />
+        <div style={{ fontSize:28, color:"#00C4CC", fontWeight:300, letterSpacing:"8px", marginTop:12, textTransform:"uppercase" }}>
+          Core
         </div>
         <div style={{ fontSize:12, color:"rgba(255,255,255,0.35)", textTransform:"uppercase", letterSpacing:"3px", marginTop:20 }}>
           Made by Affinity, for Affinity
