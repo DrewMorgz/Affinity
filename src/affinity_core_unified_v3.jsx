@@ -201,18 +201,18 @@ function Tasks(){
   const [ass,setAss]=useState("");
   const [modal,setModal]=useState(false);
   const [sel,setSel]=useState(null);
-  const filtered=tasks.filter(t=>(filter==="All"||t.priority===filter||t.status===filter)&&(!ass||t.assignee===ass));
+  const filtered=tasks.filter(t=>(filter==="All"||t.status===filter)&&(!ass||t.assignee===ass));
   const selT=sel?tasks.find(t=>t.id===sel):null;
   const done=id=>setTasks(p=>p.map(t=>t.id===id?{...t,status:"Complete"}:t));
   const th={padding:"7px 12px",textAlign:"left",fontSize:10,fontWeight:600,color:"#999",textTransform:"uppercase",letterSpacing:"0.4px",borderBottom:"0.5px solid #e5e5e5",background:"#f9f9f9",whiteSpace:"nowrap"};
   const td={padding:"9px 12px",fontSize:11,borderBottom:"0.5px solid #e5e5e5",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"};
   return <div style={{padding:18}}>
-    <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10,marginBottom:14}}>
-      {[{l:"Total open",v:tasks.filter(t=>t.status!=="Complete").length,c:CY},{l:"Critical",v:tasks.filter(t=>t.priority==="Critical"&&t.status!=="Complete").length,c:"#EF4444"},{l:"High",v:tasks.filter(t=>t.priority==="High"&&t.status!=="Complete").length,c:"#F59E0B"},{l:"In progress",v:tasks.filter(t=>t.status==="In progress").length,c:CY},{l:"Completed",v:tasks.filter(t=>t.status==="Complete").length,c:"#4CAF7D"}].map(k=><div key={k.l} style={{background:"#f9f9f9",borderRadius:6,padding:"10px 14px"}}><div style={{fontSize:10,color:"#666",marginBottom:3}}>{k.l}</div><div style={{fontSize:20,fontWeight:600,color:k.c||"#111"}}>{k.v}</div></div>)}
+    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:14}}>
+      {[{l:"Total open",v:tasks.filter(t=>t.status!=="Complete").length,c:CY},{l:"In progress",v:tasks.filter(t=>t.status==="In progress").length,c:CY},{l:"Completed",v:tasks.filter(t=>t.status==="Complete").length,c:"#4CAF7D"}].map(k=><div key={k.l} style={{background:"#f9f9f9",borderRadius:6,padding:"10px 14px"}}><div style={{fontSize:10,color:"#666",marginBottom:3}}>{k.l}</div><div style={{fontSize:20,fontWeight:600,color:k.c||"#111"}}>{k.v}</div></div>)}
     </div>
     <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap",alignItems:"center"}}>
       <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
-        {["All","Critical","High","Medium","Low","Open","In progress","Complete"].map(f=><button key={f} style={{padding:"4px 10px",fontSize:11,borderRadius:20,border:`0.5px solid ${filter===f?"#ccc":"#e5e5e5"}`,background:filter===f?"#fff":"transparent",color:filter===f?"#111":"#666",cursor:"pointer",fontWeight:filter===f?500:400}} onClick={()=>setFilter(f)}>{f}</button>)}
+        {["All","Open","In progress","Complete"].map(f=><button key={f} style={{padding:"4px 10px",fontSize:11,borderRadius:20,border:`0.5px solid ${filter===f?"#ccc":"#e5e5e5"}`,background:filter===f?"#fff":"transparent",color:filter===f?"#111":"#666",cursor:"pointer",fontWeight:filter===f?500:400}} onClick={()=>setFilter(f)}>{f}</button>)}
       </div>
       <select style={{height:30,padding:"0 8px",fontSize:11,borderRadius:5,border:"0.5px solid #ccc",background:"#fff",color:"#111",marginLeft:"auto"}} value={ass} onChange={e=>setAss(e.target.value)}>
         <option value="">All team members</option>
@@ -224,13 +224,12 @@ function Tasks(){
       <table style={{flex:1,borderCollapse:"collapse",tableLayout:"fixed"}}>
         <thead><tr>
           <th style={{...th,width:"4%"}}></th>
-          <th style={{...th,width:"28%"}}>Task</th>
-          <th style={{...th,width:"18%"}}>Entity</th>
-          <th style={{...th,width:"11%"}}>Assignee</th>
-          <th style={{...th,width:"10%"}}>Due</th>
-          <th style={{...th,width:"9%"}}>Priority</th>
-          <th style={{...th,width:"9%"}}>Category</th>
-          <th style={{...th,width:"9%"}}>Status</th>
+          <th style={{...th,width:"32%"}}>Task</th>
+          <th style={{...th,width:"20%"}}>Entity</th>
+          <th style={{...th,width:"12%"}}>Assignee</th>
+          <th style={{...th,width:"11%"}}>Due</th>
+          <th style={{...th,width:"11%"}}>Category</th>
+          <th style={{...th,width:"10%"}}>Status</th>
         </tr></thead>
         <tbody>
           {filtered.map(t=><tr key={t.id} onClick={()=>setSel(sel===t.id?null:t.id)} style={{cursor:"pointer",borderBottom:"0.5px solid #e5e5e5",background:sel===t.id?"#f9f9f9":"transparent",opacity:t.status==="Complete"?0.55:1}}>
@@ -239,17 +238,16 @@ function Tasks(){
             <td style={{...td,color:"#666"}}>{t.entity}</td>
             <td style={{...td,color:"#666"}}>{t.assignee.split(" ").map((w,i)=>i===0?w:w[0]+".").join(" ")}</td>
             <td style={{...td,color:t.due==="Overdue"||t.due==="Today"?"#EF4444":"#666",fontWeight:t.due==="Overdue"||t.due==="Today"?600:400}}>{t.due}</td>
-            <td style={td}><Bx label={t.priority} colors={pC[t.priority]}/></td>
             <td style={td}><Bx label={t.cat} colors={cC[t.cat]||{bg:"#eee",color:"#666"}}/></td>
             <td style={td}><Bx label={t.status} colors={sC[t.status]}/></td>
           </tr>)}
-          {filtered.length===0&&<tr><td colSpan={8} style={{...td,textAlign:"center",color:"#aaa",padding:30}}>No tasks match this filter</td></tr>}
+          {filtered.length===0&&<tr><td colSpan={7} style={{...td,textAlign:"center",color:"#aaa",padding:30}}>No tasks match this filter</td></tr>}
         </tbody>
       </table>
       {selT&&<div style={{width:260,minWidth:260,borderLeft:"0.5px solid #e5e5e5",padding:14,overflowY:"auto"}}>
         <button onClick={()=>setSel(null)} style={{float:"right",background:"none",border:"none",cursor:"pointer",color:"#aaa",fontSize:14}}>✕</button>
         <div style={{fontSize:13,fontWeight:600,lineHeight:1.4,marginBottom:10}}>{selT.title}</div>
-        {[["Entity",selT.entity],["Assignee",selT.assignee],["Due",selT.due],["Priority",selT.priority],["Category",selT.cat],["Status",selT.status]].map(([k,v])=><div key={k} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:"0.5px solid #e5e5e5",fontSize:12}}><span style={{color:"#666"}}>{k}</span><span style={{fontWeight:500}}>{v}</span></div>)}
+        {[["Entity",selT.entity],["Assignee",selT.assignee],["Due",selT.due],["Category",selT.cat],["Status",selT.status]].map(([k,v])=><div key={k} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:"0.5px solid #e5e5e5",fontSize:12}}><span style={{color:"#666"}}>{k}</span><span style={{fontWeight:500}}>{v}</span></div>)}
         <div style={{marginTop:12}}><div style={{fontSize:10,color:"#aaa",marginBottom:6,textTransform:"uppercase",letterSpacing:"0.4px"}}>Notes</div><textarea style={{width:"100%",height:80,fontSize:11,borderRadius:5,border:"0.5px solid #ccc",padding:"6px 8px",resize:"none",background:"#f9f9f9",color:"#111"}} placeholder="Add notes..."/></div>
         <div style={{display:"flex",gap:6,marginTop:10}}>
           {selT.status!=="Complete"&&<button onClick={()=>{done(selT.id);setSel(null);}} style={{flex:1,padding:"6px",borderRadius:5,border:"none",background:"#4CAF7D",color:"#fff",fontSize:11,cursor:"pointer",fontWeight:500}}>Mark complete ✓</button>}
@@ -261,7 +259,7 @@ function Tasks(){
       <div style={{background:"#fff",borderRadius:10,border:"0.5px solid #e5e5e5",padding:22,width:500,maxWidth:"96vw"}}>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:14}}><div style={{fontSize:14,fontWeight:600}}>New task</div><button onClick={()=>setModal(false)} style={{background:"none",border:"none",cursor:"pointer",fontSize:18,color:"#aaa"}}>✕</button></div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-          {[["Task title","text","Description of task",true],["Entity","text","Entity name or —"],["Assignee","select","",false,["Andy Morgan","Roxy Sheeley","Garry Crossan","Joanne Fenech","Neil Kelly","Gary Harrison","Sarah Cole"]],["Due date","text","DD/MM/YYYY"],["Priority","select","",false,["Critical","High","Medium","Low"]],["Category","select","",false,["Compliance","KYC","Invoicing","Timesheets","Onboarding","Corporate","Statutory","System","Accounts","Other"]],["Status","select","",false,["Open","In progress"]]].map(([l,t,ph,full,opts])=><div key={l} style={{display:"flex",flexDirection:"column",gap:3,gridColumn:full?"1/-1":"auto"}}>
+          {[["Task title","text","Description of task",true],["Entity","text","Entity name or —"],["Assignee","select","",false,["Andy Morgan","Roxy Sheeley","Garry Crossan","Joanne Fenech","Neil Kelly","Gary Harrison","Sarah Cole"]],["Due date","text","DD/MM/YYYY"],["Category","select","",false,["Compliance","KYC","Invoicing","Timesheets","Onboarding","Corporate","Statutory","System","Accounts","Other"]],["Status","select","",false,["Open","In progress"]]].map(([l,t,ph,full,opts])=><div key={l} style={{display:"flex",flexDirection:"column",gap:3,gridColumn:full?"1/-1":"auto"}}>
             <label style={{fontSize:11,color:"#666"}}>{l}</label>
             {t==="select"?<select style={{fontSize:12,borderRadius:5,border:"0.5px solid #ccc",background:"#fff",padding:"0 8px",height:32,color:"#111"}}>{(opts||[]).map(o=><option key={o}>{o}</option>)}</select>:<input type={t} style={{fontSize:12,borderRadius:5,border:"0.5px solid #ccc",padding:"0 8px",height:32,background:"#fff",color:"#111"}} placeholder={ph}/>}
           </div>)}
@@ -295,7 +293,7 @@ function SplashScreen({ onDone }) {
           <img src={AFFINITY_LOGO} alt="Affinity" style={{ height:"clamp(56px, 11vw, 96px)", display:"block" }} />
           <span style={{ fontFamily:"'Catamaran', system-ui, sans-serif", fontSize:"clamp(48px, 9.5vw, 84px)", fontWeight:300, color:"#fff", letterSpacing:"-1px", lineHeight:1 }}>Core</span>
         </div>
-        <div style={{ fontSize:12, color:"rgba(255,255,255,0.35)", textTransform:"uppercase", letterSpacing:"3px", marginTop:20 }}>
+        <div style={{ fontSize:12, color:"#fff", textTransform:"uppercase", letterSpacing:"3px", marginTop:20 }}>
           Made by Affinity, for Affinity
         </div>
       </div>

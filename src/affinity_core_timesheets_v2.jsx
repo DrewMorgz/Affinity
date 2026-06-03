@@ -45,6 +45,40 @@ export default function AffinityTimesheets() {
   const [modal, setModal] = useState(null);
   const [newEntry, setNewEntry] = useState({ entity:"", matter:"", type:"Client — admin", units:6, narrative:"" });
 
+  // Timer state + helpers (these were referenced in the JSX below but never declared,
+  // which crashed the whole module — unmounting the app and dumping the user out).
+  const [timerRunning, setTimerRunning] = useState(false);
+  const [timerSeconds, setTimerSeconds] = useState(0);
+  const [timerEntity, setTimerEntity] = useState("");
+  const [timerMatter, setTimerMatter] = useState("");
+  const [timerType, setTimerType]     = useState("Administration");
+  const [timerRef, setTimerRef]       = useState(null);
+  const [editEntry, setEditEntry]     = useState(null);
+
+  const fmtTimer = (s) => {
+    const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+    return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`;
+  };
+  const startTimer = () => {
+    if (timerRunning) {
+      if (timerRef) clearInterval(timerRef);
+      setTimerRef(null);
+      setTimerRunning(false);
+    } else {
+      const ref = setInterval(()=>setTimerSeconds(s=>s+1), 1000);
+      setTimerRef(ref);
+      setTimerRunning(true);
+    }
+  };
+  const stopAndLog = () => {
+    if (timerRef) clearInterval(timerRef);
+    setTimerRef(null);
+    setTimerRunning(false);
+    // Stub: in production this would push a new entry to ENTRIES
+    setTimerSeconds(0);
+    setTimerEntity(""); setTimerMatter("");
+  };
+
   const staffEntries = useMemo(()=>ENTRIES.filter(e=>e.staffId===parseInt(staffF)),[staffF]);
   const staff = STAFF.find(s=>s.id===parseInt(staffF));
   const totalUnits = staffEntries.reduce((s,e)=>s+e.units,0);

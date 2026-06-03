@@ -1011,52 +1011,28 @@ export default function AffinityCoreEntityAdmin({ officeFilter="" }) {
       </div>
 
       <div style={s.body}>
-        {/* Entity list panel */}
-        <div style={s.list}>
-          <div style={s.listHdr}>
-            <div style={{ display:"flex", gap:6, marginBottom:6 }}>
-              <div style={{ ...s.sw, flex:1 }}>
-                <i className="ti ti-search" style={{ fontSize:13, color:"var(--text-secondary,#666)" }} />
-                <input list="ea-entity-list" style={s.swI} placeholder="Search by name or ref…" value={search} onChange={e=>setSearch(e.target.value)} />
-                <datalist id="ea-entity-list">{ENTITIES.flatMap(e=>[<option key={"n"+e.id} value={e.name}>{e.ref}</option>,<option key={"r"+e.id} value={e.ref}>{e.name}</option>])}</datalist>
-              </div>
-              <button style={{ ...s.btn(true), height:30 }} onClick={()=>setModal("newEntity")}>＋</button>
+        {/* Search-driven entity admin — list panel removed per UX review */}
+        <div style={{...s.detail, flex:1}}>
+          <div style={{ padding:"12px 20px", borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)", display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+            <div style={{ ...s.sw, flex:1, maxWidth:520, minWidth:240 }}>
+              <i className="ti ti-search" style={{ fontSize:13, color:"var(--text-secondary,#666)" }} />
+              <input
+                list="ea-entity-list"
+                style={s.swI}
+                placeholder="Search for an entity by name or reference…"
+                value={search}
+                onChange={e=>{
+                  const v=e.target.value;
+                  setSearch(v);
+                  const m=ENTITIES.find(en=>en.name===v||en.ref===v);
+                  if(m){ setSel(m.id); setTab("overview"); }
+                }}
+              />
+              <datalist id="ea-entity-list">{ENTITIES.flatMap(e=>[<option key={"n"+e.id} value={e.name}>{e.ref}</option>,<option key={"r"+e.id} value={e.ref}>{e.name}</option>])}</datalist>
             </div>
-            <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
-              <select style={s.sel} value={jurF} onChange={e=>setJurF(e.target.value)}>
-                <option value="">All offices</option>
-                {Object.keys(officeColors).map(j=><option key={j}>{j}</option>)}
-              </select>
-              <select style={s.sel} value={typeF} onChange={e=>setTypeF(e.target.value)}>
-                <option value="">All types</option>
-                {["Company","Trust","Foundation"].map(t=><option key={t}>{t}</option>)}
-              </select>
-            </div>
+            {entity&&<button style={s.btn(false)} onClick={()=>{ setSel(null); setSearch(""); }}>Clear ✕</button>}
+            <button style={s.btn(true)} onClick={()=>setModal("newEntity")}>＋ New entity</button>
           </div>
-          <div style={s.listBody}>
-            {filtered.map(e=>{
-              const statusDot={Active:"#27500A",Dormant:"#B58A20","In liquidation":"#A32D2D",Dissolved:"#999","Pending incorporation":"#0077A8"}[e.status]||"#999";
-              const stripeColor=officeColors[e.jur]?.color||"#ccc";
-              return <div key={e.id} style={{...s.eRow(sel===e.id),paddingLeft:0,position:"relative"}} onClick={()=>{ setSel(e.id); setTab("overview"); }}>
-                <div style={{position:"absolute",left:0,top:6,bottom:6,width:3,background:stripeColor,borderRadius:2}} />
-                <div style={{ flex:1, minWidth:0, paddingLeft:12 }}>
-                  <div style={{ fontSize:12, fontWeight:500, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{e.name}</div>
-                  <div style={{ fontSize:10, color:"var(--text-secondary,#888)", marginTop:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{e.ref} · {jurShort[e.jur]||e.jur}</div>
-                </div>
-                <div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0}}>
-                  {(e.risk==="High"||e.risk==="Very High")&&<div title={e.risk+" risk"} style={{ width:6, height:6, borderRadius:"50%", background:"#EF4444" }} />}
-                  <div title={e.status} style={{ width:6, height:6, borderRadius:"50%", background:statusDot }} />
-                </div>
-              </div>;
-            })}
-          </div>
-          <div style={{ padding:"8px 14px", borderTop:"0.5px solid var(--border-tertiary,#e5e5e5)", fontSize:10, color:"var(--text-secondary,#666)" }}>
-            Showing {filtered.length} of {ENTITIES.length} entities
-          </div>
-        </div>
-
-        {/* Detail panel */}
-        <div style={s.detail}>
           {entity?(
             <>
               <div style={s.detHdr}>
