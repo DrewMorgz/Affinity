@@ -29,18 +29,21 @@ const officeColors = {
 };
 
 const usersData = [
-  { id:1, name:"Andy Morgan",     email:"andy.morgan@affinityco.com",     role:"Super Admin",     office:"Group",          status:"Active",   lastLogin:"Today 09:14",  mfa:true,  modules:["All"] },
-  { id:2, name:"Alex Gardner",    email:"alex.gardner@affinityco.com",    role:"Managing Director",office:"Group",          status:"Active",   lastLogin:"Today 08:52",  mfa:true,  modules:["All"] },
-  { id:3, name:"Neil Kelly",      email:"neil.kelly@affinityco.com",      role:"CFO",             office:"Group",          status:"Active",   lastLogin:"Yesterday",    mfa:true,  modules:["Invoicing","Reporting","Timesheets","Entities"] },
-  { id:4, name:"Gary Harrison",   email:"gary.harrison@affinityco.com",   role:"CCO",             office:"Group",          status:"Active",   lastLogin:"Today 07:38",  mfa:true,  modules:["Compliance","Entities","Reporting","Onboarding"] },
-  { id:5, name:"Roxy Sheeley",    email:"roxy.sheeley@affinityco.com",    role:"Managing Director",office:"Isle of Man",    status:"Active",   lastLogin:"Today 09:01",  mfa:true,  modules:["All — IOM"] },
-  { id:6, name:"Joanne Fenech",   email:"joanne.fenech@affinityco.com",   role:"Director",        office:"Malta",          status:"Active",   lastLogin:"Today 08:45",  mfa:true,  modules:["All — Malta"] },
-  { id:7, name:"Garry Crossan",   email:"garry.crossan@affinityco.com",   role:"Director",        office:"Cayman Islands", status:"Active",   lastLogin:"Today 08:21",  mfa:false, modules:["All — Cayman"] },
-  { id:8, name:"Sarah Cole",      email:"sarah.cole@affinityco.com",      role:"Administrator",   office:"Isle of Man",    status:"Active",   lastLogin:"2d ago",       mfa:false, modules:["Entities","Documents","Timesheets","Onboarding"] },
-  { id:9, name:"Patrick Walsh",   email:"patrick.walsh@affinityco.com",   role:"Administrator",   office:"Cayman Islands", status:"Active",   lastLogin:"3d ago",       mfa:false, modules:["Entities","Documents","Timesheets"] },
-  { id:10,name:"Maria Borg",      email:"maria.borg@affinityco.com",      role:"Administrator",   office:"Malta",          status:"Active",   lastLogin:"4d ago",       mfa:true,  modules:["Entities","Documents","Timesheets","Invoicing"] },
-  { id:11,name:"Tom Reyes",       email:"tom.reyes@affinityco.com",       role:"Administrator",   office:"Miami",          status:"Active",   lastLogin:"Yesterday",    mfa:false, modules:["Entities","Documents","Timesheets"] },
-  { id:12,name:"Laura Innes",     email:"laura.innes@affinityco.com",     role:"Read only",       office:"Group",          status:"Inactive", lastLogin:"14d ago",      mfa:false, modules:["Reporting","Entities"] },
+  { id:1, name:"Andrew Morgan", email:"andrew.morgan@affinityco.com", role:"CEO — Super Admin", office:"USA", flag:"🇺🇸", status:"Active", lastLogin:"Today 09:14", mfa:true, modules:["All"] },
+  { id:2, name:"Michael Barlow", email:"michael.barlow@affinityco.com", role:"Compliance Manager (IOM)", office:"Isle of Man", flag:"🇮🇲", status:"Active", lastLogin:"Today 08:52", mfa:true, modules:["Compliance","Entities","Reporting"] },
+  { id:3, name:"Joanne Fenech", email:"joanne.fenech@affinityco.com", role:"Managing Director (IOM)", office:"Malta", flag:"🇲🇹", status:"Active", lastLogin:"Yesterday", mfa:true, modules:["All — Malta"] },
+  { id:4, name:"Krista Fenech", email:"krista.fenech@affinityco.com", role:"Client Administrator", office:"Malta", flag:"🇲🇹", status:"Active", lastLogin:"Today 07:38", mfa:false, modules:["Entities","Documents","Timesheets"] },
+  { id:5, name:"Alexandra Gardner", email:"alexandra.gardner@affinityco.com", role:"COO", office:"USA", flag:"🇺🇸", status:"Active", lastLogin:"Today 09:01", mfa:true, modules:["Reporting","Invoicing","Timesheets","Entities"] },
+  { id:6, name:"Debbie Gooding", email:"debbie.gooding@affinityco.com", role:"Manager", office:"Isle of Man", flag:"🇮🇲", status:"Active", lastLogin:"Today 08:45", mfa:true, modules:["Entities","Documents","Timesheets","Onboarding"] },
+  { id:7, name:"Natalie Johnson", email:"natalie.johnson@affinityco.com", role:"Assistant Compliance Administrator", office:"USA", flag:"🇺🇸", status:"Active", lastLogin:"Today 08:21", mfa:true, modules:["Compliance","Entities","Reporting"] },
+  { id:8, name:"Neil Kelly", email:"neil.kelly@affinityco.com", role:"CFO", office:"USA", flag:"🇺🇸", status:"Active", lastLogin:"2d ago", mfa:false, modules:["Reporting","Invoicing","Timesheets","Entities"] },
+  { id:9, name:"Elena Pace", email:"elena.pace@affinityco.com", role:"Manager", office:"Isle of Man", flag:"🇮🇲", status:"Active", lastLogin:"Yesterday", mfa:true, modules:["Entities","Documents","Timesheets","Onboarding"] },
+  { id:10, name:"Shanya Pickett", email:"shanya.pickett@affinityco.com", role:"Assistant Manager", office:"Isle of Man", flag:"🇮🇲", status:"Active", lastLogin:"Today 10:02", mfa:true, modules:["Entities","Documents","Timesheets"] },
+  { id:11, name:"Mattei Pisani", email:"mattei.pisani@affinityco.com", role:"Director (Malta)", office:"Isle of Man", flag:"🇮🇲", status:"Active", lastLogin:"3d ago", mfa:true, modules:["Entities","Documents","Timesheets"] },
+  { id:12, name:"Colin Quayle", email:"colin.quayle@affinityco.com", role:"Director and Company Secretary (IOM)", office:"Isle of Man", flag:"🇮🇲", status:"Active", lastLogin:"Today 08:30", mfa:false, modules:["Entities","Documents","Timesheets"] },
+  { id:13, name:"Kate Shaw", email:"kate.shaw@affinityco.com", role:"Manager", office:"Isle of Man", flag:"🇮🇲", status:"Active", lastLogin:"4d ago", mfa:true, modules:["Entities","Documents","Timesheets","Onboarding"] },
+  { id:14, name:"Roxy Sheeley", email:"roxy.sheeley@affinityco.com", role:"Managing Director (IOM)", office:"Isle of Man", flag:"🇮🇲", status:"Active", lastLogin:"Today 09:25", mfa:true, modules:["All — Isle of Man"] },
+  { id:15, name:"Gilbert Spiteri Spadaro", email:"gilbert.spiterispadaro@affinityco.com", role:"Compliance Officer (Malta)", office:"Malta", flag:"🇲🇹", status:"Active", lastLogin:"Today 08:55", mfa:true, modules:["Compliance","Entities","Reporting"] },
 ];
 
 const rolesData = [
@@ -247,7 +250,7 @@ export default function AffinityCoreSystemAdmin() {
                     <td style={s.td}><div style={s.en}>{u.name}</div></td>
                     <td style={{ ...s.td, color:"var(--text-secondary,#666)", fontSize:11 }}>{u.email}</td>
                     <td style={s.td}><Badge label={u.role} colors={roleColors[u.role]} /></td>
-                    <td style={s.td}><Badge label={u.office} colors={officeColors[u.office]} /></td>
+                    <td style={s.td}><span style={{fontSize:18,lineHeight:1}} title={u.office}>{u.flag}</span></td>
                     <td style={s.td}>{u.mfa ? <span style={{ color:"#4CAF7D", fontWeight:700, fontSize:13 }}>✓</span> : <span style={{ color:"#F59E0B", fontWeight:700 }}>⚠</span>}</td>
                     <td style={s.td}><Badge label={u.status} colors={u.status==="Active"?{bg:"#EAF3DE",color:"#27500A"}:{bg:"#F1EFE8",color:"#888"}} /></td>
                     <td style={{ ...s.td, color:"var(--text-secondary,#666)", fontSize:11 }}>{u.lastLogin}</td>

@@ -18,7 +18,7 @@ const catColors = {
   "Statutory":         { bg:"#F1EFE8", color:"#555" },
 };
 
-const STAFF = ["Andy Morgan","Roxy Sheeley","Garry Crossan","Joanne Fenech","Neil Kelly","Gary Harrison","Sarah Cole","Maria Borg","Carlos Reyes"];
+const STAFF = ["Andrew Morgan","Michael Barlow","Joanne Fenech","Krista Fenech","Alexandra Gardner","Debbie Gooding","Natalie Johnson","Neil Kelly","Elena Pace","Shanya Pickett","Mattei Pisani","Colin Quayle","Kate Shaw","Roxy Sheeley","Gilbert Spiteri Spadaro"];
 
 const INITIAL_TASKS = [
   { id:1,  title:"Harrington Trust — CPR overdue",               category:"Compliance",        entity:"Harrington Family Trust",   assignee:"Roxy Sheeley",   createdBy:"Gary Harrison",  due:"14/07/2025", status:"Open",        notes:"High risk client. Review now overdue by 3 months." },
@@ -44,7 +44,7 @@ const statusC = {
 };
 
 // Per review: anyone can add/assign, only system manager can delete
-const CURRENT_USER = { name:"Andy Morgan", role:"Super Admin", isSystemManager:true };
+const CURRENT_USER = { name:"Andrew Morgan", role:"Super Admin", isSystemManager:true };
 
 export default function AffinityTasks({ userId, onNav }) {
   const [tasks, setTasks]           = useState(INITIAL_TASKS);

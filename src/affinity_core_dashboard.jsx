@@ -9,12 +9,21 @@ const fmt = (n,s="£") => s+Math.abs(Number(n||0)).toLocaleString(undefined,{min
 const Card = ({title,children,action,border}) => <div style={{background:"#fff",border:`0.5px solid ${border||"#e5e5e5"}`,borderRadius:8,padding:14,marginBottom:12}}>{title&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><div style={{fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.4px",color:"#666"}}>{title}</div>{action}</div>}{children}</div>;
 
 const USERS = [
-  {id:1,name:"Andy Morgan",  role:"Super Admin",       office:"Group",         av:"AM",c:"#00C4CC",isManager:true, team:["Roxy Sheeley","Garry Crossan","Joanne Fenech","Neil Kelly","Gary Harrison"]},
-  {id:2,name:"Roxy Sheeley", role:"Managing Director", office:"Isle of Man",   av:"RS",c:"#7C5CBF",isManager:true, team:["Sarah Cole","Patrick Walsh"]},
-  {id:3,name:"Garry Crossan",role:"Director",          office:"Cayman Islands",av:"GC",c:"#1A7FBF",isManager:false,team:[]},
-  {id:4,name:"Joanne Fenech",role:"Director",          office:"Malta",         av:"JF",c:"#4A7C6F",isManager:true, team:["Maria Borg"]},
-  {id:5,name:"Neil Kelly",   role:"CFO",               office:"Group",         av:"NK",c:"#BF5C7A",isManager:false,team:[]},
-  {id:6,name:"Gary Harrison",role:"CCO",               office:"Group",         av:"GH",c:"#7B4F1D",isManager:false,team:[]},
+  {id:1,name:"Andrew Morgan",office:"USA",flag:"🇺🇸",role:"CEO — Super Admin",av:"AM",c:"#00C4CC",isManager:true, team:["Alexandra Gardner","Roxy Sheeley","Joanne Fenech","Neil Kelly","Natalie Johnson"]},
+  {id:2,name:"Michael Barlow",office:"Isle of Man",flag:"🇮🇲",role:"Compliance Manager (IOM)",av:"MB",c:"#7C5CBF",isManager:false, team:[]},
+  {id:3,name:"Joanne Fenech",office:"Malta",flag:"🇲🇹",role:"Managing Director (IOM)",av:"JF",c:"#4A7C6F",isManager:true, team:["Krista Fenech","Gilbert Spiteri Spadaro"]},
+  {id:4,name:"Krista Fenech",office:"Malta",flag:"🇲🇹",role:"Client Administrator",av:"KF",c:"#5C8E3C",isManager:false, team:[]},
+  {id:5,name:"Alexandra Gardner",office:"USA",flag:"🇺🇸",role:"COO",av:"AG",c:"#BF5C7A",isManager:true, team:["Natalie Johnson","Neil Kelly"]},
+  {id:6,name:"Debbie Gooding",office:"Isle of Man",flag:"🇮🇲",role:"Manager",av:"DG",c:"#1A7FBF",isManager:false, team:[]},
+  {id:7,name:"Natalie Johnson",office:"USA",flag:"🇺🇸",role:"Assistant Compliance Administrator",av:"NJ",c:"#2E7A8A",isManager:false, team:[]},
+  {id:8,name:"Neil Kelly",office:"USA",flag:"🇺🇸",role:"CFO",av:"NK",c:"#BF7A5C",isManager:false, team:[]},
+  {id:9,name:"Elena Pace",office:"Isle of Man",flag:"🇮🇲",role:"Manager",av:"EP",c:"#7B4F1D",isManager:false, team:[]},
+  {id:10,name:"Shanya Pickett",office:"Isle of Man",flag:"🇮🇲",role:"Assistant Manager",av:"SP",c:"#5C7A8E",isManager:false, team:[]},
+  {id:11,name:"Mattei Pisani",office:"Isle of Man",flag:"🇮🇲",role:"Director (Malta)",av:"MP",c:"#8A4A6E",isManager:false, team:[]},
+  {id:12,name:"Colin Quayle",office:"Isle of Man",flag:"🇮🇲",role:"Director and Company Secretary (IOM)",av:"CQ",c:"#4A8E7C",isManager:false, team:[]},
+  {id:13,name:"Kate Shaw",office:"Isle of Man",flag:"🇮🇲",role:"Manager",av:"KS",c:"#A0623E",isManager:false, team:[]},
+  {id:14,name:"Roxy Sheeley",office:"Isle of Man",flag:"🇮🇲",role:"Managing Director (IOM)",av:"RS",c:"#3C5CBF",isManager:true, team:["Michael Barlow","Debbie Gooding","Elena Pace","Shanya Pickett","Mattei Pisani","Colin Quayle","Kate Shaw"]},
+  {id:15,name:"Gilbert Spiteri Spadaro",office:"Malta",flag:"🇲🇹",role:"Compliance Officer (Malta)",av:"GS",c:"#3A6E4A",isManager:false, team:[]},
 ];
 
 const ALL_TASKS = [
@@ -78,15 +87,21 @@ const modColors = {Compliance:{bg:"#FBEAF0",color:"#72243E"},KYC:{bg:"#FCEBEB",c
 const TODAY = { day:14, month:7 }; // July 14 — matches app date
 
 const STAFF_PROFILES = [
-  { name:"Andy Morgan",    birthday:{d:22,m:8},  joined:{d:1,m:3,y:2015},  role:"Group CEO",        av:"AM", c:"#00C4CC" },
-  { name:"Roxy Sheeley",   birthday:{d:14,m:7},  joined:{d:15,m:6,y:2017}, role:"MD — IOM",         av:"RS", c:"#7C5CBF" },
-  { name:"Garry Crossan",  birthday:{d:3,m:9},   joined:{d:1,m:9,y:2018},  role:"Director — Cayman",av:"GC", c:"#1A7FBF" },
-  { name:"Joanne Fenech",  birthday:{d:29,m:11}, joined:{d:10,m:1,y:2020}, role:"Director — Malta", av:"JF", c:"#4A7C6F" },
-  { name:"Neil Kelly",     birthday:{d:7,m:7},   joined:{d:14,m:7,y:2016}, role:"Group CFO",        av:"NK", c:"#BF5C7A" },
-  { name:"Gary Harrison",  birthday:{d:19,m:10}, joined:{d:1,m:4,y:2017},  role:"CCO / MLRO",       av:"GH", c:"#7B4F1D" },
-  { name:"Sarah Cole",     birthday:{d:14,m:7},  joined:{d:2,m:8,y:2021},  role:"Administrator",    av:"SC", c:"#5C8E3C" },
-  { name:"Maria Borg",     birthday:{d:5,m:12},  joined:{d:15,m:7,y:2025}, role:"Administrator — Malta", av:"MB", c:"#2E7A8A" },
-  { name:"Carlos Reyes",   birthday:{d:25,m:3},  joined:{d:10,m:3,y:2023}, role:"Director — Miami", av:"CR", c:"#8A4A6E" },
+  { name:"Andrew Morgan", birthday:{d:21,m:2}, joined:{d:1,m:12,y:2018}, office:"USA", flag:"🇺🇸", role:"CEO — Super Admin", av:"AM", c:"#00C4CC" },
+  { name:"Michael Barlow", birthday:{d:8,m:4}, joined:{d:5,m:12,y:2015}, office:"Isle of Man", flag:"🇮🇲", role:"Compliance Manager (IOM)", av:"MB", c:"#7C5CBF" },
+  { name:"Joanne Fenech", birthday:{d:22,m:12}, joined:{d:18,m:2,y:2023}, office:"Malta", flag:"🇲🇹", role:"Managing Director (IOM)", av:"JF", c:"#4A7C6F" },
+  { name:"Krista Fenech", birthday:{d:14,m:1}, joined:{d:1,m:2,y:2017}, office:"Malta", flag:"🇲🇹", role:"Client Administrator", av:"KF", c:"#5C8E3C" },
+  { name:"Alexandra Gardner", birthday:{d:8,m:9}, joined:{d:20,m:1,y:2022}, office:"USA", flag:"🇺🇸", role:"COO", av:"AG", c:"#BF5C7A" },
+  { name:"Debbie Gooding", birthday:{d:7,m:12}, joined:{d:21,m:12,y:2022}, office:"Isle of Man", flag:"🇮🇲", role:"Manager", av:"DG", c:"#1A7FBF" },
+  { name:"Natalie Johnson", birthday:{d:14,m:4}, joined:{d:15,m:10,y:2018}, office:"USA", flag:"🇺🇸", role:"Assistant Compliance Administrator", av:"NJ", c:"#2E7A8A" },
+  { name:"Neil Kelly", birthday:{d:26,m:1}, joined:{d:25,m:3,y:2020}, office:"USA", flag:"🇺🇸", role:"CFO", av:"NK", c:"#BF7A5C" },
+  { name:"Elena Pace", birthday:{d:11,m:5}, joined:{d:5,m:4,y:2019}, office:"Isle of Man", flag:"🇮🇲", role:"Manager", av:"EP", c:"#7B4F1D" },
+  { name:"Shanya Pickett", birthday:{d:4,m:2}, joined:{d:13,m:2,y:2019}, office:"Isle of Man", flag:"🇮🇲", role:"Assistant Manager", av:"SP", c:"#5C7A8E" },
+  { name:"Mattei Pisani", birthday:{d:28,m:6}, joined:{d:20,m:5,y:2014}, office:"Isle of Man", flag:"🇮🇲", role:"Director (Malta)", av:"MP", c:"#8A4A6E" },
+  { name:"Colin Quayle", birthday:{d:24,m:8}, joined:{d:18,m:2,y:2020}, office:"Isle of Man", flag:"🇮🇲", role:"Director and Company Secretary (IOM)", av:"CQ", c:"#4A8E7C" },
+  { name:"Kate Shaw", birthday:{d:3,m:9}, joined:{d:10,m:11,y:2023}, office:"Isle of Man", flag:"🇮🇲", role:"Manager", av:"KS", c:"#A0623E" },
+  { name:"Roxy Sheeley", birthday:{d:28,m:6}, joined:{d:19,m:4,y:2015}, office:"Isle of Man", flag:"🇮🇲", role:"Managing Director (IOM)", av:"RS", c:"#3C5CBF" },
+  { name:"Gilbert Spiteri Spadaro", birthday:{d:2,m:11}, joined:{d:8,m:5,y:2015}, office:"Malta", flag:"🇲🇹", role:"Compliance Officer (Malta)", av:"GS", c:"#3A6E4A" },
 ];
 
 const GROUP_ANNOUNCEMENTS = [

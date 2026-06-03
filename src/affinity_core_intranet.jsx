@@ -220,19 +220,27 @@ export default function AffinityIntranet() {
     <div style={{padding:"24px 28px"}}>
       <div style={{fontSize:20,fontWeight:700,color:NAVY,marginBottom:4}}>Get to Know Us</div>
       <div style={{fontSize:12,color:"#666",marginBottom:20}}>Meet the Affinity team across our global offices.</div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
-        {[{name:"Andy Morgan",title:"Group CEO",office:"Group",av:"AM",c:"#00C4CC",bio:"Founded Affinity in 2009. Passionate about building a truly boutique global business."},
-          {name:"Roxy Sheeley",title:"Managing Director — IOM",office:"Isle of Man",av:"RS",c:"#7C5CBF",bio:"Leads the Isle of Man operation. Specialist in trust and estate administration."},
-          {name:"Garry Crossan",title:"Director — Cayman",office:"Cayman Islands",av:"GC",c:"#1A7FBF",bio:"Heads the Cayman Islands office. Expert in fund structures and investment holdings."},
-          {name:"Joanne Fenech",title:"Director — Malta",office:"Malta",av:"JF",c:"#4A7C6F",bio:"Leads the Malta team. Specialist in MFSA-regulated structures and foundations."},
-          {name:"Neil Kelly",title:"CFO",office:"Group",av:"NK",c:"#BF5C7A",bio:"Group CFO. Oversees financial reporting, invoicing, and management accounts across all offices."},
-          {name:"Gary Harrison",title:"Group CCO / MLRO",office:"Group",av:"GH",c:"#7B4F1D",bio:"Group Chief Compliance Officer. Leads AML, sanctions, and regulatory across all jurisdictions."},
-        ].map(p=>(
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
+        {[{name:"Andrew Morgan",title:"CEO — Super Admin",office:"USA",flag:"🇺🇸",av:"AM",c:"#00C4CC",bio:"Founded Affinity. Drives group strategy across all five jurisdictions."},
+          {name:"Michael Barlow",title:"Compliance Manager (IOM)",office:"Isle of Man",flag:"🇮🇲",av:"MB",c:"#7C5CBF",bio:"Leads the IOM compliance function. AML/KYC and regulatory specialist."},
+          {name:"Joanne Fenech",title:"Managing Director (IOM)",office:"Malta",flag:"🇲🇹",av:"JF",c:"#4A7C6F",bio:"Heads the Malta office and the wider Affinity managing director group."},
+          {name:"Krista Fenech",title:"Client Administrator",office:"Malta",flag:"🇲🇹",av:"KF",c:"#5C8E3C",bio:"Client-facing administration for the Malta book."},
+          {name:"Alexandra Gardner",title:"COO",office:"USA",flag:"🇺🇸",av:"AG",c:"#BF5C7A",bio:"Group Chief Operating Officer. Oversees operations and delivery firm-wide."},
+          {name:"Debbie Gooding",title:"Manager",office:"Isle of Man",flag:"🇮🇲",av:"DG",c:"#1A7FBF",bio:"Manager in the IOM team. Trust and corporate administration."},
+          {name:"Natalie Johnson",title:"Assistant Compliance Administrator",office:"USA",flag:"🇺🇸",av:"NJ",c:"#2E7A8A",bio:"Supports the USA compliance function. CDD and onboarding focus."},
+          {name:"Neil Kelly",title:"CFO",office:"USA",flag:"🇺🇸",av:"NK",c:"#BF7A5C",bio:"Group CFO. Oversees financial reporting, billing, and management accounts."},
+          {name:"Elena Pace",title:"Manager",office:"Isle of Man",flag:"🇮🇲",av:"EP",c:"#7B4F1D",bio:"Manager — IOM office. Corporate administration and client liaison."},
+          {name:"Shanya Pickett",title:"Assistant Manager",office:"Isle of Man",flag:"🇮🇲",av:"SP",c:"#5C7A8E",bio:"Assistant Manager supporting IOM client delivery."},
+          {name:"Mattei Pisani",title:"Director (Malta)",office:"Isle of Man",flag:"🇮🇲",av:"MP",c:"#8A4A6E",bio:"Director focused on the Malta book. Foundations and MFSA structures."},
+          {name:"Colin Quayle",title:"Director and Company Secretary (IOM)",office:"Isle of Man",flag:"🇮🇲",av:"CQ",c:"#4A8E7C",bio:"Director and Company Secretary. IOM statutory and governance lead."},
+          {name:"Kate Shaw",title:"Manager",office:"Isle of Man",flag:"🇮🇲",av:"KS",c:"#A0623E",bio:"Manager — IOM. Senior administration and compliance oversight."},
+          {name:"Roxy Sheeley",title:"Managing Director (IOM)",office:"Isle of Man",flag:"🇮🇲",av:"RS",c:"#3C5CBF",bio:"Managing Director — IOM. Trust and estate administration specialist."},
+          {name:"Gilbert Spiteri Spadaro",title:"Compliance Officer (Malta)",office:"Malta",flag:"🇲🇹",av:"GS",c:"#3A6E4A",bio:"Compliance Officer — Malta. AML, sanctions, and regulatory reporting."}].map(p=>(
           <div key={p.name} style={{background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:10,padding:"16px 14px",textAlign:"center"}}>
             <div style={{width:56,height:56,borderRadius:"50%",background:p.c,color:"#fff",fontSize:16,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 10px"}}>{p.av}</div>
             <div style={{fontSize:13,fontWeight:700,color:NAVY}}>{p.name}</div>
             <div style={{fontSize:11,color:"#666",margin:"3px 0"}}>{p.title}</div>
-            <div style={{display:"inline-block",padding:"2px 8px",borderRadius:20,fontSize:10,fontWeight:600,background:"#E6F7FB",color:"#0077A8",marginBottom:8}}>{p.office}</div>
+            <div style={{fontSize:18,marginBottom:8,lineHeight:1}} title={p.office}>{p.flag}</div>
             <div style={{fontSize:11,color:"#888",lineHeight:1.5}}>{p.bio}</div>
           </div>
         ))}

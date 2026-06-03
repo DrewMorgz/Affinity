@@ -6,14 +6,21 @@ const th = { padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:600, 
 const td = { padding:"8px 12px", fontSize:11, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", borderBottom:"0.5px solid #e5e5e5" };
 
 const STAFF = [
-  { id:1, name:"Roxy Sheeley",   role:"Managing Director", office:"Isle of Man",    rate:250, target:37.5 },
-  { id:2, name:"Garry Crossan",  role:"Director",          office:"Cayman Islands", rate:250, target:37.5 },
-  { id:3, name:"Joanne Fenech",  role:"Director",          office:"Malta",          rate:250, target:37.5 },
-  { id:4, name:"Neil Kelly",     role:"CFO",               office:"Group",          rate:300, target:37.5 },
-  { id:5, name:"Gary Harrison",  role:"CCO",               office:"Group",          rate:300, target:37.5 },
-  { id:6, name:"Sarah Cole",     role:"Administrator",     office:"Isle of Man",    rate:150, target:37.5 },
-  { id:7, name:"Patrick Walsh",  role:"Administrator",     office:"Cayman Islands", rate:150, target:37.5 },
-  { id:8, name:"Maria Borg",     role:"Administrator",     office:"Malta",          rate:150, target:37.5 },
+  { id:1, name:"Andrew Morgan", role:"CEO — Super Admin", office:"USA", flag:"🇺🇸", rate:350, target:37.5 },
+  { id:2, name:"Michael Barlow", role:"Compliance Manager (IOM)", office:"Isle of Man", flag:"🇮🇲", rate:200, target:37.5 },
+  { id:3, name:"Joanne Fenech", role:"Managing Director (IOM)", office:"Malta", flag:"🇲🇹", rate:300, target:37.5 },
+  { id:4, name:"Krista Fenech", role:"Client Administrator", office:"Malta", flag:"🇲🇹", rate:150, target:37.5 },
+  { id:5, name:"Alexandra Gardner", role:"COO", office:"USA", flag:"🇺🇸", rate:350, target:37.5 },
+  { id:6, name:"Debbie Gooding", role:"Manager", office:"Isle of Man", flag:"🇮🇲", rate:200, target:37.5 },
+  { id:7, name:"Natalie Johnson", role:"Assistant Compliance Administrator", office:"USA", flag:"🇺🇸", rate:150, target:37.5 },
+  { id:8, name:"Neil Kelly", role:"CFO", office:"USA", flag:"🇺🇸", rate:350, target:37.5 },
+  { id:9, name:"Elena Pace", role:"Manager", office:"Isle of Man", flag:"🇮🇲", rate:200, target:37.5 },
+  { id:10, name:"Shanya Pickett", role:"Assistant Manager", office:"Isle of Man", flag:"🇮🇲", rate:150, target:37.5 },
+  { id:11, name:"Mattei Pisani", role:"Director (Malta)", office:"Isle of Man", flag:"🇮🇲", rate:300, target:37.5 },
+  { id:12, name:"Colin Quayle", role:"Director and Company Secretary (IOM)", office:"Isle of Man", flag:"🇮🇲", rate:300, target:37.5 },
+  { id:13, name:"Kate Shaw", role:"Manager", office:"Isle of Man", flag:"🇮🇲", rate:200, target:37.5 },
+  { id:14, name:"Roxy Sheeley", role:"Managing Director (IOM)", office:"Isle of Man", flag:"🇮🇲", rate:300, target:37.5 },
+  { id:15, name:"Gilbert Spiteri Spadaro", role:"Compliance Officer (Malta)", office:"Malta", flag:"🇲🇹", rate:150, target:37.5 },
 ];
 
 const ENTRIES = [

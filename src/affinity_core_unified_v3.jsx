@@ -24,15 +24,21 @@ const AFFINITY_LOGO = "https://cdn.prod.website-files.com/680f471059835ea8d579b7
 const CY = "#00C4CC";
 
 const USERS = [
-  {id:1,name:"Andy Morgan",  role:"Super Admin",        office:"Group",         av:"AM",c:"#00C4CC", pass:"affinity1"},
-  {id:2,name:"Roxy Sheeley", role:"Managing Director",  office:"Isle of Man",   av:"RS",c:"#7C5CBF", pass:"affinity2"},
-  {id:3,name:"Garry Crossan",role:"Director",           office:"Cayman Islands",av:"GC",c:"#1A7FBF", pass:"affinity3"},
-  {id:4,name:"Joanne Fenech",role:"Director",           office:"Malta",         av:"JF",c:"#4A7C6F", pass:"affinity4"},
-  {id:5,name:"Neil Kelly",   role:"CFO",                office:"Group",         av:"NK",c:"#BF5C7A", pass:"affinity5"},
-  {id:6,name:"Gary Harrison",role:"CCO / MLRO",         office:"Group",         av:"GH",c:"#7B4F1D", pass:"affinity6"},
-  {id:7,name:"Sarah Cole",   role:"Administrator",      office:"Isle of Man",   av:"SC",c:"#5C8E3C", pass:"affinity7"},
-  {id:8,name:"Maria Borg",   role:"Administrator",      office:"Malta",         av:"MB",c:"#2E7A8A", pass:"affinity8"},
-  {id:9,name:"Carlos Reyes", role:"Director",           office:"Miami",         av:"CR",c:"#8A4A6E", pass:"affinity9"},
+  {id:1,name:"Andrew Morgan",firstName:"Andrew",lastName:"Morgan",office:"USA",flag:"🇺🇸",role:"CEO — Super Admin",av:"AM",c:"#00C4CC",pass:"affinity1"},
+  {id:2,name:"Michael Barlow",firstName:"Michael",lastName:"Barlow",office:"Isle of Man",flag:"🇮🇲",role:"Compliance Manager (IOM)",av:"MB",c:"#7C5CBF",pass:"affinity2"},
+  {id:3,name:"Joanne Fenech",firstName:"Joanne",lastName:"Fenech",office:"Malta",flag:"🇲🇹",role:"Managing Director (IOM)",av:"JF",c:"#4A7C6F",pass:"affinity3"},
+  {id:4,name:"Krista Fenech",firstName:"Krista",lastName:"Fenech",office:"Malta",flag:"🇲🇹",role:"Client Administrator",av:"KF",c:"#5C8E3C",pass:"affinity4"},
+  {id:5,name:"Alexandra Gardner",firstName:"Alexandra",lastName:"Gardner",office:"USA",flag:"🇺🇸",role:"COO",av:"AG",c:"#BF5C7A",pass:"affinity5"},
+  {id:6,name:"Debbie Gooding",firstName:"Debbie",lastName:"Gooding",office:"Isle of Man",flag:"🇮🇲",role:"Manager",av:"DG",c:"#1A7FBF",pass:"affinity6"},
+  {id:7,name:"Natalie Johnson",firstName:"Natalie",lastName:"Johnson",office:"USA",flag:"🇺🇸",role:"Assistant Compliance Administrator",av:"NJ",c:"#2E7A8A",pass:"affinity7"},
+  {id:8,name:"Neil Kelly",firstName:"Neil",lastName:"Kelly",office:"USA",flag:"🇺🇸",role:"CFO",av:"NK",c:"#BF7A5C",pass:"affinity8"},
+  {id:9,name:"Elena Pace",firstName:"Elena",lastName:"Pace",office:"Isle of Man",flag:"🇮🇲",role:"Manager",av:"EP",c:"#7B4F1D",pass:"affinity9"},
+  {id:10,name:"Shanya Pickett",firstName:"Shanya",lastName:"Pickett",office:"Isle of Man",flag:"🇮🇲",role:"Assistant Manager",av:"SP",c:"#5C7A8E",pass:"affinity10"},
+  {id:11,name:"Mattei Pisani",firstName:"Mattei",lastName:"Pisani",office:"Isle of Man",flag:"🇮🇲",role:"Director (Malta)",av:"MP",c:"#8A4A6E",pass:"affinity11"},
+  {id:12,name:"Colin Quayle",firstName:"Colin",lastName:"Quayle",office:"Isle of Man",flag:"🇮🇲",role:"Director and Company Secretary (IOM)",av:"CQ",c:"#4A8E7C",pass:"affinity12"},
+  {id:13,name:"Kate Shaw",firstName:"Kate",lastName:"Shaw",office:"Isle of Man",flag:"🇮🇲",role:"Manager",av:"KS",c:"#A0623E",pass:"affinity13"},
+  {id:14,name:"Roxy Sheeley",firstName:"Roxy",lastName:"Sheeley",office:"Isle of Man",flag:"🇮🇲",role:"Managing Director (IOM)",av:"RS",c:"#3C5CBF",pass:"affinity14"},
+  {id:15,name:"Gilbert Spiteri Spadaro",firstName:"Gilbert",lastName:"Spiteri Spadaro",office:"Malta",flag:"🇲🇹",role:"Compliance Officer (Malta)",av:"GS",c:"#3A6E4A",pass:"affinity15"},
 ];
 
 // ── Login screen ─────────────────────────────────────────
@@ -519,14 +525,14 @@ export default function AffinityCore(){
       <div style={{padding:"10px 14px",borderTop:"0.5px solid rgba(255,255,255,0.08)",position:"relative"}}>
         <div style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}} onClick={e=>{e.stopPropagation();setU(!uOpen);}}>
           <div style={{width:28,height:28,borderRadius:"50%",background:user.c,color:"#fff",fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{user.av}</div>
-          <div><div style={{fontSize:11,fontWeight:500,color:"#fff"}}>{user.name}</div><div style={{fontSize:10,color:"rgba(255,255,255,0.38)"}}>{user.role}</div></div>
+          <div><div style={{fontSize:11,fontWeight:500,color:"#fff",display:"flex",alignItems:"center",gap:5}}>{user.name}<span style={{fontSize:13}}>{user.flag}</span></div><div style={{fontSize:10,color:"rgba(255,255,255,0.38)"}}>{user.role}</div></div>
           <span style={{marginLeft:"auto",color:"rgba(255,255,255,0.3)",fontSize:10}}>▲</span>
         </div>
         {uOpen&&<div style={{position:"absolute",bottom:58,left:8,right:8,background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:8,zIndex:100,overflow:"hidden",padding:"4px 0",boxShadow:"0 4px 16px rgba(0,0,0,0.1)"}} onClick={e=>e.stopPropagation()}>
           <div style={{padding:"6px 12px",fontSize:10,fontWeight:600,color:"#999",textTransform:"uppercase",letterSpacing:"0.5px",borderBottom:"0.5px solid #e5e5e5"}}>Switch user</div>
           {USERS.map(u=><div key={u.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",cursor:"pointer",background:uid===u.id?"#f5f5f5":"transparent"}} onClick={()=>{setUid(u.id);setU(false);}}>
             <div style={{width:24,height:24,borderRadius:"50%",background:u.c,color:"#fff",fontSize:9,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{u.av}</div>
-            <div><div style={{fontSize:12,fontWeight:uid===u.id?600:400}}>{u.name}</div><div style={{fontSize:10,color:"#999"}}>{u.role}</div></div>
+            <div><div style={{fontSize:12,fontWeight:uid===u.id?600:400,display:"flex",alignItems:"center",gap:5}}>{u.name}<span style={{fontSize:13}}>{u.flag}</span></div><div style={{fontSize:10,color:"#999"}}>{u.role}</div></div>
             {uid===u.id&&<span style={{marginLeft:"auto",color:CY,fontWeight:700}}>✓</span>}
           </div>)}
         </div>}
