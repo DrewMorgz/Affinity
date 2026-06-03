@@ -110,11 +110,11 @@ const TABS = [
   { id:"fileNotes",  label:"File notes",              group:"Entity" },
   { id:"safe",       label:"Archiving & safe custody",            group:"Entity" },
   { id:"compliance", label:"Compliance register",     group:"Regulatory" },
-  { id:"fatca",      label:"FATCA / CRS",                   group:"Regulatory" },
-  { id:"crs",        label:"CRS",                     group:"Regulatory" },
-  { id:"substance",  label:"Substance",               group:"Regulatory" },
-  { id:"registers",  label:"Generate registers",      group:"Admin" },
   { id:"egaming",    label:"eGaming / OGRA",          group:"Regulatory", gamingOnly:true },
+  { id:"fatca",      label:"FATCA",                   group:"Filing Obligations" },
+  { id:"crs",        label:"CRS",                     group:"Filing Obligations" },
+  { id:"substance",  label:"Substance",               group:"Filing Obligations" },
+  { id:"registers",  label:"Generate registers",      group:"Admin" },
 ];
 
 const s = {
@@ -548,13 +548,14 @@ export default function AffinityCoreEntityAdmin({ officeFilter="" }) {
             <button style={s.btn(true)} onClick={()=>setModal("bank")}>＋ Add account</button>
           </div>
           {banks.length>0?(
-            <Tbl cols={[{l:"Bank / broker",w:"22%"},{l:"Account name",w:"18%"},{l:"Account no.",w:"14%"},{l:"Currency",w:"10%"},{l:"Resolution date",w:"14%"},{l:"Status",w:"12%"}]}
+            <Tbl cols={[{l:"Bank / broker",w:"18%"},{l:"Account name",w:"14%"},{l:"Account no.",w:"12%"},{l:"Currency",w:"7%"},{l:"Signatories",w:"22%"},{l:"Resolution date",w:"12%"},{l:"Status",w:"10%"}]}
               rows={banks.map(b=>(
                 <tr key={b.id} style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)" }}>
                   <td style={{ ...s.td, fontWeight:500 }}>{b.bank}</td>
                   <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{b.account}</td>
                   <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{b.number}</td>
                   <td style={s.td}>{b.currency}</td>
+                  <td style={{ ...s.td, color:"var(--text-secondary,#666)", fontSize:11 }}>{b.signatories||"—"}</td>
                   <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{b.resolution}</td>
                   <td style={s.td}><Badge label={b.closed?"Closed":"Active"} colors={b.closed?{bg:"#F1EFE8",color:"#888"}:{bg:"#EAF3DE",color:"#27500A"}} /></td>
                 </tr>
@@ -1017,7 +1018,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="" }) {
               <div style={{ ...s.sw, flex:1 }}>
                 <i className="ti ti-search" style={{ fontSize:13, color:"var(--text-secondary,#666)" }} />
                 <input list="ea-entity-list" style={s.swI} placeholder="Search by name or ref…" value={search} onChange={e=>setSearch(e.target.value)} />
-                <datalist id="ea-entity-list">{ENTITIES.map(e=><option key={e.id} value={e.name}/>)}</datalist>
+                <datalist id="ea-entity-list">{ENTITIES.flatMap(e=>[<option key={"n"+e.id} value={e.name}>{e.ref}</option>,<option key={"r"+e.id} value={e.ref}>{e.name}</option>])}</datalist>
               </div>
               <button style={{ ...s.btn(true), height:30 }} onClick={()=>setModal("newEntity")}>＋</button>
             </div>
@@ -1033,21 +1034,21 @@ export default function AffinityCoreEntityAdmin({ officeFilter="" }) {
             </div>
           </div>
           <div style={s.listBody}>
-            {filtered.map(e=>(
-              <div key={e.id} style={s.eRow(sel===e.id)} onClick={()=>{ setSel(e.id); setTab("overview"); }}>
-                <div style={{ ...s.avatar, background:officeColors[e.jur]?.bg||"#eee", color:officeColors[e.jur]?.color||"#666" }}>
-                  {getInitials(e.name)}
-                </div>
-                <div style={{ flex:1, minWidth:0 }}>
+            {filtered.map(e=>{
+              const statusDot={Active:"#27500A",Dormant:"#B58A20","In liquidation":"#A32D2D",Dissolved:"#999","Pending incorporation":"#0077A8"}[e.status]||"#999";
+              const stripeColor=officeColors[e.jur]?.color||"#ccc";
+              return <div key={e.id} style={{...s.eRow(sel===e.id),paddingLeft:0,position:"relative"}} onClick={()=>{ setSel(e.id); setTab("overview"); }}>
+                <div style={{position:"absolute",left:0,top:6,bottom:6,width:3,background:stripeColor,borderRadius:2}} />
+                <div style={{ flex:1, minWidth:0, paddingLeft:12 }}>
                   <div style={{ fontSize:12, fontWeight:500, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{e.name}</div>
-                  <div style={{ display:"flex", alignItems:"center", gap:4, marginTop:3 }}>
-                    <Badge label={jurShort[e.jur]||e.jur} colors={officeColors[e.jur]} />
-                    <Badge label={e.status} colors={statusBadge(e.status)} />
-                  </div>
+                  <div style={{ fontSize:10, color:"var(--text-secondary,#888)", marginTop:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{e.ref} · {jurShort[e.jur]||e.jur}</div>
                 </div>
-                {(e.risk==="High"||e.risk==="Very High")&&<div style={{ width:6, height:6, borderRadius:"50%", background:"#EF4444", flexShrink:0 }} />}
-              </div>
-            ))}
+                <div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0}}>
+                  {(e.risk==="High"||e.risk==="Very High")&&<div title={e.risk+" risk"} style={{ width:6, height:6, borderRadius:"50%", background:"#EF4444" }} />}
+                  <div title={e.status} style={{ width:6, height:6, borderRadius:"50%", background:statusDot }} />
+                </div>
+              </div>;
+            })}
           </div>
           <div style={{ padding:"8px 14px", borderTop:"0.5px solid var(--border-tertiary,#e5e5e5)", fontSize:10, color:"var(--text-secondary,#666)" }}>
             Showing {filtered.length} of {ENTITIES.length} entities
@@ -1079,8 +1080,9 @@ export default function AffinityCoreEntityAdmin({ officeFilter="" }) {
               </div>
               <div style={{display:"flex",flex:1,overflow:"hidden"}}>
                 <div style={{width:172,minWidth:172,borderRight:"0.5px solid var(--border-tertiary,#e5e5e5)",overflowY:"auto",background:"var(--bg-secondary,#f9f9f9)",flexShrink:0}}>
-                  {["Entity","Regulatory","Admin"].map(group=>{
-                    const groupTabs=TABS.filter(t=>t.group===group);
+                  {["Entity","Regulatory","Filing Obligations","Admin"].map(group=>{
+                    const groupTabs=TABS.filter(t=>t.group===group && (!t.gamingOnly || entity?.isGaming));
+                    if(groupTabs.length===0) return null;
                     return <div key={group}>
                       <div style={{fontSize:9,fontWeight:600,color:"#aaa",textTransform:"uppercase",letterSpacing:"0.5px",padding:"10px 12px 4px"}}>{group}</div>
                       {groupTabs.map(t=><div key={t.id} onClick={()=>setTab(t.id)} style={{padding:"7px 12px",cursor:"pointer",fontSize:12,borderLeft:`2px solid ${tab===t.id?CY:"transparent"}`,background:tab===t.id?"var(--bg-primary,#fff)":"transparent",color:tab===t.id?"var(--text-primary,#111)":"var(--text-secondary,#666)",fontWeight:tab===t.id?500:400,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{t.label}</div>)}
@@ -1088,9 +1090,9 @@ export default function AffinityCoreEntityAdmin({ officeFilter="" }) {
                   })}
                 </div>
                 <div style={{flex:1,overflowY:"auto",padding:"14px 20px"}}>
-                  {tab==="fatca"&&<FATCATab entity={ent}/>}
-                  {tab==="crs"&&<CRSTab entity={ent}/>}
-                  {tab==="substance"&&<SubstanceTab entity={ent}/>}
+                  {tab==="fatca"&&<FATCATab entity={entity}/>}
+                  {tab==="crs"&&<CRSTab entity={entity}/>}
+                  {tab==="substance"&&<SubstanceTab entity={entity}/>}
                   {tab!=="fatca"&&tab!=="crs"&&tab!=="substance"&&renderTab()}
                 </div>
               </div>
