@@ -13,11 +13,11 @@ const STATS = [
 
 const OFFICES = [
   { name: "Isle of Man",    flag: "🇮🇲", since: "Est. 2004", desc: "Our home and headquarters" },
-  { name: "Malta",          flag: "🇲🇹", since: "Est. 2015", desc: "Mediterranean hub" },
-  { name: "Cayman Islands", flag: "🇰🇾", since: "Est. 2018", desc: "Caribbean operations" },
-  { name: "United Kingdom", flag: "🇬🇧", since: "Est. 2019", desc: "London presence" },
+  { name: "Malta",          flag: "🇲🇹", since: "Est. 2011", desc: "Mediterranean hub" },
+  { name: "Cayman Islands", flag: "🇰🇾", since: "Est. 2021", desc: "Caribbean operations" },
+  { name: "United Kingdom", flag: "🇬🇧", since: "Est. 2025", desc: "London presence" },
   { name: "Miami",          flag: "🇺🇸", since: "Est. 2023", desc: "South Florida expansion" },
-  { name: "Cyprus",         flag: "🇨🇾", since: "Est. 2024", desc: "Eastern Mediterranean" },
+  { name: "Cyprus",         flag: "🇨🇾", since: "Est. 2026", desc: "Eastern Mediterranean" },
 ];
 
 const VALUES = [
@@ -69,7 +69,7 @@ export default function AffinityLoginPage({ onLogin }) {
       <div style={{ marginBottom: 32, textAlign: "center", animation: "fadeInUp 0.8s ease 0.3s both" }}>
         <div style={{ display: "inline-flex", alignItems: "center", gap: "0.35em", justifyContent: "center", width: "100%" }}>
           <img src="https://cdn.prod.website-files.com/680f471059835ea8d579b7e8/680f87c089dc0cf0630d7c8d_Affinity%20grad.svg" alt="Affinity" style={{ height: "clamp(56px, 11vw, 96px)", display: "block" }} />
-          <span style={{ fontFamily: "'Catamaran', system-ui, sans-serif", fontSize: "clamp(48px, 9.5vw, 84px)", fontWeight: 300, color: CY, letterSpacing: "-1px", lineHeight: 1 }}>Core</span>
+          <span style={{ fontFamily: "'Catamaran', system-ui, sans-serif", fontSize: "clamp(48px, 9.5vw, 84px)", fontWeight: 300, color: "#fff", letterSpacing: "-1px", lineHeight: 1 }}>Core</span>
         </div>
         <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "3px", marginTop: 16 }}>
           Made by Affinity, for Affinity
