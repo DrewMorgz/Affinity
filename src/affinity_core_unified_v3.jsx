@@ -11,15 +11,11 @@ import Bookkeeping   from "./affinity_core_bookkeeping_v2";
 import Budgeting     from "./affinity_core_budgeting";
 import Reporting     from "./affinity_core_reporting_v2";
 import Procedures    from "./affinity_core_procedures_v2";
-import Notifications from "./affinity_core_notifications";
 import SystemAdmin   from "./affinity_core_system_admin";
 import Chatbot      from "./affinity_core_chatbot";
 import Intranet     from "./affinity_core_intranet";
-import Compliance   from "./affinity_core_compliance";
 import EntityChart  from "./affinity_core_entity_chart";
 import EGaming      from "./affinity_core_egaming";
-import JurCompliance from "./affinity_core_jurisdiction_compliance";
-import Statutory    from "./affinity_core_statutory_registers";
 import GenerateDoc  from "./affinity_core_generate_document";
 
 const NAVY = "#001242";
@@ -166,8 +162,6 @@ const NAV = [
     {id:"reporting",    label:"Reporting",     icon:"\uD83D\uDCC8",b:null},
   ]},
   {s:"Governance", items:[
-    {id:"compliance",   label:"Compliance",    icon:"\u2713",b:null},
-    {id:"statutory",    label:"Statutory",     icon:"\uD83D\uDCCB",b:null},
     {id:"procedures",   label:"Procedures",    icon:"\u2699",b:null},
     {id:"generate",     label:"Generate doc",  icon:"\uD83D\uDCC4",b:null},
   ]},
@@ -176,7 +170,6 @@ const NAV = [
     {id:"chatbot",      label:"Assistant",     icon:"\uD83E\uDD16",b:null},
   ]},
   {s:"System",     items:[
-    {id:"notifications",label:"Notifications", icon:"\uD83D\uDD14",b:8},
     {id:"system",       label:"System admin",  icon:"\uD83D\uDD27",b:null},
   ]},
 ];
@@ -373,8 +366,6 @@ const SEARCH_INDEX = [
   {type:"Module",  label:"Entity Admin",                   sub:"Manage entity records",         mod:"entities"},
   {type:"Module",  label:"CRM",                            sub:"Pipeline & prospects",          mod:"crm"},
   {type:"Module",  label:"Documents",                      sub:"DMS & file management",         mod:"documents"},
-  {type:"Module",  label:"Compliance",                     sub:"KYC, AML, reviews, sanctions",  mod:"compliance"},
-  {type:"Module",  label:"Statutory Registers",            sub:"Annual returns, BO, officers",  mod:"statutory"},
   {type:"Module",  label:"Onboarding",                     sub:"New business & KYC",            mod:"onboarding"},
   {type:"Module",  label:"Timesheets",                     sub:"Time recording",                mod:"timesheets"},
   {type:"Module",  label:"Invoicing",                      sub:"Billing & debtors",             mod:"invoicing"},
@@ -384,10 +375,8 @@ const SEARCH_INDEX = [
   {type:"Module",  label:"Procedures",                     sub:"Process library",               mod:"procedures"},
   {type:"Module",  label:"Generate Document",              sub:"Templates & statutory forms",   mod:"generate"},
   {type:"Module",  label:"eGaming / OGRA",                 sub:"Licence register",              mod:"egaming"},
-  {type:"Module",  label:"Jurisdiction Compliance",        sub:"Cayman & Malta",                mod:"jurcompliance"},
   {type:"Module",  label:"Intranet",                       sub:"Staff directory & news",        mod:"intranet"},
   {type:"Module",  label:"Assistant",                      sub:"Internal chatbot",              mod:"chatbot"},
-  {type:"Module",  label:"Notifications",                  sub:"Alerts & reminders",            mod:"notifications"},
   {type:"Module",  label:"System Admin",                   sub:"Users, roles & config",         mod:"system"},
   // People
   {type:"Person",  label:"Andy Morgan",                    sub:"Group CEO · IOM",               mod:"intranet"},
@@ -401,11 +390,9 @@ const SEARCH_INDEX = [
 const SHORTCUTS = [
   {key:"d", label:"Dashboard",  mod:"dashboard"},
   {key:"e", label:"Entities",   mod:"entities"},
-  {key:"c", label:"Compliance", mod:"compliance"},
   {key:"t", label:"Timesheets", mod:"timesheets"},
   {key:"i", label:"Invoicing",  mod:"invoicing"},
   {key:"r", label:"Reporting",  mod:"reporting"},
-  {key:"n", label:"Notifications",mod:"notifications"},
   {key:"s", label:"Search",     mod:null},
 ];
 
@@ -422,6 +409,7 @@ export default function AffinityCore(){
   const [searchOpen,setSearchOpen]=useState(false);
   const [searchQ,setSearchQ]=useState("");
   const [shortcutsOpen,setShortcutsOpen]=useState(false);
+  const [officeOpen,setOfficeOpen]=useState(false);
   const user=USERS.find(u=>u.id===uid);
   const navLabel=NAV.flatMap(s=>s.items).find(i=>i.id===mod)?.label||mod;
 
@@ -493,15 +481,11 @@ export default function AffinityCore(){
       case "budgeting":    return <Budgeting/>;
       case "reporting":    return <Reporting/>;
       case "procedures":   return <Procedures/>;
-      case "notifications":return <Notifications/>;
       case "chatbot":      return <Chatbot/>;
       case "intranet":     return <Intranet/>;
       case "system":       return <SystemAdmin/>;
-      case "compliance":   return <Compliance officeFilter={officeFilter}/>;
-      case "statutory":    return <Statutory officeFilter={officeFilter}/>;
       case "generate":     return <GenerateDoc/>;
       case "egaming":      return <EGaming/>;
-      case "jurcompliance": return <JurCompliance/>;
       default:             return <Dashboard userId={uid} onNav={setMod}/>;
     }
   };
@@ -522,23 +506,6 @@ export default function AffinityCore(){
       <div style={{padding:"14px 14px 10px",borderBottom:"0.5px solid rgba(255,255,255,0.08)"}}>
         <div style={{fontSize:18,fontWeight:500,color:CY}}>Affinity <span style={{color:"#fff",fontWeight:300}}>Core</span></div>
         <div style={{fontSize:9,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:"1px",marginTop:2}}>Made by Affinity, for Affinity</div>
-        {/* Office filter — always visible in sidebar */}
-        <div style={{marginTop:12}}>
-          <div style={{fontSize:9,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Office filter</div>
-          <div style={{display:"flex",flexDirection:"column",gap:2}}>
-            {["All","Isle of Man","Malta","Cayman Islands","United Kingdom","Miami","Cyprus"].map(o=>{
-              const flags={"Isle of Man":"🇮🇲","Malta":"🇲🇹","Cayman Islands":"🇰🇾","United Kingdom":"🇬🇧","Miami":"🇺🇸","Cyprus":"🇨🇾","All":"🌍"};
-              const oc=officeColors[o];
-              const active=officeFilter===o;
-              return <button key={o} onClick={()=>{setOfficeFilter(o);if(mobile)setSideOpen(false);}}
-                style={{display:"flex",alignItems:"center",gap:8,padding:"6px 8px",borderRadius:5,border:"none",background:active?(oc?.bg||"rgba(0,180,216,0.2)"):"transparent",cursor:"pointer",textAlign:"left",width:"100%"}}>
-                <span style={{fontSize:13}}>{flags[o]}</span>
-                <span style={{fontSize:11,fontWeight:active?600:400,color:active?(oc?.color||CY):"rgba(255,255,255,0.55)"}}>{o==="All"?"All offices":o}</span>
-                {active&&<span style={{marginLeft:"auto",color:oc?.color||CY,fontSize:11}}>✓</span>}
-              </button>;
-            })}
-          </div>
-        </div>
       </div>
       <div style={{flex:1,overflowY:"auto",paddingBottom:6}}>
         {NAV.map(sec=><div key={sec.s}>
@@ -580,9 +547,27 @@ export default function AffinityCore(){
           <button onClick={e=>{e.stopPropagation();setSearchOpen(true);}} style={{display:"flex",alignItems:"center",gap:8,height:32,padding:"0 12px",borderRadius:6,border:"0.5px solid #e5e5e5",background:dark?"#252540":"#f9f9f9",cursor:"pointer",color:"#999",fontSize:11,whiteSpace:"nowrap"}}>
             🔍 {!mobile&&<span>Search <span style={{color:"#ccc",fontSize:10}}>⌘K</span></span>}
           </button>
-          {/* Office filter indicator — desktop only (filter is in sidebar) */}
-          {!mobile&&officeFilter!=="All"&&<div style={{display:"flex",alignItems:"center",gap:6,height:32,padding:"0 10px",borderRadius:6,border:`1.5px solid ${offC2.color}`,background:offC2.bg,fontSize:11,fontWeight:600,color:offC2.color,cursor:"pointer"}} onClick={()=>setOfficeFilter("All")}>
-            {{"Isle of Man":"🇮🇲","Malta":"🇲🇹","Cayman Islands":"🇰🇾","United Kingdom":"🇬🇧","Miami":"🇺🇸","Cyprus":"🇨🇾"}[officeFilter]} {officeFilter} <span style={{opacity:0.6,fontSize:10}}>× clear</span>
+          {/* Office filter dropdown — top right */}
+          {!mobile&&<div style={{position:"relative"}}>
+            <button onClick={e=>{e.stopPropagation();setOfficeOpen(o=>!o);}}
+              style={{display:"flex",alignItems:"center",gap:6,height:32,padding:"0 10px",borderRadius:6,border:`1px solid ${officeFilter==="All"?"#e5e5e5":(officeColors[officeFilter]?.color||CY)}`,background:officeFilter==="All"?"#fff":(officeColors[officeFilter]?.bg||"rgba(0,180,216,0.1)"),fontSize:11,fontWeight:600,color:officeFilter==="All"?"#666":(officeColors[officeFilter]?.color||CY),cursor:"pointer",whiteSpace:"nowrap"}}>
+              <span style={{fontSize:13}}>{({"Isle of Man":"🇮🇲","Malta":"🇲🇹","Cayman Islands":"🇰🇾","United Kingdom":"🇬🇧","Miami":"🇺🇸","Cyprus":"🇨🇾","All":"🌍"})[officeFilter]}</span>
+              <span>{officeFilter==="All"?"All offices":officeFilter}</span>
+              <span style={{opacity:0.5,fontSize:9,marginLeft:2}}>▼</span>
+            </button>
+            {officeOpen&&<div style={{position:"absolute",top:38,right:0,minWidth:200,background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:8,zIndex:100,overflow:"hidden",padding:"4px 0",boxShadow:"0 4px 16px rgba(0,0,0,0.08)"}} onClick={e=>e.stopPropagation()}>
+              {["All","Isle of Man","Malta","Cayman Islands","United Kingdom","Miami","Cyprus"].map(o=>{
+                const flags={"Isle of Man":"🇮🇲","Malta":"🇲🇹","Cayman Islands":"🇰🇾","United Kingdom":"🇬🇧","Miami":"🇺🇸","Cyprus":"🇨🇾","All":"🌍"};
+                const oc=officeColors[o];
+                const active=officeFilter===o;
+                return <div key={o} onClick={()=>{setOfficeFilter(o);setOfficeOpen(false);}}
+                  style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",cursor:"pointer",background:active?"#f5f5f5":"transparent",fontSize:12,fontWeight:active?600:400,color:active?(oc?.color||CY):"#333"}}>
+                  <span style={{fontSize:14}}>{flags[o]}</span>
+                  <span>{o==="All"?"All offices":o}</span>
+                  {active&&<span style={{marginLeft:"auto",color:oc?.color||CY,fontWeight:700}}>✓</span>}
+                </div>;
+              })}
+            </div>}
           </div>}
           {/* Shortcuts help */}
           {!mobile&&<button onClick={e=>{e.stopPropagation();setShortcutsOpen(p=>!p);}} title="Keyboard shortcuts" style={{width:32,height:32,borderRadius:6,border:"0.5px solid #e5e5e5",background:"transparent",cursor:"pointer",fontSize:13,color:"#999",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:600}}>?</button>}
@@ -595,9 +580,9 @@ export default function AffinityCore(){
           {nOpen&&<div style={{position:"absolute",top:38,right:0,width:300,background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:8,zIndex:100,overflow:"hidden",boxShadow:"0 4px 16px rgba(0,0,0,0.08)"}} onClick={e=>e.stopPropagation()}>
             <div style={{padding:"10px 14px",borderBottom:"0.5px solid #e5e5e5",display:"flex",justifyContent:"space-between"}}>
               <span style={{fontWeight:600,fontSize:12}}>Notifications</span>
-              <span style={{fontSize:11,color:CY,cursor:"pointer"}} onClick={()=>{setMod("notifications");setN(false);}}>View all &#8599;</span>
+              <span style={{fontSize:11,color:CY,cursor:"pointer"}} onClick={()=>{setMod("dashboard");setN(false);}}>View all &#8599;</span>
             </div>
-            {ALERTS.slice(0,5).map(a=><div key={a.id} style={{padding:"9px 14px",borderBottom:"0.5px solid #e5e5e5",cursor:"pointer"}} onClick={()=>{setMod("notifications");setN(false);}}>
+            {ALERTS.slice(0,5).map(a=><div key={a.id} style={{padding:"9px 14px",borderBottom:"0.5px solid #e5e5e5",cursor:"pointer"}} onClick={()=>{setMod("dashboard");setN(false);}}>
               <div style={{display:"flex",alignItems:"center",gap:6}}><div style={{width:6,height:6,borderRadius:"50%",background:a.sev==="Critical"?"#EF4444":"#F59E0B"}}/><span style={{fontSize:11,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.title}</span></div>
               <div style={{fontSize:10,color:"#999",marginTop:2,paddingLeft:12}}>{a.ass}</div>
             </div>)}
