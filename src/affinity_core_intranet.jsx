@@ -43,10 +43,10 @@ const RESOURCES = [
 ];
 
 const ADVENTURE_VALUES = [
-  {v:"Honesty",          icon:"&#10003;", desc:"We are transparent and truthful in all our dealings — with clients, regulators and each other."},
-  {v:"Transparent Communication", icon:"&#128172;", desc:"We share information openly and ensure everyone has what they need to do their best work."},
-  {v:"Respect",          icon:"&#11088;", desc:"We treat every person — colleague, client, counterparty — with dignity and professionalism."},
-  {v:"Inclusivity",      icon:"&#129309;", desc:"We celebrate difference and ensure everyone at Affinity has an equal opportunity to thrive."},
+  {v:"Honesty",          icon:"✓", desc:"We are transparent and truthful in all our dealings — with clients, regulators and each other."},
+  {v:"Transparent Communication", icon:"💬", desc:"We share information openly and ensure everyone has what they need to do their best work."},
+  {v:"Respect",          icon:"⭐", desc:"We treat every person — colleague, client, counterparty — with dignity and professionalism."},
+  {v:"Inclusivity",      icon:"🤝", desc:"We celebrate difference and ensure everyone at Affinity has an equal opportunity to thrive."},
 ];
 
 function Clock({office}) {
@@ -103,7 +103,7 @@ export default function AffinityIntranet() {
         <div style={{marginBottom:24}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
             <div style={{fontSize:17,fontWeight:700,color:NAVY}}>Our Group News &amp; Updates</div>
-            <button style={{fontSize:12,color:CY,background:"none",border:"none",cursor:"pointer",fontWeight:500}}>See all &#8599;</button>
+            <button style={{fontSize:12,color:CY,background:"none",border:"none",cursor:"pointer",fontWeight:500}}>See all ↗</button>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
             {NEWS.map(n=>(
@@ -123,7 +123,7 @@ export default function AffinityIntranet() {
         <div style={{marginBottom:24}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
             <div style={{fontSize:17,fontWeight:700,color:NAVY}}>Our Group Events</div>
-            <button style={{fontSize:12,color:CY,background:"none",border:"none",cursor:"pointer",fontWeight:500}}>&#43; Add event</button>
+            <button style={{fontSize:12,color:CY,background:"none",border:"none",cursor:"pointer",fontWeight:500}}>+ Add event</button>
           </div>
           <div style={{display:"flex",gap:10,overflowX:"auto",paddingBottom:6}}>
             {EVENTS.map(e=>(
@@ -144,7 +144,7 @@ export default function AffinityIntranet() {
             <div style={{position:"relative",zIndex:1}}>
               <div style={{fontSize:16,fontWeight:700,color:"#fff",marginBottom:6}}>The Affinity Adventure</div>
               <div style={{fontSize:11,color:"rgba(255,255,255,0.7)",marginBottom:12,lineHeight:1.6}}>Our values, culture and what it means to be part of the Affinity team.</div>
-              <div style={{fontSize:11,fontWeight:600,color:CY}}>LEARN MORE &#8594;</div>
+              <div style={{fontSize:11,fontWeight:600,color:CY}}>LEARN MORE →</div>
             </div>
           </div>
           <div onClick={()=>setPage("resources")} style={{background:`linear-gradient(135deg,${TEAL} 0%,#004E5A 100%)`,borderRadius:10,padding:"24px 20px",cursor:"pointer",position:"relative",overflow:"hidden"}}>
@@ -152,7 +152,7 @@ export default function AffinityIntranet() {
             <div style={{position:"relative",zIndex:1}}>
               <div style={{fontSize:16,fontWeight:700,color:"#fff",marginBottom:6}}>Explore your Resources</div>
               <div style={{fontSize:11,color:"rgba(255,255,255,0.7)",marginBottom:12,lineHeight:1.6}}>Forms, policies, handbooks and everything you need.</div>
-              <div style={{fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.8)"}}>LEARN MORE &#8594;</div>
+              <div style={{fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.8)"}}>LEARN MORE →</div>
             </div>
           </div>
         </div>
@@ -203,12 +203,12 @@ export default function AffinityIntranet() {
         {RESOURCES.map(r=>(
           <div key={r.name} style={{background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:8,padding:"12px 14px",display:"flex",gap:12,alignItems:"flex-start"}}>
             <div style={{width:32,height:32,borderRadius:6,background:r.type==="Form"?"#E6F7FB":r.type==="Link"?"#EAF3DE":"#EEF0FB",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>
-              {r.type==="Form"?"&#128196;":r.type==="Link"?"&#128279;":"&#128196;"}
+              {r.type==="Form"?"📄":r.type==="Link"?"🔗":"📄"}
             </div>
             <div style={{flex:1}}>
               <div style={{fontSize:12,fontWeight:600,color:NAVY,marginBottom:3}}>{r.name}</div>
               <div style={{fontSize:11,color:"#666",lineHeight:1.5}}>{r.desc}</div>
-              <button style={{marginTop:6,fontSize:11,color:CY,background:"none",border:"none",cursor:"pointer",padding:0}}>Open &#8599;</button>
+              <button style={{marginTop:6,fontSize:11,color:CY,background:"none",border:"none",cursor:"pointer",padding:0}}>Open ↗</button>
             </div>
           </div>
         ))}
@@ -244,7 +244,7 @@ export default function AffinityIntranet() {
     const n = NEWS.find(x=>x.id===newsId);
     if(!n) return null;
     return <div style={{padding:"24px 28px"}}>
-      <button onClick={()=>setNewsId(null)} style={{fontSize:11,color:CY,background:"none",border:"none",cursor:"pointer",marginBottom:14,padding:0}}>&#8592; Back to news</button>
+      <button onClick={()=>setNewsId(null)} style={{fontSize:11,color:CY,background:"none",border:"none",cursor:"pointer",marginBottom:14,padding:0}}>← Back to news</button>
       <div style={{backgroundImage:`url('${n.img}')`,backgroundSize:"cover",backgroundPosition:"center",height:200,borderRadius:10,marginBottom:16}}/>
       <div style={{fontSize:20,fontWeight:700,color:NAVY,marginBottom:4}}>{n.title}</div>
       <div style={{fontSize:11,color:"#aaa",marginBottom:16}}>{n.author} &middot; {n.date}</div>

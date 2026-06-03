@@ -194,7 +194,7 @@ function FATCATab({entity}) {
   return <div>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
       <div><div style={{fontSize:14,fontWeight:600}}>FATCA — Foreign Account Tax Compliance Act</div><div style={{fontSize:11,color:"#666",marginTop:2}}>US reporting obligation status for {entity?.name}</div></div>
-      {isApplicable&&<button onClick={()=>setModal("fatca")} style={{padding:"5px 14px",borderRadius:5,border:"none",background:"#00C4CC",color:"#fff",fontSize:11,cursor:"pointer"}}>&#43; Add/edit FATCA data</button>}
+      {isApplicable&&<button onClick={()=>setModal("fatca")} style={{padding:"5px 14px",borderRadius:5,border:"none",background:"#00C4CC",color:"#fff",fontSize:11,cursor:"pointer"}}>+ Add/edit FATCA data</button>}
     </div>
     {!isApplicable?<div style={{background:"#f9f9f9",borderRadius:8,padding:20,textAlign:"center",color:"#aaa",fontSize:12}}>FATCA reporting is not applicable for entities in {entity?.jur}.</div>:
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
@@ -210,8 +210,8 @@ function FATCATab({entity}) {
           <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"0.5px solid #e5e5e5",fontSize:12}}><span style={{color:"#666"}}>{k}</span><span style={{fontWeight:500,textAlign:"right",maxWidth:220}}>{v}</span></div>
         ))}
         <div style={{marginTop:12,display:"flex",gap:6}}>
-          <button style={{flex:1,padding:"6px",borderRadius:5,border:"0.5px solid #ccc",background:"transparent",fontSize:11,cursor:"pointer"}}>View return &#8599;</button>
-          <button style={{flex:1,padding:"6px",borderRadius:5,border:"none",background:"#00C4CC",color:"#fff",fontSize:11,cursor:"pointer"}}>File return &#8599;</button>
+          <button style={{flex:1,padding:"6px",borderRadius:5,border:"0.5px solid #ccc",background:"transparent",fontSize:11,cursor:"pointer"}}>View return ↗</button>
+          <button style={{flex:1,padding:"6px",borderRadius:5,border:"none",background:"#00C4CC",color:"#fff",fontSize:11,cursor:"pointer"}}>File return ↗</button>
         </div>
       </div>
     </div>}
@@ -228,7 +228,7 @@ function CRSTab({entity}) {
   return <div>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
       <div><div style={{fontSize:14,fontWeight:600}}>CRS — Common Reporting Standard</div><div style={{fontSize:11,color:"#666",marginTop:2}}>OECD automatic exchange of financial information</div></div>
-      {isApplicable&&<button style={{padding:"5px 14px",borderRadius:5,border:"none",background:"#00C4CC",color:"#fff",fontSize:11,cursor:"pointer"}}>&#43; Add/edit CRS data</button>}
+      {isApplicable&&<button style={{padding:"5px 14px",borderRadius:5,border:"none",background:"#00C4CC",color:"#fff",fontSize:11,cursor:"pointer"}}>+ Add/edit CRS data</button>}
     </div>
     {!isApplicable?<div style={{background:"#f9f9f9",borderRadius:8,padding:20,textAlign:"center",color:"#aaa",fontSize:12}}>CRS reporting does not apply to entities in {entity?.jur}.</div>:
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
@@ -267,7 +267,7 @@ function SubstanceTab({entity}) {
   return <div>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
       <div><div style={{fontSize:14,fontWeight:600}}>Substance requirements</div><div style={{fontSize:11,color:"#666",marginTop:2}}>Economic substance test — {entity?.jur}</div></div>
-      {isApplicable&&<button style={{padding:"5px 14px",borderRadius:5,border:"none",background:"#00C4CC",color:"#fff",fontSize:11,cursor:"pointer"}}>&#43; Update substance data</button>}
+      {isApplicable&&<button style={{padding:"5px 14px",borderRadius:5,border:"none",background:"#00C4CC",color:"#fff",fontSize:11,cursor:"pointer"}}>+ Update substance data</button>}
     </div>
     {!isApplicable?<div style={{background:"#f9f9f9",borderRadius:8,padding:20,textAlign:"center",color:"#aaa",fontSize:12}}>
       {entity?.type==="Trust"||entity?.type==="Foundation"?"Substance requirements do not apply to "+entity?.type.toLowerCase()+"s.":"Substance requirements do not apply to entities in "+entity?.jur+"."}
@@ -280,7 +280,7 @@ function SubstanceTab({entity}) {
             <div style={{fontSize:11,color:"#666",marginBottom:6}}>Relevant activities (select all that apply):</div>
             {activities.map(a=><div key={a} style={{display:"flex",alignItems:"center",gap:8,padding:"4px 0",borderBottom:"0.5px solid #f5f5f5",fontSize:12}}>
               <div style={{width:14,height:14,borderRadius:3,border:"1px solid #ccc",background:a===entityActivity||a==="Holding company"?"#00C4CC":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                {(a===entityActivity||a==="Holding company")&&<span style={{color:"#fff",fontSize:9}}>&#10003;</span>}
+                {(a===entityActivity||a==="Holding company")&&<span style={{color:"#fff",fontSize:9}}>✓</span>}
               </div>
               <span style={{color:a===entityActivity||a==="Holding company"?"#111":"#666"}}>{a}</span>
             </div>)}
@@ -296,11 +296,11 @@ function SubstanceTab({entity}) {
       <div style={{background:"#f9f9f9",borderRadius:8,padding:12}}>
         <div style={{fontSize:11,fontWeight:600,marginBottom:8}}>Substance evidence on file</div>
         {[
-          {item:"Board meeting minutes — in jurisdiction",status:"&#10003; Filed",c:"#4CAF7D"},
-          {item:"Directors resident in jurisdiction",status:"&#10003; Confirmed",c:"#4CAF7D"},
-          {item:"Accounts / management accounts",status:"&#10003; Filed",c:"#4CAF7D"},
+          {item:"Board meeting minutes — in jurisdiction",status:"✓ Filed",c:"#4CAF7D"},
+          {item:"Directors resident in jurisdiction",status:"✓ Confirmed",c:"#4CAF7D"},
+          {item:"Accounts / management accounts",status:"✓ Filed",c:"#4CAF7D"},
           {item:"Payroll records (if applicable)",status:"N/A — holding company",c:"#aaa"},
-          {item:"CIGA evidence — decision making",status:"&#10003; Board minutes filed",c:"#4CAF7D"},
+          {item:"CIGA evidence — decision making",status:"✓ Board minutes filed",c:"#4CAF7D"},
         ].map((e,i)=>(
           <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"0.5px solid #e5e5e5",fontSize:11}}>
             <span style={{color:"#666"}}>{e.item}</span>

@@ -4,7 +4,7 @@ const CY = "#00C4CC";
 
 const Bx = ({label,colors}) => <span style={{display:"inline-block",padding:"2px 8px",borderRadius:20,fontSize:10,fontWeight:600,background:colors?.bg||"#eee",color:colors?.color||"#333",whiteSpace:"nowrap"}}>{label}</span>;
 const Btn = ({primary,children,onClick,sx={}}) => <button onClick={onClick} style={{padding:"5px 12px",borderRadius:5,border:primary?"none":"0.5px solid #ccc",background:primary?CY:"transparent",color:primary?"#fff":"#111",fontSize:11,cursor:"pointer",whiteSpace:"nowrap",...sx}}>{children}</button>;
-const Md = ({title,onClose,children}) => <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(13,27,42,0.5)",display:"flex",alignItems:"flex-start",justifyContent:"center",paddingTop:40,zIndex:200}} onClick={e=>e.target===e.currentTarget&&onClose()}><div style={{background:"#fff",borderRadius:10,border:"0.5px solid #e5e5e5",padding:22,width:520,maxWidth:"96vw",maxHeight:"88vh",overflowY:"auto"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><div style={{fontSize:14,fontWeight:600}}>{title}</div><button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:18,color:"#aaa"}}>&#x2715;</button></div>{children}</div></div>;
+const Md = ({title,onClose,children}) => <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(13,27,42,0.5)",display:"flex",alignItems:"flex-start",justifyContent:"center",paddingTop:40,zIndex:200}} onClick={e=>e.target===e.currentTarget&&onClose()}><div style={{background:"#fff",borderRadius:10,border:"0.5px solid #e5e5e5",padding:22,width:520,maxWidth:"96vw",maxHeight:"88vh",overflowY:"auto"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><div style={{fontSize:14,fontWeight:600}}>{title}</div><button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:18,color:"#aaa"}}>✕</button></div>{children}</div></div>;
 
 // Full folder structure per brief
 const FOLDER_TREE = [
@@ -89,7 +89,7 @@ export default function AffinityDMS() {
             style={{height:28,padding:"0 10px",fontSize:11,borderRadius:5,border:"0.5px solid #ccc",background:"#fff",color:"#111",minWidth:200,outline:"none"}}/>
           <datalist id="dms-entities">{ENTITIES.map(e=><option key={e} value={e}/>)}</datalist>
         </div>
-        <Btn primary onClick={()=>setModal("upload")}>&#8593; Upload</Btn>
+        <Btn primary onClick={()=>setModal("upload")}>↑ Upload</Btn>
       </div>
 
       {/* DMS TAB — folder tree + documents */}
@@ -99,12 +99,12 @@ export default function AffinityDMS() {
           <div style={{width:240,minWidth:240,borderRight:"0.5px solid #e5e5e5",overflowY:"auto",background:"#f9f9f9",flexShrink:0}}>
             <div style={{padding:"10px 12px",fontSize:10,fontWeight:600,color:"#aaa",textTransform:"uppercase",letterSpacing:"0.5px",borderBottom:"0.5px solid #e5e5e5",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               Folders
-              {isAdmin&&<button style={{background:"none",border:"none",cursor:"pointer",color:CY,fontSize:11}}>&#43; New folder</button>}
+              {isAdmin&&<button style={{background:"none",border:"none",cursor:"pointer",color:CY,fontSize:11}}>+ New folder</button>}
             </div>
             {FOLDER_TREE.map(f=>(
               <div key={f.name}>
                 <div onClick={()=>toggleFolder(f.name)} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 12px",cursor:"pointer",background:selFolder.folder===f.name&&!selFolder.sub?"#fff":"transparent",borderBottom:"0.5px solid #e5e5e5",fontSize:12}}>
-                  <span style={{fontSize:10,color:"#aaa",width:12,flexShrink:0}}>{openFolders[f.name]?"&#9660;":"&#9658;"}</span>
+                  <span style={{fontSize:10,color:"#aaa",width:12,flexShrink:0}}>{openFolders[f.name]?"▼":"►"}</span>
                   
                   <span style={{fontWeight:selFolder.folder===f.name?600:400,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.name}</span>
                   <span style={{marginLeft:"auto",fontSize:9,color:"#aaa",flexShrink:0}}>{DOCS.filter(d=>d.folder===f.name&&d.entity===entity).length||""}</span>
@@ -114,7 +114,7 @@ export default function AffinityDMS() {
                   if(!isAdmin&&count===0) return null; // hide empty folders for non-admins
                   return (
                     <div key={sub} onClick={()=>setSelF({folder:f.name,sub})} style={{display:"flex",alignItems:"center",gap:6,padding:"5px 12px 5px 32px",cursor:"pointer",background:selFolder.folder===f.name&&selFolder.sub===sub?"#E6F7FB":"transparent",fontSize:11,borderBottom:"0.5px solid #f0f0f0"}}>
-                      <span style={{fontSize:12}}>&#128196;</span>
+                      <span style={{fontSize:12}}>📄</span>
                       <span style={{color:selFolder.folder===f.name&&selFolder.sub===sub?CY:"#555",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{sub}</span>
                       {count>0&&<span style={{marginLeft:"auto",fontSize:9,color:CY,fontWeight:600,flexShrink:0}}>{count}</span>}
                     </div>
@@ -134,7 +134,7 @@ export default function AffinityDMS() {
               style={{padding:"8px 14px",background:dragOver?"#E6F7FB":"#f9f9f9",borderBottom:"0.5px solid #e5e5e5",fontSize:11,color:dragOver?CY:"#aaa",textAlign:"center",flexShrink:0,cursor:"pointer",transition:"all 0.1s"}}
               onClick={()=>setModal("upload")}
             >
-              {dragOver?"Release to upload to this folder &#8679;":"&#8679; Drag & drop files here or click to upload &mdash; "+selFolder.folder+(selFolder.sub?" / "+selFolder.sub:"")}
+              {dragOver?"Release to upload to this folder ⇧":"⇧ Drag & drop files here or click to upload &mdash; "+selFolder.folder+(selFolder.sub?" / "+selFolder.sub:"")}
             </div>
             <div style={{padding:"8px 14px",borderBottom:"0.5px solid #e5e5e5",display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
               <div style={{fontSize:12,fontWeight:600}}>{selFolder.sub||selFolder.folder||"All documents"}</div>
@@ -158,7 +158,7 @@ export default function AffinityDMS() {
                   )}
                   {folderDocs.map(d=>(
                     <tr key={d.id} onClick={()=>setSel(sel===d.id?null:d.id)} style={{cursor:"pointer",borderBottom:"0.5px solid #e5e5e5",background:sel===d.id?"#f0fafe":"transparent"}}>
-                      <td style={{...td,textAlign:"center",fontSize:16}}>{d.folder==="KYC"?"&#128251;":d.folder==="Statutory"?"&#128196;":d.folder==="Accounts"?"&#128202;":"&#128196;"}</td>
+                      <td style={{...td,textAlign:"center",fontSize:16}}>{d.folder==="KYC"?"📻":d.folder==="Statutory"?"📄":d.folder==="Accounts"?"📊":"📄"}</td>
                       <TD v={d.name} bold/>
                       <td style={{...td,color:"#666",fontSize:10}}>{d.entity}</td>
                       <td style={td}><Bx label={d.status} colors={statusColors[d.status]}/></td>
@@ -174,7 +174,7 @@ export default function AffinityDMS() {
               {/* Doc detail panel */}
               {selDoc&&(
                 <div style={{width:220,minWidth:220,borderLeft:"0.5px solid #e5e5e5",padding:14,overflowY:"auto"}}>
-                  <button onClick={()=>setSel(null)} style={{float:"right",background:"none",border:"none",cursor:"pointer",color:"#aaa",fontSize:14}}>&#x2715;</button>
+                  <button onClick={()=>setSel(null)} style={{float:"right",background:"none",border:"none",cursor:"pointer",color:"#aaa",fontSize:14}}>✕</button>
                   <div style={{fontSize:12,fontWeight:600,lineHeight:1.4,marginBottom:4}}>{selDoc.name}</div>
                   <div style={{fontSize:10,color:"#999",marginBottom:10}}>{selDoc.entity}</div>
                   <Bx label={selDoc.status} colors={statusColors[selDoc.status]}/>
@@ -184,9 +184,9 @@ export default function AffinityDMS() {
                     </div>
                   ))}
                   <div style={{display:"flex",gap:5,marginTop:12,flexWrap:"wrap"}}>
-                    <Btn sx={{flex:1,fontSize:10}}>&#8595; Download</Btn>
-                    <Btn sx={{flex:1,fontSize:10}}>&#128065; Preview</Btn>
-                    {selDoc.status==="Under review"&&<Btn primary sx={{width:"100%",fontSize:10,marginTop:4}}>Approve &#10003;</Btn>}
+                    <Btn sx={{flex:1,fontSize:10}}>↓ Download</Btn>
+                    <Btn sx={{flex:1,fontSize:10}}>👁 Preview</Btn>
+                    {selDoc.status==="Under review"&&<Btn primary sx={{width:"100%",fontSize:10,marginTop:4}}>Approve ✓</Btn>}
                   </div>
                 </div>
               )}
@@ -228,9 +228,9 @@ export default function AffinityDMS() {
                 <div style={{fontSize:11,color:"#999",marginTop:2}}>{d.entity} &middot; {d.folder} / {d.subfolder} &middot; {d.date} by {d.by}</div>
               </div>
               <div style={{display:"flex",gap:6}}>
-                <Btn>&#128065; Preview</Btn>
+                <Btn>👁 Preview</Btn>
                 <Btn>Return</Btn>
-                <Btn primary>Approve &#10003;</Btn>
+                <Btn primary>Approve ✓</Btn>
               </div>
             </div>
           ))}
@@ -254,7 +254,7 @@ export default function AffinityDMS() {
                       <select style={{height:26,fontSize:10,borderRadius:4,border:"0.5px solid #ccc",background:"#fff",padding:"0 4px"}}>
                         {ENTITIES.slice(1).map(e=><option key={e}>{e.split(" ").slice(0,2).join(" ")}</option>)}
                       </select>
-                      <Btn primary sx={{fontSize:10,padding:"3px 8px"}}>Generate &#8599;</Btn>
+                      <Btn primary sx={{fontSize:10,padding:"3px 8px"}}>Generate ↗</Btn>
                     </div>
                   </div>
                 ))}
@@ -289,10 +289,10 @@ export default function AffinityDMS() {
           ].map((e,i)=>(
             <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:"0.5px solid #e5e5e5"}}>
               <div>
-                <div style={{fontSize:12,fontWeight:500}}>&#9993; {e.name}</div>
+                <div style={{fontSize:12,fontWeight:500}}>✉ {e.name}</div>
                 <div style={{fontSize:11,color:"#999",marginTop:2}}>{e.entity} &middot; {e.folder} &middot; {e.date} by {e.by}</div>
               </div>
-              <Btn sx={{fontSize:10}}>&#128065; Preview</Btn>
+              <Btn sx={{fontSize:10}}>👁 Preview</Btn>
             </div>
           ))}
         </div>
@@ -302,7 +302,7 @@ export default function AffinityDMS() {
       {modal==="upload"&&(
         <Md title={"Upload to "+selFolder.folder+(selFolder.sub?" / "+selFolder.sub:"")} onClose={()=>setModal(null)}>
           <div style={{border:"2px dashed #ccc",borderRadius:8,padding:20,textAlign:"center",marginBottom:14,color:"#aaa",fontSize:12,cursor:"pointer"}} onClick={()=>{}}>
-            &#8679; Drag & drop files here or <span style={{color:CY}}>browse</span><br/>
+            ⇧ Drag & drop files here or <span style={{color:CY}}>browse</span><br/>
             <span style={{fontSize:10}}>PDF, Word, Excel, image — max 50MB</span>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
@@ -327,7 +327,7 @@ export default function AffinityDMS() {
       {modal==="metadata"&&(
         <Md title="Add document metadata" onClose={()=>setModal(null)}>
           <div style={{background:"#EAF3DE22",border:"0.5px solid #4CAF7D",borderRadius:6,padding:"8px 12px",fontSize:11,color:"#27500A",marginBottom:12}}>
-            &#10003; File dropped into <strong>{selFolder.folder} / {selFolder.sub}</strong>. Please complete the metadata below.
+            ✓ File dropped into <strong>{selFolder.folder} / {selFolder.sub}</strong>. Please complete the metadata below.
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
             {[["Entity","select",ENTITIES.slice(1)],["Document name","text"],["Document date","text","DD/MM/YYYY"],["Expiry date","text","DD/MM/YYYY or N/A"],["Version","text","e.g. v1"],["Notes","text","Optional"]].map(([l,t,opts])=>(

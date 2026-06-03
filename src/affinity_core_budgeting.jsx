@@ -9,7 +9,7 @@ const Btn = ({primary,children,onClick,sx={}}) => <button onClick={onClick} styl
 const Card = ({title,children,action}) => <div style={{background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:8,padding:14,marginBottom:12}}>{title&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><div style={{fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.4px",color:"#666"}}>{title}</div>{action}</div>}{children}</div>;
 const KG = ({items,cols=4}) => <div style={{display:"grid",gridTemplateColumns:`repeat(${cols},1fr)`,gap:10,marginBottom:14}}>{items.map(k=><div key={k.l} style={{background:"#f9f9f9",borderRadius:6,padding:"10px 14px"}}><div style={{fontSize:10,color:"#666",marginBottom:3}}>{k.l}</div><div style={{fontSize:20,fontWeight:600,color:k.c||"#111"}}>{k.v}</div>{k.s&&<div style={{fontSize:10,color:"#999",marginTop:2}}>{k.s}</div>}</div>)}</div>;
 const SN = ({tabs,active,onChange}) => <div style={{display:"flex",gap:3,marginBottom:14,flexWrap:"wrap"}}>{tabs.map((t,i)=><button key={i} style={{padding:"4px 12px",fontSize:11,borderRadius:20,border:`0.5px solid ${active===i?"#ccc":"#e5e5e5"}`,background:active===i?"#fff":"transparent",color:active===i?"#111":"#666",cursor:"pointer",fontWeight:active===i?500:400,whiteSpace:"nowrap"}} onClick={()=>onChange(i)}>{t}</button>)}</div>;
-const Md = ({title,onClose,children}) => <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(13,27,42,0.5)",display:"flex",alignItems:"flex-start",justifyContent:"center",paddingTop:40,zIndex:200}} onClick={e=>e.target===e.currentTarget&&onClose()}><div style={{background:"#fff",borderRadius:10,border:"0.5px solid #e5e5e5",padding:22,width:520,maxWidth:"96vw",maxHeight:"88vh",overflowY:"auto"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><div style={{fontSize:14,fontWeight:600}}>{title}</div><button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:18,color:"#aaa"}}>&#x2715;</button></div>{children}</div></div>;
+const Md = ({title,onClose,children}) => <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(13,27,42,0.5)",display:"flex",alignItems:"flex-start",justifyContent:"center",paddingTop:40,zIndex:200}} onClick={e=>e.target===e.currentTarget&&onClose()}><div style={{background:"#fff",borderRadius:10,border:"0.5px solid #e5e5e5",padding:22,width:520,maxWidth:"96vw",maxHeight:"88vh",overflowY:"auto"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><div style={{fontSize:14,fontWeight:600}}>{title}</div><button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:18,color:"#aaa"}}>✕</button></div>{children}</div></div>;
 
 // ── Data ──────────────────────────────────────────────────────
 const BUDGETS = [
@@ -84,8 +84,8 @@ export default function AffinityBudgeting() {
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 20px",borderBottom:"0.5px solid #e5e5e5"}}>
         <div style={{fontSize:18,fontWeight:500,color:CY}}>Affinity <span style={{color:"#111",fontWeight:300}}>Core</span><small style={{fontSize:11,color:"#999",fontWeight:300,marginLeft:8}}>Budgeting</small></div>
         <div style={{display:"flex",gap:6}}>
-          <Btn onClick={()=>setModal("newBudget")}>&#43; New budget</Btn>
-          <Btn primary onClick={()=>setModal("newBudget")}>&#43; New reforecast</Btn>
+          <Btn onClick={()=>setModal("newBudget")}>+ New budget</Btn>
+          <Btn primary onClick={()=>setModal("newBudget")}>+ New reforecast</Btn>
         </div>
       </div>
 
@@ -110,9 +110,9 @@ export default function AffinityBudgeting() {
               <div style={{fontSize:11,color:"#999",marginTop:2}}>{budget.period} &middot; Owner: {budget.owner} &middot; Version: {budget.version}</div>
             </div>
             <div style={{display:"flex",gap:6}}>
-              <Btn>Export &#8599;</Btn>
+              <Btn>Export ↗</Btn>
               <Btn>Edit budget</Btn>
-              <Btn primary>Approve &#10003;</Btn>
+              <Btn primary>Approve ✓</Btn>
             </div>
           </div>
           <KG cols={5} items={[
@@ -312,7 +312,7 @@ export default function AffinityBudgeting() {
             ]}/>
           </div>
           <div style={{display:"flex",justifyContent:"flex-end",marginBottom:10}}>
-            <Btn primary onClick={()=>setModal("po")}>&#43; Raise purchase order</Btn>
+            <Btn primary onClick={()=>setModal("po")}>+ Raise purchase order</Btn>
           </div>
           <table style={{width:"100%",borderCollapse:"collapse",tableLayout:"fixed"}}>
             <thead><tr>
@@ -333,7 +333,7 @@ export default function AffinityBudgeting() {
                   <td style={{...td,textAlign:"right",fontWeight:600}}>{fmt(p.amount)}</td>
                   <td style={{...td,color:"#666"}}>{p.raised}</td>
                   <td style={td}><Badge label={p.status} colors={p.status==="Approved"?{bg:"#EAF3DE",color:"#27500A"}:{bg:"#FAEEDA",color:"#633806"}}/></td>
-                  <td style={td}>{p.status==="Pending"?<Btn primary>Approve &#10003;</Btn>:<Btn>View</Btn>}</td>
+                  <td style={td}>{p.status==="Pending"?<Btn primary>Approve ✓</Btn>:<Btn>View</Btn>}</td>
                 </tr>
               ))}
             </tbody>

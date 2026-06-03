@@ -129,10 +129,10 @@ export default function AffinityChatbot() {
       {/* Header */}
       <div style={{background:"#fff",borderBottom:"0.5px solid #e5e5e5",padding:"12px 20px",flexShrink:0}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:36,height:36,borderRadius:"50%",background:CY,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>&#129302;</div>
+          <div style={{width:36,height:36,borderRadius:"50%",background:CY,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>🤖</div>
           <div>
             <div style={{fontSize:14,fontWeight:600}}>Affinity Core Assistant</div>
-            <div style={{fontSize:11,color:"#4CAF7D"}}>&#9679; Online &middot; Internal data only &middot; No external connection</div>
+            <div style={{fontSize:11,color:"#4CAF7D"}}>● Online &middot; Internal data only &middot; No external connection</div>
           </div>
         </div>
       </div>
@@ -141,14 +141,14 @@ export default function AffinityChatbot() {
       <div style={{flex:1,overflowY:"auto",padding:"16px 20px"}}>
         {messages.map((m,i)=>(
           <div key={i} style={{display:"flex",justifyContent:m.role==="user"?"flex-end":"flex-start",marginBottom:12}}>
-            {m.role==="assistant"&&<div style={{width:28,height:28,borderRadius:"50%",background:CY,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,flexShrink:0,marginRight:8,marginTop:2}}>&#129302;</div>}
+            {m.role==="assistant"&&<div style={{width:28,height:28,borderRadius:"50%",background:CY,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,flexShrink:0,marginRight:8,marginTop:2}}>🤖</div>}
             <div style={{maxWidth:"72%",padding:"10px 14px",borderRadius:m.role==="user"?"12px 12px 2px 12px":"12px 12px 12px 2px",background:m.role==="user"?CY:"#fff",color:m.role==="user"?"#fff":"#111",fontSize:12,lineHeight:1.65,boxShadow:"0 1px 4px rgba(0,0,0,0.06)",border:m.role==="user"?"none":"0.5px solid #e5e5e5"}}>
               {renderText(m.text)}
             </div>
           </div>
         ))}
         {loading&&<div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
-          <div style={{width:28,height:28,borderRadius:"50%",background:CY,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12}}>&#129302;</div>
+          <div style={{width:28,height:28,borderRadius:"50%",background:CY,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12}}>🤖</div>
           <div style={{padding:"10px 14px",borderRadius:"12px 12px 12px 2px",background:"#fff",border:"0.5px solid #e5e5e5",boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}>
             <div style={{display:"flex",gap:4,alignItems:"center"}}>
               {[0,1,2].map(i=><div key={i} style={{width:6,height:6,borderRadius:"50%",background:"#ccc",animation:`pulse 1s ${i*0.2}s infinite`}}/>)}
@@ -177,7 +177,7 @@ export default function AffinityChatbot() {
             />
           </div>
           <button onClick={()=>send()} disabled={!input.trim()||loading} style={{width:36,height:36,borderRadius:8,border:"none",background:input.trim()&&!loading?CY:"#e5e5e5",color:"#fff",cursor:input.trim()&&!loading?"pointer":"default",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>
-            &#8594;
+            →
           </button>
         </div>
         <div style={{fontSize:10,color:"#aaa",marginTop:6,textAlign:"center"}}>Internal use only &middot; Data sourced from Affinity Core &middot; No external connection</div>

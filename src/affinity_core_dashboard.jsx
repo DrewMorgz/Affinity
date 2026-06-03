@@ -167,7 +167,7 @@ export default function Dashboard({userId, onNav}) {
       <div style={{marginBottom:14}}>
         <div style={{fontSize:18,fontWeight:700}}>Good morning, {user.name.split(" ")[0]}.</div>
         <div style={{fontSize:12,color:"#666",marginTop:3}}>{user.office} &middot; {user.role}
-          {critCount>0&&<span style={{color:"#EF4444",marginLeft:8}}>&#9888; {critCount} critical item{critCount>1?"s":""} require your attention.</span>}
+          {critCount>0&&<span style={{color:"#EF4444",marginLeft:8}}>⚠ {critCount} critical item{critCount>1?"s":""} require your attention.</span>}
         </div>
       </div>
 
@@ -216,10 +216,10 @@ export default function Dashboard({userId, onNav}) {
       })()}
 
       {/* Timesheet alert */}
-      {userId===4&&<div style={{background:"#FCEBEB22",border:"0.5px solid #EF4444",borderRadius:8,padding:"10px 14px",marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontSize:12,fontWeight:600,color:"#A32D2D"}}>&#9888; Timesheet not submitted — Wednesday, Thursday missing</div><button style={{padding:"5px 12px",borderRadius:5,border:"none",background:"#EF4444",color:"#fff",fontSize:11,cursor:"pointer"}}>Submit now</button></div>}
+      {userId===4&&<div style={{background:"#FCEBEB22",border:"0.5px solid #EF4444",borderRadius:8,padding:"10px 14px",marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontSize:12,fontWeight:600,color:"#A32D2D"}}>⚠ Timesheet not submitted — Wednesday, Thursday missing</div><button style={{padding:"5px 12px",borderRadius:5,border:"none",background:"#EF4444",color:"#fff",fontSize:11,cursor:"pointer"}}>Submit now</button></div>}
 
       {/* Inbox 7d+ alert */}
-      {overdueInbox.length>0&&<div style={{background:"#FAEEDA22",border:"0.5px solid #F59E0B",borderRadius:8,padding:"10px 14px",marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontSize:12,fontWeight:500,color:"#633806"}}>&#9993; {overdueInbox.length} item{overdueInbox.length>1?"s":""} in your inbox have been waiting 7+ days and need attention.</div><button onClick={()=>setInboxFilter("mine")} style={{padding:"5px 12px",borderRadius:5,border:"none",background:"#F59E0B",color:"#fff",fontSize:11,cursor:"pointer"}}>View inbox</button></div>}
+      {overdueInbox.length>0&&<div style={{background:"#FAEEDA22",border:"0.5px solid #F59E0B",borderRadius:8,padding:"10px 14px",marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontSize:12,fontWeight:500,color:"#633806"}}>✉ {overdueInbox.length} item{overdueInbox.length>1?"s":""} in your inbox have been waiting 7+ days and need attention.</div><button onClick={()=>setInboxFilter("mine")} style={{padding:"5px 12px",borderRadius:5,border:"none",background:"#F59E0B",color:"#fff",fontSize:11,cursor:"pointer"}}>View inbox</button></div>}
 
       {/* KPIs */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10,marginBottom:14}}>
@@ -237,7 +237,7 @@ export default function Dashboard({userId, onNav}) {
               {["mine","team"].map(f=><button key={f} onClick={()=>setTaskFilter(f)} style={{padding:"2px 8px",borderRadius:20,border:`0.5px solid ${taskFilter===f?"#ccc":"#e5e5e5"}`,background:taskFilter===f?"#fff":"transparent",color:taskFilter===f?"#111":"#aaa",cursor:"pointer",fontSize:10}}>{f==="mine"?"Mine":"My team"}{f==="team"&&<span style={{marginLeft:3,fontWeight:600,color:teamTasks.filter(t=>t.priority==="Critical").length>0?"#EF4444":"#F59E0B"}}>({teamTasks.length})</span>}</button>)}
             </div>}
           </div>
-        } action={<button onClick={()=>onNav&&onNav("tasks")} style={{padding:"4px 10px",borderRadius:5,border:"0.5px solid #e5e5e5",background:"transparent",fontSize:11,cursor:"pointer"}}>View all &#8599;</button>}>
+        } action={<button onClick={()=>onNav&&onNav("tasks")} style={{padding:"4px 10px",borderRadius:5,border:"0.5px solid #e5e5e5",background:"transparent",fontSize:11,cursor:"pointer"}}>View all ↗</button>}>
           {shownTasks.slice(0,6).map(t=>(
             <div key={t.id} style={{display:"flex",alignItems:"flex-start",gap:8,padding:"6px 0",borderBottom:"0.5px solid #e5e5e5"}}>
               <div style={{width:7,height:7,borderRadius:"50%",marginTop:4,flexShrink:0,background:t.priority==="Critical"?"#EF4444":t.priority==="High"?"#F59E0B":CY}}/>
@@ -248,7 +248,7 @@ export default function Dashboard({userId, onNav}) {
               <Bx label={t.module} colors={modColors[t.module]||{bg:"#eee",color:"#666"}}/>
             </div>
           ))}
-          {shownTasks.length===0&&<div style={{fontSize:12,color:"#4CAF7D",padding:"10px 0"}}>&#10003; No outstanding tasks</div>}
+          {shownTasks.length===0&&<div style={{fontSize:12,color:"#4CAF7D",padding:"10px 0"}}>✓ No outstanding tasks</div>}
         </Card>
 
         {/* Inbox */}
@@ -259,7 +259,7 @@ export default function Dashboard({userId, onNav}) {
               {["mine","team"].map(f=><button key={f} onClick={()=>setInboxFilter(f)} style={{padding:"2px 8px",borderRadius:20,border:`0.5px solid ${inboxFilter===f?"#ccc":"#e5e5e5"}`,background:inboxFilter===f?"#fff":"transparent",color:inboxFilter===f?"#111":"#aaa",cursor:"pointer",fontSize:10}}>{f==="mine"?"Mine":"My team"}{f==="team"&&<span style={{marginLeft:3,fontWeight:600,color:"#F59E0B"}}>({teamInbox.length})</span>}</button>)}
             </div>}
           </div>
-        } action={<button onClick={()=>onNav&&onNav("documents")} style={{padding:"4px 10px",borderRadius:5,border:"0.5px solid #e5e5e5",background:"transparent",fontSize:11,cursor:"pointer"}}>Open DMS &#8599;</button>}
+        } action={<button onClick={()=>onNav&&onNav("documents")} style={{padding:"4px 10px",borderRadius:5,border:"0.5px solid #e5e5e5",background:"transparent",fontSize:11,cursor:"pointer"}}>Open DMS ↗</button>}
         border={overdueInbox.length>0?"#F59E0B":"#e5e5e5"}>
           {shownInbox.length===0&&<div style={{fontSize:12,color:"#aaa",padding:"10px 0"}}>No items in inbox.</div>}
           {shownInbox.slice(0,6).map(i=>(
@@ -274,7 +274,7 @@ export default function Dashboard({userId, onNav}) {
                 {inboxFilter==="team"&&<div style={{fontSize:10,color:"#aaa",marginTop:1}}>Assigned to {i.assignee}</div>}
               </div>
               <div style={{display:"flex",gap:4,flexShrink:0}}>
-                <button style={{padding:"3px 7px",borderRadius:4,border:"0.5px solid #e5e5e5",background:"transparent",fontSize:10,cursor:"pointer"}}>File &#8599;</button>
+                <button style={{padding:"3px 7px",borderRadius:4,border:"0.5px solid #e5e5e5",background:"transparent",fontSize:10,cursor:"pointer"}}>File ↗</button>
               </div>
             </div>
           ))}
@@ -304,7 +304,7 @@ export default function Dashboard({userId, onNav}) {
         </Card>}
 
         {/* Onboarding pipeline */}
-        <Card title="Onboarding pipeline" action={<button onClick={()=>onNav&&onNav("onboarding")} style={{padding:"4px 10px",borderRadius:5,border:"0.5px solid #e5e5e5",background:"transparent",fontSize:11,cursor:"pointer"}}>View &#8599;</button>}>
+        <Card title="Onboarding pipeline" action={<button onClick={()=>onNav&&onNav("onboarding")} style={{padding:"4px 10px",borderRadius:5,border:"0.5px solid #e5e5e5",background:"transparent",fontSize:11,cursor:"pointer"}}>View ↗</button>}>
           {ONBOARDING.map(o=>(
             <div key={o.name} style={{marginBottom:8}}>
               <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:2}}>
@@ -320,7 +320,7 @@ export default function Dashboard({userId, onNav}) {
       {/* Third row */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
         {/* Debtors or recently accessed */}
-        {myDebtors.length>0?<Card title="My debtors" action={<button onClick={()=>onNav&&onNav("invoicing")} style={{padding:"4px 10px",borderRadius:5,border:"0.5px solid #e5e5e5",background:"transparent",fontSize:11,cursor:"pointer"}}>View all &#8599;</button>}>
+        {myDebtors.length>0?<Card title="My debtors" action={<button onClick={()=>onNav&&onNav("invoicing")} style={{padding:"4px 10px",borderRadius:5,border:"0.5px solid #e5e5e5",background:"transparent",fontSize:11,cursor:"pointer"}}>View all ↗</button>}>
           {myDebtors.map((d,i)=>(
             <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:"0.5px solid #e5e5e5",fontSize:12}}>
               <div><div style={{fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:180}}>{d.entity}</div><div style={{fontSize:10,color:"#999",marginTop:2}}>{d.age}</div></div>
@@ -336,7 +336,7 @@ export default function Dashboard({userId, onNav}) {
           {[{item:"Q3 retainer invoices",type:"Invoicing",count:7},{item:"Time entries — week 28",type:"Timesheets",count:4},{item:"North Star attrition",type:"Onboarding",count:1}].map((a,i)=>(
             <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"0.5px solid #e5e5e5",fontSize:12}}>
               <div><div style={{fontWeight:500}}>{a.item}</div><Bx label={a.type} colors={modColors[a.type]||{bg:"#eee",color:"#666"}}/></div>
-              <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontWeight:600,color:CY}}>{a.count} item{a.count>1?"s":""}</span><button style={{padding:"4px 10px",borderRadius:5,border:"none",background:CY,color:"#fff",fontSize:11,cursor:"pointer"}}>Open &#8599;</button></div>
+              <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontWeight:600,color:CY}}>{a.count} item{a.count>1?"s":""}</span><button style={{padding:"4px 10px",borderRadius:5,border:"none",background:CY,color:"#fff",fontSize:11,cursor:"pointer"}}>Open ↗</button></div>
             </div>
           ))}
         </Card>}
@@ -352,7 +352,7 @@ export default function Dashboard({userId, onNav}) {
           <div style={{marginTop:10}}>
             <div style={{fontSize:10,color:"#aaa",marginBottom:6,textTransform:"uppercase",letterSpacing:"0.4px"}}>Quick links</div>
             <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-              {["Entity Admin","Timesheets","Invoicing","Compliance"].map(l=><button key={l} onClick={()=>onNav&&onNav(l.toLowerCase().replace(" ",""))} style={{padding:"4px 10px",borderRadius:20,border:"0.5px solid #e5e5e5",background:"transparent",fontSize:11,cursor:"pointer",color:"#666"}}>{l} &#8599;</button>)}
+              {["Entity Admin","Timesheets","Invoicing","Compliance"].map(l=><button key={l} onClick={()=>onNav&&onNav(l.toLowerCase().replace(" ",""))} style={{padding:"4px 10px",borderRadius:20,border:"0.5px solid #e5e5e5",background:"transparent",fontSize:11,cursor:"pointer",color:"#666"}}>{l} ↗</button>)}
             </div>
           </div>
         </Card>

@@ -218,7 +218,7 @@ function Tasks(){
         <option value="">All team members</option>
         {[...new Set(TASKS_DATA.map(t=>t.assignee))].map(a=><option key={a}>{a}</option>)}
       </select>
-      <button onClick={()=>setModal(true)} style={{padding:"5px 14px",borderRadius:5,border:"none",background:CY,color:"#fff",fontSize:11,cursor:"pointer",fontWeight:500}}>&#43; New task</button>
+      <button onClick={()=>setModal(true)} style={{padding:"5px 14px",borderRadius:5,border:"none",background:CY,color:"#fff",fontSize:11,cursor:"pointer",fontWeight:500}}>+ New task</button>
     </div>
     <div style={{display:"flex"}}>
       <table style={{flex:1,borderCollapse:"collapse",tableLayout:"fixed"}}>
@@ -247,19 +247,19 @@ function Tasks(){
         </tbody>
       </table>
       {selT&&<div style={{width:260,minWidth:260,borderLeft:"0.5px solid #e5e5e5",padding:14,overflowY:"auto"}}>
-        <button onClick={()=>setSel(null)} style={{float:"right",background:"none",border:"none",cursor:"pointer",color:"#aaa",fontSize:14}}>&#x2715;</button>
+        <button onClick={()=>setSel(null)} style={{float:"right",background:"none",border:"none",cursor:"pointer",color:"#aaa",fontSize:14}}>✕</button>
         <div style={{fontSize:13,fontWeight:600,lineHeight:1.4,marginBottom:10}}>{selT.title}</div>
         {[["Entity",selT.entity],["Assignee",selT.assignee],["Due",selT.due],["Priority",selT.priority],["Category",selT.cat],["Status",selT.status]].map(([k,v])=><div key={k} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:"0.5px solid #e5e5e5",fontSize:12}}><span style={{color:"#666"}}>{k}</span><span style={{fontWeight:500}}>{v}</span></div>)}
         <div style={{marginTop:12}}><div style={{fontSize:10,color:"#aaa",marginBottom:6,textTransform:"uppercase",letterSpacing:"0.4px"}}>Notes</div><textarea style={{width:"100%",height:80,fontSize:11,borderRadius:5,border:"0.5px solid #ccc",padding:"6px 8px",resize:"none",background:"#f9f9f9",color:"#111"}} placeholder="Add notes..."/></div>
         <div style={{display:"flex",gap:6,marginTop:10}}>
-          {selT.status!=="Complete"&&<button onClick={()=>{done(selT.id);setSel(null);}} style={{flex:1,padding:"6px",borderRadius:5,border:"none",background:"#4CAF7D",color:"#fff",fontSize:11,cursor:"pointer",fontWeight:500}}>Mark complete &#10003;</button>}
+          {selT.status!=="Complete"&&<button onClick={()=>{done(selT.id);setSel(null);}} style={{flex:1,padding:"6px",borderRadius:5,border:"none",background:"#4CAF7D",color:"#fff",fontSize:11,cursor:"pointer",fontWeight:500}}>Mark complete ✓</button>}
           <button style={{flex:1,padding:"6px",borderRadius:5,border:"0.5px solid #ccc",background:"transparent",color:"#111",fontSize:11,cursor:"pointer"}}>Edit</button>
         </div>
       </div>}
     </div>
     {modal&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(13,27,42,0.5)",display:"flex",alignItems:"flex-start",justifyContent:"center",paddingTop:40,zIndex:200}} onClick={e=>e.target===e.currentTarget&&setModal(false)}>
       <div style={{background:"#fff",borderRadius:10,border:"0.5px solid #e5e5e5",padding:22,width:500,maxWidth:"96vw"}}>
-        <div style={{display:"flex",justifyContent:"space-between",marginBottom:14}}><div style={{fontSize:14,fontWeight:600}}>New task</div><button onClick={()=>setModal(false)} style={{background:"none",border:"none",cursor:"pointer",fontSize:18,color:"#aaa"}}>&#x2715;</button></div>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:14}}><div style={{fontSize:14,fontWeight:600}}>New task</div><button onClick={()=>setModal(false)} style={{background:"none",border:"none",cursor:"pointer",fontSize:18,color:"#aaa"}}>✕</button></div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
           {[["Task title","text","Description of task",true],["Entity","text","Entity name or —"],["Assignee","select","",false,["Andy Morgan","Roxy Sheeley","Garry Crossan","Joanne Fenech","Neil Kelly","Gary Harrison","Sarah Cole"]],["Due date","text","DD/MM/YYYY"],["Priority","select","",false,["Critical","High","Medium","Low"]],["Category","select","",false,["Compliance","KYC","Invoicing","Timesheets","Onboarding","Corporate","Statutory","System","Accounts","Other"]],["Status","select","",false,["Open","In progress"]]].map(([l,t,ph,full,opts])=><div key={l} style={{display:"flex",flexDirection:"column",gap:3,gridColumn:full?"1/-1":"auto"}}>
             <label style={{fontSize:11,color:"#666"}}>{l}</label>
@@ -522,14 +522,14 @@ export default function AffinityCore(){
         <div style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}} onClick={e=>{e.stopPropagation();setU(!uOpen);}}>
           <div style={{width:28,height:28,borderRadius:"50%",background:user.c,color:"#fff",fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{user.av}</div>
           <div><div style={{fontSize:11,fontWeight:500,color:"#fff"}}>{user.name}</div><div style={{fontSize:10,color:"rgba(255,255,255,0.38)"}}>{user.role}</div></div>
-          <span style={{marginLeft:"auto",color:"rgba(255,255,255,0.3)",fontSize:10}}>&#9650;</span>
+          <span style={{marginLeft:"auto",color:"rgba(255,255,255,0.3)",fontSize:10}}>▲</span>
         </div>
         {uOpen&&<div style={{position:"absolute",bottom:58,left:8,right:8,background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:8,zIndex:100,overflow:"hidden",padding:"4px 0",boxShadow:"0 4px 16px rgba(0,0,0,0.1)"}} onClick={e=>e.stopPropagation()}>
           <div style={{padding:"6px 12px",fontSize:10,fontWeight:600,color:"#999",textTransform:"uppercase",letterSpacing:"0.5px",borderBottom:"0.5px solid #e5e5e5"}}>Switch user</div>
           {USERS.map(u=><div key={u.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",cursor:"pointer",background:uid===u.id?"#f5f5f5":"transparent"}} onClick={()=>{setUid(u.id);setU(false);}}>
             <div style={{width:24,height:24,borderRadius:"50%",background:u.c,color:"#fff",fontSize:9,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{u.av}</div>
             <div><div style={{fontSize:12,fontWeight:uid===u.id?600:400}}>{u.name}</div><div style={{fontSize:10,color:"#999"}}>{u.role}</div></div>
-            {uid===u.id&&<span style={{marginLeft:"auto",color:CY,fontWeight:700}}>&#10003;</span>}
+            {uid===u.id&&<span style={{marginLeft:"auto",color:CY,fontWeight:700}}>✓</span>}
           </div>)}
         </div>}
       </div>
@@ -538,7 +538,7 @@ export default function AffinityCore(){
       <div data-topbar style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 16px",height:48,borderBottom:"0.5px solid #e5e5e5",flexShrink:0,background:"#fff"}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           {/* Hamburger — mobile only */}
-          <button onClick={e=>{e.stopPropagation();setSideOpen(!sideOpen);}} style={{display:mobile?"flex":"none",alignItems:"center",justifyContent:"center",width:36,height:36,borderRadius:6,border:"0.5px solid #e5e5e5",background:"transparent",cursor:"pointer",fontSize:18,flexShrink:0}}>&#9776;</button>
+          <button onClick={e=>{e.stopPropagation();setSideOpen(!sideOpen);}} style={{display:mobile?"flex":"none",alignItems:"center",justifyContent:"center",width:36,height:36,borderRadius:6,border:"0.5px solid #e5e5e5",background:"transparent",cursor:"pointer",fontSize:18,flexShrink:0}}>☰</button>
           {mobile&&<div style={{fontSize:16,fontWeight:500,color:CY}}>Affinity <span style={{color:"#111",fontWeight:300}}>Core</span></div>}
           {!mobile&&<div style={{fontSize:14,fontWeight:500}}>{navLabel}</div>}
           <span style={{display:mobile?"none":"inline-block",padding:"2px 8px",borderRadius:20,fontSize:10,fontWeight:600,background:offC[user.office]?.bg||"#eee",color:offC[user.office]?.color||"#666"}}>{user.office}</span>
@@ -576,12 +576,12 @@ export default function AffinityCore(){
           {/* PDF export */}
           {!mobile&&<button onClick={e=>{e.stopPropagation();window.print();}} title="Export current view as PDF" style={{width:32,height:32,borderRadius:6,border:"0.5px solid #e5e5e5",background:"transparent",cursor:"pointer",fontSize:13,color:"#999",display:"flex",alignItems:"center",justifyContent:"center"}}>⬇️</button>}
           <button onClick={e=>{e.stopPropagation();setN(!nOpen);}} style={{position:"relative",width:32,height:32,borderRadius:6,border:"0.5px solid #e5e5e5",background:"transparent",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15}}>
-            &#128276;<div style={{position:"absolute",top:6,right:6,width:7,height:7,borderRadius:"50%",background:"#EF4444"}}/>
+            🔔<div style={{position:"absolute",top:6,right:6,width:7,height:7,borderRadius:"50%",background:"#EF4444"}}/>
           </button>
           {nOpen&&<div style={{position:"absolute",top:38,right:0,width:300,background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:8,zIndex:100,overflow:"hidden",boxShadow:"0 4px 16px rgba(0,0,0,0.08)"}} onClick={e=>e.stopPropagation()}>
             <div style={{padding:"10px 14px",borderBottom:"0.5px solid #e5e5e5",display:"flex",justifyContent:"space-between"}}>
               <span style={{fontWeight:600,fontSize:12}}>Notifications</span>
-              <span style={{fontSize:11,color:CY,cursor:"pointer"}} onClick={()=>{setMod("dashboard");setN(false);}}>View all &#8599;</span>
+              <span style={{fontSize:11,color:CY,cursor:"pointer"}} onClick={()=>{setMod("dashboard");setN(false);}}>View all ↗</span>
             </div>
             {ALERTS.slice(0,5).map(a=><div key={a.id} style={{padding:"9px 14px",borderBottom:"0.5px solid #e5e5e5",cursor:"pointer"}} onClick={()=>{setMod("dashboard");setN(false);}}>
               <div style={{display:"flex",alignItems:"center",gap:6}}><div style={{width:6,height:6,borderRadius:"50%",background:a.sev==="Critical"?"#EF4444":"#F59E0B"}}/><span style={{fontSize:11,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.title}</span></div>
