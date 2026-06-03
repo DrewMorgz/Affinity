@@ -298,9 +298,9 @@ function SplashScreen({ onDone }) {
     }}>
       {/* Logo */}
       <div style={{ marginBottom:32, textAlign:"center" }}>
-        <img src={AFFINITY_LOGO} alt="Affinity" style={{ width:"clamp(220px, 60vw, 340px)", display:"block", margin:"0 auto" }} />
-        <div style={{ fontSize:28, color:"#00C4CC", fontWeight:300, letterSpacing:"8px", marginTop:12, textTransform:"uppercase" }}>
-          Core
+        <div style={{ display:"inline-flex", alignItems:"center", gap:"0.35em", justifyContent:"center", width:"100%" }}>
+          <img src={AFFINITY_LOGO} alt="Affinity" style={{ height:"clamp(56px, 11vw, 96px)", display:"block" }} />
+          <span style={{ fontFamily:"'Catamaran', system-ui, sans-serif", fontSize:"clamp(48px, 9.5vw, 84px)", fontWeight:300, color:"#00C4CC", letterSpacing:"-1px", lineHeight:1 }}>Core</span>
         </div>
         <div style={{ fontSize:12, color:"rgba(255,255,255,0.35)", textTransform:"uppercase", letterSpacing:"3px", marginTop:20 }}>
           Made by Affinity, for Affinity
