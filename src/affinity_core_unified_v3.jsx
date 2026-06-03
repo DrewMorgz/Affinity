@@ -475,6 +475,7 @@ export default function AffinityCore(){
       case "crm":          return <CRM/>;
       case "documents":    return <Documents/>;
       case "onboarding":   return <Onboarding/>;
+      case "attrition":    return <Onboarding initialView="attrition"/>;
       case "timesheets":   return <Timesheets officeFilter={officeFilter}/>;
       case "invoicing":    return <Invoicing/>;
       case "bookkeeping":  return <Bookkeeping/>;

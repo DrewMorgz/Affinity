@@ -375,9 +375,8 @@ export default function AffinityTimesheets() {
               {[
                 ["Date","text","DD/MM/YYYY",false],["Entity","text","Entity name",false],
                 ["Matter / service","text","e.g. Company administration",false],
-                ["Work type","select","",false,["Client — admin","Client — compliance","Client — trust","Client — finance","Client — onboarding","Client — corporate","Non-billable — internal","Non-billable — leave"]],
+                ["Work type","select","",false,["Client — admin","Client — compliance","Client — trust","Client — finance","Client — onboarding","Client — corporate","Client — non-billable","Non-billable — new business","Non-billable — internal","Non-billable — leave"]],
                 ["Units (10 min)","number","e.g. 6 = 1 hour",false],
-                ["Billable","select","",false,["Yes","No"]],
               ].map(([l,t,ph,full,opts])=>(
                 <div key={l} style={{ display:"flex", flexDirection:"column", gap:3, gridColumn:full?"1/-1":"auto" }}>
                   <label style={{ fontSize:11, color:"#666" }}>{l}</label>

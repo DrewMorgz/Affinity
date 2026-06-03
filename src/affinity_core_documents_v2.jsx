@@ -259,18 +259,6 @@ export default function AffinityDMS() {
                   </div>
                 ))}
               </div>
-              {section==="Statutory"&&(
-                <div style={{marginTop:12}}>
-                  <div style={{fontSize:11,fontWeight:600,marginBottom:8,color:"#666"}}>Jurisdiction-specific statutory forms</div>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:6}}>
-                    {["Alderney","Bahamas","Barbados","Bermuda","BVI","Brunei","Cayman Islands","Curacao","Cyprus","Delaware","England & Wales","General","Gibraltar","Guernsey","Hong Kong","Ireland","Isle of Man","Jersey","Labuan","Luxembourg","Malaysia","Malta","Mauritius","Netherlands","New York","Seychelles","Singapore","Turks & Caicos","UAE","Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming"].map(j=>(
-                      <div key={j} style={{background:"#f9f9f9",borderRadius:4,padding:"4px 8px",fontSize:10,display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer",border:"0.5px solid #e5e5e5"}} onClick={()=>setModal("jur")}>
-                        <span>{j}</span><span style={{color:CY}}>&#8599;</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           ))}
         </div>
@@ -359,22 +347,6 @@ export default function AffinityDMS() {
         </Md>
       )}
 
-      {modal==="jur"&&(
-        <Md title="Jurisdiction statutory forms" onClose={()=>setModal(null)}>
-          <div style={{fontSize:11,color:"#666",marginBottom:12}}>Select the form type for this jurisdiction. Forms are pre-populated from entity data.</div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr",gap:6}}>
-            {["Change of directors","Change of secretary","Change of registered office","Return of allotments","Annual return","Dissolution / strike-off form","Continuation form","Consent to act as director"].map(f=>(
-              <div key={f} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:"0.5px solid #e5e5e5",fontSize:12}}>
-                <span>{f}</span>
-                <Btn primary sx={{fontSize:10,padding:"3px 8px"}}>Generate &#8599;</Btn>
-              </div>
-            ))}
-          </div>
-          <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:12}}>
-            <Btn onClick={()=>setModal(null)}>Close</Btn>
-          </div>
-        </Md>
-      )}
     </div>
   );
 }

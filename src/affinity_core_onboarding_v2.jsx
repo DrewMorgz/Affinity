@@ -47,8 +47,8 @@ const jurShort = { "Isle of Man":"IOM","Malta":"MLT","Cayman Islands":"CYM" };
 const VIEWS = ["pipeline","active","transfer","attrition","portal"];
 const VLABELS = ["Overview","Active onboardings","Transfer-in","Attrition","Client portal"];
 
-export default function AffinityOnboarding() {
-  const [view, setView]   = useState("pipeline");
+export default function AffinityOnboarding({ initialView }) {
+  const [view, setView]   = useState(initialView || "pipeline");
   const [sel, setSel]     = useState(null);
   const [modal, setModal] = useState(null);
 
