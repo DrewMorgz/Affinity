@@ -28,7 +28,7 @@ const USERS = [
   {id:2,name:"Michael Barlow",firstName:"Michael",lastName:"Barlow",office:"Isle of Man",flag:"🇮🇲",role:"Compliance Manager (IOM)",av:"MB",c:"#7C5CBF",pass:"affinity2"},
   {id:3,name:"Joanne Fenech",firstName:"Joanne",lastName:"Fenech",office:"Malta",flag:"🇲🇹",role:"Managing Director (IOM)",av:"JF",c:"#4A7C6F",pass:"affinity3"},
   {id:4,name:"Krista Fenech",firstName:"Krista",lastName:"Fenech",office:"Malta",flag:"🇲🇹",role:"Client Administrator",av:"KF",c:"#5C8E3C",pass:"affinity4"},
-  {id:5,name:"Alexandra Gardner",firstName:"Alexandra",lastName:"Gardner",office:"USA",flag:"🇺🇸",role:"COO",av:"AG",c:"#BF5C7A",pass:"affinity5"},
+  {id:5,name:"Alexandra Gardner",firstName:"Alexandra",lastName:"Gardner",office:"USA",flag:"🇺🇸",role:"COO — Super Admin",av:"AG",c:"#BF5C7A",pass:"affinity5"},
   {id:6,name:"Debbie Gooding",firstName:"Debbie",lastName:"Gooding",office:"Isle of Man",flag:"🇮🇲",role:"Manager",av:"DG",c:"#1A7FBF",pass:"affinity6"},
   {id:7,name:"Natalie Johnson",firstName:"Natalie",lastName:"Johnson",office:"USA",flag:"🇺🇸",role:"Assistant Compliance Administrator",av:"NJ",c:"#2E7A8A",pass:"affinity7"},
   {id:8,name:"Neil Kelly",firstName:"Neil",lastName:"Kelly",office:"USA",flag:"🇺🇸",role:"CFO",av:"NK",c:"#BF7A5C",pass:"affinity8"},
@@ -528,13 +528,18 @@ export default function AffinityCore(){
           <div><div style={{fontSize:11,fontWeight:500,color:"#fff",display:"flex",alignItems:"center",gap:5}}>{user.name}<span style={{fontSize:13}}>{user.flag}</span></div><div style={{fontSize:10,color:"rgba(255,255,255,0.38)"}}>{user.role}</div></div>
           <span style={{marginLeft:"auto",color:"rgba(255,255,255,0.3)",fontSize:10}}>▲</span>
         </div>
-        {uOpen&&<div style={{position:"absolute",bottom:58,left:8,right:8,background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:8,zIndex:100,overflow:"hidden",padding:"4px 0",boxShadow:"0 4px 16px rgba(0,0,0,0.1)"}} onClick={e=>e.stopPropagation()}>
-          <div style={{padding:"6px 12px",fontSize:10,fontWeight:600,color:"#999",textTransform:"uppercase",letterSpacing:"0.5px",borderBottom:"0.5px solid #e5e5e5"}}>Switch user</div>
-          {USERS.map(u=><div key={u.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",cursor:"pointer",background:uid===u.id?"#f5f5f5":"transparent"}} onClick={()=>{setUid(u.id);setU(false);}}>
-            <div style={{width:24,height:24,borderRadius:"50%",background:u.c,color:"#fff",fontSize:9,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{u.av}</div>
-            <div><div style={{fontSize:12,fontWeight:uid===u.id?600:400,display:"flex",alignItems:"center",gap:5}}>{u.name}<span style={{fontSize:13}}>{u.flag}</span></div><div style={{fontSize:10,color:"#999"}}>{u.role}</div></div>
-            {uid===u.id&&<span style={{marginLeft:"auto",color:CY,fontWeight:700}}>✓</span>}
-          </div>)}
+        {uOpen&&<div style={{position:"absolute",bottom:58,left:8,right:8,background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:8,zIndex:100,overflow:"hidden",boxShadow:"0 4px 16px rgba(0,0,0,0.15)",maxHeight:"70vh",display:"flex",flexDirection:"column"}} onClick={e=>e.stopPropagation()}>
+          <div style={{padding:"8px 12px",fontSize:10,fontWeight:600,color:"#999",textTransform:"uppercase",letterSpacing:"0.5px",borderBottom:"0.5px solid #e5e5e5",flexShrink:0}}>Switch user</div>
+          <div style={{overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",padding:"4px 0"}} onTouchMove={e=>e.stopPropagation()}>
+            {USERS.map(u=><div key={u.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",cursor:"pointer",background:uid===u.id?"#f5f5f5":"transparent",minWidth:0}} onClick={()=>{setUid(u.id);setU(false);}}>
+              <div style={{width:28,height:28,borderRadius:"50%",background:u.c,color:"#fff",fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{u.av}</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:12,fontWeight:uid===u.id?600:500,display:"flex",alignItems:"center",gap:5,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{u.name}<span style={{fontSize:13,flexShrink:0}}>{u.flag}</span></div>
+                <div style={{fontSize:10,color:"#999",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{u.role}</div>
+              </div>
+              {uid===u.id&&<span style={{color:CY,fontWeight:700,flexShrink:0}}>✓</span>}
+            </div>)}
+          </div>
         </div>}
       </div>
     </div>

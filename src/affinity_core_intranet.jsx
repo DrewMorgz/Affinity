@@ -225,7 +225,7 @@ export default function AffinityIntranet() {
           {name:"Michael Barlow",title:"Compliance Manager (IOM)",office:"Isle of Man",flag:"🇮🇲",av:"MB",c:"#7C5CBF",bio:"Leads the IOM compliance function. AML/KYC and regulatory specialist."},
           {name:"Joanne Fenech",title:"Managing Director (IOM)",office:"Malta",flag:"🇲🇹",av:"JF",c:"#4A7C6F",bio:"Heads the Malta office and the wider Affinity managing director group."},
           {name:"Krista Fenech",title:"Client Administrator",office:"Malta",flag:"🇲🇹",av:"KF",c:"#5C8E3C",bio:"Client-facing administration for the Malta book."},
-          {name:"Alexandra Gardner",title:"COO",office:"USA",flag:"🇺🇸",av:"AG",c:"#BF5C7A",bio:"Group Chief Operating Officer. Oversees operations and delivery firm-wide."},
+          {name:"Alexandra Gardner",title:"COO — Super Admin",office:"USA",flag:"🇺🇸",av:"AG",c:"#BF5C7A",bio:"Group Chief Operating Officer. Oversees operations and delivery firm-wide."},
           {name:"Debbie Gooding",title:"Manager",office:"Isle of Man",flag:"🇮🇲",av:"DG",c:"#1A7FBF",bio:"Manager in the IOM team. Trust and corporate administration."},
           {name:"Natalie Johnson",title:"Assistant Compliance Administrator",office:"USA",flag:"🇺🇸",av:"NJ",c:"#2E7A8A",bio:"Supports the USA compliance function. CDD and onboarding focus."},
           {name:"Neil Kelly",title:"CFO",office:"USA",flag:"🇺🇸",av:"NK",c:"#BF7A5C",bio:"Group CFO. Oversees financial reporting, billing, and management accounts."},

@@ -10,7 +10,7 @@ const STAFF = [
   { id:2, name:"Michael Barlow", role:"Compliance Manager (IOM)", office:"Isle of Man", flag:"🇮🇲", rate:200, target:37.5 },
   { id:3, name:"Joanne Fenech", role:"Managing Director (IOM)", office:"Malta", flag:"🇲🇹", rate:300, target:37.5 },
   { id:4, name:"Krista Fenech", role:"Client Administrator", office:"Malta", flag:"🇲🇹", rate:150, target:37.5 },
-  { id:5, name:"Alexandra Gardner", role:"COO", office:"USA", flag:"🇺🇸", rate:350, target:37.5 },
+  { id:5, name:"Alexandra Gardner", role:"COO — Super Admin", office:"USA", flag:"🇺🇸", rate:350, target:37.5 },
   { id:6, name:"Debbie Gooding", role:"Manager", office:"Isle of Man", flag:"🇮🇲", rate:200, target:37.5 },
   { id:7, name:"Natalie Johnson", role:"Assistant Compliance Administrator", office:"USA", flag:"🇺🇸", rate:150, target:37.5 },
   { id:8, name:"Neil Kelly", role:"CFO", office:"USA", flag:"🇺🇸", rate:350, target:37.5 },
