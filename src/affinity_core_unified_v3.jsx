@@ -22,10 +22,9 @@ import JurCompliance from "./affinity_core_jurisdiction_compliance";
 import Statutory    from "./affinity_core_statutory_registers";
 import GenerateDoc  from "./affinity_core_generate_document";
 
-const AFFINITY_LOGO = "https://cdn.prod.website-files.com/680f471059835ea8d579b7e8/680f87c089dc0cf0630d7c8d_Affinity%20grad.svg";
+const NAVY = "#001242";
 
 const CY = "#00C4CC";
-const NAVY = "#001242";
 
 const USERS = [
   {id:1,name:"Andy Morgan",  role:"Super Admin",        office:"Group",         av:"AM",c:"#00C4CC", pass:"affinity1"},
@@ -298,9 +297,15 @@ function SplashScreen({ onDone }) {
     }}>
       {/* Logo */}
       <div style={{ marginBottom:32, textAlign:"center" }}>
-        <img src={AFFINITY_LOGO} alt="Affinity" style={{ width:280, maxWidth:"80vw", display:"block", margin:"0 auto" }} />
-        <div style={{ fontSize:32, color:"#00C4CC", fontWeight:300, letterSpacing:"6px", marginTop:10, textTransform:"uppercase" }}>
-          Core
+        <div style={{
+          fontFamily: "'Catamaran', system-ui, sans-serif",
+          fontWeight: 700,
+          fontSize: "clamp(52px, 11vw, 96px)",
+          letterSpacing: "-2px",
+          lineHeight: 1,
+          color: "#fff",
+        }}>
+          Affinity <span style={{ color:"#00C4CC", fontWeight:300 }}>Core</span>
         </div>
         <div style={{ fontSize:12, color:"rgba(255,255,255,0.35)", textTransform:"uppercase", letterSpacing:"3px", marginTop:20 }}>
           Made by Affinity, for Affinity
