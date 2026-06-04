@@ -94,9 +94,41 @@ export default function AffinityDMS() {
 
       {/* DMS TAB — folder tree + documents */}
       {tab===0&&(
-        <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-          <div style={{padding:"10px 16px",flexShrink:0,overflow:"auto",maxHeight:"50vh",borderBottom:"0.5px solid #e5e5e5"}}>
-          {/* Email filing — both methods now go into Correspondence > Emails */}
+        <div style={{flex:1,display:"flex",overflow:"hidden"}}>
+          {/* Folder tree */}
+          <div style={{width:240,minWidth:240,borderRight:"0.5px solid #e5e5e5",overflowY:"auto",background:"#f9f9f9",flexShrink:0}}>
+            <div style={{padding:"10px 12px",fontSize:10,fontWeight:600,color:"#aaa",textTransform:"uppercase",letterSpacing:"0.5px",borderBottom:"0.5px solid #e5e5e5",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              Folders
+              {isAdmin&&<button style={{background:"none",border:"none",cursor:"pointer",color:CY,fontSize:11}}>+ New folder</button>}
+            </div>
+            {FOLDER_TREE.map(f=>(
+              <div key={f.name}>
+                <div onClick={()=>toggleFolder(f.name)} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 12px",cursor:"pointer",background:selFolder.folder===f.name&&!selFolder.sub?"#fff":"transparent",borderBottom:"0.5px solid #e5e5e5",fontSize:12}}>
+                  <span style={{fontSize:10,color:"#aaa",width:12,flexShrink:0}}>{openFolders[f.name]?"▼":"►"}</span>
+                  
+                  <span style={{fontWeight:selFolder.folder===f.name?600:400,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.name}</span>
+                  <span style={{marginLeft:"auto",fontSize:9,color:"#aaa",flexShrink:0}}>{DOCS.filter(d=>d.folder===f.name&&d.entity===entity).length||""}</span>
+                </div>
+                {openFolders[f.name]&&f.subs.map(sub=>{
+                  const count = DOCS.filter(d=>d.folder===f.name&&d.subfolder===sub&&d.entity===entity).length;
+                  if(!isAdmin&&count===0) return null; // hide empty folders for non-admins
+                  return (
+                    <div key={sub} onClick={()=>setSelF({folder:f.name,sub})} style={{display:"flex",alignItems:"center",gap:6,padding:"5px 12px 5px 32px",cursor:"pointer",background:selFolder.folder===f.name&&selFolder.sub===sub?"#E6F7FB":"transparent",fontSize:11,borderBottom:"0.5px solid #f0f0f0"}}>
+                      <span style={{fontSize:12}}>📄</span>
+                      <span style={{color:selFolder.folder===f.name&&selFolder.sub===sub?CY:"#555",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{sub}</span>
+                      {count>0&&<span style={{marginLeft:"auto",fontSize:9,color:CY,fontWeight:600,flexShrink:0}}>{count}</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+
+          {/* Document list */}
+          <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+          {selFolder.folder==="Correspondence" && selFolder.sub==="Emails" ? (
+            <div style={{padding:"12px 16px",overflowY:"auto",flex:1}}>
+              {/* Email filing — both methods now go into Correspondence > Emails */}
           <div style={{background:"#E6F7FB22",border:`0.5px solid ${CY}`,borderRadius:8,padding:"12px 14px",marginBottom:16}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,flexWrap:"wrap",gap:6}}>
               <div style={{fontSize:12,fontWeight:600}}>📧 Email filing — files into Correspondence / Emails</div>
@@ -145,40 +177,10 @@ export default function AffinityDMS() {
                 ))}
               </div>
             </div>
-          </div>
-          </div>
-          <div style={{flex:1,display:"flex",overflow:"hidden"}}>
-          {/* Folder tree */}
-          <div style={{width:240,minWidth:240,borderRight:"0.5px solid #e5e5e5",overflowY:"auto",background:"#f9f9f9",flexShrink:0}}>
-            <div style={{padding:"10px 12px",fontSize:10,fontWeight:600,color:"#aaa",textTransform:"uppercase",letterSpacing:"0.5px",borderBottom:"0.5px solid #e5e5e5",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              Folders
-              {isAdmin&&<button style={{background:"none",border:"none",cursor:"pointer",color:CY,fontSize:11}}>+ New folder</button>}
             </div>
-            {FOLDER_TREE.map(f=>(
-              <div key={f.name}>
-                <div onClick={()=>toggleFolder(f.name)} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 12px",cursor:"pointer",background:selFolder.folder===f.name&&!selFolder.sub?"#fff":"transparent",borderBottom:"0.5px solid #e5e5e5",fontSize:12}}>
-                  <span style={{fontSize:10,color:"#aaa",width:12,flexShrink:0}}>{openFolders[f.name]?"▼":"►"}</span>
-                  
-                  <span style={{fontWeight:selFolder.folder===f.name?600:400,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.name}</span>
-                  <span style={{marginLeft:"auto",fontSize:9,color:"#aaa",flexShrink:0}}>{DOCS.filter(d=>d.folder===f.name&&d.entity===entity).length||""}</span>
-                </div>
-                {openFolders[f.name]&&f.subs.map(sub=>{
-                  const count = DOCS.filter(d=>d.folder===f.name&&d.subfolder===sub&&d.entity===entity).length;
-                  if(!isAdmin&&count===0) return null; // hide empty folders for non-admins
-                  return (
-                    <div key={sub} onClick={()=>setSelF({folder:f.name,sub})} style={{display:"flex",alignItems:"center",gap:6,padding:"5px 12px 5px 32px",cursor:"pointer",background:selFolder.folder===f.name&&selFolder.sub===sub?"#E6F7FB":"transparent",fontSize:11,borderBottom:"0.5px solid #f0f0f0"}}>
-                      <span style={{fontSize:12}}>📄</span>
-                      <span style={{color:selFolder.folder===f.name&&selFolder.sub===sub?CY:"#555",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{sub}</span>
-                      {count>0&&<span style={{marginLeft:"auto",fontSize:9,color:CY,fontWeight:600,flexShrink:0}}>{count}</span>}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
-          </div>
-
-          {/* Document list */}
-          <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+            </div>
+          ) : (
+          <>
             {/* Drop zone */}
             <div
               onDragOver={e=>{e.preventDefault();setDragOver(true);}}
@@ -244,7 +246,8 @@ export default function AffinityDMS() {
                 </div>
               )}
             </div>
-          </div>
+          </>
+          )}
           </div>
         </div>
       )}
