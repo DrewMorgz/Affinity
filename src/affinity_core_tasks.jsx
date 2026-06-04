@@ -18,7 +18,7 @@ const catColors = {
   "Statutory":         { bg:"#F1EFE8", color:"#555" },
 };
 
-const STAFF = ["Andrew Morgan","Michael Barlow","Joanne Fenech","Krista Fenech","Alexandra Gardner","Debbie Gooding","Natalie Johnson","Neil Kelly","Elena Pace","Shanya Pickett","Mattei Pisani","Colin Quayle","Kate Shaw","Roxy Sheeley","Gilbert Spiteri Spadaro"];
+const STAFF = ["Andrew Morgan","Michael Barlow","Joanne Fenech","Krista Fenech","Alexandra Gardner","Debbie Gooding","Natalie Johnson","Neil Kelly","Elena Pace","Shanya Pickett","Mattei Pisani","Colin Quayle","Kate Shaw","Roxy Sheeley","Gilbert Spiteri Spadaro","Gary Harrison"];
 
 const INITIAL_TASKS = [
   { id:1,  title:"Harrington Trust — CPR overdue",               category:"Compliance",        entity:"Harrington Family Trust",   assignee:"Roxy Sheeley",   createdBy:"Gary Harrison",  due:"14/07/2025", status:"Open",        notes:"High risk client. Review now overdue by 3 months." },

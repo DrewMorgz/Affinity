@@ -38,6 +38,7 @@ const USERS = [
   {id:13,name:"Kate Shaw",firstName:"Kate",lastName:"Shaw",office:"Isle of Man",flag:"🇮🇲",role:"Manager",av:"KS",c:"#A0623E",pass:"affinity13"},
   {id:14,name:"Roxy Sheeley",firstName:"Roxy",lastName:"Sheeley",office:"Isle of Man",flag:"🇮🇲",role:"Managing Director (IOM)",av:"RS",c:"#3C5CBF",pass:"affinity14"},
   {id:15,name:"Gilbert Spiteri Spadaro",firstName:"Gilbert",lastName:"Spiteri Spadaro",office:"Malta",flag:"🇲🇹",role:"Compliance Officer (Malta)",av:"GS",c:"#3A6E4A",pass:"affinity15"},
+  {id:16,name:"Gary Harrison",firstName:"Gary",lastName:"Harrison",office:"Isle of Man",flag:"🇮🇲",role:"COO",av:"GH",c:"#0D6E8E",pass:"affinity16"},
 ];
 
 // ── Login screen ─────────────────────────────────────────

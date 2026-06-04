@@ -21,6 +21,7 @@ const STAFF = [
   { id:13, name:"Kate Shaw", role:"Manager", office:"Isle of Man", flag:"🇮🇲", rate:200, target:37.5 },
   { id:14, name:"Roxy Sheeley", role:"Managing Director (IOM)", office:"Isle of Man", flag:"🇮🇲", rate:300, target:37.5 },
   { id:15, name:"Gilbert Spiteri Spadaro", role:"Compliance Officer (Malta)", office:"Malta", flag:"🇲🇹", rate:150, target:37.5 },
+  { id:16, name:"Gary Harrison", role:"COO", office:"Isle of Man", flag:"🇮🇲", rate:350, target:37.5 },
 ];
 
 const ENTRIES = [

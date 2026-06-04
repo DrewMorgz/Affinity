@@ -44,6 +44,7 @@ const usersData = [
   { id:13, name:"Kate Shaw", email:"kate.shaw@affinityco.com", role:"Manager", office:"Isle of Man", flag:"🇮🇲", status:"Active", lastLogin:"4d ago", mfa:true, modules:["Entities","Documents","Timesheets","Onboarding"] },
   { id:14, name:"Roxy Sheeley", email:"roxy.sheeley@affinityco.com", role:"Managing Director (IOM)", office:"Isle of Man", flag:"🇮🇲", status:"Active", lastLogin:"Today 09:25", mfa:true, modules:["All — Isle of Man"] },
   { id:15, name:"Gilbert Spiteri Spadaro", email:"gilbert.spiterispadaro@affinityco.com", role:"Compliance Officer (Malta)", office:"Malta", flag:"🇲🇹", status:"Active", lastLogin:"Today 08:55", mfa:true, modules:["Compliance","Entities","Reporting"] },
+  { id:16, name:"Gary Harrison", email:"gary.harrison@affinityco.com", role:"COO", office:"Isle of Man", flag:"🇮🇲", status:"Active", lastLogin:"Today 09:30", mfa:true, modules:["All — Isle of Man"] },
 ];
 
 const rolesData = [

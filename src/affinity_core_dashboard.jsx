@@ -24,6 +24,7 @@ const USERS = [
   {id:13,name:"Kate Shaw",office:"Isle of Man",flag:"🇮🇲",role:"Manager",av:"KS",c:"#A0623E",isManager:false, team:[]},
   {id:14,name:"Roxy Sheeley",office:"Isle of Man",flag:"🇮🇲",role:"Managing Director (IOM)",av:"RS",c:"#3C5CBF",isManager:true, team:["Michael Barlow","Debbie Gooding","Elena Pace","Shanya Pickett","Mattei Pisani","Colin Quayle","Kate Shaw"]},
   {id:15,name:"Gilbert Spiteri Spadaro",office:"Malta",flag:"🇲🇹",role:"Compliance Officer (Malta)",av:"GS",c:"#3A6E4A",isManager:false, team:[]},
+  {id:16,name:"Gary Harrison",office:"Isle of Man",flag:"🇮🇲",role:"COO",av:"GH",c:"#0D6E8E",isManager:true, team:["Michael Barlow","Debbie Gooding","Elena Pace","Shanya Pickett"]},
 ];
 
 const ALL_TASKS = [
@@ -102,6 +103,7 @@ const STAFF_PROFILES = [
   { name:"Kate Shaw", birthday:{d:3,m:9}, joined:{d:10,m:11,y:2023}, office:"Isle of Man", flag:"🇮🇲", role:"Manager", av:"KS", c:"#A0623E" },
   { name:"Roxy Sheeley", birthday:{d:28,m:6}, joined:{d:19,m:4,y:2015}, office:"Isle of Man", flag:"🇮🇲", role:"Managing Director (IOM)", av:"RS", c:"#3C5CBF" },
   { name:"Gilbert Spiteri Spadaro", birthday:{d:2,m:11}, joined:{d:8,m:5,y:2015}, office:"Malta", flag:"🇲🇹", role:"Compliance Officer (Malta)", av:"GS", c:"#3A6E4A" },
+  { name:"Gary Harrison", birthday:{d:12,m:9}, joined:{d:1,m:3,y:2017}, office:"Isle of Man", flag:"🇮🇲", role:"COO", av:"GH", c:"#0D6E8E" },
 ];
 
 const GROUP_ANNOUNCEMENTS = [
