@@ -300,7 +300,7 @@ Isle of Man · Malta · Cayman Islands · Cyprus · USA · United Kingdom`
                 <table style={{ width:"100%", borderCollapse:"collapse", fontSize:11, minWidth:isMobile?640:0 }}>
                   <thead>
                     <tr style={{ background:"#fafafa", borderBottom:"0.5px solid #e5e5e5" }}>
-                      {["Company","Contact","Type","Office","Stage","Annual fee","Pro-rata YTD","BD lead","Last interaction"].map(h=>(
+                      {["Company","Contact","Type","Office","Stage","Annual fee","Pro-rata to YE","BD lead","Last interaction"].map(h=>(
                         <th key={h} style={{ padding:"8px 10px", textAlign:"left", fontSize:10, fontWeight:600, color:"#666", textTransform:"uppercase", letterSpacing:"0.3px", whiteSpace:"nowrap" }}>{h}</th>
                       ))}
                     </tr>

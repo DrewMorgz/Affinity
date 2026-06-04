@@ -134,6 +134,9 @@ export default function AffinityFeedback(props) {
 
   return (
     <div style={{padding:"20px 24px 80px", maxWidth:1100, margin:"0 auto", fontFamily:"'Catamaran',system-ui,sans-serif"}}>
+      <div style={{background:"#EAF3DE",border:"1px solid #4CAF7D",borderRadius:6,padding:"8px 12px",marginBottom:12,fontSize:11,color:"#27500A"}}>
+        ✓ Feedback module rendering · build 4.7 · userName="{userName||"(none)"}" · isSuperAdmin={String(isSuperAdmin)}
+      </div>
       <div style={{marginBottom:18}}>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
           <span style={{fontSize:22}}>💬</span>

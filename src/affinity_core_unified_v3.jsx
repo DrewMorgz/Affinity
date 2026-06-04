@@ -68,6 +68,9 @@ function LoginScreen({ onLogin }) {
       <div style={{ width:"100%", maxWidth:420 }}>
         {/* Logo + banner */}
         <div style={{ background:`linear-gradient(135deg, ${CY} 0%, #00929A 50%, ${NAVY} 100%)`, borderRadius:14, padding:"30px 26px", marginBottom:28, textAlign:"center", boxShadow:"0 8px 32px rgba(0,180,216,0.18)" }}>
+          <img src="https://cdn.prod.website-files.com/680f471059835ea8d579b7e8/680f87c089dc0cf0630d7c8d_Affinity%20grad.svg"
+               alt="Affinity"
+               style={{ height:48, marginBottom:14, filter:"brightness(0) invert(1)" }} />
           <div style={{ fontSize:36, fontWeight:700, color:"#fff", letterSpacing:"-0.5px", lineHeight:1 }}>
             Affinity <span style={{ fontWeight:300, opacity:0.92 }}>Core</span>
           </div>

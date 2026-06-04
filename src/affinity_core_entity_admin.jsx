@@ -386,21 +386,26 @@ export default function AffinityCoreEntityAdmin({ officeFilter="" }) {
           <div style={s.g2}>
             <div style={s.card}>
               <div style={s.cardT}>Core information</div>
-              {[["Client / group",entity.group],["Principal activity",entity.principalActivity],["Entity type",entity.type],["Jurisdiction",entity.jur],["Registration number",entity.regNo],["Incorporated",entity.incorporated],["Year end",entity.yearEnd],["Currency",entity.currency],["Status",entity.status],["Risk rating",entity.risk]].map(([k,v])=>(
+              {[
+                ["Client / group",entity.group],
+                ["Principal activity",entity.principalActivity],
+                ["Entity type",entity.type],
+                ["Jurisdiction",entity.jur],
+                ["Registration number",entity.regNo],
+                ["Incorporated",entity.incorporated],
+                ["Year end",entity.yearEnd],
+                ["Currency",entity.currency],
+                ["Status",entity.status],
+                ["Risk rating",entity.risk],
+                ["Registered office",`Affinity Group, ${entity.jur}`],
+                ["Business address","Same as registered"],
+                ["Communication address","Same as registered"],
+                ...((entity.foreignRegs && entity.foreignRegs.length>0)
+                  ? entity.foreignRegs.map(fr => [`Foreign reg — ${fr.jurisdiction||fr.jur||"—"}`, fr.regNo||fr.number||"—"])
+                  : []),
+              ].map(([k,v])=>(
                 <div key={k} style={s.dRow}><span style={s.dKey}>{k}</span><span style={s.dVal}>{v}</span></div>
               ))}
-              <div style={{ marginTop:14, paddingTop:10, borderTop:"0.5px dashed #e5e5e5" }}>
-                <div style={{ ...s.cardT, marginBottom:6 }}>Addresses</div>
-                {[["Registered office",`Affinity Group, ${entity.jur}`],["Business address","Same as registered"],["Communication address","Same as registered"]].map(([k,v])=>(
-                  <div key={k} style={s.dRow}><span style={s.dKey}>{k}</span><span style={s.dVal}>{v}</span></div>
-                ))}
-              </div>
-              <div style={{ marginTop:14, paddingTop:10, borderTop:"0.5px dashed #e5e5e5" }}>
-                <div style={{ ...s.cardT, marginBottom:6 }}>Foreign registrations</div>
-                {(entity.foreignRegs && entity.foreignRegs.length>0)?entity.foreignRegs.map((fr,i)=>(
-                  <div key={i} style={s.dRow}><span style={s.dKey}>{fr.jurisdiction||fr.jur||"—"}</span><span style={s.dVal}>{fr.regNo||fr.number||"—"}</span></div>
-                )):<div style={{ fontSize:11, color:"var(--text-secondary,#888)", padding:"4px 0" }}>None recorded.</div>}
-              </div>
             </div>
             <div style={s.card}>
               <div style={s.cardT}>Administration</div>
@@ -443,17 +448,6 @@ export default function AffinityCoreEntityAdmin({ officeFilter="" }) {
                 <div key={k} style={s.dRow}><span style={s.dKey}>{k}</span><span style={s.dVal}>{v}</span></div>
               ))}
               <button style={{ ...s.btn(false), marginTop:8, fontSize:10 }}>View M&A in DMS ↗</button>
-            </div>
-          </div>
-          <div style={s.card}>
-            <div style={s.cardT}>Share capital</div>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:0 }}>
-              <div>{[["Authorised share capital","£100,000"],["Issued share capital","£10,000"],["Currency",entity.currency||"GBP"]].map(([k,v])=>(
-                <div key={k} style={s.dRow}><span style={s.dKey}>{k}</span><span style={s.dVal}>{v}</span></div>
-              ))}</div>
-              <div>{[["Share classes","Ordinary"],["Par value","£1.00"]].map(([k,v])=>(
-                <div key={k} style={s.dRow}><span style={s.dKey}>{k}</span><span style={s.dVal}>{v}</span></div>
-              ))}</div>
             </div>
           </div>
         </div>
