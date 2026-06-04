@@ -123,6 +123,12 @@ export default function AffinityCRM() {
   const [srch,setSrch]   = useState("");
   const [form,setForm]   = useState({});
   const [prospects,setProspects] = useState(PROSPECTS);
+  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < 768);
+  React.useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
   const [proposalForm, setProposalForm] = useState({ country:"Isle of Man", sector:"Holding company", annualFee:10000, setupFee:2500, adminFee:500 });
   const [proposalOutput, setProposalOutput] = useState(null);
 
@@ -312,7 +318,7 @@ Isle of Man · Malta · Cayman Islands · Cyprus · USA · United Kingdom`
         {/* PROSPECTS */}
         {view==="prospects"&&(
           <div style={{ display:"flex", height:"calc(100vh - 120px)" }}>
-            <div style={{ width:320, borderRight:"0.5px solid #e5e5e5", display:"flex", flexDirection:"column" }}>
+            <div style={{ width:isMobile?(sp?0:"100%"):320, display:(isMobile&&sp)?"none":"flex", borderRight:"0.5px solid #e5e5e5", flexDirection:"column", flexShrink:0 }}>
               <div style={{ padding:"10px 14px", borderBottom:"0.5px solid #e5e5e5" }}>
                 <input placeholder="Search by name or company…" value={srch} onChange={e=>setSrch(e.target.value)}
                   style={{ width:"100%", height:30, padding:"0 10px", border:"0.5px solid #e5e5e5", borderRadius:5, fontSize:11, outline:"none", boxSizing:"border-box" }} />
@@ -340,9 +346,10 @@ Isle of Man · Malta · Cayman Islands · Cyprus · USA · United Kingdom`
               <div style={{ padding:"8px 14px", borderTop:"0.5px solid #e5e5e5", fontSize:10, color:"#aaa" }}>{filtered.length} prospects</div>
             </div>
 
-            <div style={{ flex:1, overflowY:"auto", padding:"20px 24px" }}>
+            <div style={{ flex:1, overflowY:"auto", padding:isMobile?"12px 16px":"20px 24px", display:(isMobile&&!sp)?"none":"block" }}>
               {!sp ? <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100%", color:"#bbb", fontSize:13 }}>Select a prospect</div> : (
                 <>
+                  {isMobile&&<button onClick={()=>setSel(null)} style={{ marginBottom:12, padding:"6px 10px", border:"0.5px solid #ddd", background:"#fff", borderRadius:6, fontSize:11, cursor:"pointer", color:"#666" }}>← Back to list</button>}
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:20 }}>
                     <div>
                       <h2 style={{ margin:"0 0 4px", fontSize:20, fontWeight:700 }}>{sp.company}</h2>
@@ -354,7 +361,7 @@ Isle of Man · Malta · Cayman Islands · Cyprus · USA · United Kingdom`
                         <Badge label={sp.risk+" risk"} colors={riskC[sp.risk]||{bg:"#eee",color:"#666"}} />
                       </div>
                     </div>
-                    <div style={{ display:"flex", gap:6 }}>
+                    <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
                       {["Fees Paid","KYC Approved"].includes(sp.stage)&&<button style={{ ...nba, background:"#4CAF7D", borderColor:"#4CAF7D" }} onClick={()=>setView("convert")}>Convert ↗</button>}
                       <button style={{ ...nba }} onClick={()=>{ setProposalForm({ country:sp.jur||"Isle of Man", sector:"Holding company", annualFee:sp.annualFee||10000, setupFee:sp.setupFee||2500, adminFee:sp.adminFee||500 }); setProposalOutput(null); setModal("proposal"); }}>📄 Proposal</button>
                       <button style={nb} onClick={()=>setModal("interaction")}>＋ Log</button>
@@ -362,7 +369,7 @@ Isle of Man · Malta · Cayman Islands · Cyprus · USA · United Kingdom`
                     </div>
                   </div>
 
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:16 }}>
+                  <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr":"1fr 1fr 1fr", gap:12, marginBottom:16 }}>
                     {/* Contact */}
                     <div style={{ background:"#fff", border:"0.5px solid #e5e5e5", borderRadius:10, padding:14 }}>
                       <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.4px", color:"#888", marginBottom:10 }}>Contact</div>
