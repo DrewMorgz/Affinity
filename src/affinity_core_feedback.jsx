@@ -1,303 +1,256 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 
 const CY   = "#00C4CC";
 const NAVY = "#001242";
 
-const MODULES = [
-  "Dashboard","Tasks","Entity Admin","CRM","Documents","Onboarding",
-  "Timesheets","Invoicing","Bookkeeping","Budgeting","Attrition","Reporting",
-  "Compliance","Procedures","Generate doc","Intranet","Assistant","System admin",
-  "Login / Auth","General / Layout","Mobile","Other"
-];
-const TYPES      = ["Bug","UX / Design","Feature request","Copy / Wording","Performance","Question"];
+const MODULES = ["Dashboard","Tasks","Entity Admin","CRM","Documents","Onboarding","Timesheets","Invoicing","Bookkeeping","Budgeting","Attrition","Reporting","Compliance","Procedures","Intranet","System admin","Login","Mobile","Other"];
+const TYPES = ["Bug","UX / Design","Feature request","Copy","Performance","Question"];
 const PRIORITIES = ["High","Medium","Low"];
-const STATUSES   = ["Open","In review","In progress","Implemented","Won't fix","Duplicate"];
-
+const STATUSES = ["Open","In review","In progress","Implemented","Won't fix"];
 const STORAGE_KEY = "affinity-core-feedback";
 
-const priColor = (p) => p === "High" ? {bg:"#FCEBEB",color:"#A32D2D"} : p === "Medium" ? {bg:"#FAEEDA",color:"#633806"} : {bg:"#EAF3DE",color:"#27500A"};
-const typeColor = (t) => ({
-  "Bug":               {bg:"#FCEBEB",color:"#A32D2D"},
-  "UX / Design":       {bg:"#EEF0FB",color:"#3C3489"},
-  "Feature request":   {bg:"#E6F7FB",color:"#0077A8"},
-  "Copy / Wording":    {bg:"#F1EFE8",color:"#666"},
-  "Performance":       {bg:"#FAEEDA",color:"#633806"},
-  "Question":          {bg:"#EAF3DE",color:"#27500A"},
-}[t] || {bg:"#eee",color:"#666"});
-const statusColor = (s) => ({
-  "Open":         {bg:"#FCEBEB",color:"#A32D2D"},
-  "In review":    {bg:"#FAEEDA",color:"#633806"},
-  "In progress":  {bg:"#E6F7FB",color:"#0077A8"},
-  "Implemented":  {bg:"#EAF3DE",color:"#27500A"},
-  "Won't fix":    {bg:"#F1EFE8",color:"#666"},
-  "Duplicate":    {bg:"#F1EFE8",color:"#666"},
-}[s] || {bg:"#eee",color:"#666"});
+function priColor(p) {
+  if (p === "High") return {bg:"#FCEBEB",color:"#A32D2D"};
+  if (p === "Medium") return {bg:"#FAEEDA",color:"#633806"};
+  return {bg:"#EAF3DE",color:"#27500A"};
+}
 
-const Badge = ({ label, c }) => (
-  <span style={{display:"inline-block",padding:"2px 9px",borderRadius:20,fontSize:10,fontWeight:600,background:c.bg,color:c.color,whiteSpace:"nowrap"}}>{label}</span>
-);
+function Badge(props) {
+  var c = props.c || {bg:"#eee",color:"#666"};
+  return (
+    <span style={{display:"inline-block",padding:"2px 9px",borderRadius:20,fontSize:10,fontWeight:600,background:c.bg,color:c.color,whiteSpace:"nowrap"}}>
+      {props.label}
+    </span>
+  );
+}
 
 export default function AffinityFeedback(props) {
-  const userName = props && props.userName ? String(props.userName) : "";
-  const isSuperAdmin = !!(props && props.isSuperAdmin);
-  const [items, setItems] = useState(() => {
+  var userName = (props && props.userName) ? String(props.userName) : "";
+  var isSuperAdmin = !!(props && props.isSuperAdmin);
+
+  var itemsState = useState([]);
+  var items = itemsState[0];
+  var setItems = itemsState[1];
+
+  var testerState = useState(userName);
+  var tester = testerState[0]; var setTester = testerState[1];
+
+  var moduleState = useState("Dashboard");
+  var moduleField = moduleState[0]; var setModuleField = moduleState[1];
+
+  var typeState = useState("UX / Design");
+  var typeField = typeState[0]; var setTypeField = typeState[1];
+
+  var priorityState = useState("Medium");
+  var priorityField = priorityState[0]; var setPriorityField = priorityState[1];
+
+  var textState = useState("");
+  var text = textState[0]; var setText = textState[1];
+
+  var savedState = useState(false);
+  var justSaved = savedState[0]; var setJustSaved = savedState[1];
+
+  useEffect(function() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : [];
-    } catch { return []; }
-  });
-
-  const [form, setForm] = useState({
-    tester:  userName || "",
-    module:  "Dashboard",
-    type:    "UX / Design",
-    priority:"Medium",
-    text:    "",
-  });
-  const [filter, setFilter] = useState("All");
-  const [justSaved, setJustSaved] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < 768);
-
-  useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+      var raw = (typeof localStorage !== "undefined") ? localStorage.getItem(STORAGE_KEY) : null;
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) setItems(parsed);
+      }
+    } catch (e) { /* ignore */ }
   }, []);
 
-  // Sync to localStorage on change
-  useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); } catch {}
+  useEffect(function() {
+    try {
+      if (typeof localStorage !== "undefined") {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+      }
+    } catch (e) { /* ignore */ }
   }, [items]);
 
-  // Keep tester name in sync if user changes
-  useEffect(() => { if (userName) setForm(f => ({...f, tester:userName})); }, [userName]);
+  useEffect(function() {
+    if (userName) setTester(userName);
+  }, [userName]);
 
-  const submit = () => {
-    if (!form.text.trim()) return;
-    const entry = {
+  function submit() {
+    if (!text || !text.trim()) return;
+    var entry = {
       id: Date.now(),
       createdAt: new Date().toISOString(),
-      tester: form.tester || "Anonymous",
-      module: form.module,
-      type: form.type,
-      priority: form.priority,
-      text: form.text.trim(),
+      tester: tester || "Anonymous",
+      module: moduleField,
+      type: typeField,
+      priority: priorityField,
+      text: text.trim(),
       status: "Open",
-      adminNotes: "",
     };
-    setItems([entry, ...items]);
-    setForm(f => ({...f, text:""}));
+    setItems([entry].concat(items));
+    setText("");
     setJustSaved(true);
-    setTimeout(() => setJustSaved(false), 2000);
-  };
+    setTimeout(function() { setJustSaved(false); }, 2000);
+  }
 
-  const updateStatus = (id, status) => {
-    setItems(items.map(it => it.id === id ? {...it, status} : it));
-  };
-  const updateNotes = (id, adminNotes) => {
-    setItems(items.map(it => it.id === id ? {...it, adminNotes} : it));
-  };
-  const remove = (id) => {
-    if (!window.confirm("Delete this feedback entry?")) return;
-    setItems(items.filter(it => it.id !== id));
-  };
+  function updateStatus(id, status) {
+    setItems(items.map(function(it) { return it.id === id ? Object.assign({}, it, {status:status}) : it; }));
+  }
 
-  const exportCsv = () => {
-    const esc = (v) => `"${String(v ?? "").replace(/"/g,'""')}"`;
-    const cols = ["Date","Tester","Module","Type","Priority","Status","Feedback","Notes"];
-    const rows = items.map(it => [
-      new Date(it.createdAt).toLocaleString("en-GB"),
-      it.tester, it.module, it.type, it.priority, it.status, it.text, it.adminNotes
-    ].map(esc).join(","));
-    const csv = [cols.join(","), ...rows].join("\n");
-    const blob = new Blob([csv], {type:"text/csv"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = `affinity-core-feedback-${new Date().toISOString().slice(0,10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  function remove(id) {
+    if (typeof window !== "undefined" && !window.confirm("Delete this feedback entry?")) return;
+    setItems(items.filter(function(it) { return it.id !== id; }));
+  }
 
-  const clearAll = () => {
-    if (!window.confirm(`Clear all ${items.length} feedback entries? This cannot be undone.`)) return;
+  function exportCsv() {
+    function esc(v) { return '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"'; }
+    var cols = ["Date","Tester","Module","Type","Priority","Status","Feedback"];
+    var rows = items.map(function(it) {
+      return [new Date(it.createdAt).toLocaleString("en-GB"), it.tester, it.module, it.type, it.priority, it.status, it.text].map(esc).join(",");
+    });
+    var csv = [cols.join(",")].concat(rows).join("\n");
+    try {
+      var blob = new Blob([csv], {type:"text/csv"});
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = "affinity-core-feedback.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) { /* ignore */ }
+  }
+
+  function clearAll() {
+    if (typeof window !== "undefined" && !window.confirm("Clear all " + items.length + " feedback entries?")) return;
     setItems([]);
-  };
+  }
 
-  const filtered = useMemo(() => {
-    if (filter === "All") return items;
-    if (["Open","In review","In progress","Implemented"].includes(filter)) return items.filter(i => i.status === filter);
-    if (PRIORITIES.includes(filter)) return items.filter(i => i.priority === filter);
-    return items;
-  }, [items, filter]);
+  var totalCount = items.length;
+  var openCount = items.filter(function(i) { return i.status === "Open"; }).length;
+  var highCount = items.filter(function(i) { return i.priority === "High" && i.status !== "Implemented"; }).length;
+  var doneCount = items.filter(function(i) { return i.status === "Implemented"; }).length;
 
-  const counts = useMemo(() => ({
-    total: items.length,
-    open: items.filter(i => i.status === "Open").length,
-    high: items.filter(i => i.priority === "High" && i.status !== "Implemented" && i.status !== "Won't fix").length,
-    done: items.filter(i => i.status === "Implemented").length,
-  }), [items]);
-
-  // ---------------- Styles ----------------
-  const card = { background:"#fff", border:"0.5px solid #e5e5e5", borderRadius:10, padding:isMobile?14:18 };
-  const lbl  = { fontSize:10, fontWeight:600, color:"#888", marginBottom:4, textTransform:"uppercase", letterSpacing:"0.4px" };
-  const inp  = { width:"100%", padding:"8px 10px", border:"0.5px solid #ddd", borderRadius:6, fontSize:12, fontFamily:"inherit", outline:"none", boxSizing:"border-box" };
-  const btn  = (primary=false) => ({
-    padding:"9px 16px", border:primary?"none":"0.5px solid #ddd", borderRadius:6,
-    background:primary?CY:"#fff", color:primary?"#fff":"#333", fontSize:12,
-    fontWeight:primary?600:500, cursor:"pointer", whiteSpace:"nowrap"
-  });
+  var cardStyle = {background:"#fff", border:"0.5px solid #e5e5e5", borderRadius:10, padding:16};
+  var inputStyle = {width:"100%", padding:"8px 10px", border:"0.5px solid #ddd", borderRadius:6, fontSize:12, boxSizing:"border-box", fontFamily:"inherit"};
+  var labelStyle = {fontSize:10, fontWeight:600, color:"#888", marginBottom:4, textTransform:"uppercase", letterSpacing:"0.4px"};
+  var btnPrimary = {padding:"9px 16px", border:"none", borderRadius:6, background:CY, color:"#fff", fontSize:12, fontWeight:600, cursor:"pointer"};
+  var btnSecondary = {padding:"9px 16px", border:"0.5px solid #ddd", borderRadius:6, background:"#fff", color:"#333", fontSize:12, fontWeight:500, cursor:"pointer"};
 
   return (
-    <div style={{padding:isMobile?"14px 14px 60px":"24px 28px 80px", maxWidth:1200, margin:"0 auto"}}>
-      {/* Header */}
+    <div style={{padding:"20px 24px 80px", maxWidth:1100, margin:"0 auto", fontFamily:"'Catamaran',system-ui,sans-serif"}}>
       <div style={{marginBottom:18}}>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
           <span style={{fontSize:22}}>💬</span>
-          <h1 style={{margin:0, fontSize:isMobile?20:24, fontWeight:700, color:NAVY}}>Feedback</h1>
+          <h1 style={{margin:0, fontSize:22, fontWeight:700, color:NAVY}}>Feedback</h1>
         </div>
         <div style={{fontSize:12, color:"#666", lineHeight:1.5}}>
-          Spot something odd, missing, or worth changing? Log it here — one entry per observation.
-          Andy and Alex see everything you submit. <span style={{color:"#999"}}>Beta build — some features show mock data while we wire them up.</span>
+          Log anything you spot — design, bugs, missing features, copy. Andy and Alex see everything.
         </div>
       </div>
 
-      {/* Stats strip */}
-      <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(4,1fr)",gap:8,marginBottom:18}}>
-        {[
-          {l:"Total",        v:counts.total, c:CY},
-          {l:"Open",         v:counts.open,  c:"#A32D2D"},
-          {l:"High priority",v:counts.high,  c:"#B58A20"},
-          {l:"Implemented",  v:counts.done,  c:"#27500A"},
-        ].map(k=>(
-          <div key={k.l} style={{...card, padding:"10px 14px"}}>
-            <div style={{fontSize:10,color:"#888",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.4px"}}>{k.l}</div>
-            <div style={{fontSize:22,fontWeight:700,color:k.c,marginTop:2}}>{k.v}</div>
-          </div>
-        ))}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:18}}>
+        <div style={Object.assign({}, cardStyle, {padding:"10px 14px"})}>
+          <div style={{fontSize:10,color:"#888",fontWeight:600,textTransform:"uppercase"}}>Total</div>
+          <div style={{fontSize:22,fontWeight:700,color:CY,marginTop:2}}>{totalCount}</div>
+        </div>
+        <div style={Object.assign({}, cardStyle, {padding:"10px 14px"})}>
+          <div style={{fontSize:10,color:"#888",fontWeight:600,textTransform:"uppercase"}}>Open</div>
+          <div style={{fontSize:22,fontWeight:700,color:"#A32D2D",marginTop:2}}>{openCount}</div>
+        </div>
+        <div style={Object.assign({}, cardStyle, {padding:"10px 14px"})}>
+          <div style={{fontSize:10,color:"#888",fontWeight:600,textTransform:"uppercase"}}>High priority</div>
+          <div style={{fontSize:22,fontWeight:700,color:"#B58A20",marginTop:2}}>{highCount}</div>
+        </div>
+        <div style={Object.assign({}, cardStyle, {padding:"10px 14px"})}>
+          <div style={{fontSize:10,color:"#888",fontWeight:600,textTransform:"uppercase"}}>Done</div>
+          <div style={{fontSize:22,fontWeight:700,color:"#27500A",marginTop:2}}>{doneCount}</div>
+        </div>
       </div>
 
-      {/* Submit form */}
-      <div style={{...card, marginBottom:18}}>
+      <div style={Object.assign({}, cardStyle, {marginBottom:18})}>
         <div style={{fontSize:13,fontWeight:700,color:NAVY,marginBottom:14}}>New feedback</div>
-
-        <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:12,marginBottom:12}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
           <div>
-            <div style={lbl}>Tester</div>
-            <input style={inp} value={form.tester} onChange={e=>setForm({...form,tester:e.target.value})} placeholder="Your name"/>
+            <div style={labelStyle}>Tester</div>
+            <input style={inputStyle} value={tester} onChange={function(e){setTester(e.target.value);}} placeholder="Your name" />
           </div>
           <div>
-            <div style={lbl}>Module / area</div>
-            <select style={inp} value={form.module} onChange={e=>setForm({...form,module:e.target.value})}>
-              {MODULES.map(m=><option key={m}>{m}</option>)}
+            <div style={labelStyle}>Module / area</div>
+            <select style={inputStyle} value={moduleField} onChange={function(e){setModuleField(e.target.value);}}>
+              {MODULES.map(function(m){ return <option key={m}>{m}</option>; })}
             </select>
           </div>
         </div>
-
-        <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"1fr 1fr",gap:12,marginBottom:12}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
           <div>
-            <div style={lbl}>Type</div>
-            <select style={inp} value={form.type} onChange={e=>setForm({...form,type:e.target.value})}>
-              {TYPES.map(t=><option key={t}>{t}</option>)}
+            <div style={labelStyle}>Type</div>
+            <select style={inputStyle} value={typeField} onChange={function(e){setTypeField(e.target.value);}}>
+              {TYPES.map(function(t){ return <option key={t}>{t}</option>; })}
             </select>
           </div>
           <div>
-            <div style={lbl}>Priority</div>
-            <select style={inp} value={form.priority} onChange={e=>setForm({...form,priority:e.target.value})}>
-              {PRIORITIES.map(p=><option key={p}>{p}</option>)}
+            <div style={labelStyle}>Priority</div>
+            <select style={inputStyle} value={priorityField} onChange={function(e){setPriorityField(e.target.value);}}>
+              {PRIORITIES.map(function(p){ return <option key={p}>{p}</option>; })}
             </select>
           </div>
         </div>
-
         <div style={{marginBottom:14}}>
-          <div style={lbl}>What's the feedback?</div>
+          <div style={labelStyle}>What's the feedback?</div>
           <textarea
-            style={{...inp,minHeight:90,resize:"vertical",lineHeight:1.5}}
-            value={form.text}
-            onChange={e=>setForm({...form,text:e.target.value})}
+            style={Object.assign({}, inputStyle, {minHeight:90, resize:"vertical", lineHeight:1.5})}
+            value={text}
+            onChange={function(e){setText(e.target.value);}}
             placeholder="Be specific. What did you see, where, and what would you change?"
           />
         </div>
-
         <div style={{display:"flex",gap:8,justifyContent:"flex-end",alignItems:"center"}}>
-          {justSaved && <span style={{fontSize:11,color:"#27500A",marginRight:8}}>✓ Saved</span>}
-          <button style={btn(true)} onClick={submit} disabled={!form.text.trim()}>Submit feedback</button>
+          {justSaved ? <span style={{fontSize:11,color:"#27500A",marginRight:8}}>✓ Saved</span> : null}
+          <button style={btnPrimary} onClick={submit}>Submit feedback</button>
         </div>
       </div>
 
-      {/* List */}
-      <div style={card}>
+      <div style={cardStyle}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:8}}>
-          <div style={{fontSize:13,fontWeight:700,color:NAVY}}>All feedback {items.length>0 && <span style={{color:"#999",fontWeight:500}}>· {filtered.length} shown</span>}</div>
+          <div style={{fontSize:13,fontWeight:700,color:NAVY}}>All feedback</div>
           <div style={{display:"flex",gap:6}}>
-            <button style={btn(false)} onClick={exportCsv} disabled={items.length===0}>⬇ Export CSV</button>
-            {isSuperAdmin && <button style={{...btn(false), color:"#A32D2D"}} onClick={clearAll} disabled={items.length===0}>Clear all</button>}
+            <button style={btnSecondary} onClick={exportCsv}>⬇ Export CSV</button>
+            {isSuperAdmin ? <button style={Object.assign({}, btnSecondary, {color:"#A32D2D"})} onClick={clearAll}>Clear all</button> : null}
           </div>
         </div>
 
-        {/* Filters */}
-        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14,paddingBottom:12,borderBottom:"0.5px solid #f0f0f0"}}>
-          {["All","Open","High","Medium","Low","Implemented"].map(f=>(
-            <button key={f}
-              onClick={()=>setFilter(f)}
-              style={{padding:"5px 10px",fontSize:11,border:"none",borderRadius:14,background:filter===f?CY:"#f5f5f5",color:filter===f?"#fff":"#666",cursor:"pointer",fontWeight:filter===f?600:500}}>
-              {f}
-            </button>
-          ))}
-        </div>
-
-        {filtered.length === 0 ? (
+        {items.length === 0 ? (
           <div style={{padding:"40px 20px",textAlign:"center",color:"#aaa",fontSize:12}}>
-            {items.length === 0 ? "No feedback yet — be the first." : "No entries match this filter."}
+            No feedback yet — be the first.
           </div>
         ) : (
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
-            {filtered.map(it => (
-              <div key={it.id} style={{border:"0.5px solid #eee",borderRadius:8,padding:12,background:"#fafafa"}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8,marginBottom:8,flexWrap:"wrap"}}>
-                  <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
-                    <Badge label={it.module} c={{bg:"#EEF0FB",color:"#3C3489"}}/>
-                    <Badge label={it.type} c={typeColor(it.type)}/>
-                    <Badge label={it.priority} c={priColor(it.priority)}/>
-                    <Badge label={it.status} c={statusColor(it.status)}/>
+            {items.map(function(it) {
+              return (
+                <div key={it.id} style={{border:"0.5px solid #eee",borderRadius:8,padding:12,background:"#fafafa"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8,marginBottom:8,flexWrap:"wrap"}}>
+                    <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                      <Badge label={it.module} c={{bg:"#EEF0FB",color:"#3C3489"}} />
+                      <Badge label={it.type} c={{bg:"#E6F7FB",color:"#0077A8"}} />
+                      <Badge label={it.priority} c={priColor(it.priority)} />
+                      <Badge label={it.status} c={{bg:"#F1EFE8",color:"#666"}} />
+                    </div>
+                    <div style={{fontSize:10,color:"#999"}}>{it.tester} · {new Date(it.createdAt).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</div>
                   </div>
-                  <div style={{fontSize:10,color:"#999"}}>
-                    {it.tester} · {new Date(it.createdAt).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}
-                  </div>
+                  <div style={{fontSize:12,color:"#333",lineHeight:1.55,whiteSpace:"pre-wrap"}}>{it.text}</div>
+                  {isSuperAdmin ? (
+                    <div style={{marginTop:10,paddingTop:10,borderTop:"0.5px dashed #ddd",display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+                      <span style={{fontSize:10,color:"#888",fontWeight:600}}>ADMIN:</span>
+                      <select value={it.status} onChange={function(e){updateStatus(it.id, e.target.value);}} style={{fontSize:11,padding:"3px 6px",border:"0.5px solid #ddd",borderRadius:4,background:"#fff"}}>
+                        {STATUSES.map(function(s){ return <option key={s}>{s}</option>; })}
+                      </select>
+                      <button onClick={function(){ remove(it.id); }} style={{fontSize:11,color:"#A32D2D",background:"transparent",border:"none",cursor:"pointer",marginLeft:"auto"}}>Delete</button>
+                    </div>
+                  ) : null}
                 </div>
-                <div style={{fontSize:12,color:"#333",lineHeight:1.55,whiteSpace:"pre-wrap"}}>{it.text}</div>
-
-                {isSuperAdmin && (
-                  <div style={{marginTop:10,paddingTop:10,borderTop:"0.5px dashed #ddd",display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
-                    <span style={{fontSize:10,color:"#888",fontWeight:600}}>ADMIN:</span>
-                    <select value={it.status} onChange={e=>updateStatus(it.id, e.target.value)} style={{fontSize:11,padding:"3px 6px",border:"0.5px solid #ddd",borderRadius:4,background:"#fff"}}>
-                      {STATUSES.map(s=><option key={s}>{s}</option>)}
-                    </select>
-                    {editingId === it.id ? (
-                      <input
-                        style={{...inp, flex:1, minWidth:160, padding:"4px 8px", fontSize:11}}
-                        autoFocus
-                        defaultValue={it.adminNotes}
-                        onBlur={e=>{ updateNotes(it.id, e.target.value); setEditingId(null); }}
-                        onKeyDown={e=>{ if(e.key==="Enter"){ updateNotes(it.id, e.target.value); setEditingId(null); }}}
-                        placeholder="Notes from Andy / Alex…"
-                      />
-                    ) : (
-                      <button onClick={()=>setEditingId(it.id)} style={{fontSize:11,color:"#666",background:"transparent",border:"0.5px solid #ddd",borderRadius:4,padding:"3px 8px",cursor:"pointer"}}>
-                        {it.adminNotes ? `📝 ${it.adminNotes}` : "+ Add note"}
-                      </button>
-                    )}
-                    <button onClick={()=>remove(it.id)} style={{fontSize:11,color:"#A32D2D",background:"transparent",border:"none",cursor:"pointer",marginLeft:"auto"}}>Delete</button>
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
         <div style={{marginTop:16,paddingTop:14,borderTop:"0.5px solid #f0f0f0",fontSize:10,color:"#999",lineHeight:1.6}}>
-          Entries are stored locally in your browser. Use <strong>Export CSV</strong> to send everything to Andy / Alex.
-          {isSuperAdmin && <> Super admins see admin controls on each entry.</>}
+          Entries are stored locally in your browser. Use Export CSV to share with Andy / Alex.
         </div>
       </div>
     </div>

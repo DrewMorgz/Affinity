@@ -300,7 +300,7 @@ Isle of Man · Malta · Cayman Islands · Cyprus · USA · United Kingdom`
                 <table style={{ width:"100%", borderCollapse:"collapse", fontSize:11, minWidth:isMobile?640:0 }}>
                   <thead>
                     <tr style={{ background:"#fafafa", borderBottom:"0.5px solid #e5e5e5" }}>
-                      {["Stage","Company","Contact","Type","Office","Annual fee","BD lead","Last interaction"].map(h=>(
+                      {["Company","Contact","Type","Office","Stage","Annual fee","Pro-rata YTD","BD lead","Last interaction"].map(h=>(
                         <th key={h} style={{ padding:"8px 10px", textAlign:"left", fontSize:10, fontWeight:600, color:"#666", textTransform:"uppercase", letterSpacing:"0.3px", whiteSpace:"nowrap" }}>{h}</th>
                       ))}
                     </tr>
@@ -310,22 +310,41 @@ Isle of Man · Malta · Cayman Islands · Cyprus · USA · United Kingdom`
                       const ints = INTERACTIONS[p.id]||[];
                       const last = ints[0];
                       const stageColor = PIPELINE_STAGES.indexOf(p.stage)>=4 ? "#4CAF7D" : PIPELINE_STAGES.indexOf(p.stage)>=2 ? "#F59E0B" : CY;
+                      // Pro-rata to end of year — based on conversion date (DD/MM/YYYY) if set,
+                      // otherwise treat as a full-year fee already.
+                      let proRata = p.annualFee;
+                      if (p.conversionDate) {
+                        const parts = p.conversionDate.split("/");
+                        if (parts.length === 3) {
+                          const convDate = new Date(parseInt(parts[2]), parseInt(parts[1])-1, parseInt(parts[0]));
+                          const yearEnd = new Date(convDate.getFullYear(), 11, 31);
+                          const daysLeft = Math.max(0, Math.ceil((yearEnd - convDate) / (1000*60*60*24)));
+                          proRata = Math.round(p.annualFee * (daysLeft / 365));
+                        }
+                      } else {
+                        // No conversion date — assume today + assume rest of this year
+                        const today = new Date();
+                        const yearEnd = new Date(today.getFullYear(), 11, 31);
+                        const daysLeft = Math.max(0, Math.ceil((yearEnd - today) / (1000*60*60*24)));
+                        proRata = Math.round(p.annualFee * (daysLeft / 365));
+                      }
                       return (
                         <tr key={p.id} onClick={()=>{ setSel(p.id); setView("prospects"); }}
                           style={{ borderBottom:"0.5px solid #f0f0f0", cursor:"pointer" }}
                           onMouseEnter={e=>e.currentTarget.style.background="#f9fbfc"}
                           onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                          <td style={{ padding:"10px", whiteSpace:"nowrap" }}>
-                            <span style={{ display:"inline-block", width:6, height:6, borderRadius:"50%", background:stageColor, marginRight:6, verticalAlign:"middle" }} />
-                            <span style={{ fontSize:11, color:"#333" }}>{p.stage}</span>
-                          </td>
                           <td style={{ padding:"10px", fontWeight:600 }}>{p.company}</td>
                           <td style={{ padding:"10px", color:"#666" }}>{p.firstName} {p.lastName}</td>
                           <td style={{ padding:"10px", color:"#666", whiteSpace:"nowrap" }}>{p.type||"—"}</td>
                           <td style={{ padding:"10px", whiteSpace:"nowrap" }}>
                             <Badge label={p.office.split(" ")[0]} colors={officeC[p.office]||{bg:"#eee",color:"#666"}}/>
                           </td>
+                          <td style={{ padding:"10px", whiteSpace:"nowrap" }}>
+                            <span style={{ display:"inline-block", width:6, height:6, borderRadius:"50%", background:stageColor, marginRight:6, verticalAlign:"middle" }} />
+                            <span style={{ fontSize:11, color:"#333" }}>{p.stage}</span>
+                          </td>
                           <td style={{ padding:"10px", fontWeight:600, color:"#4CAF7D", whiteSpace:"nowrap" }}>{fmt(p.annualFee)}</td>
+                          <td style={{ padding:"10px", color:"#666", whiteSpace:"nowrap" }} title="Pro-rated to 31 Dec">{fmt(proRata)}</td>
                           <td style={{ padding:"10px", color:"#666", whiteSpace:"nowrap" }}>{p.bd}</td>
                           <td style={{ padding:"10px", color:"#666", maxWidth:240 }}>
                             {last?<div>

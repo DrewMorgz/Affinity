@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 const CY = "#00C4CC";
-const TEAL = "#008A91"; // darker shade of brand CY for gradients
+const TEAL_DARK = "#00929A"; // single darker shade of CY used only inside gradients
 const NAVY = "#001242";
 
 const OFFICES = [
@@ -72,7 +72,7 @@ export default function AffinityIntranet() {
   const navItems = ["Home","The Adventure Book","Get to Know Us","Your Resources"];
 
   const Hero = () => (
-    <div style={{background:`linear-gradient(135deg, ${TEAL} 0%, #005A60 60%, ${NAVY} 100%)`,padding:"28px 32px",marginBottom:0,position:"relative",overflow:"hidden"}}>
+    <div style={{background:`linear-gradient(135deg, ${CY} 0%, ${TEAL_DARK} 50%, ${NAVY} 100%)`,padding:"28px 32px",marginBottom:0,position:"relative",overflow:"hidden"}}>
       <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,backgroundImage:"url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1200&q=60')",backgroundSize:"cover",backgroundPosition:"center",opacity:0.15}}/>
       <div style={{position:"relative",zIndex:1}}>
         <div style={{fontSize:28,fontWeight:700,color:"#fff",marginBottom:20}}>Affinity Group Intranet</div>
@@ -93,7 +93,7 @@ export default function AffinityIntranet() {
             <div style={{fontSize:16,fontWeight:700,color:NAVY,marginBottom:6}}>Our Vision</div>
             <div style={{fontSize:13,color:"#444",lineHeight:1.7}}>To be the leading destination for corporate, digital, and private wealth clients — a boutique service provider delivering bespoke solutions globally, with Innovation and Quality.</div>
           </div>
-          <div style={{borderLeft:`4px solid ${TEAL}`,paddingLeft:16}}>
+          <div style={{borderLeft:`4px solid ${TEAL_DARK}`,paddingLeft:16}}>
             <div style={{fontSize:16,fontWeight:700,color:NAVY,marginBottom:6}}>Our Mission</div>
             <div style={{fontSize:13,color:"#444",lineHeight:1.7}}>We take a personal approach, identifying new and emerging sectors, jurisdictions and technologies that provide growth opportunities and add value for existing and new clients.</div>
           </div>
@@ -139,7 +139,7 @@ export default function AffinityIntranet() {
 
         {/* Adventure + Resources cards */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-          <div onClick={()=>setPage("adventure")} style={{background:`linear-gradient(135deg,${NAVY} 0%,#0A1F5E 100%)`,borderRadius:10,padding:"24px 20px",cursor:"pointer",position:"relative",overflow:"hidden"}}>
+          <div onClick={()=>setPage("adventure")} style={{background:`linear-gradient(135deg,${NAVY} 0%,#0A2470 100%)`,borderRadius:10,padding:"24px 20px",cursor:"pointer",position:"relative",overflow:"hidden"}}>
             <div style={{position:"absolute",top:0,right:0,bottom:0,width:"50%",backgroundImage:"url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=60')",backgroundSize:"cover",backgroundPosition:"center",opacity:0.25}}/>
             <div style={{position:"relative",zIndex:1}}>
               <div style={{fontSize:16,fontWeight:700,color:"#fff",marginBottom:6}}>The Affinity Adventure</div>
@@ -147,7 +147,7 @@ export default function AffinityIntranet() {
               <div style={{fontSize:11,fontWeight:600,color:CY}}>LEARN MORE →</div>
             </div>
           </div>
-          <div onClick={()=>setPage("resources")} style={{background:`linear-gradient(135deg,${TEAL} 0%,#005A60 100%)`,borderRadius:10,padding:"24px 20px",cursor:"pointer",position:"relative",overflow:"hidden"}}>
+          <div onClick={()=>setPage("resources")} style={{background:`linear-gradient(135deg,${CY} 0%,${TEAL_DARK} 100%)`,borderRadius:10,padding:"24px 20px",cursor:"pointer",position:"relative",overflow:"hidden"}}>
             <div style={{position:"absolute",top:0,right:0,bottom:0,width:"50%",backgroundImage:"url('https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=400&q=60')",backgroundSize:"cover",backgroundPosition:"center",opacity:0.2}}/>
             <div style={{position:"relative",zIndex:1}}>
               <div style={{fontSize:16,fontWeight:700,color:"#fff",marginBottom:6}}>Explore your Resources</div>
@@ -162,7 +162,7 @@ export default function AffinityIntranet() {
 
   const AdventurePage = () => (
     <div>
-      <div style={{background:`linear-gradient(135deg,${NAVY} 0%,#0A1F5E 100%)`,padding:"32px 28px",backgroundImage:"url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&q=60')",backgroundSize:"cover",backgroundPosition:"center",backgroundBlendMode:"overlay"}}>
+      <div style={{background:`linear-gradient(135deg,${NAVY} 0%,#0A2470 100%)`,padding:"32px 28px",backgroundImage:"url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&q=60')",backgroundSize:"cover",backgroundPosition:"center",backgroundBlendMode:"overlay"}}>
         <div style={{fontSize:28,fontWeight:700,color:"#fff",marginBottom:12}}>The Affinity Adventure</div>
         <div style={{fontSize:14,fontStyle:"italic",color:"rgba(255,255,255,0.9)",maxWidth:700,lineHeight:1.7,background:"rgba(0,0,0,0.3)",padding:"12px 16px",borderRadius:8,borderLeft:`4px solid ${CY}`}}>
           "Being part of the Adventure is working collaboratively to reach a shared destination whilst supporting and lifting each other up to achieve personal milestones along the way." <strong style={{color:CY}}>— Andy Morgan, Group CEO</strong>
@@ -178,7 +178,7 @@ export default function AffinityIntranet() {
             </div>
           ))}
         </div>
-        <div style={{background:`linear-gradient(135deg,${TEAL},${NAVY})`,borderRadius:10,padding:"20px 24px",marginBottom:20}}>
+        <div style={{background:`linear-gradient(135deg,${TEAL_DARK},${NAVY})`,borderRadius:10,padding:"20px 24px",marginBottom:20}}>
           <div style={{fontSize:16,fontWeight:700,color:"#fff",marginBottom:10}}>Adventure Mission</div>
           <div style={{fontSize:13,color:"rgba(255,255,255,0.85)",lineHeight:1.7}}>The Affinity Adventure is our commitment to building a business and a team that genuinely makes a difference — for our clients, for each other, and for the communities we operate in across the globe. We believe that exceptional service comes from exceptional people who feel valued, supported and inspired.</div>
         </div>

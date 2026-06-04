@@ -255,7 +255,32 @@ export default function AffinityDMS() {
                 <div style={{fontSize:11,color:"#666",lineHeight:1.6}}>1. Open the email in Outlook<br/>2. Click the Affinity Core add-in button<br/>3. Pick entity from the dropdown — filing target defaults to Correspondence / Emails<br/>4. Click File</div>
               </div>
             </div>
-            <div style={{fontSize:10,color:"#888"}}>Both methods are supported. Emails always land in the entity's Correspondence / Emails subfolder unless you override the destination.</div>
+            <div style={{fontSize:10,color:"#888",marginBottom:10}}>Both methods are supported. Emails always land in the entity's Correspondence / Emails subfolder unless you override the destination.</div>
+            <div style={{marginTop:10,paddingTop:10,borderTop:"0.5px solid #e5e5e5"}}>
+              <div style={{fontSize:11,fontWeight:600,marginBottom:8}}>Recently filed emails</div>
+              <div style={{background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:6,overflow:"hidden"}}>
+                <div style={{display:"grid",gridTemplateColumns:"160px 1fr 160px 110px 40px",gap:0,padding:"6px 10px",background:"#fafafa",fontSize:10,fontWeight:600,color:"#666",textTransform:"uppercase",letterSpacing:"0.3px",borderBottom:"0.5px solid #e5e5e5"}}>
+                  <div>From</div><div>Subject</div><div>To</div><div>Date</div><div></div>
+                </div>
+                {[
+                  {from:"Roxy Sheeley", to:"emma.harrington@gmail.com", subject:"RE: Q2 retainer invoice — Meridian Holdings", date:"14 Jul 14:22", entity:"Meridian Holdings Ltd"},
+                  {from:"Garry Crossan", to:"david.silver@silverstone.ky", subject:"FW: KYC renewal — Emma Harrington",          date:"12 Jul 09:08", entity:"Harrington Family Trust"},
+                  {from:"Gary Harrison", to:"compliance@apexgrowth.com",  subject:"RE: Apex sanctions review — MLRO",             date:"12 Jul 08:31", entity:"Apex Growth Fund Ltd"},
+                  {from:"Andy Morgan",   to:"sofia.adriatic@adriatic.mt",  subject:"Onboarding pack — Adriatic Holdings",          date:"11 Jul 16:45", entity:"Adriatic Holdings Ltd"},
+                ].map((e,i)=>(
+                  <div key={i} style={{display:"grid",gridTemplateColumns:"160px 1fr 160px 110px 40px",gap:0,padding:"8px 10px",borderBottom:i<3?"0.5px solid #f0f0f0":"none",fontSize:11,alignItems:"center"}}>
+                    <div style={{fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{e.from}</div>
+                    <div style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                      <span style={{color:"#888"}}>✉ </span>{e.subject}
+                      <span style={{color:"#aaa",fontSize:10,marginLeft:6}}>· {e.entity}</span>
+                    </div>
+                    <div style={{color:"#666",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{e.to}</div>
+                    <div style={{color:"#888",fontSize:10}}>{e.date}</div>
+                    <div><Btn sx={{fontSize:9,padding:"2px 6px"}}>👁</Btn></div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
           {["Onboarding","Correspondence","Statutory"].map(section=>(
             <div key={section} style={{marginBottom:20}}>

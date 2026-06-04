@@ -114,27 +114,14 @@ const GROUP_ANNOUNCEMENTS = [
 ];
 
 function getHappenings() {
-  // Convert a {d,m} pair into a comparable "day of year" relative to TODAY,
-  // so we can window upcoming events forward 30 days regardless of month rollover.
+  // Always returns the next 6 upcoming events, regardless of how far away they are.
+  // Includes both birthdays and work anniversaries. Sorted by proximity.
   const monthLen = [31,28,31,30,31,30,31,31,30,31,30,31];
-  const dayOfYear = (d,m) => {
-    let total = d;
-    for (let i=1; i<m; i++) total += monthLen[i-1];
-    return total;
-  };
+  const dayOfYear = (d,m) => { let total = d; for (let i=1; i<m; i++) total += monthLen[i-1]; return total; };
   const todayDoy = dayOfYear(TODAY.day, TODAY.month);
-
-  // Distance in days from today to (d,m), looking forward (wrapping over year-end)
-  const daysAhead = (d,m) => {
-    const target = dayOfYear(d,m);
-    let diff = target - todayDoy;
-    if (diff < 0) diff += 365;
-    return diff;
-  };
+  const daysAhead = (d,m) => { const t = dayOfYear(d,m); let diff = t - todayDoy; if (diff < 0) diff += 365; return diff; };
 
   const events = [];
-  const WINDOW = 30; // show birthdays/anniversaries up to 30 days ahead
-
   STAFF_PROFILES.forEach(s => {
     const first = s.name.split(" ")[0];
 
@@ -142,24 +129,31 @@ function getHappenings() {
     const bdAhead = daysAhead(s.birthday.d, s.birthday.m);
     if (bdAhead === 0) {
       events.push({ type:"birthday", person:s, text:`It's ${first}'s birthday today! 🎂`, av:s.av, c:s.c, sort:0 });
-    } else if (bdAhead <= WINDOW) {
-      events.push({ type:"birthday_soon", person:s, text:`${first}'s birthday in ${bdAhead} day${bdAhead>1?"s":""}`, av:s.av, c:s.c, sort:bdAhead });
+    } else {
+      events.push({ type:"birthday_soon", person:s, text:`${first}'s birthday — ${formatAhead(bdAhead, s.birthday.d, s.birthday.m)}`, av:s.av, c:s.c, sort:bdAhead });
     }
 
-    // Work anniversary
+    // Anniversary
     const annAhead = daysAhead(s.joined.d, s.joined.m);
     const yearNow = new Date().getFullYear();
-    const years = TODAY.month > s.joined.m || (TODAY.month === s.joined.m && TODAY.day >= s.joined.d)
-      ? yearNow - s.joined.y
-      : yearNow - s.joined.y - 1;
-    if (annAhead === 0 && years > 0) {
-      events.push({ type:"anniversary", person:s, text:`${first} is celebrating ${years} year${years>1?"s":""} at Affinity! 🎉`, av:s.av, c:s.c, sort:0 });
-    } else if (annAhead <= WINDOW && annAhead > 0 && (years + 1) > 0) {
-      events.push({ type:"anniversary_soon", person:s, text:`${first} celebrates ${years+1} year${(years+1)>1?"s":""} at Affinity in ${annAhead} day${annAhead>1?"s":""}`, av:s.av, c:s.c, sort:annAhead+0.5 });
+    const yearsCompleted = TODAY.month > s.joined.m || (TODAY.month === s.joined.m && TODAY.day >= s.joined.d)
+      ? yearNow - s.joined.y : yearNow - s.joined.y - 1;
+    if (annAhead === 0 && yearsCompleted > 0) {
+      events.push({ type:"anniversary", person:s, text:`${first} is celebrating ${yearsCompleted} year${yearsCompleted>1?"s":""} at Affinity! 🎉`, av:s.av, c:s.c, sort:0 });
+    } else if (yearsCompleted + 1 > 0) {
+      const next = yearsCompleted + 1;
+      events.push({ type:"anniversary_soon", person:s, text:`${first} marks ${next} year${next>1?"s":""} at Affinity — ${formatAhead(annAhead, s.joined.d, s.joined.m)}`, av:s.av, c:s.c, sort:annAhead + 0.5 });
     }
   });
 
-  return events.sort((a,b)=>a.sort-b.sort).slice(0, 8); // cap to 8
+  return events.sort((a,b)=>a.sort-b.sort).slice(0, 6);
+}
+
+function formatAhead(days, d, m) {
+  const monthsShort = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  if (days <= 7) return `in ${days} day${days>1?"s":""}`;
+  if (days <= 30) return `in ${days} days (${d} ${monthsShort[m-1]})`;
+  return `${d} ${monthsShort[m-1]}`;
 }
 
 export default function Dashboard({userId, onNav}) {
@@ -206,8 +200,7 @@ export default function Dashboard({userId, onNav}) {
       {(()=>{
         const happenings = getHappenings();
         const announcements = GROUP_ANNOUNCEMENTS.slice(0,2);
-        const hasContent = happenings.length > 0 || announcements.length > 0;
-        if (!hasContent) return null; // (guard kept; window now wide enough that something usually shows)
+        // happenings always returns 6 items now, so card is always populated
         return (
           <div style={{background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:10,padding:14,marginBottom:14}}>
             <div style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.5px",color:"#888",marginBottom:12}}>
