@@ -147,8 +147,8 @@ export default function AffinityDMS() {
             <div style={{marginTop:10,paddingTop:10,borderTop:"0.5px solid #e5e5e5"}}>
               <div style={{fontSize:11,fontWeight:600,marginBottom:8}}>Recently filed emails</div>
               <div style={{background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:6,overflow:"hidden"}}>
-                <div style={{display:"grid",gridTemplateColumns:"160px 1fr 160px 110px 40px",gap:0,padding:"6px 10px",background:"#fafafa",fontSize:10,fontWeight:600,color:"#666",textTransform:"uppercase",letterSpacing:"0.3px",borderBottom:"0.5px solid #e5e5e5"}}>
-                  <div>From</div><div>Subject</div><div>To</div><div>Date</div><div></div>
+                <div style={{display:"grid",gridTemplateColumns:"140px 140px 1fr 110px 40px",gap:0,padding:"6px 10px",background:"#fafafa",fontSize:10,fontWeight:600,color:"#666",textTransform:"uppercase",letterSpacing:"0.3px",borderBottom:"0.5px solid #e5e5e5"}}>
+                  <div>To</div><div>From</div><div>Subject</div><div>Date</div><div></div>
                 </div>
                 {[
                   {from:"Roxy Sheeley",     to:"emma.harrington@gmail.com",       subject:"RE: Q2 retainer invoice — Meridian Holdings",      date:"14 Jul 14:22", entity:"Meridian Holdings Ltd"},
@@ -164,13 +164,13 @@ export default function AffinityDMS() {
                   {from:"Roxy Sheeley",     to:"david.thornbury@asset-co.co.uk",  subject:"AGM minutes for signature — Thornbury Asset Co",   date:"10 Jul 09:15", entity:"Thornbury Asset Co Ltd"},
                   {from:"Mattei Pisani",    to:"k.papadopoulos@silverstone.ky",   subject:"Silverstone Capital Fund — Cayman registration",   date:"09 Jul 11:08", entity:"Silverstone Capital Fund"},
                 ].map((e,i)=>(
-                  <div key={i} style={{display:"grid",gridTemplateColumns:"160px 1fr 160px 110px 40px",gap:0,padding:"8px 10px",borderBottom:i<11?"0.5px solid #f0f0f0":"none",fontSize:11,alignItems:"center"}}>
+                  <div key={i} style={{display:"grid",gridTemplateColumns:"140px 140px 1fr 110px 40px",gap:0,padding:"8px 10px",borderBottom:i<11?"0.5px solid #f0f0f0":"none",fontSize:11,alignItems:"center"}}>
+                    <div style={{color:"#666",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{e.to}</div>
                     <div style={{fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{e.from}</div>
                     <div style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                       <span style={{color:"#888"}}>✉ </span>{e.subject}
                       <span style={{color:"#aaa",fontSize:10,marginLeft:6}}>· {e.entity}</span>
                     </div>
-                    <div style={{color:"#666",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{e.to}</div>
                     <div style={{color:"#888",fontSize:10}}>{e.date}</div>
                     <div><Btn sx={{fontSize:9,padding:"2px 6px"}}>👁</Btn></div>
                   </div>

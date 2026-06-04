@@ -403,11 +403,11 @@ export default function AffinityCoreEntityAdmin({ officeFilter="" }) {
                 ...((entity.foreignRegs && entity.foreignRegs.length>0)
                   ? entity.foreignRegs.map(fr => [`Foreign reg — ${fr.jurisdiction||fr.jur||"—"}`, fr.regNo||fr.number||"—"])
                   : [
-                      ["Foreign reg — Cayman Islands","FR-2024-08821"],
-                      ["Foreign reg — Malta MFSA","C-92847-MFS"],
+                      ["Foreign reg","FR-2024-08821"],
+                      ["Foreign reg","C-92847-MFS"],
                     ]),
-              ].map(([k,v])=>(
-                <div key={k} style={s.dRow}><span style={s.dKey}>{k}</span><span style={s.dVal}>{v}</span></div>
+              ].map(([k,v], i)=>(
+                <div key={k+"-"+i} style={s.dRow}><span style={s.dKey}>{k}</span><span style={s.dVal}>{v}</span></div>
               ))}
             </div>
             <div style={s.card}>

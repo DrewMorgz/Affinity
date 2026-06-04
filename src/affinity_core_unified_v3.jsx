@@ -16,6 +16,7 @@ import Chatbot      from "./affinity_core_chatbot";
 import Intranet     from "./affinity_core_intranet";
 import EGaming      from "./affinity_core_egaming";
 import GenerateDoc  from "./affinity_core_generate_document";
+import Feedback     from "./affinity_core_feedback";
 
 const NAVY = "#001242";
 const AFFINITY_LOGO = "https://cdn.prod.website-files.com/680f471059835ea8d579b7e8/680f87c089dc0cf0630d7c8d_Affinity%20grad.svg";
@@ -68,20 +69,13 @@ function LoginScreen({ onLogin }) {
       <div style={{ width:"100%", maxWidth:420 }}>
         {/* Logo + banner */}
         <div style={{ background:`linear-gradient(135deg, ${CY} 0%, #00929A 50%, ${NAVY} 100%)`, borderRadius:14, padding:"30px 26px", marginBottom:28, textAlign:"center", boxShadow:"0 8px 32px rgba(0,180,216,0.18)" }}>
-          <div style={{ marginBottom:16, display:"inline-flex", alignItems:"center", justifyContent:"center" }}>
-            <svg width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <linearGradient id="ac-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#fff" stopOpacity="1"/>
-                  <stop offset="100%" stopColor="#fff" stopOpacity="0.6"/>
-                </linearGradient>
-              </defs>
-              <circle cx="36" cy="36" r="34" fill="none" stroke="#fff" strokeWidth="2" strokeOpacity="0.9"/>
-              <path d="M 36 14 L 22 56 L 28 56 L 31 47 L 41 47 L 44 56 L 50 56 Z M 33 41 L 36 30 L 39 41 Z" fill="url(#ac-logo-grad)"/>
-            </svg>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:4, marginBottom:4 }}>
+            <div style={{ width:36, height:3, background:"#fff", opacity:0.9, borderRadius:2 }}/>
+            <div style={{ width:6, height:6, background:"#fff", borderRadius:"50%", opacity:0.9 }}/>
+            <div style={{ width:36, height:3, background:"#fff", opacity:0.9, borderRadius:2 }}/>
           </div>
-          <div style={{ fontSize:36, fontWeight:700, color:"#fff", letterSpacing:"-0.5px", lineHeight:1 }}>
-            Affinity <span style={{ fontWeight:300, opacity:0.92 }}>Core</span>
+          <div style={{ fontSize:48, fontWeight:700, color:"#fff", letterSpacing:"-1px", lineHeight:1, marginTop:8 }}>
+            Affinity <span style={{ fontWeight:200, opacity:0.95, fontStyle:"italic" }}>Core</span>
           </div>
           <div style={{ fontSize:11, color:"#fff", marginTop:10, textTransform:"uppercase", letterSpacing:"3px", opacity:0.9 }}>
             Corporate &middot; Trust &middot; Compliance
