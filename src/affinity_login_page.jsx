@@ -27,6 +27,26 @@ const VALUES = [
   { icon: "🏆", title: "Award winning",         desc: "Recognised by Citywealth and industry peers for excellence in wealth management services." },
 ];
 
+// First-name + password → user ID lookup (mirrors USERS in unified shell)
+const LOGIN_MAP = {
+  "andrew":     { pass: "madebyAffinity", id: 1 },  // super admin
+  "michael":    { pass: "affinity2",  id: 2 },
+  "joanne":     { pass: "affinity3",  id: 3 },
+  "krista":     { pass: "affinity4",  id: 4 },
+  "alexandra":  { pass: "madebyAffinity", id: 5 },  // super admin
+  "debbie":     { pass: "affinity6",  id: 6 },
+  "natalie":    { pass: "affinity7",  id: 7 },
+  "neil":       { pass: "affinity8",  id: 8 },
+  "elena":      { pass: "affinity9",  id: 9 },
+  "shanya":     { pass: "affinity10", id: 10 },
+  "mattei":     { pass: "affinity11", id: 11 },
+  "colin":      { pass: "affinity12", id: 12 },
+  "kate":       { pass: "affinity13", id: 13 },
+  "roxy":       { pass: "affinity14", id: 14 },
+  "gilbert":    { pass: "affinity15", id: 15 },
+  "gary":       { pass: "affinity16", id: 16 },
+};
+
 export default function AffinityLoginPage({ onLogin }) {
   const [showSplash, setShowSplash] = useState(true);
   const [username, setUsername]     = useState("");
@@ -41,15 +61,21 @@ export default function AffinityLoginPage({ onLogin }) {
   }, []);
 
   const handleLogin = () => {
-    if (!username || !password) { setError("Please enter your username and password"); return; }
+    if (!username || !password) { setError("Please enter your first name and password"); return; }
     setLoading(true);
     setTimeout(() => {
-      if (username.toLowerCase() === "admin" && password === "Madebyus") {
-        onLogin(1);
-      } else {
-        setError("Incorrect username or password");
-        setLoading(false);
+      const key = username.trim().toLowerCase();
+      // Admin shortcut
+      if (key === "admin" && password === "madebyAffinity") {
+        onLogin(1); return;
       }
+      // Per-user first-name login
+      const entry = LOGIN_MAP[key];
+      if (entry && entry.pass === password) {
+        onLogin(entry.id); return;
+      }
+      setError("Incorrect first name or password");
+      setLoading(false);
     }, 800);
   };
 
@@ -171,14 +197,14 @@ export default function AffinityLoginPage({ onLogin }) {
             <div style={{ background: "rgba(255,255,255,0.97)", borderRadius: 20, padding: "36px 32px", boxShadow: "0 40px 80px rgba(0,0,0,0.3)", backdropFilter: "blur(20px)" }}>
               <div style={{ marginBottom: 28 }}>
                 <h2 style={{ fontSize: 22, fontWeight: 700, color: NAVY, marginBottom: 6 }}>Sign in to Affinity Core</h2>
-                <p style={{ fontSize: 13, color: "#888" }}>Enter your credentials to access the platform</p>
+                <p style={{ fontSize: 13, color: "#888" }}>Enter your first name and password</p>
               </div>
 
               <div style={{ marginBottom: 16 }}>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 8 }}>Username</label>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 8 }}>First name</label>
                 <input className="login-input" type="text" value={username} onChange={e => { setUsername(e.target.value); setError(""); }}
                   onKeyDown={e => e.key === "Enter" && handleLogin()}
-                  placeholder="Enter your username" autoFocus
+                  placeholder="Your first name" autoFocus
                   style={{ width: "100%", padding: "12px 14px", border: `1.5px solid ${error ? "#EF4444" : "#e0e0e0"}`, borderRadius: 10, fontSize: 14, fontFamily: "inherit", background: "#fafafa", color: NAVY, transition: "all 0.2s" }}
                 />
               </div>
