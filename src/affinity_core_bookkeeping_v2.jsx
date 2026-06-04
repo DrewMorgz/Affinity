@@ -99,7 +99,7 @@ export default function AffinityBookkeeping() {
   return (
     <div style={{ fontFamily:"'Catamaran',system-ui,sans-serif", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)", minHeight:600 }}>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 20px", borderBottom:"0.5px solid #e5e5e5" }}>
-        <div style={{ fontSize:18, fontWeight:500, color:CY }}>Affinity <span style={{ color:"var(--text-primary,#111)", fontWeight:300 }}>Core</span><small style={{ fontSize:11, color:"#999", fontWeight:300, marginLeft:8 }}>Bookkeeping</small></div>
+        <div style={{ fontSize:18, fontWeight:500, color:"#001242" }}>Bookkeeping</div>
         <div style={{ display:"flex", gap:5 }}>
           {["Entities","Timesheets","Invoicing","Reporting"].map(n=><button key={n} style={nb}>{n}</button>)}
           <button style={nba}>Bookkeeping</button>

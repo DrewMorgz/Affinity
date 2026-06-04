@@ -1054,7 +1054,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="" }) {
     <div style={s.wrap}>
       {/* Header */}
       <div style={s.hdr}>
-        <div style={s.logo}>Affinity <span style={{ color:"var(--text-primary,#111)", fontWeight:300 }}>Core</span><small style={{ fontSize:11, color:"var(--text-secondary,#666)", fontWeight:300, marginLeft:8 }}>Entity Admin</small></div>
+        <div style={s.logo}>Entity Admin</div>
         <div style={{ display:"flex", gap:5 }}>
           {["Compliance","Documents","Timesheets","Invoicing","Reporting"].map(n=>(
             <button key={n} style={{ ...nb, fontSize:11 }}>{n}</button>

@@ -197,7 +197,7 @@ export default function AffinityCoreSystemAdmin() {
     <div style={s.wrap}>
       {/* Header */}
       <div style={s.header}>
-        <div style={s.logo}>Affinity <span style={{ color:"var(--text-primary,#111)", fontWeight:400 }}>Core</span><small style={{ fontSize:11, color:"#999", fontWeight:400, marginLeft:8 }}>System Admin</small></div>
+        <div style={s.logo}>System Admin</div>
         <div style={{ display:"flex", gap:5 }}>
           {["Entities","Compliance","Documents","Invoicing","Reporting"].map(n => <button key={n} style={nb}>{n}</button>)}
           <button style={nbActive}>System</button>

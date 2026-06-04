@@ -263,12 +263,20 @@ export default function AffinityDMS() {
                   <div>From</div><div>Subject</div><div>To</div><div>Date</div><div></div>
                 </div>
                 {[
-                  {from:"Roxy Sheeley", to:"emma.harrington@gmail.com", subject:"RE: Q2 retainer invoice — Meridian Holdings", date:"14 Jul 14:22", entity:"Meridian Holdings Ltd"},
-                  {from:"Garry Crossan", to:"david.silver@silverstone.ky", subject:"FW: KYC renewal — Emma Harrington",          date:"12 Jul 09:08", entity:"Harrington Family Trust"},
-                  {from:"Gary Harrison", to:"compliance@apexgrowth.com",  subject:"RE: Apex sanctions review — MLRO",             date:"12 Jul 08:31", entity:"Apex Growth Fund Ltd"},
-                  {from:"Andy Morgan",   to:"sofia.adriatic@adriatic.mt",  subject:"Onboarding pack — Adriatic Holdings",          date:"11 Jul 16:45", entity:"Adriatic Holdings Ltd"},
+                  {from:"Roxy Sheeley",     to:"emma.harrington@gmail.com",       subject:"RE: Q2 retainer invoice — Meridian Holdings",      date:"14 Jul 14:22", entity:"Meridian Holdings Ltd"},
+                  {from:"Garry Crossan",    to:"david.silver@silverstone.ky",     subject:"FW: KYC renewal — Emma Harrington",                date:"14 Jul 11:30", entity:"Harrington Family Trust"},
+                  {from:"Gary Harrison",    to:"compliance@apexgrowth.com",       subject:"RE: Apex sanctions review — MLRO",                 date:"14 Jul 09:08", entity:"Apex Growth Fund Ltd"},
+                  {from:"Andrew Morgan",    to:"sofia.adriatic@adriatic.mt",      subject:"Onboarding pack — Adriatic Holdings",              date:"13 Jul 16:45", entity:"Adriatic Holdings Ltd"},
+                  {from:"Joanne Fenech",    to:"verona.digital@vdh.com.mt",       subject:"MFSA licence — Verona Digital structure approved", date:"13 Jul 14:12", entity:"Verona Digital Holdings Ltd"},
+                  {from:"Neil Kelly",       to:"andrew@stonebridge-capital.co.uk", subject:"Q3 invoice — annual administration fees",         date:"12 Jul 17:30", entity:"Stonebridge Capital Ltd"},
+                  {from:"Colin Quayle",     to:"board@meridian-holdings.com",     subject:"Director resolution — capital reorganisation",     date:"12 Jul 15:02", entity:"Meridian Holdings Ltd"},
+                  {from:"Alexandra Gardner",to:"counsel@bluewater.fl",            subject:"FATCA reporting — Bluewater Trust",                date:"12 Jul 10:45", entity:"Bluewater Family Trust"},
+                  {from:"Krista Fenech",    to:"kyc@azure-med.mt",                subject:"FW: Source of funds documentation",                date:"11 Jul 16:22", entity:"Azure Mediterranean Foundation"},
+                  {from:"Michael Barlow",   to:"compliance@pacific-wealth.ky",    subject:"EDD review outstanding — please respond",          date:"11 Jul 13:50", entity:"Pacific Wealth Trust"},
+                  {from:"Roxy Sheeley",     to:"david.thornbury@asset-co.co.uk",  subject:"AGM minutes for signature — Thornbury Asset Co",   date:"10 Jul 09:15", entity:"Thornbury Asset Co Ltd"},
+                  {from:"Mattei Pisani",    to:"k.papadopoulos@silverstone.ky",   subject:"Silverstone Capital Fund — Cayman registration",   date:"09 Jul 11:08", entity:"Silverstone Capital Fund"},
                 ].map((e,i)=>(
-                  <div key={i} style={{display:"grid",gridTemplateColumns:"160px 1fr 160px 110px 40px",gap:0,padding:"8px 10px",borderBottom:i<3?"0.5px solid #f0f0f0":"none",fontSize:11,alignItems:"center"}}>
+                  <div key={i} style={{display:"grid",gridTemplateColumns:"160px 1fr 160px 110px 40px",gap:0,padding:"8px 10px",borderBottom:i<11?"0.5px solid #f0f0f0":"none",fontSize:11,alignItems:"center"}}>
                     <div style={{fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{e.from}</div>
                     <div style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                       <span style={{color:"#888"}}>✉ </span>{e.subject}

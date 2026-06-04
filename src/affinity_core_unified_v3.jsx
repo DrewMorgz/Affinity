@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import AffinityLoginPage from "./affinity_login_page";
 import Dashboard     from "./affinity_core_dashboard";
 import EntityAdmin   from "./affinity_core_entity_admin";
@@ -66,13 +66,16 @@ function LoginScreen({ onLogin }) {
   return (
     <div style={{ minHeight:"100vh", background:NAVY, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'Catamaran',system-ui,sans-serif", padding:20 }}>
       <div style={{ width:"100%", maxWidth:420 }}>
-        {/* Logo */}
-        <div style={{ textAlign:"center", marginBottom:40 }}>
-          <div style={{ fontSize:32, fontWeight:700, color:"#fff", letterSpacing:"-0.5px" }}>
-            Affinity <span style={{ color:CY, fontWeight:300 }}>Core</span>
+        {/* Logo + banner */}
+        <div style={{ background:`linear-gradient(135deg, ${CY} 0%, #00929A 50%, ${NAVY} 100%)`, borderRadius:14, padding:"30px 26px", marginBottom:28, textAlign:"center", boxShadow:"0 8px 32px rgba(0,180,216,0.18)" }}>
+          <div style={{ fontSize:36, fontWeight:700, color:"#fff", letterSpacing:"-0.5px", lineHeight:1 }}>
+            Affinity <span style={{ fontWeight:300, opacity:0.92 }}>Core</span>
           </div>
-          <div style={{ fontSize:12, color:"rgba(255,255,255,0.4)", marginTop:6, textTransform:"uppercase", letterSpacing:"2px" }}>
-            Corporate & Trust Services
+          <div style={{ fontSize:11, color:"#fff", marginTop:10, textTransform:"uppercase", letterSpacing:"3px", opacity:0.9 }}>
+            Corporate &middot; Trust &middot; Compliance
+          </div>
+          <div style={{ fontSize:10, color:"#fff", marginTop:6, opacity:0.7 }}>
+            Isle of Man · Malta · Cayman · USA · UK · Cyprus
           </div>
         </div>
 
@@ -400,6 +403,30 @@ const SHORTCUTS = [
   {key:"s", label:"Search",     mod:null},
 ];
 
+class ErrorBoundary extends React.Component {
+  constructor(p){ super(p); this.state={err:null,info:null}; }
+  static getDerivedStateFromError(err){ return {err}; }
+  componentDidCatch(err, info){ this.setState({info}); console.error("Affinity Core error boundary:", err, info); }
+  render(){
+    if (this.state.err) {
+      return (
+        <div style={{padding:24,fontFamily:"system-ui,sans-serif"}}>
+          <div style={{background:"#FCEBEB",border:"1px solid #A32D2D",borderRadius:8,padding:18,marginBottom:14}}>
+            <div style={{fontSize:14,fontWeight:700,color:"#A32D2D",marginBottom:6}}>Something went wrong rendering this page</div>
+            <div style={{fontSize:12,color:"#666",lineHeight:1.6}}>This is a beta build — please screenshot this message and send it to Andy / Alex. Click 'Try again' or refresh.</div>
+          </div>
+          <div style={{background:"#fafafa",border:"0.5px solid #e5e5e5",borderRadius:6,padding:12,fontSize:11,fontFamily:"ui-monospace,monospace",whiteSpace:"pre-wrap",color:"#333",maxHeight:300,overflow:"auto"}}>
+            {String(this.state.err && this.state.err.message ? this.state.err.message : this.state.err)}
+            {this.state.info && this.state.info.componentStack ? "\n\n" + this.state.info.componentStack.slice(0,600) : ""}
+          </div>
+          <button onClick={()=>this.setState({err:null,info:null})} style={{marginTop:12,padding:"8px 14px",border:"none",borderRadius:6,background:"#00C4CC",color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer"}}>Try again</button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function AffinityCore(){
   const [loggedIn, setLoggedIn] = useState(false);
   const [splash, setSplash] = useState(true);
@@ -607,7 +634,7 @@ export default function AffinityCore(){
         </div>
         <button onClick={()=>setOfficeFilter("All")} style={{fontSize:10,color:offC2.color,background:"transparent",border:`0.5px solid ${offC2.color}66`,borderRadius:4,padding:"2px 8px",cursor:"pointer"}}>Clear ×</button>
       </div>}
-      <div style={{flex:1,overflowY:"auto",background:"#fff"}}>{content()}</div>
+      <div style={{flex:1,overflowY:"auto",background:"#fff"}}><ErrorBoundary>{content()}</ErrorBoundary></div>
     </div>
 
     {/* ── GLOBAL SEARCH MODAL ──────────────────────────────── */}

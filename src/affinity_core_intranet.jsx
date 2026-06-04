@@ -264,7 +264,7 @@ export default function AffinityIntranet() {
     <div style={{fontFamily:"'Catamaran',system-ui,sans-serif",background:"#f5f7fa",minHeight:"100vh",color:"#111"}}>
       {/* Nav */}
       <div style={{background:"#fff",borderBottom:"0.5px solid #e5e5e5",padding:"0 28px",display:"flex",alignItems:"center",gap:0,height:44,flexShrink:0}}>
-        <div style={{fontSize:14,fontWeight:700,color:TEAL,marginRight:24}}>Affinity Group</div>
+        <div style={{fontSize:14,fontWeight:700,color:TEAL_DARK,marginRight:24}}>Affinity Group</div>
         {navItems.map(n=>{
           const id=n.toLowerCase().replace(/ /g,"-");
           const active=page===id||(n==="Home"&&page==="home");

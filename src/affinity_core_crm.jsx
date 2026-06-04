@@ -266,7 +266,7 @@ Isle of Man · Malta · Cayman Islands · Cyprus · USA · United Kingdom`
     <div style={{ fontFamily:"'Catamaran',system-ui,sans-serif", background:"#f8f9fc", color:"#111", minHeight:"100vh" }}>
       <div style={{ background:NAVY, padding:"12px 24px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-          <span style={{ color:"#fff", fontWeight:700, fontSize:17 }}>Affinity <span style={{ fontWeight:300 }}>Core</span></span>
+          
           <span style={{ color:"#8892b0", fontSize:13 }}>CRM & Business Development</span>
         </div>
         <button style={{ ...nba, background:"#4CAF7D", borderColor:"#4CAF7D" }} onClick={()=>{ setForm({stage:"Initial Call",type:"Company",office:"Isle of Man",source:"Referral",risk:"Medium"}); setModal("add"); }}>＋ Add prospect</button>

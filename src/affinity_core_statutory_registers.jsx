@@ -88,7 +88,7 @@ export default function AffinityStatutory() {
       {/* Header */}
       <div style={{ background:NAVY, padding:"12px 24px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-          <span style={{ color:"#fff", fontWeight:700, fontSize:17 }}>Affinity <span style={{ fontWeight:300 }}>Core</span></span>
+          
           <span style={{ color:"#8892b0", fontSize:13 }}>Statutory, Company Secretarial & Regulatory Registers</span>
         </div>
         <div style={{ display:"flex", gap:5 }}>
