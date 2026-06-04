@@ -69,10 +69,22 @@ function LoginScreen({ onLogin }) {
       <div style={{ width:"100%", maxWidth:420 }}>
         {/* Logo + banner */}
         <div style={{ background:`linear-gradient(135deg, ${CY} 0%, #00929A 50%, ${NAVY} 100%)`, borderRadius:14, padding:"30px 26px", marginBottom:28, textAlign:"center", boxShadow:"0 8px 32px rgba(0,180,216,0.18)" }}>
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:4, marginBottom:4 }}>
-            <div style={{ width:36, height:3, background:"#fff", opacity:0.9, borderRadius:2 }}/>
-            <div style={{ width:6, height:6, background:"#fff", borderRadius:"50%", opacity:0.9 }}/>
-            <div style={{ width:36, height:3, background:"#fff", opacity:0.9, borderRadius:2 }}/>
+          <div style={{ marginBottom:18, display:"flex", justifyContent:"center" }}>
+            <div style={{ background:"#fff", borderRadius:60, padding:"14px 28px", boxShadow:"0 4px 16px rgba(0,0,0,0.15)", display:"inline-flex", alignItems:"center", justifyContent:"center", minHeight:48, minWidth:140 }}>
+              <img
+                src="https://cdn.prod.website-files.com/680f471059835ea8d579b7e8/680f87c089dc0cf0630d7c8d_Affinity%20grad.svg"
+                alt="Affinity"
+                style={{ height:36, display:"block", maxWidth:200 }}
+                onError={(e) => {
+                  // SVG didn't load — replace with text fallback inside the pill
+                  e.target.style.display = "none";
+                  const fallback = document.createElement("div");
+                  fallback.textContent = "AFFINITY";
+                  fallback.style.cssText = "font-size:22px;font-weight:700;letter-spacing:2px;background:linear-gradient(135deg,#00C4CC,#001242);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:#001242;";
+                  e.target.parentNode.appendChild(fallback);
+                }}
+              />
+            </div>
           </div>
           <div style={{ fontSize:48, fontWeight:700, color:"#fff", letterSpacing:"-1px", lineHeight:1, marginTop:8 }}>
             Affinity <span style={{ fontWeight:200, opacity:0.95, fontStyle:"italic" }}>Core</span>
