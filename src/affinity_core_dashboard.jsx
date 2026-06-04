@@ -88,22 +88,64 @@ const modColors = {Compliance:{bg:"#FBEAF0",color:"#72243E"},KYC:{bg:"#FCEBEB",c
 const TODAY = { day:14, month:7 }; // July 14 — matches app date
 
 const STAFF_PROFILES = [
-  { name:"Andrew Morgan", birthday:{d:21,m:2}, joined:{d:1,m:12,y:2018}, office:"USA", flag:"🇺🇸", role:"CEO — Super Admin", av:"AM", c:"#00C4CC" },
-  { name:"Michael Barlow", birthday:{d:8,m:4}, joined:{d:5,m:12,y:2015}, office:"Isle of Man", flag:"🇮🇲", role:"Compliance Manager (IOM)", av:"MB", c:"#7C5CBF" },
-  { name:"Joanne Fenech", birthday:{d:22,m:12}, joined:{d:18,m:2,y:2023}, office:"Malta", flag:"🇲🇹", role:"Managing Director (IOM)", av:"JF", c:"#4A7C6F" },
-  { name:"Krista Fenech", birthday:{d:14,m:1}, joined:{d:1,m:2,y:2017}, office:"Malta", flag:"🇲🇹", role:"Client Administrator", av:"KF", c:"#5C8E3C" },
-  { name:"Alexandra Gardner", birthday:{d:8,m:9}, joined:{d:20,m:1,y:2022}, office:"USA", flag:"🇺🇸", role:"COO — Super Admin", av:"AG", c:"#BF5C7A" },
-  { name:"Debbie Gooding", birthday:{d:7,m:12}, joined:{d:21,m:12,y:2022}, office:"Isle of Man", flag:"🇮🇲", role:"Manager", av:"DG", c:"#1A7FBF" },
-  { name:"Natalie Johnson", birthday:{d:14,m:4}, joined:{d:15,m:10,y:2018}, office:"USA", flag:"🇺🇸", role:"Assistant Compliance Administrator", av:"NJ", c:"#2E7A8A" },
-  { name:"Neil Kelly", birthday:{d:26,m:1}, joined:{d:25,m:3,y:2020}, office:"USA", flag:"🇺🇸", role:"CFO", av:"NK", c:"#BF7A5C" },
-  { name:"Elena Pace", birthday:{d:11,m:5}, joined:{d:5,m:4,y:2019}, office:"Isle of Man", flag:"🇮🇲", role:"Manager", av:"EP", c:"#7B4F1D" },
-  { name:"Shanya Pickett", birthday:{d:4,m:2}, joined:{d:13,m:2,y:2019}, office:"Isle of Man", flag:"🇮🇲", role:"Assistant Manager", av:"SP", c:"#5C7A8E" },
-  { name:"Mattei Pisani", birthday:{d:28,m:6}, joined:{d:20,m:5,y:2014}, office:"Isle of Man", flag:"🇮🇲", role:"Director (Malta)", av:"MP", c:"#8A4A6E" },
-  { name:"Colin Quayle", birthday:{d:24,m:8}, joined:{d:18,m:2,y:2020}, office:"Isle of Man", flag:"🇮🇲", role:"Director and Company Secretary (IOM)", av:"CQ", c:"#4A8E7C" },
-  { name:"Kate Shaw", birthday:{d:3,m:9}, joined:{d:10,m:11,y:2023}, office:"Isle of Man", flag:"🇮🇲", role:"Manager", av:"KS", c:"#A0623E" },
-  { name:"Roxy Sheeley", birthday:{d:28,m:6}, joined:{d:19,m:4,y:2015}, office:"Isle of Man", flag:"🇮🇲", role:"Managing Director (IOM)", av:"RS", c:"#3C5CBF" },
-  { name:"Gilbert Spiteri Spadaro", birthday:{d:2,m:11}, joined:{d:8,m:5,y:2015}, office:"Malta", flag:"🇲🇹", role:"Compliance Officer (Malta)", av:"GS", c:"#3A6E4A" },
-  { name:"Gary Harrison", birthday:{d:12,m:9}, joined:{d:1,m:3,y:2017}, office:"Isle of Man", flag:"🇮🇲", role:"COO", av:"GH", c:"#0D6E8E" },
+  { name:"Michael Barlow", birthday:{d:27,m:1}, joined:{d:5,m:1,y:2026}, office:"Isle of Man", flag:"🇮🇲", role:"Compliance Manager (IOM)", av:"MB", c:"#7C5CBF" },
+  { name:"Lily Briars", birthday:{d:24,m:2}, joined:{d:16,m:7,y:2025}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"LB", c:"#4A7C6F" },
+  { name:"Jessica Cain", birthday:{d:24,m:3}, joined:{d:20,m:2,y:2025}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"JC", c:"#7C5CBF" },
+  { name:"Ryan Cain", birthday:{d:21,m:2}, joined:{d:20,m:9,y:2021}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"RC", c:"#BF5C7A" },
+  { name:"Holly Campbell", birthday:{d:23,m:12}, joined:{d:9,m:1,y:2023}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"HC", c:"#5C8E3C" },
+  { name:"Jacqueline Carroll", birthday:{d:20,m:8}, joined:{d:30,m:6,y:2025}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"JA", c:"#1A7FBF" },
+  { name:"Jazmine Corkill", birthday:{d:8,m:6}, joined:{d:1,m:10,y:2024}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"JO", c:"#2E7A8A" },
+  { name:"Kate Cowley", birthday:{d:13,m:8}, joined:{d:1,m:9,y:2025}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"KC", c:"#7B4F1D" },
+  { name:"Garry Crossan", birthday:{d:20,m:10}, joined:{d:1,m:5,y:2021}, office:"Isle of Man", flag:"🇮🇲", role:"Senior Manager", av:"GC", c:"#7C5CBF" },
+  { name:"Sikholiwe Dlamini", birthday:{d:24,m:5}, joined:{d:5,m:6,y:2023}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"SD", c:"#8A4A6E" },
+  { name:"Joanne Fenech", birthday:{d:18,m:1}, joined:{d:3,m:4,y:2020}, office:"Malta", flag:"🇲🇹", role:"Managing Director (IOM)", av:"JF", c:"#4A7C6F" },
+  { name:"Krista Fenech", birthday:{d:23,m:12}, joined:{d:12,m:5,y:2025}, office:"Malta", flag:"🇲🇹", role:"Client Administrator", av:"KF", c:"#5C8E3C" },
+  { name:"Luca Fenech", birthday:{d:19,m:4}, joined:{d:12,m:5,y:2025}, office:"Malta", flag:"🇲🇹", role:"Staff", av:"LF", c:"#0D6E8E" },
+  { name:"Alexandra Gardner", birthday:{d:28,m:1}, joined:{d:1,m:9,y:2015}, office:"USA", flag:"🇺🇸", role:"COO — Super Admin", av:"AG", c:"#BF5C7A" },
+  { name:"Deborah Gooding", birthday:{d:2,m:10}, joined:{d:12,m:5,y:2020}, office:"Isle of Man", flag:"🇮🇲", role:"Manager", av:"DG", c:"#1A7FBF" },
+  { name:"Kurt Grech", birthday:{d:17,m:5}, joined:{d:8,m:6,y:2021}, office:"Malta", flag:"🇲🇹", role:"Staff", av:"KG", c:"#0E5C7F" },
+  { name:"Colette Grisdale", birthday:{d:1,m:10}, joined:{d:18,m:3,y:2024}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"CG", c:"#6A8E2E" },
+  { name:"Mónica Guedes", birthday:{d:18,m:1}, joined:{d:4,m:8,y:2025}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"MG", c:"#BF9A3C" },
+  { name:"Martin Hall", birthday:{d:6,m:10}, joined:{d:26,m:3,y:2025}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"MH", c:"#4F6E8E" },
+  { name:"Gary Harrison", birthday:{d:31,m:12}, joined:{d:25,m:5,y:2021}, office:"Isle of Man", flag:"🇮🇲", role:"COO", av:"GH", c:"#0D6E8E" },
+  { name:"Lucy Harrison", birthday:{d:21,m:9}, joined:{d:9,m:2,y:2026}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"LH", c:"#3C5CBF" },
+  { name:"Natalie Johnson", birthday:{d:4,m:12}, joined:{d:15,m:12,y:2025}, office:"USA", flag:"🇺🇸", role:"Assistant Compliance Administrator", av:"NJ", c:"#2E7A8A" },
+  { name:"Stelios Kazamia", birthday:{d:8,m:4}, joined:{d:27,m:1,y:2026}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"SK", c:"#7C5CBF" },
+  { name:"Allana Kelly", birthday:{d:30,m:7}, joined:{d:20,m:1,y:2025}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"AK", c:"#BF5C7A" },
+  { name:"Neil Kelly", birthday:{d:26,m:1}, joined:{d:20,m:3,y:2023}, office:"USA", flag:"🇺🇸", role:"CFO", av:"NK", c:"#BF7A5C" },
+  { name:"Rebecca Kelly", birthday:{d:27,m:7}, joined:{d:3,m:7,y:2023}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"RK", c:"#1A7FBF" },
+  { name:"Farah Kirpalani", birthday:{d:29,m:12}, joined:{d:2,m:3,y:2026}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"FK", c:"#2E7A8A" },
+  { name:"Chloe Liu", birthday:{d:30,m:12}, joined:{d:13,m:10,y:2025}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"CL", c:"#7B4F1D" },
+  { name:"Kristy Maxwell", birthday:{d:15,m:8}, joined:{d:20,m:9,y:2023}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"KM", c:"#5C7A8E" },
+  { name:"Georgia Mitchell", birthday:{d:5,m:11}, joined:{d:15,m:7,y:2024}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"GM", c:"#8A4A6E" },
+  { name:"Fraser Monk", birthday:{d:23,m:2}, joined:{d:23,m:1,y:2023}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"FM", c:"#4A8E7C" },
+  { name:"Andrew Morgan", birthday:{d:31,m:7}, joined:{d:18,m:5,y:2008}, office:"USA", flag:"🇺🇸", role:"CEO — Super Admin", av:"AM", c:"#00C4CC" },
+  { name:"Kristina Muco", birthday:{d:27,m:12}, joined:{d:11,m:3,y:2024}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"KU", c:"#0D6E8E" },
+  { name:"Mavis Nyawai", birthday:{d:4,m:3}, joined:{d:6,m:5,y:2025}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"MN", c:"#3A6E4A" },
+  { name:"Junona Ostache", birthday:{d:23,m:1}, joined:{d:1,m:8,y:2024}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"JS", c:"#7A4A8C" },
+  { name:"Christine Otieno", birthday:{d:20,m:12}, joined:{d:21,m:9,y:2022}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"CO", c:"#0E5C7F" },
+  { name:"Elena Pace", birthday:{d:25,m:10}, joined:{d:5,m:4,y:2020}, office:"Isle of Man", flag:"🇮🇲", role:"Manager", av:"EP", c:"#7B4F1D" },
+  { name:"Jaydee Page", birthday:{d:8,m:3}, joined:{d:14,m:6,y:2022}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"JP", c:"#BF9A3C" },
+  { name:"Claudia Palao Izquierdo", birthday:{d:18,m:1}, joined:{d:1,m:12,y:2025}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"CP", c:"#4F6E8E" },
+  { name:"Shanya Pickett", birthday:{d:7,m:8}, joined:{d:28,m:2,y:2026}, office:"Isle of Man", flag:"🇮🇲", role:"Assistant Manager", av:"SP", c:"#5C7A8E" },
+  { name:"Mattei Pisani", birthday:{d:18,m:1}, joined:{d:8,m:11,y:2021}, office:"Isle of Man", flag:"🇮🇲", role:"Director (Malta)", av:"MP", c:"#8A4A6E" },
+  { name:"Kyle Quaggan", birthday:{d:31,m:12}, joined:{d:4,m:9,y:2024}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"KQ", c:"#4A7C6F" },
+  { name:"Colin Quayle", birthday:{d:8,m:4}, joined:{d:30,m:3,y:2020}, office:"Isle of Man", flag:"🇮🇲", role:"Director and Company Secretary (IOM)", av:"CQ", c:"#4A8E7C" },
+  { name:"Imogen Quirk", birthday:{d:23,m:11}, joined:{d:10,m:10,y:2024}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"IQ", c:"#BF5C7A" },
+  { name:"Marcus Roberts", birthday:{d:2,m:6}, joined:{d:24,m:6,y:2024}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"MR", c:"#5C8E3C" },
+  { name:"Karina Rogova", birthday:{d:28,m:3}, joined:{d:5,m:11,y:2025}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"KR", c:"#1A7FBF" },
+  { name:"Isadora Rothwell", birthday:{d:4,m:2}, joined:{d:28,m:11,y:2022}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"IR", c:"#2E7A8A" },
+  { name:"Reece Roza De Oliveira", birthday:{d:0,m:0}, joined:{d:8,m:6,y:2026}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"RR", c:"#7B4F1D" },
+  { name:"Kate Shaw", birthday:{d:28,m:5}, joined:{d:28,m:10,y:2013}, office:"Isle of Man", flag:"🇮🇲", role:"Manager", av:"KS", c:"#A0623E" },
+  { name:"Roxy Sheeley", birthday:{d:16,m:5}, joined:{d:13,m:9,y:2021}, office:"Isle of Man", flag:"🇮🇲", role:"Managing Director (IOM)", av:"RS", c:"#3C5CBF" },
+  { name:"Rebecca Skillan", birthday:{d:25,m:7}, joined:{d:1,m:1,y:2025}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"RS", c:"#4A8E7C" },
+  { name:"Gilbert Spiteri Spadaro", birthday:{d:6,m:7}, joined:{d:5,m:1,y:2026}, office:"Malta", flag:"🇲🇹", role:"Compliance Officer (Malta)", av:"GS", c:"#3A6E4A" },
+  { name:"Annabel Stephenson", birthday:{d:17,m:11}, joined:{d:1,m:4,y:2025}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"AS", c:"#0D6E8E" },
+  { name:"Ben Strodder", birthday:{d:6,m:8}, joined:{d:29,m:9,y:2025}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"BS", c:"#3A6E4A" },
+  { name:"Jessica Thornton", birthday:{d:16,m:6}, joined:{d:16,m:9,y:2024}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"JT", c:"#7A4A8C" },
+  { name:"Romane Van Broukhoven", birthday:{d:13,m:5}, joined:{d:1,m:5,y:2025}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"RV", c:"#0E5C7F" },
+  { name:"Kurt Vella", birthday:{d:15,m:2}, joined:{d:5,m:10,y:2021}, office:"Malta", flag:"🇲🇹", role:"Staff", av:"KV", c:"#6A8E2E" },
+  { name:"Shannan Wilson-Ferrara", birthday:{d:1,m:2}, joined:{d:11,m:8,y:2025}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"SW", c:"#BF9A3C" }
 ];
 
 const GROUP_ANNOUNCEMENTS = [
@@ -125,12 +167,14 @@ function getHappenings() {
   STAFF_PROFILES.forEach(s => {
     const first = s.name.split(" ")[0];
 
-    // Birthday
-    const bdAhead = daysAhead(s.birthday.d, s.birthday.m);
-    if (bdAhead === 0) {
-      events.push({ type:"birthday", person:s, text:`It's ${first}'s birthday today! 🎂`, av:s.av, c:s.c, sort:0 });
-    } else {
-      events.push({ type:"birthday_soon", person:s, text:`${first}'s birthday — ${formatAhead(bdAhead, s.birthday.d, s.birthday.m)}`, av:s.av, c:s.c, sort:bdAhead });
+    // Birthday (skip if not recorded — d:0 marker)
+    if (s.birthday && s.birthday.d > 0) {
+      const bdAhead = daysAhead(s.birthday.d, s.birthday.m);
+      if (bdAhead === 0) {
+        events.push({ type:"birthday", person:s, text:`It's ${first}'s birthday today! 🎂`, av:s.av, c:s.c, sort:0 });
+      } else {
+        events.push({ type:"birthday_soon", person:s, text:`${first}'s birthday — ${formatAhead(bdAhead, s.birthday.d, s.birthday.m)}`, av:s.av, c:s.c, sort:bdAhead });
+      }
     }
 
     // Anniversary
