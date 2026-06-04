@@ -195,9 +195,12 @@ export default function AffinityLoginPage({ onLogin }) {
 
           <div className="fade-up" style={{ animationDelay: "0.3s" }}>
             <div style={{ background: "rgba(255,255,255,0.97)", borderRadius: 20, padding: "36px 32px", boxShadow: "0 40px 80px rgba(0,0,0,0.3)", backdropFilter: "blur(20px)" }}>
-              <div style={{ marginBottom: 28 }}>
-                <h2 style={{ fontSize: 22, fontWeight: 700, color: NAVY, marginBottom: 6 }}>Sign in to Affinity Core</h2>
-                <p style={{ fontSize: 13, color: "#888" }}>Enter your first name and password</p>
+              <div style={{ marginBottom: 28, textAlign:"center" }}>
+                <div style={{ display:"inline-flex", alignItems:"center", gap:"0.3em", justifyContent:"center", marginBottom:10 }}>
+                  <img src="https://cdn.prod.website-files.com/680f471059835ea8d579b7e8/680f87c089dc0cf0630d7c8d_Affinity%20grad.svg" alt="Affinity" style={{ height:42, display:"block" }} />
+                  <span style={{ fontSize:38, fontWeight:300, color:NAVY, letterSpacing:"-1px", lineHeight:1 }}>Core</span>
+                </div>
+                <p style={{ fontSize: 13, color: "#888", margin:0 }}>Enter your first name and password</p>
               </div>
 
               <div style={{ marginBottom: 16 }}>
