@@ -52,7 +52,7 @@ function LoginScreen({ onLogin }) {
 
   const handleLogin = () => {
     // Temporary single login
-    if (username.trim().toLowerCase() === "admin" && pass === "Madebyus") {
+    if (username.trim().toLowerCase() === "admin" && pass === "madebyAffinity") {
       onLogin(1); return;
     }
     // Per-user login
@@ -99,17 +99,17 @@ function LoginScreen({ onLogin }) {
 
         <div style={{ background:"rgba(255,255,255,0.05)", borderRadius:16, padding:32, border:"0.5px solid rgba(255,255,255,0.1)" }}>
           <div style={{ fontSize:18, fontWeight:600, color:"#fff", marginBottom:6 }}>Sign in</div>
-          <div style={{ fontSize:13, color:"rgba(255,255,255,0.4)", marginBottom:28 }}>Select your profile and enter your password</div>
+          <div style={{ fontSize:13, color:"rgba(255,255,255,0.4)", marginBottom:28 }}>Enter your first name and password</div>
 
           {/* Username */}
           <div style={{ marginBottom:16 }}>
-            <label style={{ display:"block", fontSize:11, fontWeight:600, color:"rgba(255,255,255,0.5)", textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:8 }}>Username</label>
+            <label style={{ display:"block", fontSize:11, fontWeight:600, color:"rgba(255,255,255,0.5)", textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:8 }}>First name</label>
             <input
               type="text"
               value={username}
               onChange={e => { setUsername(e.target.value); setError(""); }}
               onKeyDown={e => e.key==="Enter" && handleLogin()}
-              placeholder="Enter your username"
+              placeholder="Your first name"
               autoFocus
               style={{ width:"100%", padding:"12px 14px", background:"rgba(255,255,255,0.07)", border:`1.5px solid ${error?"#EF4444":"rgba(255,255,255,0.15)"}`, borderRadius:8, color:"#fff", fontSize:14, outline:"none", boxSizing:"border-box", fontFamily:"inherit" }}
             />
