@@ -149,6 +149,7 @@ const NAV = [
   {s:"Overview",   items:[
     {id:"dashboard",    label:"Dashboard",     icon:"\u229E",b:null},
     {id:"tasks",        label:"Tasks",          icon:"\u2713",b:3},
+    {id:"feedback",     label:"Feedback",       icon:"\uD83D\uDCAC",b:null},
   ]},
   {s:"Core",       items:[
     {id:"entities",     label:"Entity Admin",  icon:"\uD83C\uDFE2",b:null},
@@ -473,6 +474,7 @@ export default function AffinityCore(){
     switch(mod){
       case "dashboard":    return <Dashboard userId={uid} onNav={setMod} officeFilter={officeFilter}/>;
       case "tasks":        return <Tasks/>;
+      case "feedback":     return <Feedback userName={user.name} isSuperAdmin={user.role?.includes("Super Admin")}/>;
       case "entities":     return <EntityAdmin officeFilter={officeFilter}/>;
       case "crm":          return <CRM/>;
       case "documents":    return <Documents/>;
