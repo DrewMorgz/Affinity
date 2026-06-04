@@ -75,8 +75,9 @@ const INTERACTIONS = {
 };
 
 const PIPELINE_STAGES = ["Initial Call","Proposal Sent","Proposal Accepted","KYC Arriving","KYC Approved","Fees Paid"];
-const VIEWS = ["pipeline","prospects","interactions","performance","convert"];
-const VLBLS = ["Pipeline","All prospects","Interactions","Performance","Convert"];
+const VIEWS = ["pipeline","performance","convert"];
+const VIEWS_ALL = ["pipeline","prospects","interactions","performance","convert"]; // internal (prospects kept for detail panel)
+const VLBLS = ["Pipeline","Performance","Convert"];
 const fmt = n => "£"+Number(n||0).toLocaleString();
 
 // Calculate prorated fee based on conversion date
@@ -279,38 +280,68 @@ Isle of Man · Malta · Cayman Islands · Cyprus · USA · United Kingdom`
 
         {/* PIPELINE */}
         {view==="pipeline"&&(
-          <div style={{ padding:"16px 20px" }}>
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:20 }}>
+          <div style={{ padding:isMobile?"12px 12px 60px":"16px 20px" }}>
+            <div style={{ display:"grid", gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(4,1fr)", gap:10, marginBottom:16 }}>
               {[{l:"Active prospects",v:pipeline.length,c:CY},{l:"Total annual value",v:fmt(totalVal)+"/yr",c:"#111"},{l:"Fees paid",v:prospects.filter(p=>p.stage==="Fees Paid").length,c:"#4CAF7D"},{l:"KYC in progress",v:prospects.filter(p=>["KYC Arriving","KYC Approved"].includes(p.stage)).length,c:"#F59E0B"}].map(k=>(
                 <div key={k.l} style={{ background:"#f9f9f9", borderRadius:8, padding:"12px 14px" }}>
                   <div style={{ fontSize:10, color:"#666", marginBottom:4 }}>{k.l}</div>
-                  <div style={{ fontSize:20, fontWeight:700, color:k.c }}>{k.v}</div>
+                  <div style={{ fontSize:isMobile?16:20, fontWeight:700, color:k.c }}>{k.v}</div>
                 </div>
               ))}
             </div>
-            <div style={{ display:"flex", gap:0, overflowX:"auto" }}>
-              {PIPELINE_STAGES.map((stage,i)=>{
-                const inS=prospects.filter(p=>p.stage===stage);
-                return (
-                  <div key={stage} style={{ flex:1, minWidth:160, borderRight:i<PIPELINE_STAGES.length-1?"0.5px solid #e5e5e5":"none", padding:"0 8px 10px" }}>
-                    <div style={{ padding:"8px 4px 10px" }}>
-                      <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.4px", color:"#666" }}>{stage}</div>
-                      <div style={{ fontSize:10, color:"#aaa", marginTop:2 }}>{inS.length} · {fmt(inS.reduce((s,p)=>s+p.annualFee,0))}/yr</div>
-                    </div>
-                    {inS.map(p=>(
-                      <div key={p.id} onClick={()=>{ setSel(p.id); setView("prospects"); }} style={{ background:"#fff", border:"0.5px solid #e5e5e5", borderRadius:8, padding:"10px 12px", marginBottom:8, cursor:"pointer" }}>
-                        <div style={{ fontSize:11, fontWeight:600, marginBottom:2 }}>{p.company}</div>
-                        <div style={{ fontSize:10, color:"#666", marginBottom:6 }}>{p.firstName} {p.lastName}</div>
-                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                          <Badge label={p.office.split(" ")[0]} colors={officeC[p.office]||{bg:"#eee",color:"#666"}} />
-                          <span style={{ fontSize:11, fontWeight:600, color:"#4CAF7D" }}>{fmt(p.annualFee)}</span>
-                        </div>
-                      </div>
-                    ))}
-                    {inS.length===0&&<div style={{ fontSize:11, color:"#ddd", textAlign:"center", padding:"16px 0" }}>—</div>}
-                  </div>
-                );
-              })}
+
+            {/* Spreadsheet-style prospect table */}
+            <div style={{ background:"#fff", border:"0.5px solid #e5e5e5", borderRadius:8, overflow:"hidden" }}>
+              <div style={{ padding:"10px 14px", borderBottom:"0.5px solid #e5e5e5", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:8 }}>
+                <div style={{ fontSize:12, fontWeight:600, color:NAVY }}>All prospects ({prospects.length})</div>
+                <div style={{ fontSize:10, color:"#888" }}>Click any row to open</div>
+              </div>
+              <div style={{ overflowX:"auto" }}>
+                <table style={{ width:"100%", borderCollapse:"collapse", fontSize:11, minWidth:isMobile?640:0 }}>
+                  <thead>
+                    <tr style={{ background:"#fafafa", borderBottom:"0.5px solid #e5e5e5" }}>
+                      {["Stage","Company","Contact","Type","Office","Annual fee","BD lead","Last interaction"].map(h=>(
+                        <th key={h} style={{ padding:"8px 10px", textAlign:"left", fontSize:10, fontWeight:600, color:"#666", textTransform:"uppercase", letterSpacing:"0.3px", whiteSpace:"nowrap" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {prospects.slice().sort((a,b)=>PIPELINE_STAGES.indexOf(a.stage)-PIPELINE_STAGES.indexOf(b.stage)).map(p=>{
+                      const ints = INTERACTIONS[p.id]||[];
+                      const last = ints[0];
+                      const stageColor = PIPELINE_STAGES.indexOf(p.stage)>=4 ? "#4CAF7D" : PIPELINE_STAGES.indexOf(p.stage)>=2 ? "#F59E0B" : CY;
+                      return (
+                        <tr key={p.id} onClick={()=>{ setSel(p.id); setView("prospects"); }}
+                          style={{ borderBottom:"0.5px solid #f0f0f0", cursor:"pointer" }}
+                          onMouseEnter={e=>e.currentTarget.style.background="#f9fbfc"}
+                          onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                          <td style={{ padding:"10px", whiteSpace:"nowrap" }}>
+                            <span style={{ display:"inline-block", width:6, height:6, borderRadius:"50%", background:stageColor, marginRight:6, verticalAlign:"middle" }} />
+                            <span style={{ fontSize:11, color:"#333" }}>{p.stage}</span>
+                          </td>
+                          <td style={{ padding:"10px", fontWeight:600 }}>{p.company}</td>
+                          <td style={{ padding:"10px", color:"#666" }}>{p.firstName} {p.lastName}</td>
+                          <td style={{ padding:"10px", color:"#666", whiteSpace:"nowrap" }}>{p.type||"—"}</td>
+                          <td style={{ padding:"10px", whiteSpace:"nowrap" }}>
+                            <Badge label={p.office.split(" ")[0]} colors={officeC[p.office]||{bg:"#eee",color:"#666"}}/>
+                          </td>
+                          <td style={{ padding:"10px", fontWeight:600, color:"#4CAF7D", whiteSpace:"nowrap" }}>{fmt(p.annualFee)}</td>
+                          <td style={{ padding:"10px", color:"#666", whiteSpace:"nowrap" }}>{p.bd}</td>
+                          <td style={{ padding:"10px", color:"#666", maxWidth:240 }}>
+                            {last?<div>
+                              <div style={{ fontSize:10, color:"#999" }}>{last.date} · {last.type} · {last.by}</div>
+                              <div style={{ fontSize:11, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{last.note}</div>
+                            </div>:<span style={{ color:"#bbb" }}>No interactions yet</span>}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div style={{ padding:"10px 14px", borderTop:"0.5px solid #e5e5e5", fontSize:10, color:"#888" }}>
+                Showing {prospects.length} prospects, sorted by stage.
+              </div>
             </div>
           </div>
         )}

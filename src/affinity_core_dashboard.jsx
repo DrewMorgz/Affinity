@@ -114,38 +114,52 @@ const GROUP_ANNOUNCEMENTS = [
 ];
 
 function getHappenings() {
+  // Convert a {d,m} pair into a comparable "day of year" relative to TODAY,
+  // so we can window upcoming events forward 30 days regardless of month rollover.
+  const monthLen = [31,28,31,30,31,30,31,31,30,31,30,31];
+  const dayOfYear = (d,m) => {
+    let total = d;
+    for (let i=1; i<m; i++) total += monthLen[i-1];
+    return total;
+  };
+  const todayDoy = dayOfYear(TODAY.day, TODAY.month);
+
+  // Distance in days from today to (d,m), looking forward (wrapping over year-end)
+  const daysAhead = (d,m) => {
+    const target = dayOfYear(d,m);
+    let diff = target - todayDoy;
+    if (diff < 0) diff += 365;
+    return diff;
+  };
+
   const events = [];
-  const d = TODAY.day, m = TODAY.month;
+  const WINDOW = 30; // show birthdays/anniversaries up to 30 days ahead
 
   STAFF_PROFILES.forEach(s => {
-    // Birthday today
-    if (s.birthday.d === d && s.birthday.m === m) {
-      events.push({ type:"birthday", person:s, text:`It's ${s.name.split(" ")[0]}'s birthday today! 🎂`, av:s.av, c:s.c });
-    }
-    // Birthday in next 7 days
-    else {
-      const bDay = s.birthday.d, bMon = s.birthday.m;
-      for (let i=1; i<=7; i++) {
-        let nd = d+i, nm = m;
-        if (nd > 31) { nd -= 31; nm++; }
-        if (nd === bDay && nm === bMon) {
-          const days = i;
-          events.push({ type:"birthday_soon", person:s, text:`${s.name.split(" ")[0]}'s birthday in ${days} day${days>1?"s":""}`, av:s.av, c:s.c });
-          break;
-        }
-      }
+    const first = s.name.split(" ")[0];
+
+    // Birthday
+    const bdAhead = daysAhead(s.birthday.d, s.birthday.m);
+    if (bdAhead === 0) {
+      events.push({ type:"birthday", person:s, text:`It's ${first}'s birthday today! 🎂`, av:s.av, c:s.c, sort:0 });
+    } else if (bdAhead <= WINDOW) {
+      events.push({ type:"birthday_soon", person:s, text:`${first}'s birthday in ${bdAhead} day${bdAhead>1?"s":""}`, av:s.av, c:s.c, sort:bdAhead });
     }
 
     // Work anniversary
+    const annAhead = daysAhead(s.joined.d, s.joined.m);
+    const yearNow = new Date().getFullYear();
     const years = TODAY.month > s.joined.m || (TODAY.month === s.joined.m && TODAY.day >= s.joined.d)
-      ? new Date().getFullYear() - s.joined.y
-      : new Date().getFullYear() - s.joined.y - 1;
-    if (s.joined.d === d && s.joined.m === m && years > 0) {
-      events.push({ type:"anniversary", person:s, text:`${s.name.split(" ")[0]} is celebrating ${years} year${years>1?"s":""} at Affinity! 🎉`, av:s.av, c:s.c });
+      ? yearNow - s.joined.y
+      : yearNow - s.joined.y - 1;
+    if (annAhead === 0 && years > 0) {
+      events.push({ type:"anniversary", person:s, text:`${first} is celebrating ${years} year${years>1?"s":""} at Affinity! 🎉`, av:s.av, c:s.c, sort:0 });
+    } else if (annAhead <= WINDOW && annAhead > 0 && (years + 1) > 0) {
+      events.push({ type:"anniversary_soon", person:s, text:`${first} celebrates ${years+1} year${(years+1)>1?"s":""} at Affinity in ${annAhead} day${annAhead>1?"s":""}`, av:s.av, c:s.c, sort:annAhead+0.5 });
     }
   });
 
-  return events;
+  return events.sort((a,b)=>a.sort-b.sort).slice(0, 8); // cap to 8
 }
 
 export default function Dashboard({userId, onNav}) {
@@ -193,7 +207,7 @@ export default function Dashboard({userId, onNav}) {
         const happenings = getHappenings();
         const announcements = GROUP_ANNOUNCEMENTS.slice(0,2);
         const hasContent = happenings.length > 0 || announcements.length > 0;
-        if (!hasContent) return null;
+        if (!hasContent) return null; // (guard kept; window now wide enough that something usually shows)
         return (
           <div style={{background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:10,padding:14,marginBottom:14}}>
             <div style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.5px",color:"#888",marginBottom:12}}>

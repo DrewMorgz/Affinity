@@ -414,7 +414,7 @@ export default function AffinityCore(){
   const [searchQ,setSearchQ]=useState("");
   const [shortcutsOpen,setShortcutsOpen]=useState(false);
   const [officeOpen,setOfficeOpen]=useState(false);
-  const user=USERS.find(u=>u.id===uid);
+  const user=USERS.find(u=>u.id===uid)||USERS[0];
   const navLabel=NAV.flatMap(s=>s.items).find(i=>i.id===mod)?.label||mod;
 
   const searchResults = searchQ.length > 1
@@ -474,7 +474,7 @@ export default function AffinityCore(){
     switch(mod){
       case "dashboard":    return <Dashboard userId={uid} onNav={setMod} officeFilter={officeFilter}/>;
       case "tasks":        return <Tasks/>;
-      case "feedback":     return <Feedback userName={user.name} isSuperAdmin={user.role?.includes("Super Admin")}/>;
+      case "feedback":     return <Feedback userName={user?.name||""} isSuperAdmin={!!(user&&user.role&&user.role.indexOf("Super Admin")>-1)}/>;
       case "entities":     return <EntityAdmin officeFilter={officeFilter}/>;
       case "crm":          return <CRM/>;
       case "documents":    return <Documents/>;
@@ -510,12 +510,12 @@ export default function AffinityCore(){
     <div data-sidebar style={{width:208,minWidth:208,background:NAVY,display:"flex",flexDirection:"column",overflow:"hidden",flexShrink:0,position:"fixed",top:0,left:0,bottom:0,zIndex:50,transform:mobile?(sideOpen?"translateX(0)":"translateX(-100%)"):"translateX(0)",transition:"transform 0.25s ease"}}>
       <div style={{padding:"14px 14px 10px",borderBottom:"0.5px solid rgba(255,255,255,0.08)"}}>
         <div style={{fontSize:18,fontWeight:500,color:CY}}>Affinity <span style={{color:"#fff",fontWeight:300}}>Core</span></div>
-        <div style={{fontSize:9,color:"rgba(255,255,255,0.3)",textTransform:"uppercase",letterSpacing:"1px",marginTop:2}}>Made by Affinity, for Affinity</div>
+        <div style={{fontSize:9,color:"#fff",textTransform:"uppercase",letterSpacing:"1px",marginTop:2,opacity:0.8}}>Made by Affinity, for Affinity</div>
       </div>
       <div style={{flex:1,overflowY:"auto",paddingBottom:6}}>
         {NAV.map(sec=><div key={sec.s}>
-          <div style={{fontSize:9,fontWeight:500,color:"rgba(255,255,255,0.28)",textTransform:"uppercase",letterSpacing:"1px",padding:"10px 14px 4px"}}>{sec.s}</div>
-          {sec.items.map(item=><div key={item.id} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 12px",cursor:"pointer",borderRadius:5,margin:"1px 6px",background:mod===item.id?"rgba(0,180,216,0.18)":"transparent",color:mod===item.id?"#fff":"rgba(255,255,255,0.52)",fontSize:12,fontWeight:mod===item.id?500:400}} onClick={()=>navTo(item.id)}>
+          <div style={{fontSize:9,fontWeight:500,color:"#fff",opacity:0.7,textTransform:"uppercase",letterSpacing:"1px",padding:"10px 14px 4px"}}>{sec.s}</div>
+          {sec.items.map(item=><div key={item.id} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 12px",cursor:"pointer",borderRadius:5,margin:"1px 6px",background:mod===item.id?"rgba(0,180,216,0.18)":"transparent",color:"#fff",opacity:mod===item.id?1:0.85,fontSize:12,fontWeight:mod===item.id?500:400}} onClick={()=>navTo(item.id)}>
             <span style={{fontSize:13}}>{item.icon}</span>
             <span>{item.label}</span>
             {item.b&&<span style={{background:"#EF4444",color:"#fff",borderRadius:10,padding:"1px 5px",fontSize:9,fontWeight:700,marginLeft:"auto"}}>{item.b}</span>}
@@ -525,8 +525,8 @@ export default function AffinityCore(){
       <div style={{padding:"10px 14px",borderTop:"0.5px solid rgba(255,255,255,0.08)",position:"relative"}}>
         <div style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}} onClick={e=>{e.stopPropagation();setU(!uOpen);}}>
           <div style={{width:28,height:28,borderRadius:"50%",background:user.c,color:"#fff",fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{user.av}</div>
-          <div><div style={{fontSize:11,fontWeight:500,color:"#fff",display:"flex",alignItems:"center",gap:5}}>{user.name}<span style={{fontSize:13}}>{user.flag}</span></div><div style={{fontSize:10,color:"rgba(255,255,255,0.38)"}}>{user.role}</div></div>
-          <span style={{marginLeft:"auto",color:"rgba(255,255,255,0.3)",fontSize:10}}>▲</span>
+          <div><div style={{fontSize:11,fontWeight:500,color:"#fff",display:"flex",alignItems:"center",gap:5}}>{user.name}<span style={{fontSize:13}}>{user.flag}</span></div><div style={{fontSize:10,color:"#fff",opacity:0.75}}>{user.role}</div></div>
+          <span style={{marginLeft:"auto",color:"#fff",opacity:0.6,fontSize:10}}>▲</span>
         </div>
         {uOpen&&<div style={{position:"absolute",bottom:58,left:8,right:8,background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:8,zIndex:100,overflow:"hidden",boxShadow:"0 4px 16px rgba(0,0,0,0.15)",maxHeight:"70vh",display:"flex",flexDirection:"column"}} onClick={e=>e.stopPropagation()}>
           <div style={{padding:"8px 12px",fontSize:10,fontWeight:600,color:"#999",textTransform:"uppercase",letterSpacing:"0.5px",borderBottom:"0.5px solid #e5e5e5",flexShrink:0}}>Switch user</div>

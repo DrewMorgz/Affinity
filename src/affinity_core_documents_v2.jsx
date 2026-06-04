@@ -58,7 +58,7 @@ export default function AffinityDMS() {
   const [openFolders,setOpen] = useState({"KYC":true});
   const [selFolder,setSelF]   = useState({folder:"KYC",sub:"CDD"});
   const [sel,setSel]          = useState(null);
-  const [tab,setTab]          = useState(0); // 0=DMS, 1=Expiring, 2=Approvals, 3=Generate, 4=Email
+  const [tab,setTab]          = useState(0); // 0=DMS, 1=Expiring, 2=Approvals, 3=Generate
   const [modal,setModal]      = useState(null);
   const [dragOver,setDragOver] = useState(false);
   const [isAdmin]             = useState(true); // would come from user role
@@ -75,7 +75,7 @@ export default function AffinityDMS() {
   const th={padding:"7px 12px",textAlign:"left",fontSize:10,fontWeight:600,color:"#999",textTransform:"uppercase",letterSpacing:"0.4px",borderBottom:"0.5px solid #e5e5e5",background:"#f9f9f9",whiteSpace:"nowrap"};
   const td={padding:"8px 12px",fontSize:11,borderBottom:"0.5px solid #e5e5e5",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"};
 
-  const tabs = ["Document folders","Expiring / expired","Approvals","Generate document","Email filing"];
+  const tabs = ["Document folders","Expiring / expired","Approvals","Generate document"];
 
   return (
     <div style={{fontFamily:"'Catamaran',system-ui,sans-serif",background:"#fff",color:"#111",height:"calc(100vh - 48px)",display:"flex",flexDirection:"column",overflow:"hidden"}}>
@@ -240,6 +240,23 @@ export default function AffinityDMS() {
       {/* GENERATE DOCUMENT */}
       {tab===3&&(
         <div style={{padding:16,overflowY:"auto",flex:1}}>
+          {/* Email filing — both methods now go into Correspondence > Emails */}
+          <div style={{background:"#E6F7FB22",border:`0.5px solid ${CY}`,borderRadius:8,padding:"12px 14px",marginBottom:16}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,flexWrap:"wrap",gap:6}}>
+              <div style={{fontSize:12,fontWeight:600}}>📧 Email filing — files into Correspondence / Emails</div>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:10}}>
+              <div style={{background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:6,padding:12}}>
+                <div style={{fontSize:11,fontWeight:600,marginBottom:6}}>Method 1 — Drag from Outlook</div>
+                <div style={{fontSize:11,color:"#666",lineHeight:1.6}}>1. Open the entity in the DMS<br/>2. Drag the email from Outlook into the Correspondence / Emails folder<br/>3. Complete the metadata popup<br/>4. Filed as .msg or .eml</div>
+              </div>
+              <div style={{background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:6,padding:12}}>
+                <div style={{fontSize:11,fontWeight:600,marginBottom:6}}>Method 2 — Outlook add-in</div>
+                <div style={{fontSize:11,color:"#666",lineHeight:1.6}}>1. Open the email in Outlook<br/>2. Click the Affinity Core add-in button<br/>3. Pick entity from the dropdown — filing target defaults to Correspondence / Emails<br/>4. Click File</div>
+              </div>
+            </div>
+            <div style={{fontSize:10,color:"#888"}}>Both methods are supported. Emails always land in the entity's Correspondence / Emails subfolder unless you override the destination.</div>
+          </div>
           {["Onboarding","Correspondence","Statutory"].map(section=>(
             <div key={section} style={{marginBottom:20}}>
               <div style={{fontSize:12,fontWeight:700,color:CY,marginBottom:10,borderBottom:"0.5px solid #e5e5e5",paddingBottom:6}}>{section}</div>
@@ -264,39 +281,6 @@ export default function AffinityDMS() {
         </div>
       )}
 
-      {/* EMAIL FILING */}
-      {tab===4&&(
-        <div style={{padding:16,overflowY:"auto",flex:1}}>
-          <div style={{background:"#E6F7FB22",border:`0.5px solid ${CY}`,borderRadius:8,padding:"12px 14px",marginBottom:16}}>
-            <div style={{fontSize:12,fontWeight:600,marginBottom:4}}>Email filing — no public folders required</div>
-            <div style={{fontSize:11,color:"#555",lineHeight:1.6}}>Emails are saved into the DMS by dragging from Outlook into the appropriate folder, or by using the email preview button to file directly. Public folders are not required — all filing is done at entity level within the folder structure.</div>
-          </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
-            <div style={{background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:8,padding:14}}>
-              <div style={{fontSize:11,fontWeight:600,marginBottom:8}}>Method 1 — Drag from Outlook</div>
-              <div style={{fontSize:11,color:"#666",lineHeight:1.7}}>1. Open the DMS to the correct entity and folder<br/>2. Drag the email from Outlook into the folder panel<br/>3. A metadata popup will appear — complete and save<br/>4. Email is filed as a .msg or .eml file</div>
-            </div>
-            <div style={{background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:8,padding:14}}>
-              <div style={{fontSize:11,fontWeight:600,marginBottom:8}}>Method 2 — Preview &amp; file</div>
-              <div style={{fontSize:11,color:"#666",lineHeight:1.7}}>1. Open the email in Outlook<br/>2. Click the Affinity Core add-in button<br/>3. Select entity and folder from the dropdown<br/>4. Click File — saved directly to the DMS<br/><span style={{color:"#aaa",fontSize:10}}>(Requires M365 integration — Phase 2)</span></div>
-            </div>
-          </div>
-          <div style={{fontSize:11,fontWeight:600,marginBottom:8}}>Recently filed emails</div>
-          {[
-            {name:"RE: Q2 retainer invoice — Meridian Holdings",entity:"Meridian Holdings Ltd",folder:"Correspondence / Emails",date:"14/07/2025",by:"Roxy Sheeley"},
-            {name:"FW: KYC renewal — Emma Harrington",          entity:"Harrington Family Trust", folder:"KYC / Onboarding",    date:"12/07/2025",by:"Roxy Sheeley"},
-            {name:"RE: Apex sanctions review — MLRO",           entity:"Apex Growth Fund Ltd",    folder:"KYC / Ongoing Monitoring",date:"12/07/2025",by:"Gary Harrison"},
-          ].map((e,i)=>(
-            <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:"0.5px solid #e5e5e5"}}>
-              <div>
-                <div style={{fontSize:12,fontWeight:500}}>✉ {e.name}</div>
-                <div style={{fontSize:11,color:"#999",marginTop:2}}>{e.entity} &middot; {e.folder} &middot; {e.date} by {e.by}</div>
-              </div>
-              <Btn sx={{fontSize:10}}>👁 Preview</Btn>
-            </div>
-          ))}
-        </div>
-      )}
 
       {/* Upload modal */}
       {modal==="upload"&&(

@@ -37,7 +37,9 @@ const Badge = ({ label, c }) => (
   <span style={{display:"inline-block",padding:"2px 9px",borderRadius:20,fontSize:10,fontWeight:600,background:c.bg,color:c.color,whiteSpace:"nowrap"}}>{label}</span>
 );
 
-export default function AffinityFeedback({ userName, isSuperAdmin }) {
+export default function AffinityFeedback(props) {
+  const userName = props && props.userName ? String(props.userName) : "";
+  const isSuperAdmin = !!(props && props.isSuperAdmin);
   const [items, setItems] = useState(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -97,7 +99,7 @@ export default function AffinityFeedback({ userName, isSuperAdmin }) {
     setItems(items.map(it => it.id === id ? {...it, adminNotes} : it));
   };
   const remove = (id) => {
-    if (!confirm("Delete this feedback entry?")) return;
+    if (!window.confirm("Delete this feedback entry?")) return;
     setItems(items.filter(it => it.id !== id));
   };
 
@@ -118,7 +120,7 @@ export default function AffinityFeedback({ userName, isSuperAdmin }) {
   };
 
   const clearAll = () => {
-    if (!confirm(`Clear all ${items.length} feedback entries? This cannot be undone.`)) return;
+    if (!window.confirm(`Clear all ${items.length} feedback entries? This cannot be undone.`)) return;
     setItems([]);
   };
 

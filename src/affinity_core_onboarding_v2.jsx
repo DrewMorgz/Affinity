@@ -49,6 +49,11 @@ const VLABELS = ["Overview","Active onboardings","Transfer-in","Attrition","Clie
 
 export default function AffinityOnboarding({ initialView }) {
   const [view, setView]   = useState(initialView || "pipeline");
+  // When user lands here via the Attrition sidebar entry, only the
+  // Attrition tab is shown — everything else stripped from the nav.
+  const isAttritionOnly = initialView === "attrition";
+  const visibleViews = isAttritionOnly ? ["attrition"] : VIEWS.filter(v => v !== "attrition");
+  const visibleLabels = visibleViews.map(v => VLABELS[VIEWS.indexOf(v)]);
   const [sel, setSel]     = useState(null);
   const [modal, setModal] = useState(null);
 
@@ -67,7 +72,7 @@ export default function AffinityOnboarding({ initialView }) {
         </div>
       </div>
       <div style={{ display:"flex", gap:4, padding:"8px 20px", borderBottom:"0.5px solid #e5e5e5", background:"var(--bg-secondary,#f9f9f9)", flexWrap:"wrap" }}>
-        {VIEWS.map((v,i)=><button key={v} style={{ padding:"4px 12px", fontSize:11, borderRadius:20, border:`0.5px solid ${view===v?"#ccc":"#e5e5e5"}`, background:view===v?"var(--bg-primary,#fff)":"transparent", color:view===v?"var(--text-primary,#111)":"#666", cursor:"pointer", fontWeight:view===v?500:400 }} onClick={()=>{ setView(v); setSel(null); }}>{VLABELS[i]}</button>)}
+        {visibleViews.map((v,i)=><button key={v} style={{ padding:"4px 12px", fontSize:11, borderRadius:20, border:`0.5px solid ${view===v?"#ccc":"#e5e5e5"}`, background:view===v?"var(--bg-primary,#fff)":"transparent", color:view===v?"var(--text-primary,#111)":"#666", cursor:"pointer", fontWeight:view===v?500:400 }} onClick={()=>{ setView(v); setSel(null); }}>{visibleLabels[i]}</button>)}
       </div>
 
       {view==="pipeline"&&(

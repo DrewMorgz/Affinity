@@ -97,26 +97,24 @@ const ENTITY_DATA = {
 
 const TABS = [
   { id:"overview",   label:"Overview",                group:"Entity" },
-  { id:"structure",  label:"Structure / chart",       group:"Entity" },
-  { id:"statutory",  label:"Statutory data",          group:"Entity" },
   { id:"directors",  label:"Officers",                group:"Entity" },
   { id:"shareholders",label:"Shareholders",           group:"Entity" },
-  { id:"addresses",  label:"Addresses",               group:"Entity" },
   { id:"bank",       label:"Bank accounts",           group:"Entity" },
   { id:"charges",    label:"Charges",                 group:"Entity" },
   { id:"assets",     label:"Assets",                  group:"Entity" },
   { id:"dividends",  label:"Dividends",               group:"Entity" },
-  { id:"foreignRegs",label:"Foreign registrations",  group:"Entity" },
   { id:"relations",  label:"Relations",               group:"Entity" },
   { id:"meetings",   label:"Meetings",                group:"Entity" },
+  { id:"structure",  label:"Structure / chart",       group:"Entity" },
   { id:"fileNotes",  label:"File notes",              group:"Entity" },
-  { id:"safe",       label:"Archiving & safe custody",            group:"Entity" },
+  { id:"archive",    label:"Archive",                 group:"Entity" },
+  { id:"safe",       label:"Safe custody",            group:"Entity" },
+  { id:"registers",  label:"Generate registers",      group:"Entity" },
   { id:"compliance", label:"Compliance register",     group:"Regulatory" },
   { id:"egaming",    label:"eGaming / OGRA",          group:"Regulatory", gamingOnly:true },
   { id:"fatca",      label:"FATCA",                   group:"Filing Obligations" },
   { id:"crs",        label:"CRS",                     group:"Filing Obligations" },
   { id:"substance",  label:"Substance",               group:"Filing Obligations" },
-  { id:"registers",  label:"Generate registers",      group:"Admin" },
 ];
 
 const s = {
@@ -435,6 +433,26 @@ export default function AffinityCoreEntityAdmin({ officeFilter="" }) {
               <button style={{ ...s.btn(false), marginTop:8, fontSize:10 }}>View M&A in DMS ↗</button>
             </div>
           </div>
+          <div style={s.g3}>
+            <div style={s.card}>
+              <div style={s.cardT}>Registered & business addresses</div>
+              {[["Registered office",`Affinity Group, ${entity.jur}`],["Business address","Same as registered"],["Communication address","Same as registered"],["Trading address","—"]].map(([k,v])=>(
+                <div key={k} style={s.dRow}><span style={s.dKey}>{k}</span><span style={s.dVal}>{v}</span></div>
+              ))}
+            </div>
+            <div style={s.card}>
+              <div style={s.cardT}>Foreign registrations</div>
+              {(entity.foreignRegs && entity.foreignRegs.length>0)?entity.foreignRegs.map((fr,i)=>(
+                <div key={i} style={s.dRow}><span style={s.dKey}>{fr.jurisdiction||fr.jur||"—"}</span><span style={s.dVal}>{fr.regNo||fr.number||"—"}</span></div>
+              )):<div style={{ fontSize:11, color:"var(--text-secondary,#888)", padding:"6px 0" }}>No foreign registrations recorded.</div>}
+            </div>
+            <div style={s.card}>
+              <div style={s.cardT}>Share capital</div>
+              {[["Authorised share capital","£100,000"],["Issued share capital","£10,000"],["Currency",entity.currency||"GBP"],["Share classes","Ordinary"],["Par value","£1.00"]].map(([k,v])=>(
+                <div key={k} style={s.dRow}><span style={s.dKey}>{k}</span><span style={s.dVal}>{v}</span></div>
+              ))}
+            </div>
+          </div>
         </div>
       );
 
@@ -731,27 +749,57 @@ export default function AffinityCoreEntityAdmin({ officeFilter="" }) {
         </div>
       );
 
-      case "safe": return (
-        <div>
-          <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
-            <div style={{ fontSize:12, fontWeight:500 }}>Safe custody register</div>
-            <button style={s.btn(true)} onClick={()=>setModal("safeItem")}>＋ Add item</button>
+      case "archive": {
+        // Archive shows historical / closed records (same table format as safe custody)
+        const archived = safeItems.filter(si=>si.retrieved); // retrieved items are the archive
+        return (
+          <div>
+            <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
+              <div style={{ fontSize:12, fontWeight:500 }}>Archive — historical records</div>
+              <button style={s.btn(true)} onClick={()=>setModal("safeItem")}>＋ Add archive entry</button>
+            </div>
+            {archived.length>0?(
+              <Tbl cols={[{l:"Item description",w:"34%"},{l:"Date archived",w:"18%"},{l:"Date retrieved",w:"18%"},{l:"Authorised by",w:"18%"},{l:"Status",w:"12%"}]}
+                rows={archived.map(si=>(
+                  <tr key={si.id} style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)" }}>
+                    <td style={{ ...s.td, fontWeight:500 }}>{si.item}</td>
+                    <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{si.deposited}</td>
+                    <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{si.retrieved||"—"}</td>
+                    <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{si.auth}</td>
+                    <td style={s.td}><Badge label="Archived" colors={{bg:"#F1EFE8",color:"#888"}} /></td>
+                  </tr>
+                ))}
+              />
+            ):<div style={{ color:"var(--text-secondary,#666)", fontSize:12, padding:"20px 0", textAlign:"center" }}>No archived records.</div>}
           </div>
-          {safeItems.length>0?(
-            <Tbl cols={[{l:"Item description",w:"34%"},{l:"Date deposited",w:"18%"},{l:"Date retrieved",w:"18%"},{l:"Authorised by",w:"18%"},{l:"Status",w:"12%"}]}
-              rows={safeItems.map(si=>(
-                <tr key={si.id} style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)" }}>
-                  <td style={{ ...s.td, fontWeight:500 }}>{si.item}</td>
-                  <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{si.deposited}</td>
-                  <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{si.retrieved||"—"}</td>
-                  <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{si.auth}</td>
-                  <td style={s.td}><Badge label={si.retrieved?"Retrieved":"In safe"} colors={si.retrieved?{bg:"#F1EFE8",color:"#888"}:{bg:"#EAF3DE",color:"#27500A"}} /></td>
-                </tr>
-              ))}
-            />
-          ):<div style={{ color:"var(--text-secondary,#666)", fontSize:12, padding:"20px 0", textAlign:"center" }}>No safe custody items recorded.</div>}
-        </div>
-      );
+        );
+      }
+
+      case "safe": {
+        // Safe custody = items currently held (not yet retrieved)
+        const inSafe = safeItems.filter(si=>!si.retrieved);
+        return (
+          <div>
+            <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
+              <div style={{ fontSize:12, fontWeight:500 }}>Safe custody register</div>
+              <button style={s.btn(true)} onClick={()=>setModal("safeItem")}>＋ Add item</button>
+            </div>
+            {inSafe.length>0?(
+              <Tbl cols={[{l:"Item description",w:"34%"},{l:"Date deposited",w:"18%"},{l:"Date retrieved",w:"18%"},{l:"Authorised by",w:"18%"},{l:"Status",w:"12%"}]}
+                rows={inSafe.map(si=>(
+                  <tr key={si.id} style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)" }}>
+                    <td style={{ ...s.td, fontWeight:500 }}>{si.item}</td>
+                    <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{si.deposited}</td>
+                    <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{si.retrieved||"—"}</td>
+                    <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{si.auth}</td>
+                    <td style={s.td}><Badge label="In safe" colors={{bg:"#EAF3DE",color:"#27500A"}} /></td>
+                  </tr>
+                ))}
+              />
+            ):<div style={{ color:"var(--text-secondary,#666)", fontSize:12, padding:"20px 0", textAlign:"center" }}>No safe custody items recorded.</div>}
+          </div>
+        );
+      }
 
       case "compliance": return (
         <div>
