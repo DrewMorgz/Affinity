@@ -634,7 +634,7 @@ export default function AffinityCore(){
         </div>
         <button onClick={()=>setOfficeFilter("All")} style={{fontSize:10,color:offC2.color,background:"transparent",border:`0.5px solid ${offC2.color}66`,borderRadius:4,padding:"2px 8px",cursor:"pointer"}}>Clear ×</button>
       </div>}
-      <div style={{flex:1,overflowY:"auto",background:"#fff"}}><ErrorBoundary>{content()}</ErrorBoundary></div>
+      <div style={{flex:1,overflowY:"auto",background:"#fff"}}><ErrorBoundary key={mod}>{content()}</ErrorBoundary></div>
     </div>
 
     {/* ── GLOBAL SEARCH MODAL ──────────────────────────────── */}
