@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import EntityChart from "./affinity_core_entity_chart";
 const CY = "#00C4CC";
 const NAVY = "#001242";
 
@@ -96,6 +97,7 @@ const ENTITY_DATA = {
 
 const TABS = [
   { id:"overview",   label:"Overview",                group:"Entity" },
+  { id:"structure",  label:"Structure / chart",       group:"Entity" },
   { id:"statutory",  label:"Statutory data",          group:"Entity" },
   { id:"directors",  label:"Officers",                group:"Entity" },
   { id:"shareholders",label:"Shareholders",           group:"Entity" },
@@ -1069,7 +1071,8 @@ export default function AffinityCoreEntityAdmin({ officeFilter="" }) {
                   {tab==="fatca"&&<FATCATab entity={entity}/>}
                   {tab==="crs"&&<CRSTab entity={entity}/>}
                   {tab==="substance"&&<SubstanceTab entity={entity}/>}
-                  {tab!=="fatca"&&tab!=="crs"&&tab!=="substance"&&renderTab()}
+                  {tab==="structure"&&<div style={{margin:"-20px -24px"}}><EntityChart/></div>}
+                  {tab!=="fatca"&&tab!=="crs"&&tab!=="substance"&&tab!=="structure"&&renderTab()}
                 </div>
               </div>
             </>

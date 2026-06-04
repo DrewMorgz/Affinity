@@ -14,7 +14,6 @@ import Procedures    from "./affinity_core_procedures_v2";
 import SystemAdmin   from "./affinity_core_system_admin";
 import Chatbot      from "./affinity_core_chatbot";
 import Intranet     from "./affinity_core_intranet";
-import EntityChart  from "./affinity_core_entity_chart";
 import EGaming      from "./affinity_core_egaming";
 import GenerateDoc  from "./affinity_core_generate_document";
 
@@ -152,7 +151,6 @@ const NAV = [
   ]},
   {s:"Core",       items:[
     {id:"entities",     label:"Entity Admin",  icon:"\uD83C\uDFE2",b:null},
-    {id:"entitychart",  label:"Structure",     icon:"\uD83D\uDCC8",b:null},
     {id:"crm",          label:"CRM",           icon:"\uD83E\uDD1D",b:null},
     {id:"documents",    label:"Documents",     icon:"\uD83D\uDCC1",b:2},
     {id:"onboarding",   label:"Onboarding",    icon:"\u2705",b:1},
@@ -475,7 +473,6 @@ export default function AffinityCore(){
       case "dashboard":    return <Dashboard userId={uid} onNav={setMod} officeFilter={officeFilter}/>;
       case "tasks":        return <Tasks/>;
       case "entities":     return <EntityAdmin officeFilter={officeFilter}/>;
-      case "entitychart":  return <EntityChart/>;
       case "crm":          return <CRM/>;
       case "documents":    return <Documents/>;
       case "onboarding":   return <Onboarding/>;

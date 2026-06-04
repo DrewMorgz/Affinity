@@ -123,6 +123,114 @@ export default function AffinityCRM() {
   const [srch,setSrch]   = useState("");
   const [form,setForm]   = useState({});
   const [prospects,setProspects] = useState(PROSPECTS);
+  const [proposalForm, setProposalForm] = useState({ country:"Isle of Man", sector:"Holding company", annualFee:10000, setupFee:2500, adminFee:500 });
+  const [proposalOutput, setProposalOutput] = useState(null);
+
+  const SECTOR_STRUCTURE = {
+    "Holding company":"Private Limited Company",
+    "Trust / estate":"Discretionary Trust",
+    "Fund":"Segregated Portfolio Company",
+    "Family office":"Private Trust Company with underlying Trust",
+    "Yachting":"Yacht-owning SPV",
+    "Aviation":"Aircraft-owning SPV",
+    "eGaming":"Licensed Gaming Company",
+    "Fintech":"Regulated Fintech Vehicle",
+    "Real estate":"Property Holding Company",
+    "Trading":"International Trading Company",
+    "IP holding":"IP Holding Company",
+  };
+  const COUNTRY_NOTES = {
+    "Isle of Man":"a stable Crown Dependency with 0% corporate tax for most activities, recognised internationally for its regulatory rigour and political neutrality",
+    "Malta":"a respected EU jurisdiction offering full passporting rights, an attractive refundable tax credit system, and a deep network of double-tax treaties",
+    "Cayman Islands":"the leading offshore jurisdiction for funds and tax-neutral holding vehicles, with no direct taxation and a sophisticated services industry",
+    "Cyprus":"a full EU member with one of the lowest corporate tax rates in Europe (12.5%), an IP-box regime, and over 65 double-tax treaties",
+    "USA":"unparalleled market access, robust legal protections and operational flexibility for international groups doing business in the Americas",
+    "United Kingdom":"the global benchmark for rule of law, professional services and access to capital markets, with a wide treaty network",
+    "Gaming Gateway":"our specialist eGaming services hub, offering jurisdictional flexibility and licensing support for online gaming operators",
+    "Nav":"our dedicated maritime and superyacht services arm, structured to support flag-state registration and ownership vehicles",
+  };
+  const generateProposal = () => {
+    const sp_ = prospects.find(p=>p.id===sel); if(!sp_) return;
+    const { country, sector, annualFee, setupFee, adminFee } = proposalForm;
+    const structure = SECTOR_STRUCTURE[sector] || "appropriate corporate vehicle";
+    const note = COUNTRY_NOTES[country] || "a well-regulated jurisdiction";
+    const today = new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"});
+    const total1 = Number(setupFee) + Number(annualFee) + Number(adminFee);
+    const total2 = Number(annualFee) + Number(adminFee);
+    const fmt = (n) => "£" + Number(n).toLocaleString();
+    setProposalOutput(
+`AFFINITY GROUP
+PROPOSAL FOR ${sp_.company.toUpperCase()}
+
+Date: ${today}
+Prepared for: ${sp_.firstName} ${sp_.lastName}, ${sp_.company}
+Jurisdiction: ${country}
+Sector: ${sector}
+
+————————————————————————————————
+
+EXECUTIVE SUMMARY
+
+Affinity is pleased to present this proposal for the establishment and ongoing administration of a ${structure} in ${country}, structured to support your ${sector.toLowerCase()} activities.
+
+${country} is ${note}.
+
+————————————————————————————————
+
+PROPOSED STRUCTURE
+
+We recommend establishing a ${structure} in ${country}. This vehicle provides:
+
+  • Clear separation of liability and operational ring-fencing
+  • Tax-efficient profit extraction within applicable rules
+  • Recognised counterparty status for banking, broker and investor relations
+  • Regulatory comfort and a transparent compliance position
+
+————————————————————————————————
+
+SERVICES INCLUDED
+
+Our annual service package covers:
+
+  • Registered office and registered agent
+  • Company secretarial and statutory filings
+  • Director services (where required) and meeting administration
+  • AML/KYC ongoing monitoring and periodic review
+  • Bookkeeping and management account preparation
+  • Dedicated client manager and quarterly review calls
+
+————————————————————————————————
+
+FEE SCHEDULE
+
+Set-up fee (one-time)         ${fmt(setupFee).padStart(12)}
+Annual administration         ${fmt(annualFee).padStart(12)}
+Compliance & KYC (annual)     ${fmt(adminFee).padStart(12)}
+                              ————————————
+Total year 1                  ${fmt(total1).padStart(12)}
+Total year 2 onwards          ${fmt(total2).padStart(12)}
+
+All fees in GBP, exclusive of VAT and third-party disbursements (filing fees, agent fees, statutory levies). Fees are reviewed annually.
+
+————————————————————————————————
+
+NEXT STEPS
+
+  1. Sign and return this proposal
+  2. Provide initial KYC documentation
+  3. Onboarding completed within 5–10 business days
+  4. Receive incorporation pack and operational handover
+
+————————————————————————————————
+
+Your business development lead is ${sp_.bd}.
+For questions, contact business.development@affinityco.com.
+
+Affinity Group — Corporate and Trust Services
+Isle of Man · Malta · Cayman Islands · Cyprus · USA · United Kingdom`
+    );
+  };
+
 
   const nb  = { padding:"5px 12px", fontSize:11, borderRadius:5, border:"0.5px solid #e5e5e5", background:"transparent", color:"#666", cursor:"pointer" };
   const nba = { ...nb, background:CY, color:"#fff", border:`0.5px solid ${CY}`, fontWeight:500 };
@@ -248,6 +356,7 @@ export default function AffinityCRM() {
                     </div>
                     <div style={{ display:"flex", gap:6 }}>
                       {["Fees Paid","KYC Approved"].includes(sp.stage)&&<button style={{ ...nba, background:"#4CAF7D", borderColor:"#4CAF7D" }} onClick={()=>setView("convert")}>Convert ↗</button>}
+                      <button style={{ ...nba }} onClick={()=>{ setProposalForm({ country:sp.jur||"Isle of Man", sector:"Holding company", annualFee:sp.annualFee||10000, setupFee:sp.setupFee||2500, adminFee:sp.adminFee||500 }); setProposalOutput(null); setModal("proposal"); }}>📄 Proposal</button>
                       <button style={nb} onClick={()=>setModal("interaction")}>＋ Log</button>
                       <button style={nb} onClick={()=>{ setForm({...sp}); setModal("edit"); }}>Edit</button>
                     </div>
@@ -430,6 +539,57 @@ export default function AffinityCRM() {
           <Input label="Expected conversion date" value={form.conversionDate||""} onChange={v=>setForm(p=>({...p,conversionDate:v}))} placeholder="DD/MM/YYYY" />
           <Input label="Notes" value={form.notes||""} onChange={v=>setForm(p=>({...p,notes:v}))} />
           <button onClick={saveProspect} style={{ width:"100%", background:CY, color:"#fff", border:"none", borderRadius:8, padding:10, fontSize:14, fontWeight:600, cursor:"pointer" }}>Save</button>
+        </Modal>
+      )}
+
+      {modal==="proposal"&&sp&&(
+        <Modal title={proposalOutput?"Proposal — preview":"Generate proposal"} onClose={()=>{setModal(null);setProposalOutput(null);}}>
+          {!proposalOutput?(
+            <>
+              <div style={{ fontSize:11, color:"#666", marginBottom:12 }}>
+                Select the structure parameters and fee schedule for {sp.company}. The proposal will be auto-generated.
+              </div>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10 }}>
+                <div>
+                  <div style={{ fontSize:10, fontWeight:600, color:"#888", marginBottom:4 }}>Country / jurisdiction</div>
+                  <select value={proposalForm.country} onChange={e=>setProposalForm(f=>({...f,country:e.target.value}))} style={{ width:"100%", padding:"8px 10px", border:"0.5px solid #ddd", borderRadius:6, fontSize:12 }}>
+                    {OFFICES.map(o=><option key={o}>{o}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <div style={{ fontSize:10, fontWeight:600, color:"#888", marginBottom:4 }}>Sector</div>
+                  <select value={proposalForm.sector} onChange={e=>setProposalForm(f=>({...f,sector:e.target.value}))} style={{ width:"100%", padding:"8px 10px", border:"0.5px solid #ddd", borderRadius:6, fontSize:12 }}>
+                    {Object.keys(SECTOR_STRUCTURE).map(o=><option key={o}>{o}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10, marginBottom:14 }}>
+                {[["Annual fee","annualFee"],["Set-up fee","setupFee"],["Compliance fee","adminFee"]].map(([lbl,key])=>(
+                  <div key={key}>
+                    <div style={{ fontSize:10, fontWeight:600, color:"#888", marginBottom:4 }}>{lbl} (£)</div>
+                    <input type="number" value={proposalForm[key]} onChange={e=>setProposalForm(f=>({...f,[key]:e.target.value}))} style={{ width:"100%", padding:"8px 10px", border:"0.5px solid #ddd", borderRadius:6, fontSize:12 }} />
+                  </div>
+                ))}
+              </div>
+              <div style={{ display:"flex", gap:8, justifyContent:"flex-end", borderTop:"0.5px solid #e5e5e5", paddingTop:12 }}>
+                <button onClick={()=>setModal(null)} style={{ padding:"8px 14px", border:"0.5px solid #ddd", borderRadius:6, background:"#fff", fontSize:12, cursor:"pointer" }}>Cancel</button>
+                <button onClick={generateProposal} style={{ padding:"8px 16px", border:"none", borderRadius:6, background:CY, color:"#fff", fontSize:12, fontWeight:600, cursor:"pointer" }}>Generate ↗</button>
+              </div>
+            </>
+          ):(
+            <>
+              <div style={{ background:"#FAFAFA", border:"0.5px solid #e5e5e5", borderRadius:6, padding:14, maxHeight:"50vh", overflowY:"auto", fontFamily:"ui-monospace, Menlo, monospace", fontSize:11, lineHeight:1.55, whiteSpace:"pre-wrap", color:"#222" }}>
+                {proposalOutput}
+              </div>
+              <div style={{ display:"flex", gap:8, justifyContent:"space-between", borderTop:"0.5px solid #e5e5e5", paddingTop:12, marginTop:12 }}>
+                <button onClick={()=>setProposalOutput(null)} style={{ padding:"8px 14px", border:"0.5px solid #ddd", borderRadius:6, background:"#fff", fontSize:12, cursor:"pointer" }}>← Edit inputs</button>
+                <div style={{ display:"flex", gap:8 }}>
+                  <button onClick={()=>{navigator.clipboard?.writeText(proposalOutput); alert("Proposal copied to clipboard");}} style={{ padding:"8px 14px", border:"0.5px solid #ddd", borderRadius:6, background:"#fff", fontSize:12, cursor:"pointer" }}>Copy</button>
+                  <button onClick={()=>{const blob=new Blob([proposalOutput],{type:"text/plain"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=`Proposal-${sp.company.replace(/[^a-z0-9]+/gi,"-")}.txt`; a.click(); URL.revokeObjectURL(url);}} style={{ padding:"8px 16px", border:"none", borderRadius:6, background:CY, color:"#fff", fontSize:12, fontWeight:600, cursor:"pointer" }}>Download</button>
+                </div>
+              </div>
+            </>
+          )}
         </Modal>
       )}
 
