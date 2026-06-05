@@ -71,6 +71,21 @@ export default function AffinityDMS() {
     (!selFolder.sub||d.subfolder===selFolder.sub)
   );
   const selDoc = sel ? DOCS.find(d=>d.id===sel) : null;
+  const [signaturePending, setSignaturePending] = useState({}); // {docId: true} for docs sent to Zoho Sign
+  const [signedDocs, setSignedDocs] = useState({});           // {docId: true} for docs marked as signed
+
+  const sendToZohoSign = (doc) => {
+    if (!doc) return;
+    // Copy entity + doc context to clipboard so user can paste into Zoho Sign quickly
+    const ctx = `Entity: ${doc.entity}\nDocument: ${doc.name}\nFolder: ${doc.folder} / ${doc.subfolder}`;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(ctx).catch(()=>{});
+    }
+    // Mark this doc as pending signature locally
+    setSignaturePending(p => ({...p, [doc.id]: true}));
+    // Open Zoho Sign\'s quick-send page in a new tab
+    window.open("https://sign.zoho.com/zs#/quicksend", "_blank", "noopener,noreferrer");
+  };
 
   const th={padding:"7px 12px",textAlign:"left",fontSize:10,fontWeight:600,color:"#999",textTransform:"uppercase",letterSpacing:"0.4px",borderBottom:"0.5px solid #e5e5e5",background:"#f9f9f9",whiteSpace:"nowrap"};
   const td={padding:"8px 12px",fontSize:11,borderBottom:"0.5px solid #e5e5e5",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"};
@@ -242,6 +257,32 @@ export default function AffinityDMS() {
                     <Btn sx={{flex:1,fontSize:10}}>↓ Download</Btn>
                     <Btn sx={{flex:1,fontSize:10}}>👁 Preview</Btn>
                     {selDoc.status==="Under review"&&<Btn primary sx={{width:"100%",fontSize:10,marginTop:4}}>Approve ✓</Btn>}
+                  </div>
+
+                  {/* Zoho Sign — Send for signature */}
+                  <div style={{marginTop:12,paddingTop:12,borderTop:"0.5px solid #e5e5e5"}}>
+                    {signedDocs[selDoc.id] ? (
+                      <div style={{padding:"8px 10px",background:"#EAF3DE",border:"0.5px solid #4CAF7D",borderRadius:6,fontSize:10,color:"#27500A",textAlign:"center"}}>
+                        ✓ Signed via Zoho Sign
+                      </div>
+                    ) : signaturePending[selDoc.id] ? (
+                      <div>
+                        <div style={{padding:"8px 10px",background:"#FAEEDA",border:"0.5px solid #D4A04E",borderRadius:6,fontSize:10,color:"#633806",textAlign:"center",marginBottom:6}}>
+                          ⏳ Pending signature (in Zoho Sign)
+                        </div>
+                        <div style={{display:"flex",gap:5}}>
+                          <Btn sx={{flex:1,fontSize:9}} onClick={()=>sendToZohoSign(selDoc)}>↗ Reopen Zoho</Btn>
+                          <Btn primary sx={{flex:1,fontSize:9}} onClick={()=>setSignedDocs(d=>({...d, [selDoc.id]:true}))}>✓ Mark signed</Btn>
+                        </div>
+                      </div>
+                    ) : (
+                      <Btn primary sx={{width:"100%",fontSize:10,background:"#E74C3C"}} onClick={()=>sendToZohoSign(selDoc)}>
+                        ✍ Send for signature via Zoho Sign
+                      </Btn>
+                    )}
+                    <div style={{fontSize:9,color:"#999",marginTop:6,lineHeight:1.4,textAlign:"center"}}>
+                      Opens Zoho Sign in a new tab. Entity &amp; document name copied to clipboard for quick paste.
+                    </div>
                   </div>
                 </div>
               )}
