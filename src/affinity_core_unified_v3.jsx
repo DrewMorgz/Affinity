@@ -18,6 +18,7 @@ import EGaming      from "./affinity_core_egaming";
 import GenerateDoc  from "./affinity_core_generate_document";
 import Feedback     from "./affinity_core_feedback";
 import AuditLog     from "./affinity_core_audit_log";
+import Notifications, { NotificationsPanel, NOTIFICATIONS_DATA } from "./affinity_core_notifications";
 
 const NAVY = "#001242";
 const AFFINITY_LOGO = "https://cdn.prod.website-files.com/680f471059835ea8d579b7e8/680f87c089dc0cf0630d7c8d_Affinity%20grad.svg";
@@ -171,6 +172,7 @@ const NAV = [
   {s:"Overview",   items:[
     {id:"dashboard",    label:"Dashboard",     icon:"\u229E",b:null},
     {id:"tasks",        label:"Tasks",          icon:"\u2713",b:3},
+    {id:"notifications",label:"Notifications",  icon:"\uD83D\uDD14",b:null},
     {id:"feedback",     label:"Feedback",       icon:"\uD83D\uDCAC",b:null},
   ]},
   {s:"Core",       items:[
@@ -450,6 +452,7 @@ const SEARCH_INDEX = [
   // ─── Modules ──────────────────────────────────────────────
   {type:"Module",  label:"Dashboard",                      sub:"Overview & tasks",                mod:"dashboard"},
   {type:"Module",  label:"Tasks",                          sub:"Action items",                    mod:"tasks"},
+  {type:"Module",  label:"Notifications",                  sub:"Alerts & activity feed",          mod:"notifications"},
   {type:"Module",  label:"Feedback",                       sub:"Beta tester feedback",            mod:"feedback"},
   {type:"Module",  label:"Audit log",                      sub:"Activity & compliance trail",     mod:"audit"},
   {type:"Module",  label:"Entity Admin",                   sub:"Manage entity records",           mod:"entities"},
@@ -513,6 +516,22 @@ export default function AffinityCore(){
   const [dark,setDark]=useState(false);
   const [officeFilter,setOfficeFilter]=useState("All");
   const [searchOpen,setSearchOpen]=useState(false);
+  const [notifOpen,setNotifOpen]=useState(false);
+  const [notifReadIds,setNotifReadIds]=useState({});
+  // Load notification read state from localStorage
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("affinity-core-notifications-read");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object") setNotifReadIds(parsed);
+      }
+    } catch (e) {}
+  }, []);
+  useEffect(() => {
+    try { localStorage.setItem("affinity-core-notifications-read", JSON.stringify(notifReadIds)); } catch (e) {}
+  }, [notifReadIds]);
+  const unreadNotifs = NOTIFICATIONS_DATA.filter(n => !notifReadIds[n.id]).length;
   const [searchQ,setSearchQ]=useState("");
   const [shortcutsOpen,setShortcutsOpen]=useState(false);
   const [officeOpen,setOfficeOpen]=useState(false);
@@ -539,7 +558,7 @@ export default function AffinityCore(){
     let timer = null;
     const handler = (e) => {
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
-      if (e.key === "Escape") { setSearchOpen(false); setShortcutsOpen(false); return; }
+      if (e.key === "Escape") { setSearchOpen(false); setShortcutsOpen(false); setNotifOpen(false); return; }
       if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); setSearchOpen(true); return; }
       if (e.key === "g" || e.key === "G") { gPressed = true; timer = setTimeout(() => { gPressed = false; }, 1000); return; }
       if (gPressed) {
@@ -578,6 +597,7 @@ export default function AffinityCore(){
       case "tasks":        return <Tasks/>;
       case "feedback":     return <Feedback userName={user?.name||""} isSuperAdmin={!!(user&&user.role&&user.role.indexOf("Super Admin")>-1)}/>;
       case "audit":        return <AuditLog userName={user?.name||""} isSuperAdmin={!!(user&&user.role&&user.role.indexOf("Super Admin")>-1)}/>;
+      case "notifications":return <Notifications onNav={setMod}/>;
       case "entities":     return <EntityAdmin officeFilter={officeFilter}/>;
       case "crm":          return <CRM/>;
       case "documents":    return <Documents/>;
@@ -606,7 +626,7 @@ export default function AffinityCore(){
   if (!loggedIn) return <AffinityLoginPage onLogin={(id)=>{ setUid(id); setLoggedIn(true); setSplash(false); }}/>;
   if (splash) return <SplashScreen onDone={() => setSplash(false)} />;
 
-  return <div style={{display:"flex",height:"100vh",fontFamily:"'Catamaran',system-ui,sans-serif",overflow:"hidden",position:"relative",background:dark?"#1a1a2e":"#fff",...dm}} onClick={()=>{if(nOpen)setN(false);if(uOpen)setU(false);setSearchOpen(false);}}>
+  return <div style={{display:"flex",height:"100vh",fontFamily:"'Catamaran',system-ui,sans-serif",overflow:"hidden",position:"relative",background:dark?"#1a1a2e":"#fff",...dm}} onClick={()=>{if(nOpen)setN(false);if(uOpen)setU(false);setSearchOpen(false);setNotifOpen(false);}}>
 
     {/* Mobile overlay */}
     {sideOpen && <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:40}} onClick={()=>setSideOpen(false)}/>}
@@ -656,6 +676,20 @@ export default function AffinityCore(){
           <span style={{display:mobile?"none":"inline-block",padding:"2px 8px",borderRadius:20,fontSize:10,fontWeight:600,background:offC[user.office]?.bg||"#eee",color:offC[user.office]?.color||"#666"}}>{user.office}</span>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:6,position:"relative"}}>
+          {/* Notifications bell */}
+          <div style={{position:"relative"}}>
+            <button onClick={e=>{e.stopPropagation();setNotifOpen(o=>!o);setSearchOpen(false);}}
+              style={{display:"flex",alignItems:"center",justifyContent:"center",height:32,width:32,borderRadius:6,border:"0.5px solid #e5e5e5",background:dark?"#252540":"#f9f9f9",cursor:"pointer",position:"relative"}}
+              title="Notifications">
+              <span style={{fontSize:14,color:dark?"#e8e8f0":"#666"}}>🔔</span>
+              {unreadNotifs>0&&<span style={{position:"absolute",top:-3,right:-3,minWidth:16,height:16,borderRadius:8,background:"#A32D2D",color:"#fff",fontSize:9,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px",border:"1.5px solid #fff"}}>{unreadNotifs>9?"9+":unreadNotifs}</span>}
+            </button>
+            {notifOpen && <NotificationsPanel
+              readIds={notifReadIds}
+              setReadIds={setNotifReadIds}
+              onNavigate={(id)=>{setMod(id);setSideOpen(false);}}
+              onClose={()=>setNotifOpen(false)} />}
+          </div>
           {/* Search bar / button */}
           <button onClick={e=>{e.stopPropagation();setSearchOpen(true);}} style={{display:"flex",alignItems:"center",gap:8,height:32,padding:"0 12px",borderRadius:6,border:"0.5px solid #e5e5e5",background:dark?"#252540":"#f9f9f9",cursor:"pointer",color:"#999",fontSize:11,whiteSpace:"nowrap"}}>
             🔍 {!mobile&&<span>Search <span style={{color:"#ccc",fontSize:10}}>⌘K</span></span>}
