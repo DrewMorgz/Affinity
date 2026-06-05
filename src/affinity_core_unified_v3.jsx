@@ -510,7 +510,6 @@ export default function AffinityCore(){
   const [splash, setSplash] = useState(true);
   const [mod,setMod]=useState("dashboard");
   const [uid,setUid]=useState(1);
-  const [nOpen,setN]=useState(false);
   const [uOpen,setU]=useState(false);
   const [mobile,setMobile]=useState(window.innerWidth<768);
   const [dark,setDark]=useState(false);
@@ -626,7 +625,7 @@ export default function AffinityCore(){
   if (!loggedIn) return <AffinityLoginPage onLogin={(id)=>{ setUid(id); setLoggedIn(true); setSplash(false); }}/>;
   if (splash) return <SplashScreen onDone={() => setSplash(false)} />;
 
-  return <div style={{display:"flex",height:"100vh",fontFamily:"'Catamaran',system-ui,sans-serif",overflow:"hidden",position:"relative",background:dark?"#1a1a2e":"#fff",...dm}} onClick={()=>{if(nOpen)setN(false);if(uOpen)setU(false);setSearchOpen(false);setNotifOpen(false);}}>
+  return <div style={{display:"flex",height:"100vh",fontFamily:"'Catamaran',system-ui,sans-serif",overflow:"hidden",position:"relative",background:dark?"#1a1a2e":"#fff",...dm}} onClick={()=>{if(uOpen)setU(false);setSearchOpen(false);setNotifOpen(false);}}>
 
     {/* Mobile overlay */}
     {sideOpen && <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:40}} onClick={()=>setSideOpen(false)}/>}
@@ -721,19 +720,6 @@ export default function AffinityCore(){
           <span style={{display:mobile?"none":"inline",fontSize:11,color:"#999"}}>14 Jul 2025</span>
           {/* PDF export */}
           {!mobile&&<button onClick={e=>{e.stopPropagation();window.print();}} title="Export current view as PDF" style={{width:32,height:32,borderRadius:6,border:"0.5px solid #e5e5e5",background:"transparent",cursor:"pointer",fontSize:13,color:"#999",display:"flex",alignItems:"center",justifyContent:"center"}}>⬇️</button>}
-          <button onClick={e=>{e.stopPropagation();setN(!nOpen);}} style={{position:"relative",width:32,height:32,borderRadius:6,border:"0.5px solid #e5e5e5",background:"transparent",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15}}>
-            🔔<div style={{position:"absolute",top:6,right:6,width:7,height:7,borderRadius:"50%",background:"#EF4444"}}/>
-          </button>
-          {nOpen&&<div style={{position:"absolute",top:38,right:0,width:300,background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:8,zIndex:100,overflow:"hidden",boxShadow:"0 4px 16px rgba(0,0,0,0.08)"}} onClick={e=>e.stopPropagation()}>
-            <div style={{padding:"10px 14px",borderBottom:"0.5px solid #e5e5e5",display:"flex",justifyContent:"space-between"}}>
-              <span style={{fontWeight:600,fontSize:12}}>Notifications</span>
-              <span style={{fontSize:11,color:CY,cursor:"pointer"}} onClick={()=>{setMod("dashboard");setN(false);}}>View all ↗</span>
-            </div>
-            {ALERTS.slice(0,5).map(a=><div key={a.id} style={{padding:"9px 14px",borderBottom:"0.5px solid #e5e5e5",cursor:"pointer"}} onClick={()=>{setMod("dashboard");setN(false);}}>
-              <div style={{display:"flex",alignItems:"center",gap:6}}><div style={{width:6,height:6,borderRadius:"50%",background:a.sev==="Critical"?"#EF4444":"#F59E0B"}}/><span style={{fontSize:11,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.title}</span></div>
-              <div style={{fontSize:10,color:"#999",marginTop:2,paddingLeft:12}}>{a.ass}</div>
-            </div>)}
-          </div>}
           <div style={{width:30,height:30,borderRadius:"50%",background:user.c,color:"#fff",fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{user.av}</div>
         </div>
       </div>
