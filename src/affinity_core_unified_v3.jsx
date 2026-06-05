@@ -19,6 +19,7 @@ import GenerateDoc  from "./affinity_core_generate_document";
 import Feedback     from "./affinity_core_feedback";
 import AuditLog     from "./affinity_core_audit_log";
 import Notifications, { NotificationsPanel, NOTIFICATIONS_DATA } from "./affinity_core_notifications";
+import ClientPortal from "./affinity_core_client_portal";
 
 const NAVY = "#001242";
 const AFFINITY_LOGO = "https://cdn.prod.website-files.com/680f471059835ea8d579b7e8/680f87c089dc0cf0630d7c8d_Affinity%20grad.svg";
@@ -195,6 +196,7 @@ const NAV = [
     {id:"procedures",   label:"Procedures",    icon:"\u2699",b:null},
     {id:"generate",     label:"Generate doc",  icon:"\uD83D\uDCC4",b:null},
     {id:"audit",        label:"Audit log",     icon:"\uD83D\uDCDC",b:null},
+    {id:"client_portal",label:"Client portal", icon:"\uD83D\uDC64",b:null},
   ]},
   {s:"People", items:[
     {id:"intranet",     label:"Intranet",      icon:"\uD83C\uDFE0",b:null},
@@ -453,6 +455,7 @@ const SEARCH_INDEX = [
   {type:"Module",  label:"Dashboard",                      sub:"Overview & tasks",                mod:"dashboard"},
   {type:"Module",  label:"Tasks",                          sub:"Action items",                    mod:"tasks"},
   {type:"Module",  label:"Notifications",                  sub:"Alerts & activity feed",          mod:"notifications"},
+  {type:"Module",  label:"Client portal",                  sub:"Preview client-facing portal",    mod:"client_portal"},
   {type:"Module",  label:"Feedback",                       sub:"Beta tester feedback",            mod:"feedback"},
   {type:"Module",  label:"Audit log",                      sub:"Activity & compliance trail",     mod:"audit"},
   {type:"Module",  label:"Entity Admin",                   sub:"Manage entity records",           mod:"entities"},
@@ -597,6 +600,7 @@ export default function AffinityCore(){
       case "feedback":     return <Feedback userName={user?.name||""} isSuperAdmin={!!(user&&user.role&&user.role.indexOf("Super Admin")>-1)}/>;
       case "audit":        return <AuditLog userName={user?.name||""} isSuperAdmin={!!(user&&user.role&&user.role.indexOf("Super Admin")>-1)}/>;
       case "notifications":return <Notifications onNav={setMod}/>;
+      case "client_portal": return <ClientPortal/>;
       case "entities":     return <EntityAdmin officeFilter={officeFilter}/>;
       case "crm":          return <CRM/>;
       case "documents":    return <Documents/>;
