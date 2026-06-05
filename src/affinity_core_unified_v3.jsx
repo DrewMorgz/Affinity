@@ -376,40 +376,94 @@ function SplashScreen({ onDone }) {
 
 // ── Global search index ───────────────────────────────────────
 const SEARCH_INDEX = [
-  // Entities
-  {type:"Entity",  label:"Meridian Holdings Ltd",          sub:"IOM · Company · Medium risk",  mod:"entities"},
-  {type:"Entity",  label:"Harrington Family Trust",        sub:"IOM · Trust · High risk",       mod:"entities"},
-  {type:"Entity",  label:"Caledonian Ventures Ltd",        sub:"Cayman · Company · Medium risk",mod:"entities"},
-  {type:"Entity",  label:"Apex Growth Fund Ltd",           sub:"Cayman · Fund · Very High risk", mod:"entities"},
-  {type:"Entity",  label:"Pacific Wealth Trust",           sub:"Cayman · Trust · High risk",    mod:"entities"},
-  {type:"Entity",  label:"Stonebridge Capital Ltd",        sub:"Malta · Company · Low risk",    mod:"entities"},
-  {type:"Entity",  label:"Azure Mediterranean Fdn",        sub:"Malta · Foundation · Low risk", mod:"entities"},
-  {type:"Entity",  label:"Rosewood Legacy Trust",          sub:"IOM · Trust · Medium risk",     mod:"entities"},
-  {type:"Entity",  label:"North Star Holdings Ltd",        sub:"IOM · Company · High risk",     mod:"entities"},
-  // Modules
-  {type:"Module",  label:"Dashboard",                      sub:"Overview & tasks",              mod:"dashboard"},
-  {type:"Module",  label:"Entity Admin",                   sub:"Manage entity records",         mod:"entities"},
-  {type:"Module",  label:"CRM",                            sub:"Pipeline & prospects",          mod:"crm"},
-  {type:"Module",  label:"Documents",                      sub:"DMS & file management",         mod:"documents"},
-  {type:"Module",  label:"Onboarding",                     sub:"New business & KYC",            mod:"onboarding"},
-  {type:"Module",  label:"Timesheets",                     sub:"Time recording",                mod:"timesheets"},
-  {type:"Module",  label:"Invoicing",                      sub:"Billing & debtors",             mod:"invoicing"},
-  {type:"Module",  label:"Bookkeeping",                    sub:"Ledger & accounts",             mod:"bookkeeping"},
-  {type:"Module",  label:"Budgeting",                      sub:"Forecasts & variance",          mod:"budgeting"},
-  {type:"Module",  label:"Reporting",                      sub:"MI & custom reports",           mod:"reporting"},
-  {type:"Module",  label:"Procedures",                     sub:"Process library",               mod:"procedures"},
-  {type:"Module",  label:"Generate Document",              sub:"Templates & statutory forms",   mod:"generate"},
-  {type:"Module",  label:"eGaming / OGRA",                 sub:"Licence register",              mod:"egaming"},
-  {type:"Module",  label:"Intranet",                       sub:"Staff directory & news",        mod:"intranet"},
-  {type:"Module",  label:"Assistant",                      sub:"Internal chatbot",              mod:"chatbot"},
-  {type:"Module",  label:"System Admin",                   sub:"Users, roles & config",         mod:"system"},
-  // People
-  {type:"Person",  label:"Andy Morgan",                    sub:"Group CEO · IOM",               mod:"intranet"},
-  {type:"Person",  label:"Roxy Sheeley",                   sub:"MD · Isle of Man",              mod:"intranet"},
-  {type:"Person",  label:"Garry Crossan",                  sub:"Director · Cayman",             mod:"intranet"},
-  {type:"Person",  label:"Joanne Fenech",                  sub:"Director · Malta",              mod:"intranet"},
-  {type:"Person",  label:"Gary Harrison",                  sub:"CCO / MLRO · Group",            mod:"intranet"},
-  {type:"Person",  label:"Neil Kelly",                     sub:"CFO · Group",                   mod:"intranet"},
+  // ─── Entities ─────────────────────────────────────────────
+  {type:"Entity",  label:"Meridian Holdings Ltd",          sub:"IOM · Company · Medium risk",     mod:"entities"},
+  {type:"Entity",  label:"Harrington Family Trust",        sub:"IOM · Trust · High risk",         mod:"entities"},
+  {type:"Entity",  label:"Caledonian Ventures Ltd",        sub:"Cayman · Company · Medium risk",  mod:"entities"},
+  {type:"Entity",  label:"Apex Growth Fund Ltd",           sub:"Cayman · Fund · Very High risk",  mod:"entities"},
+  {type:"Entity",  label:"Pacific Wealth Trust",           sub:"Cayman · Trust · High risk",      mod:"entities"},
+  {type:"Entity",  label:"Stonebridge Capital Ltd",        sub:"Malta · Company · Low risk",      mod:"entities"},
+  {type:"Entity",  label:"Azure Mediterranean Foundation", sub:"Malta · Foundation · Low risk",   mod:"entities"},
+  {type:"Entity",  label:"Rosewood Legacy Trust",          sub:"IOM · Trust · Medium risk",       mod:"entities"},
+  {type:"Entity",  label:"North Star Holdings Ltd",        sub:"IOM · Company · High risk",       mod:"entities"},
+  {type:"Entity",  label:"Verona Digital Holdings Ltd",    sub:"Malta · Company · Medium risk",   mod:"entities"},
+  {type:"Entity",  label:"Silverstone Capital Fund",       sub:"Cayman · Fund · High risk",       mod:"entities"},
+  {type:"Entity",  label:"Adriatic Holdings Ltd",          sub:"Malta · Company · Low risk",      mod:"entities"},
+  {type:"Entity",  label:"Bluewater Family Trust",         sub:"USA · Trust · Medium risk",       mod:"entities"},
+  {type:"Entity",  label:"Thornbury Asset Co Ltd",         sub:"UK · Company · Low risk",         mod:"entities"},
+
+  // ─── Prospects (CRM) ──────────────────────────────────────
+  {type:"Prospect",label:"Emma Harrington",                sub:"Initial Call · IOM · £18k/yr",    mod:"crm"},
+  {type:"Prospect",label:"David Silver — Silverstone",     sub:"Proposal Sent · Cayman · £24k/yr",mod:"crm"},
+  {type:"Prospect",label:"Sofia Adriatic",                 sub:"KYC Approved · Malta · £14k/yr",  mod:"crm"},
+  {type:"Prospect",label:"Andrew Thornbury",               sub:"Fees Paid · UK · £9k/yr",         mod:"crm"},
+  {type:"Prospect",label:"Kostas Papadopoulos",            sub:"Initial Call · Cayman · £22k/yr", mod:"crm"},
+  {type:"Prospect",label:"Verona Digital — MFSA",          sub:"KYC Arriving · Malta · £30k/yr",  mod:"crm"},
+  {type:"Prospect",label:"Apex Growth — Mike Apex",        sub:"Proposal Accepted · Cayman · £40k/yr", mod:"crm"},
+  {type:"Prospect",label:"Bluewater — Lisa Reston",        sub:"Initial Call · USA · £16k/yr",    mod:"crm"},
+
+  // ─── People (staff) ───────────────────────────────────────
+  {type:"Person",  label:"Andrew Morgan",                  sub:"CEO · USA · Super Admin",         mod:"intranet"},
+  {type:"Person",  label:"Alexandra Gardner",              sub:"COO · USA · Super Admin",         mod:"intranet"},
+  {type:"Person",  label:"Gary Harrison",                  sub:"COO · Isle of Man",               mod:"intranet"},
+  {type:"Person",  label:"Roxy Sheeley",                   sub:"Managing Director · IOM",         mod:"intranet"},
+  {type:"Person",  label:"Joanne Fenech",                  sub:"Managing Director · Malta",       mod:"intranet"},
+  {type:"Person",  label:"Michael Barlow",                 sub:"Compliance Manager · IOM",        mod:"intranet"},
+  {type:"Person",  label:"Colin Quayle",                   sub:"Director & Company Sec · IOM",    mod:"intranet"},
+  {type:"Person",  label:"Mattei Pisani",                  sub:"Director (Malta) · IOM",          mod:"intranet"},
+  {type:"Person",  label:"Neil Kelly",                     sub:"CFO · USA",                       mod:"intranet"},
+  {type:"Person",  label:"Natalie Johnson",                sub:"Asst Compliance Admin · USA",     mod:"intranet"},
+  {type:"Person",  label:"Elena Pace",                     sub:"Manager · IOM",                   mod:"intranet"},
+  {type:"Person",  label:"Kate Shaw",                      sub:"Manager · IOM",                   mod:"intranet"},
+  {type:"Person",  label:"Debbie Gooding",                 sub:"Manager · IOM",                   mod:"intranet"},
+  {type:"Person",  label:"Shanya Pickett",                 sub:"Assistant Manager · IOM",         mod:"intranet"},
+  {type:"Person",  label:"Krista Fenech",                  sub:"Client Administrator · Malta",    mod:"intranet"},
+  {type:"Person",  label:"Gilbert Spiteri Spadaro",        sub:"Compliance Officer · Malta",      mod:"intranet"},
+
+  // ─── Tasks / actions ──────────────────────────────────────
+  {type:"Task",    label:"My open tasks",                  sub:"View tasks assigned to you",      mod:"tasks"},
+  {type:"Task",    label:"Tasks awaiting approval",        sub:"Items needing super-admin sign-off", mod:"tasks"},
+  {type:"Task",    label:"Annual returns due",             sub:"Filings due in the next 30 days", mod:"compliance"},
+  {type:"Task",    label:"KYC reviews due",                sub:"Periodic CDD refresh required",   mod:"compliance"},
+  {type:"Task",    label:"Director resolutions to sign",   sub:"Pending board approvals",         mod:"tasks"},
+  {type:"Task",    label:"Pending invoices",               sub:"Drafted but not yet sent",        mod:"invoicing"},
+
+  // ─── Documents / templates ────────────────────────────────
+  {type:"Document",label:"Recently filed emails",          sub:"Email correspondence",            mod:"documents"},
+  {type:"Document",label:"Expiring / expired documents",   sub:"Action required",                 mod:"documents"},
+  {type:"Document",label:"Pending approvals",              sub:"Docs waiting on sign-off",        mod:"documents"},
+  {type:"Document",label:"Generate AGM minutes",           sub:"Template",                        mod:"generate"},
+  {type:"Document",label:"Generate director resolution",   sub:"Template",                        mod:"generate"},
+  {type:"Document",label:"Generate engagement letter",     sub:"Template",                        mod:"generate"},
+  {type:"Document",label:"Generate FATCA / CRS form",      sub:"Template",                        mod:"generate"},
+
+  // ─── Compliance / regulatory ──────────────────────────────
+  {type:"Section", label:"FATCA register",                 sub:"Reportable accounts",             mod:"entities"},
+  {type:"Section", label:"CRS register",                   sub:"Common Reporting Standard",       mod:"entities"},
+  {type:"Section", label:"Substance returns",              sub:"Economic substance filings",      mod:"entities"},
+  {type:"Section", label:"eGaming / OGRA register",        sub:"Gaming licence holders",          mod:"entities"},
+  {type:"Section", label:"Compliance dashboard",           sub:"Firm-wide compliance KPIs",       mod:"compliance"},
+  {type:"Section", label:"Statutory registers",            sub:"Generate registers PDF",          mod:"statutory_registers"},
+
+  // ─── Modules ──────────────────────────────────────────────
+  {type:"Module",  label:"Dashboard",                      sub:"Overview & tasks",                mod:"dashboard"},
+  {type:"Module",  label:"Tasks",                          sub:"Action items",                    mod:"tasks"},
+  {type:"Module",  label:"Feedback",                       sub:"Beta tester feedback",            mod:"feedback"},
+  {type:"Module",  label:"Entity Admin",                   sub:"Manage entity records",           mod:"entities"},
+  {type:"Module",  label:"CRM",                            sub:"Pipeline & prospects",            mod:"crm"},
+  {type:"Module",  label:"Documents",                      sub:"DMS & file management",           mod:"documents"},
+  {type:"Module",  label:"Onboarding",                     sub:"New business & KYC",              mod:"onboarding"},
+  {type:"Module",  label:"Attrition",                      sub:"Exits & off-boarding",            mod:"attrition"},
+  {type:"Module",  label:"Timesheets",                     sub:"Time recording",                  mod:"timesheets"},
+  {type:"Module",  label:"Invoicing",                      sub:"Billing & debtors",               mod:"invoicing"},
+  {type:"Module",  label:"Bookkeeping",                    sub:"Ledger & accounts",               mod:"bookkeeping"},
+  {type:"Module",  label:"Budgeting",                      sub:"Forecasts & variance",            mod:"budgeting"},
+  {type:"Module",  label:"Reporting",                      sub:"MI & custom reports",             mod:"reporting"},
+  {type:"Module",  label:"Procedures",                     sub:"Process library",                 mod:"procedures"},
+  {type:"Module",  label:"Generate Document",              sub:"Templates & statutory forms",     mod:"generate"},
+  {type:"Module",  label:"Compliance",                     sub:"Compliance register",             mod:"compliance"},
+  {type:"Module",  label:"Intranet",                       sub:"Team, news & resources",          mod:"intranet"},
+  {type:"Module",  label:"System Admin",                   sub:"Users, roles & settings",         mod:"system_admin"},
 ];
 
 const SHORTCUTS = [
@@ -665,23 +719,60 @@ export default function AffinityCore(){
           {searchQ&&<button onClick={()=>setSearchQ("")} style={{background:"none",border:"none",cursor:"pointer",color:"#aaa",fontSize:16}}>×</button>}
           <kbd style={{padding:"2px 6px",borderRadius:4,border:"0.5px solid #ccc",fontSize:10,color:"#666",background:"#f5f5f5"}}>ESC</kbd>
         </div>
-        <div style={{maxHeight:400,overflowY:"auto"}}>
+        <div style={{maxHeight:440,overflowY:"auto"}}>
           {searchQ.length===0&&<div style={{padding:"8px 16px 4px",fontSize:10,fontWeight:600,color:"#aaa",textTransform:"uppercase",letterSpacing:"0.5px"}}>Quick access</div>}
-          {searchResults.map((r,i)=>(
-            <div key={i} onClick={()=>{setMod(r.mod);setSearchOpen(false);setSearchQ("");setSideOpen(false);}}
-              style={{display:"flex",alignItems:"center",gap:12,padding:"10px 16px",cursor:"pointer",borderBottom:"0.5px solid #f5f5f5",background:"transparent"}}
-              onMouseEnter={e=>e.currentTarget.style.background=dark?"#252540":"#f8f9fc"}
-              onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-              <div style={{width:32,height:32,borderRadius:8,background:r.type==="Entity"?"#E6F7FB":r.type==="Person"?"#EAF3DE":"#EEF0FB",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>
-                {r.type==="Entity"?"🏢":r.type==="Person"?"👤":"⊞"}
+          {(()=>{
+            const typeIcons = {Entity:"🏢",Person:"👤",Prospect:"💼",Task:"✓",Document:"📄",Section:"⊞",Module:"▦"};
+            const typeBg = {Entity:"#E6F7FB",Person:"#EAF3DE",Prospect:"#FAEEDA",Task:"#FCEBEB",Document:"#EEF0FB",Section:"#F0F0F5",Module:"#F5F5F5"};
+            const typeOrder = ["Entity","Prospect","Person","Task","Document","Section","Module"];
+            // Group results by type
+            const grouped = {};
+            searchResults.forEach(r => { (grouped[r.type] ||= []).push(r); });
+            const orderedTypes = typeOrder.filter(t => grouped[t] && grouped[t].length);
+            // Highlight the search term in the label
+            const highlight = (text) => {
+              if (!searchQ || searchQ.length < 2) return text;
+              const idx = text.toLowerCase().indexOf(searchQ.toLowerCase());
+              if (idx === -1) return text;
+              return (<>
+                {text.slice(0, idx)}
+                <span style={{background:"rgba(0,196,204,0.25)",fontWeight:600,padding:"0 1px",borderRadius:2}}>{text.slice(idx, idx+searchQ.length)}</span>
+                {text.slice(idx+searchQ.length)}
+              </>);
+            };
+            return orderedTypes.map(typeName => (
+              <div key={typeName}>
+                <div style={{padding:"10px 16px 4px",fontSize:9,fontWeight:700,color:"#aaa",textTransform:"uppercase",letterSpacing:"0.6px",background:dark?"#15152a":"#fafbfc",borderTop:"0.5px solid #f0f0f0"}}>
+                  {typeName === "Module" ? "Navigate to module" : typeName + "s"} <span style={{color:"#ccc",fontWeight:500,marginLeft:4}}>{grouped[typeName].length}</span>
+                </div>
+                {grouped[typeName].map((r,i)=>(
+                  <div key={typeName+"-"+i} onClick={()=>{setMod(r.mod);setSearchOpen(false);setSearchQ("");setSideOpen(false);}}
+                    style={{display:"flex",alignItems:"center",gap:12,padding:"10px 16px",cursor:"pointer",background:"transparent",transition:"background 0.1s"}}
+                    onMouseEnter={e=>e.currentTarget.style.background=dark?"#252540":"#f0f9fa"}
+                    onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                    <div style={{width:32,height:32,borderRadius:8,background:typeBg[r.type]||"#eee",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>
+                      {typeIcons[r.type]||"·"}
+                    </div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:13,fontWeight:500,color:dark?"#e8e8f0":"#111"}}>{highlight(r.label)}</div>
+                      <div style={{fontSize:11,color:"#888",marginTop:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.sub}</div>
+                    </div>
+                    <span style={{fontSize:10,color:"#ccc",flexShrink:0}}>↵</span>
+                  </div>
+                ))}
               </div>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:13,fontWeight:500,color:dark?"#e8e8f0":"#111"}}>{r.label}</div>
-                <div style={{fontSize:11,color:"#888",marginTop:1}}>{r.type} · {r.sub}</div>
-              </div>
-              <span style={{fontSize:10,color:"#ccc"}}>↵</span>
-            </div>
-          ))}
+            ));
+          })()}
+        </div>
+        {/* Footer with shortcut hints */}
+        <div style={{padding:"8px 14px",borderTop:"0.5px solid #e5e5e5",fontSize:10,color:"#999",display:"flex",justifyContent:"space-between",alignItems:"center",background:dark?"#15152a":"#fafbfc"}}>
+          <div style={{display:"flex",gap:10}}>
+            <span><kbd style={{padding:"1px 5px",border:"0.5px solid #ccc",borderRadius:3,fontSize:9,background:"#fff",color:"#666"}}>↵</kbd> open</span>
+            <span><kbd style={{padding:"1px 5px",border:"0.5px solid #ccc",borderRadius:3,fontSize:9,background:"#fff",color:"#666"}}>esc</kbd> close</span>
+          </div>
+          <div>{searchQ.length>1?searchResults.length+" results":"Cmd+K to open anytime"}</div>
+        </div>
+        <div style={{display:"none"}}>
           {searchQ.length>1&&searchResults.length===0&&(
             <div style={{padding:24,textAlign:"center",color:"#aaa",fontSize:13}}>No results for "{searchQ}"</div>
           )}
