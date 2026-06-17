@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { isConfigured } from "./affinity_accounting_supabase";
+import { listEntities, getKpiDashboard } from "./affinity_accounting_api";
 
 /*
   Affinity Accounting — Core module
@@ -78,8 +80,14 @@ const cards = { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(2
 
 // ---- panels ----
 const PANELS = {
-  acc_ov() {
-    const k = [["Revenue", f0(29060)], ["Net profit", f0(16950), 1], ["Profit margin", "58.3%"], ["Cash", f0(18420)],
+  acc_ov(liveKpis) {
+    const d = liveKpis || {};
+    const k = liveKpis ? [
+      ["Revenue", f0(d.revenue)], ["Net profit", f0(d.net_profit), 1], ["Profit margin", d.profit_margin_pct == null ? "—" : d.profit_margin_pct + "%"],
+      ["Cash", f0(d.cash)], ["Trade debtors", f0(d.trade_debtors)], ["Trade creditors", f0(d.trade_creditors)],
+      ["Working capital", f0(d.working_capital)], ["Current ratio", d.current_ratio == null ? "—" : d.current_ratio + "×"], ["Debtor days", d.dso_days == null ? "—" : d.dso_days + " days"],
+    ] : [
+      ["Revenue", f0(29060)], ["Net profit", f0(16950), 1], ["Profit margin", "58.3%"], ["Cash", f0(18420)],
       ["Trade debtors", f0(33406)], ["Trade creditors", f0(5960)], ["Working capital", f0(45866)], ["Current ratio", "8.7×"], ["Debtor days", "42 days"]];
     return (
       <>
@@ -362,24 +370,58 @@ const PANELS = {
   },
 };
 
+const DEMO_ENTITIES = [
+  { id: 1, label: "A00001 · Affinity (IOM) Limited" },
+  { id: 2, label: "A00002 · Affinity Malta Ltd" },
+  { id: 3, label: "A00003 · Affinity (Cayman) Ltd" },
+];
+
 export default function Accounting({ module }) {
   const id = TITLES[module] ? module : "acc_ov";
-  const [entity, setEntity] = useState("A00001 · Affinity (IOM) Limited");
+  const fy = new Date().getFullYear();
+  const start = fy + "-01-01", end = fy + "-12-31";
+
+  const [entities, setEntities] = useState(DEMO_ENTITIES);
+  const [entityId, setEntityId] = useState(DEMO_ENTITIES[0].id);
+  const [liveKpis, setLiveKpis] = useState(null);
+
+  // populate the entity list from Supabase when connected (else demo list)
+  useEffect(() => {
+    if (!isConfigured) return;
+    listEntities().then(({ data }) => {
+      if (data && data.length) {
+        setEntities(data.map((e) => ({ id: e.id, label: e.company_code + " · " + e.name })));
+        setEntityId((prev) => prev || data[0].id);
+      }
+    }).catch(() => {});
+  }, []);
+
+  // fetch live KPIs for the Overview panel when connected
+  useEffect(() => {
+    if (!isConfigured || !entityId) { setLiveKpis(null); return; }
+    let ok = true;
+    getKpiDashboard(entityId, start, end).then(({ data }) => {
+      if (ok) setLiveKpis(data && data.kpis ? data.kpis : null);
+    }).catch(() => { if (ok) setLiveKpis(null); });
+    return () => { ok = false; };
+  }, [entityId, start, end]);
+
+  const live = id === "acc_ov" && !!liveKpis;
   const render = PANELS[id];
 
   return (
     <div style={{ padding: "18px 22px 80px", background: "#F4F6F9", minHeight: "100vh", color: INK }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 18 }}>
         <h2 style={{ margin: 0, fontSize: 20, color: NAVY, fontWeight: 600 }}>{TITLES[id]}</h2>
-        <span style={{ background: AMBER + "1A", color: AMBER, borderRadius: 999, padding: "3px 10px", fontSize: 11.5, fontWeight: 600 }}>Preview data</span>
-        <select value={entity} onChange={(e) => setEntity(e.target.value)}
+        {live
+          ? <span style={{ background: POS + "1A", color: POS, borderRadius: 999, padding: "3px 10px", fontSize: 11.5, fontWeight: 600 }}>Live</span>
+          : <span style={{ background: AMBER + "1A", color: AMBER, borderRadius: 999, padding: "3px 10px", fontSize: 11.5, fontWeight: 600 }}>Preview data</span>}
+        <select value={entityId} onChange={(e) => setEntityId(Number(e.target.value))}
           style={{ marginLeft: "auto", background: "#fff", border: `1px solid ${LINE}`, borderRadius: 8, padding: "8px 10px", fontSize: 13 }}>
-          <option>A00001 · Affinity (IOM) Limited</option>
-          <option>A00002 · Affinity Malta Ltd</option>
-          <option>A00003 · Affinity (Cayman) Ltd</option>
+          {entities.map((e) => <option key={e.id} value={e.id}>{e.label}</option>)}
         </select>
       </div>
-      {render()}
+      {id === "acc_ov" ? render(liveKpis) : render()}
     </div>
   );
 }
