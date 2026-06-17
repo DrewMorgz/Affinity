@@ -20,6 +20,7 @@ import Feedback     from "./affinity_core_feedback";
 import AuditLog     from "./affinity_core_audit_log";
 import Notifications, { NotificationsPanel, NOTIFICATIONS_DATA } from "./affinity_core_notifications";
 import ClientPortal from "./affinity_core_client_portal";
+import Accounting   from "./affinity_core_accounting";
 
 const NAVY = "#001242";
 const AFFINITY_LOGO = "https://cdn.prod.website-files.com/680f471059835ea8d579b7e8/680f87c089dc0cf0630d7c8d_Affinity%20grad.svg";
@@ -188,6 +189,25 @@ const NAV = [
     {id:"bookkeeping",  label:"Bookkeeping",   icon:"\uD83D\uDCCA",b:null},
     {id:"budgeting",    label:"Budgeting",     icon:"\uD83D\uDCB0",b:null},
     {id:"attrition",    label:"Attrition",     icon:"\uD83D\uDDD1",b:null},
+  ]},
+  {s:"Affinity Accounting", items:[
+    {id:"acc_ov",   label:"Overview",            icon:"\u229E",b:null},
+    {id:"acc_gl",   label:"General Ledger",      icon:"\uD83D\uDCD2",b:null},
+    {id:"acc_ap",   label:"Accounts Payable",    icon:"\uD83E\uDDFE",b:null},
+    {id:"acc_ar",   label:"Accounts Receivable", icon:"\uD83D\uDCB7",b:null},
+    {id:"acc_bank", label:"Banking & Recon",     icon:"\uD83C\uDFE6",b:null},
+    {id:"acc_fa",   label:"Fixed Assets",        icon:"\uD83D\uDDA5",b:null},
+    {id:"acc_ic",   label:"Intercompany",        icon:"\uD83D\uDD01",b:null},
+    {id:"acc_con",  label:"Consolidation",       icon:"\uD83E\uDDEE",b:null},
+    {id:"acc_cf",   label:"Cash Flow & Treasury",icon:"\uD83D\uDCB8",b:null},
+    {id:"acc_fx",   label:"Multi-currency / FX", icon:"\uD83D\uDCB1",b:null},
+    {id:"acc_tax",  label:"Tax & VAT",           icon:"\uD83D\uDCD1",b:null},
+    {id:"acc_bud",  label:"Budgeting",           icon:"\uD83D\uDCB0",b:null},
+    {id:"acc_fs",   label:"Financial Statements",icon:"\uD83D\uDCC4",b:null},
+    {id:"acc_mgmt", label:"Management Reports",  icon:"\uD83D\uDCC8",b:null},
+    {id:"acc_ctl",  label:"Controls",            icon:"\uD83D\uDD12",b:null},
+    {id:"acc_doc",  label:"Documents",           icon:"\uD83D\uDCC1",b:null},
+    {id:"acc_aud",  label:"Auditor Pack",        icon:"\uD83D\uDCE6",b:null},
   ]},
   {s:"Insights",   items:[
     {id:"reporting",    label:"Reporting",     icon:"\uD83D\uDCC8",b:null},
@@ -594,6 +614,7 @@ export default function AffinityCore(){
   const offC2 = officeColors[officeFilter] || officeColors["All"];
 
   const content=()=>{
+    if (mod && mod.slice(0,4) === "acc_") return <Accounting module={mod}/>;
     switch(mod){
       case "dashboard":    return <Dashboard userId={uid} onNav={setMod} officeFilter={officeFilter}/>;
       case "tasks":        return <Tasks/>;
