@@ -368,6 +368,38 @@ const PANELS = {
       </>
     );
   },
+  wip() {
+    return (
+      <>
+        <div style={cards}>
+          <Mini title="Total unbilled WIP" rows={[["All offices", f0(184250)]]} />
+          <Mini title="By office" rows={[["Isle of Man", f0(96400)], ["Malta", f0(48200)], ["Cayman", f0(39650)]]} />
+        </div>
+        <Panel title="Work in progress by client / matter (from Timesheets)">
+          <Table head={["Client / matter", "Fee earner", "Unbilled hrs", "Rate", "WIP value", "Age"]} rows={[
+            ["Northwind Holdings — annual admin", "R. Sheeley", { n: "12.5" }, { n: f0(285) }, { n: f0(3562) }, { n: "21 days" }],
+            ["Seabright Trust — restructuring", "G. Crossan", { n: "28.0" }, { n: f0(310) }, { n: f0(8680) }, { n: "34 days" }],
+            ["Maple Fund SPC — incorporation", "J. Fenech", { n: "9.0" }, { n: f0(260) }, { n: f0(2340) }, { n: "8 days" }],
+          ]} />
+        </Panel>
+        <Note>WIP is unbilled time captured in Timesheets, valued at each fee earner's rate. Convert to a draft bill in Invoicing.</Note>
+      </>
+    );
+  },
+};
+
+// nav groups -> tabbed sets of panels (keeps the sidebar short)
+const GROUPS = {
+  acc_overview: [["acc_ov", "Overview"]],
+  acc_wip:      [["wip", "Work in progress"]],
+  acc_txn:      [["acc_gl", "General Ledger"], ["acc_ar", "Accounts Receivable"], ["acc_ap", "Accounts Payable"], ["acc_bank", "Banking & Reconciliation"]],
+  acc_assets:   [["acc_fa", "Fixed Assets"], ["acc_ic", "Intercompany"], ["acc_con", "Consolidation"]],
+  acc_report:   [["acc_cf", "Cash Flow & Treasury"], ["acc_fx", "Multi-currency / FX"], ["acc_tax", "Tax & VAT"], ["acc_fs", "Financial Statements"], ["acc_mgmt", "Management Reports"]],
+  acc_gov:      [["acc_ctl", "Controls"], ["acc_aud", "Auditor Pack"]],
+};
+const GROUP_TITLE = {
+  acc_overview: "Overview", acc_wip: "Work in progress", acc_txn: "Transactions",
+  acc_assets: "Assets & Groups", acc_report: "Reporting", acc_gov: "Governance",
 };
 
 const DEMO_ENTITIES = [
@@ -377,13 +409,18 @@ const DEMO_ENTITIES = [
 ];
 
 export default function Accounting({ module }) {
-  const id = TITLES[module] ? module : "acc_ov";
+  const group = GROUPS[module] ? module : "acc_overview";
+  const tabs = GROUPS[group];
   const fy = new Date().getFullYear();
   const start = fy + "-01-01", end = fy + "-12-31";
 
+  const [tab, setTab] = useState(tabs[0][0]);
   const [entities, setEntities] = useState(DEMO_ENTITIES);
   const [entityId, setEntityId] = useState(DEMO_ENTITIES[0].id);
   const [liveKpis, setLiveKpis] = useState(null);
+
+  // reset to the first tab whenever the nav group changes
+  useEffect(() => { setTab(GROUPS[group][0][0]); }, [group]);
 
   // populate the entity list from Supabase when connected (else demo list)
   useEffect(() => {
@@ -406,13 +443,13 @@ export default function Accounting({ module }) {
     return () => { ok = false; };
   }, [entityId, start, end]);
 
-  const live = id === "acc_ov" && !!liveKpis;
-  const render = PANELS[id];
+  const live = tab === "acc_ov" && !!liveKpis;
+  const render = PANELS[tab] || PANELS.acc_ov;
 
   return (
     <div style={{ padding: "18px 22px 80px", background: "#F4F6F9", minHeight: "100vh", color: INK }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 18 }}>
-        <h2 style={{ margin: 0, fontSize: 20, color: NAVY, fontWeight: 600 }}>{TITLES[id]}</h2>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 14 }}>
+        <h2 style={{ margin: 0, fontSize: 20, color: NAVY, fontWeight: 600 }}>{GROUP_TITLE[group]}</h2>
         {live
           ? <span style={{ background: POS + "1A", color: POS, borderRadius: 999, padding: "3px 10px", fontSize: 11.5, fontWeight: 600 }}>Live</span>
           : <span style={{ background: AMBER + "1A", color: AMBER, borderRadius: 999, padding: "3px 10px", fontSize: 11.5, fontWeight: 600 }}>Preview data</span>}
@@ -421,7 +458,17 @@ export default function Accounting({ module }) {
           {entities.map((e) => <option key={e.id} value={e.id}>{e.label}</option>)}
         </select>
       </div>
-      {id === "acc_ov" ? render(liveKpis) : render()}
+      {tabs.length > 1 && (
+        <div style={{ display: "flex", gap: 4, borderBottom: `1px solid ${LINE}`, marginBottom: 18, flexWrap: "wrap" }}>
+          {tabs.map(([tid, tlabel]) => (
+            <button key={tid} onClick={() => setTab(tid)}
+              style={{ border: "none", background: "none", cursor: "pointer", padding: "9px 12px", fontSize: 13.5,
+                fontWeight: tab === tid ? 700 : 500, color: tab === tid ? NAVY : MUT,
+                borderBottom: tab === tid ? `2px solid ${CY}` : "2px solid transparent" }}>{tlabel}</button>
+          ))}
+        </div>
+      )}
+      {tab === "acc_ov" ? render(liveKpis) : render()}
     </div>
   );
 }
