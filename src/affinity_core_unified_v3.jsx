@@ -186,7 +186,9 @@ const NAV = [
   {s:"Affinity Accounting", items:[
     {id:"acc_ov",   label:"Overview",            icon:"\u229E",b:null},
     {id:"bookkeeping",  label:"Bookkeeping",     icon:"\uD83D\uDCCA",b:null},
+    {id:"acc_gl",   label:"General Ledger",      icon:"\uD83D\uDCD2",b:null},
     {id:"invoicing",    label:"Invoicing",       icon:"\uD83D\uDCB7",b:null},
+    {id:"acc_ar",   label:"Accounts Receivable", icon:"\uD83D\uDCE5",b:null},
     {id:"acc_ap",   label:"Accounts Payable",    icon:"\uD83E\uDDFE",b:null},
     {id:"acc_bank", label:"Banking & Recon",     icon:"\uD83C\uDFE6",b:null},
     {id:"acc_fa",   label:"Fixed Assets",        icon:"\uD83D\uDDA5",b:null},
