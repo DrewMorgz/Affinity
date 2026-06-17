@@ -183,18 +183,11 @@ const NAV = [
     {id:"documents",    label:"Documents",     icon:"\uD83D\uDCC1",b:2},
     {id:"onboarding",   label:"Onboarding",    icon:"\u2705",b:1},
   ]},
-  {s:"Accounts",   items:[
-    {id:"timesheets",   label:"Timesheets",    icon:"\u23F1",b:1},
-    {id:"invoicing",    label:"Invoicing",     icon:"\uD83D\uDCB7",b:null},
-    {id:"bookkeeping",  label:"Bookkeeping",   icon:"\uD83D\uDCCA",b:null},
-    {id:"budgeting",    label:"Budgeting",     icon:"\uD83D\uDCB0",b:null},
-    {id:"attrition",    label:"Attrition",     icon:"\uD83D\uDDD1",b:null},
-  ]},
   {s:"Affinity Accounting", items:[
     {id:"acc_ov",   label:"Overview",            icon:"\u229E",b:null},
-    {id:"acc_gl",   label:"General Ledger",      icon:"\uD83D\uDCD2",b:null},
+    {id:"bookkeeping",  label:"Bookkeeping",     icon:"\uD83D\uDCCA",b:null},
+    {id:"invoicing",    label:"Invoicing",       icon:"\uD83D\uDCB7",b:null},
     {id:"acc_ap",   label:"Accounts Payable",    icon:"\uD83E\uDDFE",b:null},
-    {id:"acc_ar",   label:"Accounts Receivable", icon:"\uD83D\uDCB7",b:null},
     {id:"acc_bank", label:"Banking & Recon",     icon:"\uD83C\uDFE6",b:null},
     {id:"acc_fa",   label:"Fixed Assets",        icon:"\uD83D\uDDA5",b:null},
     {id:"acc_ic",   label:"Intercompany",        icon:"\uD83D\uDD01",b:null},
@@ -202,11 +195,10 @@ const NAV = [
     {id:"acc_cf",   label:"Cash Flow & Treasury",icon:"\uD83D\uDCB8",b:null},
     {id:"acc_fx",   label:"Multi-currency / FX", icon:"\uD83D\uDCB1",b:null},
     {id:"acc_tax",  label:"Tax & VAT",           icon:"\uD83D\uDCD1",b:null},
-    {id:"acc_bud",  label:"Budgeting",           icon:"\uD83D\uDCB0",b:null},
+    {id:"budgeting",    label:"Budgeting",       icon:"\uD83D\uDCB0",b:null},
     {id:"acc_fs",   label:"Financial Statements",icon:"\uD83D\uDCC4",b:null},
     {id:"acc_mgmt", label:"Management Reports",  icon:"\uD83D\uDCC8",b:null},
     {id:"acc_ctl",  label:"Controls",            icon:"\uD83D\uDD12",b:null},
-    {id:"acc_doc",  label:"Documents",           icon:"\uD83D\uDCC1",b:null},
     {id:"acc_aud",  label:"Auditor Pack",        icon:"\uD83D\uDCE6",b:null},
   ]},
   {s:"Insights",   items:[
@@ -218,9 +210,11 @@ const NAV = [
     {id:"audit",        label:"Audit log",     icon:"\uD83D\uDCDC",b:null},
     {id:"client_portal",label:"Client portal", icon:"\uD83D\uDC64",b:null},
   ]},
-  {s:"People", items:[
+  {s:"People & Time", items:[
     {id:"intranet",     label:"Intranet",      icon:"\uD83C\uDFE0",b:null},
     {id:"chatbot",      label:"Assistant",     icon:"\uD83E\uDD16",b:null},
+    {id:"timesheets",   label:"Timesheets",    icon:"\u23F1",b:1},
+    {id:"attrition",    label:"Attrition",     icon:"\uD83D\uDDD1",b:null},
   ]},
   {s:"System",     items:[
     {id:"system",       label:"System admin",  icon:"\uD83D\uDD27",b:null},
