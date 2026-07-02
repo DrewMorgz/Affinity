@@ -21,6 +21,7 @@ import AuditLog     from "./affinity_core_audit_log";
 import Notifications, { NotificationsPanel, NOTIFICATIONS_DATA } from "./affinity_core_notifications";
 import ClientPortal from "./affinity_core_client_portal";
 import Accounting   from "./affinity_core_accounting";
+import { canAccessModule, deriveRbacRole } from "./affinity_core_rbac";
 
 const NAVY = "#001242";
 const AFFINITY_LOGO = "https://cdn.prod.website-files.com/680f471059835ea8d579b7e8/680f87c089dc0cf0630d7c8d_Affinity%20grad.svg";
@@ -549,6 +550,7 @@ export default function AffinityCore(){
   const [shortcutsOpen,setShortcutsOpen]=useState(false);
   const [officeOpen,setOfficeOpen]=useState(false);
   const user=USERS.find(u=>u.id===uid)||USERS[0];
+  const rbacRole=deriveRbacRole(user.role);
   const navLabel=NAV.flatMap(s=>s.items).find(i=>i.id===mod)?.label||mod;
 
   const searchResults = searchQ.length > 1
@@ -605,6 +607,7 @@ export default function AffinityCore(){
   const offC2 = officeColors[officeFilter] || officeColors["All"];
 
   const content=()=>{
+    if (mod && !canAccessModule(rbacRole, mod)) return <div style={{padding:28,color:"#5B6B7B",fontSize:14}}>You don’t have access to this module. Contact a System Admin if you need it.</div>;
     if (mod && mod.slice(0,4) === "acc_") return <Accounting module={mod}/>;
     switch(mod){
       case "dashboard":    return <Dashboard userId={uid} onNav={setMod} officeFilter={officeFilter}/>;
@@ -651,14 +654,17 @@ export default function AffinityCore(){
         <div style={{fontSize:9,color:"#fff",textTransform:"uppercase",letterSpacing:"1px",marginTop:2,opacity:0.8}}>Made by Affinity, for Affinity</div>
       </div>
       <div style={{flex:1,overflowY:"auto",paddingBottom:6}}>
-        {NAV.map(sec=><div key={sec.s}>
+        {NAV.map(sec=>{
+          const items=sec.items.filter(item=>canAccessModule(rbacRole,item.id));
+          if(items.length===0) return null;
+          return <div key={sec.s}>
           <div style={{fontSize:9,fontWeight:500,color:"#fff",opacity:0.7,textTransform:"uppercase",letterSpacing:"1px",padding:"10px 14px 4px"}}>{sec.s}</div>
-          {sec.items.map(item=><div key={item.id} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 12px",cursor:"pointer",borderRadius:5,margin:"1px 6px",background:mod===item.id?"rgba(0,180,216,0.18)":"transparent",color:"#fff",opacity:mod===item.id?1:0.85,fontSize:12,fontWeight:mod===item.id?500:400}} onClick={()=>navTo(item.id)}>
+          {items.map(item=><div key={item.id} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 12px",cursor:"pointer",borderRadius:5,margin:"1px 6px",background:mod===item.id?"rgba(0,180,216,0.18)":"transparent",color:"#fff",opacity:mod===item.id?1:0.85,fontSize:12,fontWeight:mod===item.id?500:400}} onClick={()=>navTo(item.id)}>
             <span style={{fontSize:13}}>{item.icon}</span>
             <span>{item.label}</span>
             {item.b&&<span style={{background:"#EF4444",color:"#fff",borderRadius:10,padding:"1px 5px",fontSize:9,fontWeight:700,marginLeft:"auto"}}>{item.b}</span>}
           </div>)}
-        </div>)}
+        </div>;})}
       </div>
       <div style={{padding:"10px 14px",borderTop:"0.5px solid rgba(255,255,255,0.08)",position:"relative"}}>
         <div style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}} onClick={e=>{e.stopPropagation();setU(!uOpen);}}>
