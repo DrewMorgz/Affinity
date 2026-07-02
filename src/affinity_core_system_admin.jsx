@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ROLES, ROLE_LABELS, permsFor } from "./affinity_core_rbac";
 
 const CY = "#00C4CC";
 
@@ -101,8 +102,15 @@ const feeSchedules = [
   { office:"Miami",          type:"Company admin",     fee:"$2,400",  freq:"Per annum",  currency:"USD" },
 ];
 
-const VIEWS = ["users","roles","offices","fees","audit","config"];
-const VIEW_LABELS = ["Users","Roles & permissions","Offices","Fee schedules","Audit log","System config"];
+const VIEWS = ["users","roles","matrix","offices","fees","audit","config","checklist"];
+const VIEW_LABELS = ["Users","Roles & permissions","Permission matrix","Offices","Fee schedules","Audit log","System config","Implementation checklist"];
+const MATRIX_MODULES = [
+  ["Entity Admin","entities"],["CRM","crm"],["Documents","documents"],["Onboarding","onboarding"],["Timesheets","timesheets"],
+  ["WIP","acc_wip"],["Invoicing","invoicing"],["Bookkeeping","bookkeeping"],
+  ["Accounting · Transactions","acc_txn"],["Accounting · Assets & Groups","acc_assets"],["Accounting · Reporting","acc_report"],["Accounting · Governance","acc_gov"],
+  ["Budgeting","budgeting"],["Reporting","reporting"],["Procedures","procedures"],["Generate doc","generate"],
+  ["Audit log","audit"],["Client portal","client_portal"],["System admin","system"],
+];
 
 const s = {
   wrap:{ fontFamily:"'Catamaran',system-ui,sans-serif", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)", minHeight:600 },
@@ -167,6 +175,18 @@ export default function AffinityCoreSystemAdmin() {
   const [sel, setSel] = useState(null);
   const [modal, setModal] = useState(null);
   const [auditSearch, setAuditSearch] = useState("");
+  const [checklist, setChecklist] = useState([
+    { item:"MFA (TOTP) enabled for all users", note:"Delivered via Entra / Supabase Auth", status:"Backend / Entra" },
+    { item:"Session timeout 5h + 4.5h warning", note:"Entra Conditional Access", status:"Backend / Entra" },
+    { item:"Role-Module matrix completed & implemented", note:"UI layer live; backend enforcement pending", status:"In progress" },
+    { item:"Audit logging captures before/after values", note:"Needs immutable backend store", status:"Not started" },
+    { item:"System Admin field/workflow/security capabilities", note:"", status:"Not started" },
+    { item:"TLS 1.3+ encryption in transit", note:"Netlify / Supabase default", status:"Done" },
+    { item:"AES-256 encryption at rest", note:"Supabase default", status:"Backend / Entra" },
+    { item:"Data retention policies per jurisdiction", note:"Engine retention_policy (db/048); align to doc table", status:"In progress" },
+    { item:"Penetration testing completed", note:"", status:"Not started" },
+    { item:"Incident response procedures documented", note:"", status:"Not started" },
+  ]);
   const [configToggles, setConfigToggles] = useState({
     mfaRequired: true, auditLog: true, sessionTimeout: true,
     emailNotifs: true, autoReminders: true, wipAlerts: true,
@@ -516,6 +536,58 @@ export default function AffinityCoreSystemAdmin() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ── PERMISSION MATRIX ── */}
+      {view === "matrix" && (
+        <div style={s.pad}>
+          <div style={{ ...s.infoBox, marginBottom:16 }}>ℹ️ Live view of the enforced access rules (affinity_core_rbac.js). V=View · C=Create · E=Edit · D=Delete · A=Approve · X=No access. This is the front-end (UI) layer today; the data backend enforces the same rules once connected.</div>
+          <div style={{ overflowX:"auto" }}>
+            <table style={{ ...s.ct, tableLayout:"auto" }}>
+              <thead><tr>
+                <th style={{ ...s.th, textAlign:"left" }}>Module</th>
+                {ROLES.map(r=><th key={r} style={{ ...s.th, textAlign:"center" }}>{ROLE_LABELS[r]}</th>)}
+              </tr></thead>
+              <tbody>
+                {MATRIX_MODULES.map(([label,id])=>(
+                  <tr key={id} style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)" }}>
+                    <td style={{ ...s.td, fontWeight:500 }}>{label}</td>
+                    {ROLES.map(r=>{ const p=permsFor(r,id); const txt=p.length?p.join("+"):"X";
+                      return <td key={r} style={{ ...s.td, textAlign:"center", color:txt==="X"?"#bbb":"var(--text-primary,#333)", fontWeight:txt==="X"?400:600 }}>{txt}</td>; })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── IMPLEMENTATION CHECKLIST ── */}
+      {view === "checklist" && (
+        <div style={s.pad}>
+          <div style={{ ...s.infoBox, marginBottom:16 }}>ℹ️ Production-readiness checklist (§12 of the security document). Statuses are editable here for tracking. Several items depend on the data backend / Entra and can't be completed in the front-end alone.</div>
+          <table style={{ ...s.ct, tableLayout:"auto" }}>
+            <thead><tr>
+              <th style={{ ...s.th, textAlign:"left", width:"6%" }}>#</th>
+              <th style={{ ...s.th, textAlign:"left" }}>Item</th>
+              <th style={{ ...s.th, textAlign:"left", width:"22%" }}>Status</th>
+            </tr></thead>
+            <tbody>
+              {checklist.map((c,i)=>(
+                <tr key={i} style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)" }}>
+                  <td style={s.td}>{i+1}</td>
+                  <td style={s.td}>{c.item}{c.note && <div style={{ fontSize:11, color:"#999", marginTop:2 }}>{c.note}</div>}</td>
+                  <td style={s.td}>
+                    <select value={c.status} onChange={e=>{const v=e.target.value;setChecklist(p=>p.map((x,j)=>j===i?{...x,status:v}:x));}}
+                      style={{ padding:"5px 8px", borderRadius:6, border:"1px solid #ddd", fontSize:12 }}>
+                      {["Not started","In progress","Done","Backend / Entra","N/A"].map(o=><option key={o}>{o}</option>)}
+                    </select>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
