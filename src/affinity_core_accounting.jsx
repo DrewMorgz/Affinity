@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { isConfigured } from "./affinity_accounting_supabase";
-import { listEntities, getKpiDashboard } from "./affinity_accounting_api";
+import { listEntities, getKpiDashboard, getCashFlow } from "./affinity_accounting_api";
 
 /*
   Affinity Accounting — Core module
@@ -215,14 +215,17 @@ const PANELS = {
       </>
     );
   },
-  acc_cf() {
-    return (
-      <>
-        <Panel title="Cash flow statement (direct)"><Table rows={[
+  acc_cf(cf) {
+    const rows = (cf && cf.length)
+      ? cf.map((r) => [r.section, { n: f2(r.amount), neg: Number(r.amount) < 0 }])
+      : [
           ["Cash from operating activities", { n: f2(5261) }], ["Cash from investing activities", { n: f2(-100), neg: 1 }],
           ["Cash from financing activities", { n: f2(0) }], ["Net increase/(decrease) in cash", { n: f2(5161) }],
           ["Cash at beginning of period", { n: f2(0) }], ["Cash at end of period", { n: f2(5161) }],
-        ]} /></Panel>
+        ];
+    return (
+      <>
+        <Panel title="Cash flow statement (direct)"><Table rows={rows} /></Panel>
         <Panel title="Rolling forecast"><Table head={["Period", "Expected receipts", "Expected payments", "Projected close"]} rows={[
           ["Jul 2026", { n: f0(25200) }, { n: f0(3960) }, { n: f0(26401) }],
           ["Aug 2026", { n: f0(120) }, { n: f0(0) }, { n: f0(26521) }],
@@ -418,6 +421,7 @@ export default function Accounting({ module }) {
   const [entities, setEntities] = useState(DEMO_ENTITIES);
   const [entityId, setEntityId] = useState(DEMO_ENTITIES[0].id);
   const [liveKpis, setLiveKpis] = useState(null);
+  const [liveCf, setLiveCf] = useState(null);
 
   // reset to the first tab whenever the nav group changes
   useEffect(() => { setTab(GROUPS[group][0][0]); }, [group]);
@@ -443,7 +447,17 @@ export default function Accounting({ module }) {
     return () => { ok = false; };
   }, [entityId, start, end]);
 
-  const live = tab === "acc_ov" && !!liveKpis;
+  // fetch live Cash Flow statement when on that tab
+  useEffect(() => {
+    if (!isConfigured || tab !== "acc_cf" || !entityId) { setLiveCf(null); return; }
+    let ok = true;
+    getCashFlow(entityId, start, end).then(({ data }) => {
+      if (ok) setLiveCf(data && data.length ? data : null);
+    }).catch(() => { if (ok) setLiveCf(null); });
+    return () => { ok = false; };
+  }, [tab, entityId, start, end]);
+
+  const live = (tab === "acc_ov" && !!liveKpis) || (tab === "acc_cf" && !!liveCf);
   const render = PANELS[tab] || PANELS.acc_ov;
 
   return (
@@ -468,7 +482,7 @@ export default function Accounting({ module }) {
           ))}
         </div>
       )}
-      {tab === "acc_ov" ? render(liveKpis) : render()}
+      {tab === "acc_ov" ? render(liveKpis) : tab === "acc_cf" ? render(liveCf) : render()}
     </div>
   );
 }
