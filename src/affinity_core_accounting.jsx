@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { isConfigured } from "./affinity_accounting_supabase";
-import { listEntities, getKpiDashboard, getCashFlow } from "./affinity_accounting_api";
+import { listEntities, getKpiDashboard, getCashFlow, getCreditStatus, getCollections } from "./affinity_accounting_api";
 
 /*
   Affinity Accounting — Core module
@@ -141,17 +141,26 @@ const PANELS = {
       </>
     );
   },
-  acc_ar() {
-    return (
-      <>
-        <Panel title="Customer credit exposure"><Table head={["Customer", "Limit", "Outstanding", "Available", "Status"]} rows={[
+  acc_ar(ar) {
+    const credit = (ar && ar.credit && ar.credit.length)
+      ? ar.credit.map((r) => [r.code + " · " + r.name, { n: f0(r.credit_limit) }, { n: f0(r.outstanding) },
+          { n: f0(r.available), neg: Number(r.available) < 0 },
+          { pill: r.over_limit ? ["Over limit", NEG] : (r.on_hold ? ["On hold", AMBER] : ["OK", POS]) }])
+      : [
           ["CUST001 · Northwind Holdings Ltd", { n: f0(10000) }, { n: f0(9600) }, { n: f0(400) }, { pill: ["OK", POS] }],
           ["CUST002 · Seabright Trustees", { n: f0(5000) }, { n: f0(6000) }, { n: f0(-1000), neg: 1 }, { pill: ["Over limit", NEG] }],
-        ]} /></Panel>
-        <Panel title="Collections worklist"><Table head={["Customer", "Invoice", "Due", "Outstanding", "Days late", "Action"]} rows={[
+        ];
+    const coll = (ar && ar.collections && ar.collections.length)
+      ? ar.collections.map((r) => [r.customer_name, "#" + r.invoice_id, r.due_date, { n: f0(r.outstanding) },
+          { n: r.days_overdue }, { pill: [r.dunning_name || "Chaser", Number(r.days_overdue) > 30 ? NEG : AMBER] }])
+      : [
           ["Northwind Holdings", "#72", "2026-05-03", { n: f0(7200) }, { n: 45 }, { pill: ["Final notice", NEG] }],
           ["Seabright Trustees", "#74", "2026-05-22", { n: f0(6000) }, { n: 26 }, { pill: ["First chaser", AMBER] }],
-        ]} /></Panel>
+        ];
+    return (
+      <>
+        <Panel title="Customer credit exposure"><Table head={["Customer", "Limit", "Outstanding", "Available", "Status"]} rows={credit} /></Panel>
+        <Panel title="Collections worklist"><Table head={["Customer", "Invoice", "Due", "Outstanding", "Days late", "Action"]} rows={coll} /></Panel>
         <Note>Customer master · invoicing · credit notes · receipt allocation · statements · credit control / dunning · overdue interest.</Note>
       </>
     );
@@ -422,6 +431,8 @@ export default function Accounting({ module }) {
   const [entityId, setEntityId] = useState(DEMO_ENTITIES[0].id);
   const [liveKpis, setLiveKpis] = useState(null);
   const [liveCf, setLiveCf] = useState(null);
+  const [liveArCredit, setLiveArCredit] = useState(null);
+  const [liveArCol, setLiveArCol] = useState(null);
 
   // reset to the first tab whenever the nav group changes
   useEffect(() => { setTab(GROUPS[group][0][0]); }, [group]);
@@ -457,7 +468,16 @@ export default function Accounting({ module }) {
     return () => { ok = false; };
   }, [tab, entityId, start, end]);
 
-  const live = (tab === "acc_ov" && !!liveKpis) || (tab === "acc_cf" && !!liveCf);
+  // fetch live AR (credit exposure + collections) when on that tab
+  useEffect(() => {
+    if (!isConfigured || tab !== "acc_ar" || !entityId) { setLiveArCredit(null); setLiveArCol(null); return; }
+    let ok = true;
+    getCreditStatus(entityId).then(({ data }) => { if (ok) setLiveArCredit(data && data.length ? data : null); }).catch(() => { if (ok) setLiveArCredit(null); });
+    getCollections(entityId, end).then(({ data }) => { if (ok) setLiveArCol(data && data.length ? data : null); }).catch(() => { if (ok) setLiveArCol(null); });
+    return () => { ok = false; };
+  }, [tab, entityId, end]);
+
+  const live = (tab === "acc_ov" && !!liveKpis) || (tab === "acc_cf" && !!liveCf) || (tab === "acc_ar" && (!!liveArCredit || !!liveArCol));
   const render = PANELS[tab] || PANELS.acc_ov;
 
   return (
@@ -482,7 +502,7 @@ export default function Accounting({ module }) {
           ))}
         </div>
       )}
-      {tab === "acc_ov" ? render(liveKpis) : tab === "acc_cf" ? render(liveCf) : render()}
+      {tab === "acc_ov" ? render(liveKpis) : tab === "acc_cf" ? render(liveCf) : tab === "acc_ar" ? render({ credit: liveArCredit, collections: liveArCol }) : render()}
     </div>
   );
 }
