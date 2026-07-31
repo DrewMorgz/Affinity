@@ -1,4 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { isConfigured } from "./affinity_accounting_supabase";
+import { tasksList } from "./affinity_tasks_api";
 const CY = "#00C4CC";
 const NAVY = "#001242";
 
@@ -48,6 +50,18 @@ const CURRENT_USER = { name:"Andrew Morgan", role:"Super Admin", isSystemManager
 
 export default function AffinityTasks({ userId, onNav }) {
   const [tasks, setTasks]           = useState(INITIAL_TASKS);
+
+  useEffect(()=>{
+    if(!isConfigured) return;
+    let ok=true;
+    tasksList().then(({data})=>{
+      if(ok && data && data.length){
+        setTasks(data.map(t=>({ id:t.id, title:t.title, category:t.category, entity:t.entity,
+          assignee:t.assignee, createdBy:t.created_by, due:t.due, status:t.status, notes:t.notes })));
+      }
+    }).catch(()=>{});
+    return ()=>{ok=false;};
+  },[]);
   const [catF, setCatF]             = useState("");
   const [assigneeF, setAssigneeF]   = useState("");
   const [statusF, setStatusF]       = useState("Open");

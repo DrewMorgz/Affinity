@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { isConfigured } from "./affinity_accounting_supabase";
+import { tasksList } from "./affinity_tasks_api";
+import { onboardingCases } from "./affinity_onboarding_api";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 const CY = "#00C4CC";
@@ -203,14 +206,31 @@ function formatAhead(days, d, m) {
 export default function Dashboard({userId, onNav}) {
   const [inboxFilter,setInboxFilter] = useState("mine");
   const [taskFilter,setTaskFilter]   = useState("mine");
+  const [liveTasks,setLiveTasks]     = useState(null);
+  const [liveOnb,setLiveOnb]         = useState(null);
+
+  useEffect(()=>{
+    if(!isConfigured) return;
+    let ok=true;
+    tasksList().then(({data})=>{
+      if(ok && data && data.length) setLiveTasks(data.map(t=>({ id:t.id, title:t.title, assignee:t.assignee,
+        module:t.category, priority:t.priority, due:t.due, entity:t.entity })));
+    }).catch(()=>{});
+    onboardingCases().then(({data})=>{
+      if(ok && data && data.length) setLiveOnb(data.map(o=>({ name:o.name, pct:o.pct, overdue:o.overdue })));
+    }).catch(()=>{});
+    return ()=>{ok=false;};
+  },[]);
 
   const user = USERS.find(u=>u.id===userId)||USERS[0];
   const isManager = user.isManager || userId===1;
+  const allTasks   = liveTasks || ALL_TASKS;
+  const onboarding = liveOnb   || ONBOARDING;
 
   // My tasks vs team tasks
-  const myTasks   = ALL_TASKS.filter(t=>t.assignee===user.name);
-  const teamTasks = isManager ? ALL_TASKS.filter(t=>user.team.includes(t.assignee)) : [];
-  const shownTasks = taskFilter==="mine" ? myTasks : taskFilter==="team" ? teamTasks : ALL_TASKS;
+  const myTasks   = allTasks.filter(t=>t.assignee===user.name);
+  const teamTasks = isManager ? allTasks.filter(t=>user.team.includes(t.assignee)) : [];
+  const shownTasks = taskFilter==="mine" ? myTasks : taskFilter==="team" ? teamTasks : allTasks;
 
   // My inbox vs team inbox
   const myInbox   = INBOX_ITEMS.filter(i=>i.assignee===user.name);
@@ -373,7 +393,7 @@ export default function Dashboard({userId, onNav}) {
 
         {/* Onboarding pipeline */}
         <Card title="Onboarding pipeline" action={<button onClick={()=>onNav&&onNav("onboarding")} style={{padding:"4px 10px",borderRadius:5,border:"0.5px solid #e5e5e5",background:"transparent",fontSize:11,cursor:"pointer"}}>View ↗</button>}>
-          {ONBOARDING.map(o=>(
+          {onboarding.map(o=>(
             <div key={o.name} style={{marginBottom:8}}>
               <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:2}}>
                 <span style={{fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:200}}>{o.name}</span>
