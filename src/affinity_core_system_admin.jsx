@@ -171,7 +171,7 @@ const nbActive = { ...nb, background:CY, color:"#fff", border:`0.5px solid ${CY}
 export default function AffinityCoreSystemAdmin({ onNav }) {
   const [liveU,setLiveU]=useState(null);
   useEffect(()=>{ if(!isConfigured) return; let ok=true; appUsers().then(({data})=>{ if(ok&&data&&data.length) setLiveU(data); }).catch(()=>{}); return ()=>{ok=false;}; },[]);
-  const users = liveU || users;
+  const users = liveU || usersData;
   const [view, setView] = useState("users");
   const [search, setSearch] = useState("");
   const [officeF, setOfficeF] = useState("");
