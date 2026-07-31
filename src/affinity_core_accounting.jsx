@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { isConfigured } from "./affinity_accounting_supabase";
 import { listEntities, getKpiDashboard, getCashFlow, getCreditStatus, getCollections,
   apVendors, apAging, apPurchaseOrders, getFixedAssets, getIcLoans,
-  getBudgetVsActualForEntity, getTrialBalance, getRecentJournals } from "./affinity_accounting_api";
+  getBudgetVsActualForEntity, getTrialBalance, getRecentJournals,
+  getPnlByEntity, getControlChecks, getAuditPack } from "./affinity_accounting_api";
 
 /*
   Affinity Accounting — Core module
@@ -325,7 +326,24 @@ const PANELS = {
       </>
     );
   },
-  acc_fs() {
+  acc_fs(pack) {
+    const bs = pack && pack.balance_sheet;
+    const pl = pack && pack.profit_and_loss;
+    const A = bs ? Number(bs.assets) || 0 : null;
+    const L = bs ? Math.abs(Number(bs.liabilities) || 0) : null;
+    const sfp = bs
+      ? [["Total assets", { n: f0(A) }], ["Creditors: due within one year", { n: f0(-L), neg: L > 0 ? 1 : 0 }], ["Net assets", { n: f0(A - L) }]]
+      : [
+          ["Debtors", { n: f0(40606) }, { n: f0(0) }], ["Cash at bank and in hand", { n: f0(1741) }, { n: f0(0) }],
+          ["Total assets", { n: f0(42347) }, { n: f0(0) }], ["Creditors: due within one year", { n: f0(-34302) }, { n: f0(0) }],
+          ["Net assets", { n: f0(8045) }, { n: f0(0) }],
+        ];
+    const pnl = pl
+      ? [["Turnover", { n: f0(pl.income) }], ["Administrative expenses", { n: f0(-(Number(pl.expenses) || 0)), neg: 1 }], ["Profit for the financial year", { n: f0(pl.profit) }]]
+      : [
+          ["Turnover", { n: f0(8525) }, { n: f0(0) }], ["Other operating income", { n: f0(1270) }, { n: f0(0) }],
+          ["Administrative expenses", { n: f0(-2250) }, { n: f0(0) }], ["Profit for the financial year", { n: f0(7545) }, { n: f0(0) }],
+        ];
     return (
       <>
         <div style={{ display: "inline-flex", border: `1px solid ${LINE}`, borderRadius: 8, overflow: "hidden", marginBottom: 14 }}>
@@ -333,35 +351,38 @@ const PANELS = {
             <span key={t} style={{ padding: "7px 13px", fontSize: 13, background: i === 0 ? NAVY : "#fff", color: i === 0 ? "#fff" : MUT, fontWeight: i === 0 ? 600 : 400 }}>{t}</span>
           ))}
         </div>
-        <Panel title="Statement of financial position"><Table head={["", "2026", "2025"]} rows={[
-          ["Debtors", { n: f0(40606) }, { n: f0(0) }], ["Cash at bank and in hand", { n: f0(1741) }, { n: f0(0) }],
-          ["Total assets", { n: f0(42347) }, { n: f0(0) }], ["Creditors: due within one year", { n: f0(-34302) }, { n: f0(0) }],
-          ["Net assets", { n: f0(8045) }, { n: f0(0) }],
-        ]} /></Panel>
-        <Panel title="Profit & loss"><Table head={["", "2026", "2025"]} rows={[
-          ["Turnover", { n: f0(8525) }, { n: f0(0) }], ["Other operating income", { n: f0(1270) }, { n: f0(0) }],
-          ["Administrative expenses", { n: f0(-2250) }, { n: f0(0) }], ["Profit for the financial year", { n: f0(7545) }, { n: f0(0) }],
-        ]} /></Panel>
+        <Panel title="Statement of financial position"><Table head={bs ? ["", "2026"] : ["", "2026", "2025"]} rows={sfp} /></Panel>
+        <Panel title="Profit &amp; loss"><Table head={pl ? ["", "2026"] : ["", "2026", "2025"]} rows={pnl} /></Panel>
         <Note>Workflow: prepared → reviewed → approved → finalised &amp; locked · four frameworks · comparatives · data-driven notes.</Note>
       </>
     );
   },
-  acc_mgmt() {
-    return (
-      <>
-        <Panel title="P&L by entity"><Table head={["Entity", "Revenue", "Expenses", "Profit"]} rows={[
+  acc_mgmt(pnl) {
+    const rows = (pnl && pnl.length)
+      ? pnl.map((r) => [r.code + " " + r.name, { n: f0(r.revenue) }, { n: f0(r.expenses) }, { n: f0(r.profit) }])
+      : [
           ["A00001 Affinity (IOM)", { n: f0(29060) }, { n: f0(12110) }, { n: f0(16950) }],
           ["A00002 Affinity Malta", { n: f0(14200) }, { n: f0(8100) }, { n: f0(6100) }],
           ["A00003 Affinity (Cayman)", { n: f0(9800) }, { n: f0(3400) }, { n: f0(6400) }],
-        ]} /></Panel>
+        ];
+    return (
+      <>
+        <Panel title="P&amp;L by entity"><Table head={["Entity", "Revenue", "Expenses", "Profit"]} rows={rows} /></Panel>
         <Panel title="Departmental / project profitability"><Table head={["Department", "Contribution"]} rows={[
           ["Corporate Services", { n: f0(18200) }], ["Trust", { n: f0(9400) }], ["Funds", { n: f0(3460) }],
         ]} /></Panel>
-        <Note>P&L &amp; balance sheet by entity · consolidated · departmental / project / cost-centre · cash flow.</Note>
+        <Note>P&amp;L &amp; balance sheet by entity · consolidated · departmental / project / cost-centre · cash flow.</Note>
       </>
     );
   },
-  acc_ctl() {
+  acc_ctl(checks) {
+    const hasChecks = checks && checks.length;
+    const chk = hasChecks
+      ? checks.map((c) => [c.check_name + " · " + c.detail, { pill: [c.status, c.status === "Pass" ? POS : (c.status === "Attention" ? NEG : AMBER)] }])
+      : [
+          ["Preparer + Approver on one user", { pill: ["Blocked", NEG] }],
+          ["Self-approval of own journal", { pill: ["Blocked", NEG] }],
+        ];
     return (
       <>
         <Panel title="Audit log"><Table head={["Time", "User", "Action", "Note"]} rows={[
@@ -369,13 +390,10 @@ const PANELS = {
           ["09:02", "garry", "Posted JL-1055 (draft, >£50k)", "Held for approval"],
           ["08:50", "danny", "Created supplier invoice V001/INV-88", "—"],
         ]} /></Panel>
-        <Panel title="Users, roles & entity access"><Table head={["User", "Roles", "Entities"]} rows={[
+        <Panel title="Users, roles &amp; entity access"><Table head={["User", "Roles", "Entities"]} rows={[
           ["roxy", "Approver, Accountant", "IOM"], ["garry", "Preparer", "Cayman"], ["admin", "Administrator", "All"],
         ]} /></Panel>
-        <Panel title="Segregation of duties"><Table rows={[
-          ["Preparer + Approver on one user", { pill: ["Blocked", NEG] }],
-          ["Self-approval of own journal", { pill: ["Blocked", NEG] }],
-        ]} /></Panel>
+        <Panel title={hasChecks ? "Control checks" : "Segregation of duties"}><Table rows={chk} /></Panel>
         <Note>Role-based security · row-level security by entity · segregation of duties · approval workflows · audit logs.</Note>
       </>
     );
@@ -397,7 +415,13 @@ const PANELS = {
       </>
     );
   },
-  acc_aud() {
+  acc_aud(pack) {
+    const pl = pack && pack.profit_and_loss;
+    const bs = pack && pack.balance_sheet;
+    const plRows = pl ? [["Income", f0(pl.income)], ["Expenses", f0(pl.expenses)], ["Profit", f0(pl.profit)]]
+      : [["Income", f0(29060)], ["Expenses", f0(12110)], ["Profit", f0(16950)]];
+    const bsRows = bs ? [["Assets", f0(bs.assets)], ["Liabilities", f0(Math.abs(Number(bs.liabilities) || 0))], ["Net assets", f0((Number(bs.assets) || 0) - Math.abs(Number(bs.liabilities) || 0))]]
+      : [["Assets", f0(51793)], ["Liabilities", f0(34842)], ["Equity", f0(0)]];
     return (
       <>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
@@ -406,9 +430,9 @@ const PANELS = {
             onClick={() => alert("In the live app this downloads the full pack as JSON.")}>Download pack (JSON)</button>
         </div>
         <div style={cards}>
-          <Mini title="Profit & loss" rows={[["Income", f0(29060)], ["Expenses", f0(12110)], ["Profit", f0(16950)]]} />
-          <Mini title="Balance sheet" rows={[["Assets", f0(51793)], ["Liabilities", f0(34842)], ["Equity", f0(0)]]} />
-          <Mini title="Document completeness" rows={[["Invoices", "7"], ["With documents", "1"], ["Missing", "6"]]} />
+          <Mini title="Profit &amp; loss" rows={plRows} />
+          <Mini title="Balance sheet" rows={bsRows} />
+          <Mini title="Document completeness" rows={[["Invoices", "2"], ["With documents", "0"], ["Missing", "2"]]} />
         </div>
         <Note>Also includes trial balance, AR/AP aging, fixed-asset &amp; related-party notes, and a journal-entry test sample.</Note>
       </>
@@ -472,6 +496,9 @@ export default function Accounting({ module }) {
   const [liveIc, setLiveIc] = useState(null);
   const [liveGl, setLiveGl] = useState(null);
   const [liveBud, setLiveBud] = useState(null);
+  const [liveMgmt, setLiveMgmt] = useState(null);
+  const [livePack, setLivePack] = useState(null);
+  const [liveCtl, setLiveCtl] = useState(null);
 
   // reset to the first tab whenever the nav group changes
   useEffect(() => { setTab(GROUPS[group][0][0]); }, [group]);
@@ -560,11 +587,36 @@ export default function Accounting({ module }) {
     return () => { ok = false; };
   }, [tab, entityId]);
 
+  // Management Reports (P&L by entity)
+  useEffect(() => {
+    if (!isConfigured || tab !== "acc_mgmt") { setLiveMgmt(null); return; }
+    let ok = true;
+    getPnlByEntity().then(({ data }) => { if (ok) setLiveMgmt(data && data.length ? data : null); }).catch(() => { if (ok) setLiveMgmt(null); });
+    return () => { ok = false; };
+  }, [tab]);
+
+  // Financial Statements + Auditor Pack (shared audit-pack JSON)
+  useEffect(() => {
+    if (!isConfigured || (tab !== "acc_fs" && tab !== "acc_aud") || !entityId) { setLivePack(null); return; }
+    let ok = true;
+    getAuditPack(entityId, start, end).then(({ data }) => { if (ok) setLivePack(data || null); }).catch(() => { if (ok) setLivePack(null); });
+    return () => { ok = false; };
+  }, [tab, entityId, start, end]);
+
+  // Controls (control checks)
+  useEffect(() => {
+    if (!isConfigured || tab !== "acc_ctl" || !entityId) { setLiveCtl(null); return; }
+    let ok = true;
+    getControlChecks(entityId).then(({ data }) => { if (ok) setLiveCtl(data && data.length ? data : null); }).catch(() => { if (ok) setLiveCtl(null); });
+    return () => { ok = false; };
+  }, [tab, entityId]);
+
   const live = (tab === "acc_ov" && !!liveKpis) || (tab === "acc_cf" && !!liveCf)
     || (tab === "acc_ar" && (!!liveArCredit || !!liveArCol))
     || (tab === "acc_ap" && !!liveAp && (liveAp.vendors || liveAp.aging || liveAp.pos))
     || (tab === "acc_fa" && !!liveFa) || (tab === "acc_ic" && !!liveIc)
-    || (tab === "acc_gl" && !!liveGl && (liveGl.tb || liveGl.journals)) || (tab === "acc_bud" && !!liveBud);
+    || (tab === "acc_gl" && !!liveGl && (liveGl.tb || liveGl.journals)) || (tab === "acc_bud" && !!liveBud)
+    || (tab === "acc_mgmt" && !!liveMgmt) || ((tab === "acc_fs" || tab === "acc_aud") && !!livePack) || (tab === "acc_ctl" && !!liveCtl);
   const render = PANELS[tab] || PANELS.acc_ov;
 
   return (
@@ -589,7 +641,7 @@ export default function Accounting({ module }) {
           ))}
         </div>
       )}
-      {tab === "acc_ov" ? render(liveKpis) : tab === "acc_cf" ? render(liveCf) : tab === "acc_ar" ? render({ credit: liveArCredit, collections: liveArCol }) : tab === "acc_ap" ? render(liveAp) : tab === "acc_fa" ? render(liveFa) : tab === "acc_ic" ? render(liveIc) : tab === "acc_gl" ? render(liveGl) : tab === "acc_bud" ? render(liveBud) : render()}
+      {tab === "acc_ov" ? render(liveKpis) : tab === "acc_cf" ? render(liveCf) : tab === "acc_ar" ? render({ credit: liveArCredit, collections: liveArCol }) : tab === "acc_ap" ? render(liveAp) : tab === "acc_fa" ? render(liveFa) : tab === "acc_ic" ? render(liveIc) : tab === "acc_gl" ? render(liveGl) : tab === "acc_bud" ? render(liveBud) : tab === "acc_mgmt" ? render(liveMgmt) : (tab === "acc_fs" || tab === "acc_aud") ? render(livePack) : tab === "acc_ctl" ? render(liveCtl) : render()}
     </div>
   );
 }

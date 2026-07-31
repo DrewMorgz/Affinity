@@ -69,3 +69,11 @@ export async function getRecentJournals(entityId) {
   if (!isConfigured) return off();
   return supabase.rpc("recent_journals", { p_entity: entityId });
 }
+export async function getPnlByEntity() {
+  if (!isConfigured) return off();
+  return supabase.rpc("pnl_by_entity", {});
+}
+export async function getControlChecks(entityId) {
+  if (!isConfigured) return off();
+  return supabase.rpc("control_checks", { p_entity: entityId });
+}
