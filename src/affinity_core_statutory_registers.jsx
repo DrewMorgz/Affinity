@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { isConfigured } from "./affinity_accounting_supabase";
+import { statAnnualReturns, statBoRegisters, statCogs, statOfficerChanges, statDissolutions } from "./affinity_statutory_api";
 const CY = "#00C4CC";
 const NAVY = "#001242";
 
@@ -72,16 +74,40 @@ export default function AffinityStatutory() {
   const [view, setView]   = useState("calendar");
   const [modal, setModal] = useState(null);
   const [jurF, setJurF]   = useState("");
+  const [live, setLive]   = useState(null);
+
+  useEffect(() => {
+    if (!isConfigured) return;
+    let ok = true;
+    Promise.all([statAnnualReturns(), statBoRegisters(), statCogs(), statOfficerChanges(), statDissolutions()])
+      .then(([ar, bo, cg, oc, ds]) => {
+        if (!ok) return;
+        setLive({
+          ar: (ar.data || []).map(r => ({ id:r.id, entity:r.entity, jur:r.jur, type:r.type, regNo:r.reg_no, due:r.due, lastFiled:r.last_filed, admin:r.admin, status:r.status, fee:r.fee })),
+          bo: (bo.data || []).map(b => ({ id:b.id, entity:b.entity, jur:b.jur, boRequired:b.bo_required, submitted:b.submitted, status:b.status, system:b.system, nextReview:b.next_review })),
+          cogs: (cg.data || []).map(c => ({ id:c.id, entity:c.entity, requested:c.requested, issued:c.issued, requestedBy:c.requested_by, status:c.status, purpose:c.purpose })),
+          oc: (oc.data || []).map(c => ({ id:c.id, entity:c.entity, change:c.change, name:c.name, date:c.date, form:c.form, filed:c.filed, dueDate:c.due_date, admin:c.admin })),
+          dis: (ds.data || []).map(d => ({ id:d.id, entity:d.entity, type:d.type, started:d.started, admin:d.admin, stage:d.stage, targetClose:d.target_close })),
+        });
+      }).catch(() => {});
+    return () => { ok = false; };
+  }, []);
+
+  const ar   = (live && live.ar.length)   ? live.ar   : ANNUAL_RETURNS;
+  const bo   = (live && live.bo.length)   ? live.bo   : BO_REGISTER;
+  const cogs = (live && live.cogs.length) ? live.cogs : COGS;
+  const oc   = (live && live.oc.length)   ? live.oc   : OFFICER_CHANGES;
+  const dis  = (live && live.dis.length)  ? live.dis  : DISSOLUTIONS;
 
   const nb  = { padding:"5px 12px", fontSize:11, borderRadius:5, border:"0.5px solid #e5e5e5", background:"transparent", color:"#666", cursor:"pointer" };
   const nba = { ...nb, background:CY, color:"#fff", border:`0.5px solid ${CY}`, fontWeight:500 };
 
-  const overdueReturns  = ANNUAL_RETURNS.filter(r => r.status === "Overdue").length;
-  const overdueBO       = BO_REGISTER.filter(r => r.status === "Overdue").length;
-  const pendingOfficer  = OFFICER_CHANGES.filter(c => c.filed === "Not yet").length;
-  const dueSoon         = ANNUAL_RETURNS.filter(r => r.status === "Due soon").length;
+  const overdueReturns  = ar.filter(r => r.status === "Overdue").length;
+  const overdueBO       = bo.filter(r => r.status === "Overdue").length;
+  const pendingOfficer  = oc.filter(c => c.filed === "Not yet").length;
+  const dueSoon         = ar.filter(r => r.status === "Due soon").length;
 
-  const filteredReturns = ANNUAL_RETURNS.filter(r => !jurF || r.jur === jurF);
+  const filteredReturns = ar.filter(r => !jurF || r.jur === jurF);
 
   return (
     <div style={{ fontFamily:"'Catamaran',system-ui,sans-serif", background:"#f8f9fc", color:"#111", minHeight:"100vh" }}>
@@ -124,7 +150,7 @@ export default function AffinityStatutory() {
             </div>
             <div style={{ marginBottom:20 }}>
               <div style={{ fontSize:12, fontWeight:600, marginBottom:10, color:"#EF4444" }}>⚠️ Overdue — action required</div>
-              {[...ANNUAL_RETURNS.filter(r=>r.status==="Overdue"), ...BO_REGISTER.filter(b=>b.status==="Overdue"), ...OFFICER_CHANGES.filter(c=>c.filed==="Not yet")].map((item, i) => (
+              {[...ar.filter(r=>r.status==="Overdue"), ...bo.filter(b=>b.status==="Overdue"), ...oc.filter(c=>c.filed==="Not yet")].map((item, i) => (
                 <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"9px 0", borderBottom:"0.5px solid #f5f5f5" }}>
                   <div>
                     <div style={{ fontSize:12, fontWeight:500 }}>{item.entity} — {item.type||item.change||"BO register"}</div>
@@ -139,7 +165,7 @@ export default function AffinityStatutory() {
             </div>
             <div>
               <div style={{ fontSize:12, fontWeight:600, marginBottom:10, color:"#633806" }}>Due within 90 days</div>
-              {ANNUAL_RETURNS.filter(r=>r.status==="Due soon"||r.status==="Upcoming").slice(0,6).map((r,i)=>(
+              {ar.filter(r=>r.status==="Due soon"||r.status==="Upcoming").slice(0,6).map((r,i)=>(
                 <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 0", borderBottom:"0.5px solid #f5f5f5" }}>
                   <div>
                     <div style={{ fontSize:12, fontWeight:500 }}>{r.entity} — Annual return</div>
@@ -208,7 +234,7 @@ export default function AffinityStatutory() {
                 {["Entity","Jurisdiction","BO register required","Last submitted","Status","System","Next review","Action"].map(h=><th key={h} style={th}>{h}</th>)}
               </tr></thead>
               <tbody>
-                {BO_REGISTER.map(b=>(
+                {bo.map(b=>(
                   <tr key={b.id} style={{ borderBottom:"0.5px solid #f0f0f0", background:b.status==="Overdue"?"#FFF5F5":"transparent" }}>
                     <td style={{ ...td, fontWeight:500 }}>{b.entity}</td>
                     <td style={td}><Badge label={b.jur} colors={jurC[b.jur]||{bg:"#eee",color:"#666"}} /></td>
@@ -237,7 +263,7 @@ export default function AffinityStatutory() {
                 {["Entity","Change type","Individual","Date","Statutory form","Filing deadline","Filed","Admin","Action"].map(h=><th key={h} style={th}>{h}</th>)}
               </tr></thead>
               <tbody>
-                {OFFICER_CHANGES.map(c=>(
+                {oc.map(c=>(
                   <tr key={c.id} style={{ borderBottom:"0.5px solid #f0f0f0", background:c.filed==="Not yet"?"#FFFBEB":"transparent" }}>
                     <td style={{ ...td, fontWeight:500 }}>{c.entity}</td>
                     <td style={td}><Badge label={c.change} colors={{ "Director appointment":{bg:"#EAF3DE",color:"#27500A"}, "Director resignation":{bg:"#FAEEDA",color:"#633806"}, "Trustee change":{bg:"#EEF0FB",color:"#3C3489"} }[c.change]||{bg:"#eee",color:"#666"}} /></td>
@@ -267,7 +293,7 @@ export default function AffinityStatutory() {
                 {["Entity","Requested","Issued","Requested by","Purpose","Status","Action"].map(h=><th key={h} style={th}>{h}</th>)}
               </tr></thead>
               <tbody>
-                {COGS.map(c=>(
+                {cogs.map(c=>(
                   <tr key={c.id} style={{ borderBottom:"0.5px solid #f0f0f0" }}>
                     <td style={{ ...td, fontWeight:500 }}>{c.entity}</td>
                     <td style={{ ...td, color:"#666" }}>{c.requested}</td>
@@ -290,7 +316,7 @@ export default function AffinityStatutory() {
               <div style={{ fontSize:12, fontWeight:500 }}>Dissolutions, liquidations & transfer-outs in progress</div>
               <button style={nba} onClick={()=>setModal("dissolution")}>＋ Open dissolution</button>
             </div>
-            {DISSOLUTIONS.map(d=>(
+            {dis.map(d=>(
               <div key={d.id} style={{ background:"#fff", border:"0.5px solid #e5e5e5", borderRadius:10, padding:16, marginBottom:12 }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:12 }}>
                   <div>
