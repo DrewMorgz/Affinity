@@ -77,3 +77,27 @@ export async function getControlChecks(entityId) {
   if (!isConfigured) return off();
   return supabase.rpc("control_checks", { p_entity: entityId });
 }
+export async function getBankAccounts(entityId) {
+  if (!isConfigured) return off();
+  return supabase.rpc("bank_accounts_for_entity", { p_entity: entityId });
+}
+export async function getFxRates() {
+  if (!isConfigured) return off();
+  return supabase.rpc("fx_rates_latest", {});
+}
+export async function getFxPositions() {
+  if (!isConfigured) return off();
+  return supabase.rpc("fx_positions", {});
+}
+export async function getVatBoxes(entityId) {
+  if (!isConfigured) return off();
+  return supabase.rpc("vat_boxes_ytd", { p_entity: entityId });
+}
+export async function getConsolSummary() {
+  if (!isConfigured) return off();
+  return supabase.rpc("group_consolidated_summary", {});
+}
+export async function getConsolOwnership() {
+  if (!isConfigured) return off();
+  return supabase.rpc("group_effective_ownership", {});
+}

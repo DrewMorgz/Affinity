@@ -3,7 +3,8 @@ import { isConfigured } from "./affinity_accounting_supabase";
 import { listEntities, getKpiDashboard, getCashFlow, getCreditStatus, getCollections,
   apVendors, apAging, apPurchaseOrders, getFixedAssets, getIcLoans,
   getBudgetVsActualForEntity, getTrialBalance, getRecentJournals,
-  getPnlByEntity, getControlChecks, getAuditPack } from "./affinity_accounting_api";
+  getPnlByEntity, getControlChecks, getAuditPack,
+  getBankAccounts, getFxRates, getFxPositions, getVatBoxes, getConsolSummary, getConsolOwnership } from "./affinity_accounting_api";
 
 /*
   Affinity Accounting — Core module
@@ -183,13 +184,17 @@ const PANELS = {
       </>
     );
   },
-  acc_bank() {
+  acc_bank(bank) {
+    const has = bank && bank.length;
+    const rows = has
+      ? bank.map((b) => [b.name + (b.is_default ? " · default" : ""), b.iban, b.ccy])
+      : [
+          ["Barclays IOM — GBP", "GB00…4471", { n: f0(18420) }], ["HSBC Malta — EUR", "MT00…9920", { n: f0(9120) }], ["Butterfield — USD", "KY00…1180", { n: f0(26010) }],
+        ];
     return (
       <>
-        <Panel title="Bank accounts"><Table head={["Account", "IBAN", "Balance"]} rows={[
-          ["Barclays IOM — GBP", "GB00…4471", { n: f0(18420) }], ["HSBC Malta — EUR", "MT00…9920", { n: f0(9120) }], ["Butterfield — USD", "KY00…1180", { n: f0(26010) }],
-        ]} /></Panel>
-        <Panel title="Statement imports & reconciliation"><Table head={["Statement", "Format", "Lines", "Match result"]} rows={[
+        <Panel title="Bank accounts"><Table head={has ? ["Account", "IBAN", "Ccy"] : ["Account", "IBAN", "Balance"]} rows={rows} /></Panel>
+        <Panel title="Statement imports &amp; reconciliation"><Table head={["Statement", "Format", "Lines", "Match result"]} rows={[
           ["Jun statement", "MT940", "24 lines", { pill: ["Auto-matched 22 · 2 by rule", POS] }],
           ["Jul statement", "CSV", "11 lines", { pill: ["Auto-matched 11", POS] }],
         ]} /></Panel>
@@ -237,18 +242,25 @@ const PANELS = {
       </>
     );
   },
-  acc_con() {
-    return (
-      <>
-        <Panel title="Group structure & effective ownership"><Table head={["Entity", "Direct %", "Effective %", "NCI"]} rows={[
+  acc_con(con) {
+    const hasOwn = con && con.ownership && con.ownership.length;
+    const own = hasOwn
+      ? con.ownership.map((o) => [o.entity_code + " " + o.entity_name, { n: o.direct_pct + "%" }, { n: o.effective_pct + "%" }])
+      : [
           ["A00001 Affinity (IOM)", { n: "100%" }, { n: "100%" }, { n: f0(0) }],
           ["A00002 Affinity Malta", { n: "80%" }, { n: "80%" }, { n: f0(-200) }],
           ["A00003 Affinity (Cayman)", { n: "75%" }, { n: "60%" }, { n: f0(4000) }],
-        ]} /></Panel>
-        <div style={cards}>
-          <Mini title="Non-controlling interest" rows={[["Cayman (40%)", f0(4000)], ["Malta (20%)", f0(-200)]]} />
-          <Mini title="Currency translation reserve" rows={[["EUR sub (0.85→0.90)", f0(250)]]} />
-        </div>
+        ];
+    const hasSum = con && con.summary && con.summary.length;
+    return (
+      <>
+        <Panel title="Group structure &amp; effective ownership"><Table head={hasOwn ? ["Entity", "Direct %", "Effective %"] : ["Entity", "Direct %", "Effective %", "NCI"]} rows={own} /></Panel>
+        {hasSum
+          ? <Panel title="Consolidated summary (group reporting currency)"><Table rows={con.summary.map((s) => [s.line, { n: f0(s.amount) }])} /></Panel>
+          : <div style={cards}>
+              <Mini title="Non-controlling interest" rows={[["Cayman (40%)", f0(4000)], ["Malta (20%)", f0(-200)]]} />
+              <Mini title="Currency translation reserve" rows={[["EUR sub (0.85→0.90)", f0(250)]]} />
+            </div>}
         <Note>Group consolidation · multi-level ownership · minority interest · CTA · elimination · consolidated statements.</Note>
       </>
     );
@@ -273,27 +285,38 @@ const PANELS = {
       </>
     );
   },
-  acc_fx() {
+  acc_fx(fx) {
+    const hasR = fx && fx.rates && fx.rates.length;
+    const rates = hasR
+      ? fx.rates.map((r) => [r.pair, { n: Number(r.rate).toFixed(4) }, r.rate_date])
+      : [
+          ["GBP/EUR", { n: "1.1765" }, "30 Jun 2026"], ["GBP/USD", { n: "1.2710" }, "30 Jun 2026"], ["EUR/GBP", { n: "0.9000" }, "30 Jun 2026"],
+        ];
+    const hasP = fx && fx.positions && fx.positions.length;
     return (
       <>
-        <Panel title="Exchange rates (auto-fetched daily)"><Table head={["Pair", "Rate", "As at"]} rows={[
-          ["GBP/EUR", { n: "1.1765" }, "30 Jun 2026"], ["GBP/USD", { n: "1.2710" }, "30 Jun 2026"], ["EUR/GBP", { n: "0.9000" }, "30 Jun 2026"],
-        ]} /></Panel>
-        <div style={cards}>
-          <Mini title="Realised FX" rows={[["YTD", f0(420)]]} />
-          <Mini title="Unrealised (revaluation)" rows={[["At period end", f0(185)]]} />
-          <Mini title="Translation reserve" rows={[["EUR subsidiary", f0(250)]]} />
-        </div>
-        <Note>Functional + transaction currency · daily rate feed · realised & unrealised FX · translation reserves.</Note>
+        <Panel title="Exchange rates (auto-fetched daily)"><Table head={["Pair", "Rate", "As at"]} rows={rates} /></Panel>
+        {hasP
+          ? <Panel title="Currency exposure by entity"><Table head={["Entity", "Ccy", "Net position"]} rows={fx.positions.map((p) => [p.entity_code, p.ccy, { n: f0(p.net_position) }])} /></Panel>
+          : <div style={cards}>
+              <Mini title="Realised FX" rows={[["YTD", f0(420)]]} />
+              <Mini title="Unrealised (revaluation)" rows={[["At period end", f0(185)]]} />
+              <Mini title="Translation reserve" rows={[["EUR subsidiary", f0(250)]]} />
+            </div>}
+        <Note>Functional + transaction currency · daily rate feed · realised &amp; unrealised FX · translation reserves.</Note>
       </>
     );
   },
-  acc_tax() {
+  acc_tax(vat) {
+    const v = vat && vat.length ? vat[0] : null;
+    const rows = v
+      ? [["Box 1 — VAT due on sales", { n: f2(v.output_vat) }], ["Box 4 — VAT reclaimed", { n: f2(v.input_vat) }], ["Box 5 — Net VAT payable", { n: f2(v.net_vat) }]]
+      : [
+          ["Box 1 — VAT due on sales", { n: f2(5811) }], ["Box 4 — VAT reclaimed", { n: f2(2417) }], ["Box 5 — Net VAT payable", { n: f2(3394) }],
+        ];
     return (
       <>
-        <Panel title="VAT return"><Table rows={[
-          ["Box 1 — VAT due on sales", { n: f2(5811) }], ["Box 4 — VAT reclaimed", { n: f2(2417) }], ["Box 5 — Net VAT payable", { n: f2(3394) }],
-        ]} /></Panel>
+        <Panel title="VAT return"><Table rows={rows} /></Panel>
         <Panel title="VAT by jurisdiction"><Table head={["Jurisdiction", "Output", "Input", "Net"]} rows={[
           ["Isle of Man", { n: f0(200) }, { n: f0(960) }, { n: f0(-760), neg: 1 }],
           ["Malta", { n: f0(1120) }, { n: f0(540) }, { n: f0(580) }],
@@ -499,6 +522,10 @@ export default function Accounting({ module }) {
   const [liveMgmt, setLiveMgmt] = useState(null);
   const [livePack, setLivePack] = useState(null);
   const [liveCtl, setLiveCtl] = useState(null);
+  const [liveBank, setLiveBank] = useState(null);
+  const [liveFx, setLiveFx] = useState(null);
+  const [liveTax, setLiveTax] = useState(null);
+  const [liveCon, setLiveCon] = useState(null);
 
   // reset to the first tab whenever the nav group changes
   useEffect(() => { setTab(GROUPS[group][0][0]); }, [group]);
@@ -611,12 +638,50 @@ export default function Accounting({ module }) {
     return () => { ok = false; };
   }, [tab, entityId]);
 
+  // Banking
+  useEffect(() => {
+    if (!isConfigured || tab !== "acc_bank" || !entityId) { setLiveBank(null); return; }
+    let ok = true;
+    getBankAccounts(entityId).then(({ data }) => { if (ok) setLiveBank(data && data.length ? data : null); }).catch(() => { if (ok) setLiveBank(null); });
+    return () => { ok = false; };
+  }, [tab, entityId]);
+
+  // FX (rates + positions)
+  useEffect(() => {
+    if (!isConfigured || tab !== "acc_fx") { setLiveFx(null); return; }
+    let ok = true;
+    Promise.all([getFxRates(), getFxPositions()]).then(([r, p]) => {
+      if (ok) setLiveFx({ rates: r.data || null, positions: p.data || null });
+    }).catch(() => { if (ok) setLiveFx(null); });
+    return () => { ok = false; };
+  }, [tab]);
+
+  // Tax / VAT
+  useEffect(() => {
+    if (!isConfigured || tab !== "acc_tax" || !entityId) { setLiveTax(null); return; }
+    let ok = true;
+    getVatBoxes(entityId).then(({ data }) => { if (ok) setLiveTax(data && data.length ? data : null); }).catch(() => { if (ok) setLiveTax(null); });
+    return () => { ok = false; };
+  }, [tab, entityId]);
+
+  // Consolidation (ownership + summary)
+  useEffect(() => {
+    if (!isConfigured || tab !== "acc_con") { setLiveCon(null); return; }
+    let ok = true;
+    Promise.all([getConsolOwnership(), getConsolSummary()]).then(([o, s]) => {
+      if (ok) setLiveCon({ ownership: o.data || null, summary: s.data || null });
+    }).catch(() => { if (ok) setLiveCon(null); });
+    return () => { ok = false; };
+  }, [tab]);
+
   const live = (tab === "acc_ov" && !!liveKpis) || (tab === "acc_cf" && !!liveCf)
     || (tab === "acc_ar" && (!!liveArCredit || !!liveArCol))
     || (tab === "acc_ap" && !!liveAp && (liveAp.vendors || liveAp.aging || liveAp.pos))
     || (tab === "acc_fa" && !!liveFa) || (tab === "acc_ic" && !!liveIc)
     || (tab === "acc_gl" && !!liveGl && (liveGl.tb || liveGl.journals)) || (tab === "acc_bud" && !!liveBud)
-    || (tab === "acc_mgmt" && !!liveMgmt) || ((tab === "acc_fs" || tab === "acc_aud") && !!livePack) || (tab === "acc_ctl" && !!liveCtl);
+    || (tab === "acc_mgmt" && !!liveMgmt) || ((tab === "acc_fs" || tab === "acc_aud") && !!livePack) || (tab === "acc_ctl" && !!liveCtl)
+    || (tab === "acc_bank" && !!liveBank) || (tab === "acc_fx" && !!liveFx && (liveFx.rates || liveFx.positions))
+    || (tab === "acc_tax" && !!liveTax) || (tab === "acc_con" && !!liveCon && (liveCon.ownership || liveCon.summary));
   const render = PANELS[tab] || PANELS.acc_ov;
 
   return (
@@ -641,7 +706,7 @@ export default function Accounting({ module }) {
           ))}
         </div>
       )}
-      {tab === "acc_ov" ? render(liveKpis) : tab === "acc_cf" ? render(liveCf) : tab === "acc_ar" ? render({ credit: liveArCredit, collections: liveArCol }) : tab === "acc_ap" ? render(liveAp) : tab === "acc_fa" ? render(liveFa) : tab === "acc_ic" ? render(liveIc) : tab === "acc_gl" ? render(liveGl) : tab === "acc_bud" ? render(liveBud) : tab === "acc_mgmt" ? render(liveMgmt) : (tab === "acc_fs" || tab === "acc_aud") ? render(livePack) : tab === "acc_ctl" ? render(liveCtl) : render()}
+      {tab === "acc_ov" ? render(liveKpis) : tab === "acc_cf" ? render(liveCf) : tab === "acc_ar" ? render({ credit: liveArCredit, collections: liveArCol }) : tab === "acc_ap" ? render(liveAp) : tab === "acc_fa" ? render(liveFa) : tab === "acc_ic" ? render(liveIc) : tab === "acc_gl" ? render(liveGl) : tab === "acc_bud" ? render(liveBud) : tab === "acc_mgmt" ? render(liveMgmt) : (tab === "acc_fs" || tab === "acc_aud") ? render(livePack) : tab === "acc_ctl" ? render(liveCtl) : tab === "acc_bank" ? render(liveBank) : tab === "acc_fx" ? render(liveFx) : tab === "acc_tax" ? render(liveTax) : tab === "acc_con" ? render(liveCon) : render()}
     </div>
   );
 }
