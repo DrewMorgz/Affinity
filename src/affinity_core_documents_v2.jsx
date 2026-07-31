@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { isConfigured } from "./affinity_accounting_supabase";
+import { documentList } from "./affinity_documents_api";
 
 const CY = "#00C4CC";
 
@@ -59,18 +61,27 @@ export default function AffinityDMS() {
   const [selFolder,setSelF]   = useState({folder:"KYC",sub:"CDD"});
   const [sel,setSel]          = useState(null);
   const [tab,setTab]          = useState(0); // 0=DMS, 1=Expiring, 2=Approvals, 3=Generate
+  const [liveDocs,setLiveDocs] = useState(null);
+
+  useEffect(()=>{
+    if(!isConfigured) return;
+    let ok=true;
+    documentList().then(({data})=>{ if(ok && data && data.length) setLiveDocs(data); }).catch(()=>{});
+    return ()=>{ok=false;};
+  },[]);
+  const docs = liveDocs || DOCS;
   const [modal,setModal]      = useState(null);
   const [dragOver,setDragOver] = useState(false);
   const [isAdmin]             = useState(true); // would come from user role
 
   const toggleFolder = name => setOpen(p=>({...p,[name]:!p[name]}));
 
-  const folderDocs = DOCS.filter(d=>
+  const folderDocs = docs.filter(d=>
     d.entity===entity&&
     (!selFolder.folder||d.folder===selFolder.folder)&&
     (!selFolder.sub||d.subfolder===selFolder.sub)
   );
-  const selDoc = sel ? DOCS.find(d=>d.id===sel) : null;
+  const selDoc = sel ? docs.find(d=>d.id===sel) : null;
   const [signaturePending, setSignaturePending] = useState({}); // {docId: true} for docs sent to Zoho Sign
   const [signedDocs, setSignedDocs] = useState({});           // {docId: true} for docs marked as signed
 
@@ -97,7 +108,7 @@ export default function AffinityDMS() {
 
       {/* Toolbar */}
       <div style={{padding:"8px 16px",borderBottom:"0.5px solid #e5e5e5",display:"flex",gap:6,alignItems:"center",flexShrink:0,flexWrap:"wrap"}}>
-        {tabs.map((t,i)=><button key={i} style={{padding:"4px 12px",fontSize:11,borderRadius:20,border:`0.5px solid ${tab===i?"#ccc":"#e5e5e5"}`,background:tab===i?"#fff":"transparent",color:tab===i?"#111":"#666",cursor:"pointer",fontWeight:tab===i?500:400,whiteSpace:"nowrap"}} onClick={()=>setTab(i)}>{t}{i===2&&DOCS.filter(d=>d.status==="Under review"||d.status==="Draft").length>0&&<span style={{marginLeft:4,background:"#EF4444",color:"#fff",borderRadius:10,padding:"1px 5px",fontSize:9,fontWeight:700}}>{DOCS.filter(d=>d.status==="Under review"||d.status==="Draft").length}</span>}</button>)}
+        {tabs.map((t,i)=><button key={i} style={{padding:"4px 12px",fontSize:11,borderRadius:20,border:`0.5px solid ${tab===i?"#ccc":"#e5e5e5"}`,background:tab===i?"#fff":"transparent",color:tab===i?"#111":"#666",cursor:"pointer",fontWeight:tab===i?500:400,whiteSpace:"nowrap"}} onClick={()=>setTab(i)}>{t}{i===2&&docs.filter(d=>d.status==="Under review"||d.status==="Draft").length>0&&<span style={{marginLeft:4,background:"#EF4444",color:"#fff",borderRadius:10,padding:"1px 5px",fontSize:9,fontWeight:700}}>{docs.filter(d=>d.status==="Under review"||d.status==="Draft").length}</span>}</button>)}
         <div style={{position:"relative",marginLeft:"auto"}}>
           <input list="dms-entities" value={entity} onChange={e=>setEntity(e.target.value)}
             placeholder="Search entity…"
@@ -122,10 +133,10 @@ export default function AffinityDMS() {
                   <span style={{fontSize:10,color:"#aaa",width:12,flexShrink:0}}>{openFolders[f.name]?"▼":"►"}</span>
                   
                   <span style={{fontWeight:selFolder.folder===f.name?600:400,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.name}</span>
-                  <span style={{marginLeft:"auto",fontSize:9,color:"#aaa",flexShrink:0}}>{DOCS.filter(d=>d.folder===f.name&&d.entity===entity).length||""}</span>
+                  <span style={{marginLeft:"auto",fontSize:9,color:"#aaa",flexShrink:0}}>{docs.filter(d=>d.folder===f.name&&d.entity===entity).length||""}</span>
                 </div>
                 {openFolders[f.name]&&f.subs.map(sub=>{
-                  const count = DOCS.filter(d=>d.folder===f.name&&d.subfolder===sub&&d.entity===entity).length;
+                  const count = docs.filter(d=>d.folder===f.name&&d.subfolder===sub&&d.entity===entity).length;
                   if(!isAdmin&&count===0) return null; // hide empty folders for non-admins
                   return (
                     <div key={sub} onClick={()=>setSelF({folder:f.name,sub})} style={{display:"flex",alignItems:"center",gap:6,padding:"5px 12px 5px 32px",cursor:"pointer",background:selFolder.folder===f.name&&selFolder.sub===sub?"#E6F7FB":"transparent",fontSize:11,borderBottom:"0.5px solid #f0f0f0"}}>
@@ -298,8 +309,8 @@ export default function AffinityDMS() {
         <div style={{padding:16,overflowY:"auto",flex:1}}>
           <div style={{fontSize:12,fontWeight:600,marginBottom:12}}>Expiring &amp; expired documents</div>
           {[
-            ...DOCS.filter(d=>d.status==="Expired"),
-            ...DOCS.filter(d=>d.expiry&&d.status!=="Expired"),
+            ...docs.filter(d=>d.status==="Expired"),
+            ...docs.filter(d=>d.expiry&&d.status!=="Expired"),
           ].map(d=>(
             <div key={d.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:"0.5px solid #e5e5e5"}}>
               <div>
@@ -319,7 +330,7 @@ export default function AffinityDMS() {
       {tab===2&&(
         <div style={{padding:16,overflowY:"auto",flex:1}}>
           <div style={{fontSize:12,fontWeight:600,marginBottom:12}}>Documents awaiting approval</div>
-          {DOCS.filter(d=>d.status==="Under review"||d.status==="Draft").map(d=>(
+          {docs.filter(d=>d.status==="Under review"||d.status==="Draft").map(d=>(
             <div key={d.id} style={{background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:8,padding:"12px 14px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <div>
                 <div style={{fontSize:13,fontWeight:600}}>{d.name}</div>
