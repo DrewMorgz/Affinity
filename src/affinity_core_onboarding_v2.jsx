@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { isConfigured } from "./affinity_accounting_supabase";
+import { onboardingCases, attritionCases } from "./affinity_onboarding_api";
 const CY = "#00C4CC";
 const Badge = ({ label, colors }) => (<span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:600, background:colors?.bg||"#eee", color:colors?.color||"#333", whiteSpace:"nowrap" }}>{label}</span>);
 const th = { padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:600, color:"#666", textTransform:"uppercase", letterSpacing:"0.4px", borderBottom:"0.5px solid #e5e5e5", background:"var(--bg-secondary,#f9f9f9)", whiteSpace:"nowrap" };
@@ -49,6 +51,27 @@ const VLABELS = ["Overview","Active onboardings","Transfer-in","Attrition","Clie
 
 export default function AffinityOnboarding({ initialView , onNav }) {
   const [view, setView]   = useState(initialView || "pipeline");
+  const [live, setLive]   = useState(null);
+  const STAGES8 = ["New business snapshot","Approval-in-principle","Portal invitation sent","KYC collection","Compliance review","LOE & fee setup","Entity setup","Final sign-off"];
+
+  useEffect(()=>{
+    if(!isConfigured) return;
+    let ok=true;
+    Promise.all([onboardingCases(), attritionCases()]).then(([c,a])=>{
+      if(!ok) return;
+      setLive({
+        cases:(c.data||[]).map(x=>({ id:x.id, name:x.name, type:x.type, jur:x.jur, admin:x.admin, stage:x.stage,
+          pct:x.pct, started:x.started, target:x.target, status:x.status, risk:x.risk, overdue:x.overdue,
+          stages:STAGES8, docs:{ received:x.docs_received||[], outstanding:x.docs_outstanding||[] } })),
+        attrition:(a.data||[]).map(x=>({ id:x.id, name:x.name, type:x.type, admin:x.admin, stage:x.stage,
+          started:x.started, status:x.status, approvals:{ manager:x.appr_manager, director:x.appr_director, md:x.appr_md, cfo:x.appr_cfo } })),
+      });
+    }).catch(()=>{});
+    return ()=>{ok=false;};
+  },[]);
+
+  const cases     = (live && live.cases.length)     ? live.cases     : CASES;
+  const attrition = (live && live.attrition.length) ? live.attrition : ATTRITION;
   // When user lands here via the Attrition sidebar entry, only the
   // Attrition tab is shown — everything else stripped from the nav.
   const isAttritionOnly = initialView === "attrition";
@@ -57,7 +80,7 @@ export default function AffinityOnboarding({ initialView , onNav }) {
   const [sel, setSel]     = useState(null);
   const [modal, setModal] = useState(null);
 
-  const selCase = sel ? CASES.find(c=>c.id===sel) : null;
+  const selCase = sel ? cases.find(c=>c.id===sel) : null;
   const nb  = { padding:"5px 12px", fontSize:11, borderRadius:5, border:"0.5px solid #e5e5e5", background:"transparent", color:"#666", cursor:"pointer" };
   const nba = { ...nb, background:CY, color:"#fff", border:`0.5px solid ${CY}`, fontWeight:500 };
   const sc  = { background:"var(--bg-secondary,#f9f9f9)", borderRadius:6, padding:"10px 12px" };
@@ -78,14 +101,14 @@ export default function AffinityOnboarding({ initialView , onNav }) {
       {view==="pipeline"&&(
         <div style={{ padding:"16px 20px" }}>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:16 }}>
-            {[{l:"Active onboardings",v:CASES.length,c:CY},{l:"Overdue",v:CASES.filter(c=>c.overdue).length,c:"#EF4444"},{l:"Avg completion",v:"65%",c:null},{l:"Target turnaround",v:"45 days",c:null}].map(k=>(
+            {[{l:"Active onboardings",v:cases.length,c:CY},{l:"Overdue",v:cases.filter(c=>c.overdue).length,c:"#EF4444"},{l:"Avg completion",v:"65%",c:null},{l:"Target turnaround",v:"45 days",c:null}].map(k=>(
               <div key={k.l} style={sc}><div style={{ fontSize:10, color:"#666", marginBottom:3 }}>{k.l}</div><div style={{ fontSize:18, fontWeight:500, color:k.c||"var(--text-primary,#111)" }}>{k.v}</div></div>
             ))}
           </div>
           {/* Stage pipeline view */}
           <div style={{ display:"flex", gap:0, marginBottom:20, overflowX:"auto" }}>
             {["New business","KYC collection","Compliance review","LOE & fee setup","Entity setup","Complete"].map((stage,i)=>{
-              const inStage = CASES.filter(c=>c.stage===stage||( stage==="Complete"&&c.pct===100 ));
+              const inStage = cases.filter(c=>c.stage===stage||( stage==="Complete"&&c.pct===100 ));
               return (
                 <div key={stage} style={{ flex:1, minWidth:120, border:"0.5px solid #e5e5e5", borderLeft:i>0?"none":undefined, padding:"10px 10px", background:i%2===0?"var(--bg-secondary,#f9f9f9)":"var(--bg-primary,#fff)" }}>
                   <div style={{ fontSize:10, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.4px", color:"#666", marginBottom:8 }}>{stage}</div>
@@ -109,7 +132,7 @@ export default function AffinityOnboarding({ initialView , onNav }) {
             <div style={{ display:"flex", justifyContent:"flex-end", padding:"10px 20px", borderBottom:"0.5px solid #e5e5e5" }}>
               <button style={nba} onClick={()=>setModal("newCase")}>＋ New onboarding</button>
             </div>
-            {CASES.map(c=>(
+            {cases.map(c=>(
               <div key={c.id} onClick={()=>setSel(sel===c.id?null:c.id)} style={{ padding:"12px 20px", borderBottom:"0.5px solid #e5e5e5", cursor:"pointer", background:sel===c.id?"var(--bg-secondary,#f9f9f9)":undefined }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
                   <div>
@@ -201,7 +224,7 @@ export default function AffinityOnboarding({ initialView , onNav }) {
             <div style={{ fontSize:13, fontWeight:500 }}>Client attrition — active cases</div>
             <button style={nba} onClick={()=>setModal("attrition")}>＋ Raise attrition form</button>
           </div>
-          {ATTRITION.map(a=>(
+          {attrition.map(a=>(
             <div key={a.id} style={{ background:"var(--bg-primary,#fff)", border:"0.5px solid #e5e5e5", borderRadius:8, padding:"14px 16px", marginBottom:12 }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
                 <div><div style={{ fontSize:13, fontWeight:600 }}>{a.name}</div>

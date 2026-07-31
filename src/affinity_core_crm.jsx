@@ -1,4 +1,6 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { isConfigured } from "./affinity_accounting_supabase";
+import { crmProspects } from "./affinity_crm_api";
 const CY = "#00C4CC";
 const NAVY = "#001242";
 
@@ -124,6 +126,21 @@ export default function AffinityCRM() {
   const [srch,setSrch]   = useState("");
   const [form,setForm]   = useState({});
   const [prospects,setProspects] = useState(PROSPECTS);
+
+  useEffect(()=>{
+    if(!isConfigured) return;
+    let ok=true;
+    crmProspects().then(({data})=>{
+      if(ok && data && data.length){
+        setProspects(data.map(p=>({ id:p.id, firstName:p.first_name, lastName:p.last_name, company:p.company,
+          type:p.type, jur:p.jur, office:p.office, source:p.source, stage:p.stage, bd:p.bd,
+          annualFee:Number(p.annual_fee||0), setupFee:Number(p.setup_fee||0), adminFee:Number(p.admin_fee||0),
+          conversionDate:p.conversion_date, risk:p.risk, website:p.website, address:p.address, notes:p.notes,
+          services:p.services||[] })));
+      }
+    }).catch(()=>{});
+    return ()=>{ok=false;};
+  },[]);
   const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < 768);
   React.useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth < 768);
