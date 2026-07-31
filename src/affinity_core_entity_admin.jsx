@@ -1,4 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { isConfigured } from "./affinity_accounting_supabase";
+import { eaEntitiesList, eaProfile, eaOfficers, eaShareholders, eaCharges, eaUbos, eaAddresses, eaMeetings } from "./affinity_eadmin_api";
 import EntityChart from "./affinity_core_entity_chart";
 const CY = "#00C4CC";
 const NAVY = "#001242";
@@ -329,25 +331,65 @@ export default function AffinityCoreEntityAdmin({ officeFilter="" }) {
   };
   const activeJurF = officeFilter && officeFilter !== "All" ? officeToJur[officeFilter] : jurF;
 
-  const filtered = useMemo(()=>ENTITIES.filter(e=>
+  const [liveEnts, setLiveEnts] = useState(null);
+  const [det, setDet] = useState(null);
+  const fmtD = (s) => (s ? String(s).split("-").reverse().join("/") : null);
+
+  // load live client portfolio
+  useEffect(() => {
+    if (!isConfigured) return;
+    let ok = true;
+    eaEntitiesList().then(({ data }) => {
+      if (!ok || !data || !data.length) return;
+      const mapped = data.map((r) => {
+        const demo = ENTITIES.find((e) => e.ref === r.ref) || {};
+        return { ...demo, id: r.id, ref: r.ref, name: r.name, type: r.entity_type, jur: r.jurisdiction,
+                 status: r.admin_status, risk: r.risk_rating, incorporated: fmtD(r.incorporation_date) };
+      });
+      setLiveEnts(mapped);
+      setSel((s) => (mapped.find((e) => e.id === s) ? s : mapped[0].id));
+    }).catch(() => {});
+    return () => { ok = false; };
+  }, []);
+
+  // load selected entity detail
+  useEffect(() => {
+    if (!isConfigured || !liveEnts || sel == null) { setDet(null); return; }
+    let ok = true;
+    Promise.all([eaProfile(sel), eaOfficers(sel), eaShareholders(sel), eaCharges(sel), eaUbos(sel), eaAddresses(sel), eaMeetings(sel)])
+      .then(([p, o, sh, c, u, a, m]) => { if (ok) setDet({
+        profile: (p.data && p.data[0]) || null, officers: o.data || [], shareholders: sh.data || [],
+        charges: c.data || [], ubos: u.data || [], addresses: a.data || [], meetings: m.data || [] }); })
+      .catch(() => { if (ok) setDet(null); });
+    return () => { ok = false; };
+  }, [sel, liveEnts]);
+
+  const ents = liveEnts || ENTITIES;
+
+  const filtered = useMemo(()=>ents.filter(e=>
     (!search||e.name.toLowerCase().includes(search.toLowerCase())||e.ref.toLowerCase().includes(search.toLowerCase()))&&
     (!activeJurF||e.jur===activeJurF)&&(!typeF||e.type===typeF)&&(!statF||e.status===statF)
-  ),[search,activeJurF,typeF,statF,jurF,officeFilter]);
+  ),[search,activeJurF,typeF,statF,jurF,officeFilter,ents]);
 
-  const entity   = ENTITIES.find(e=>e.id===sel);
-  const dirs     = ENTITY_DATA.directors[sel]||[];
-  const shares   = ENTITY_DATA.shareholders[sel]||[];
-  const addrs    = ENTITY_DATA.addresses[sel]||[];
+  const baseEntity = ents.find(e=>e.id===sel);
+  const entity = (det && det.profile)
+    ? { ...baseEntity, regNo:det.profile.reg_no, yearEnd:det.profile.year_end, principalActivity:det.profile.business_activity,
+        jur:det.profile.jurisdiction, type:det.profile.entity_type, incorporated:fmtD(det.profile.incorporation_date),
+        status:det.profile.admin_status, risk:det.profile.risk_rating }
+    : baseEntity;
+  const dirs     = det ? det.officers.map(o=>({ id:o.id, name:o.name, role:o.role, appointed:fmtD(o.appointed), resigned:fmtD(o.resigned), nationality:o.nationality, dob:fmtD(o.dob), address:o.address })) : (ENTITY_DATA.directors[sel]||[]);
+  const shares   = det ? det.shareholders.map(x=>({ id:x.id, name:x.name, type:"—", shares:x.shares, class:x.share_class, pct:(x.pct!=null?x.pct+"%":"—"), nominal:"—", paid:"—", regDate:fmtD(x.held_from) })) : (ENTITY_DATA.shareholders[sel]||[]);
+  const addrs    = det ? det.addresses.map(a=>({ type:a.address_type, address:a.address, from:fmtD(a.from_date), to:a.to_date?fmtD(a.to_date):null })) : (ENTITY_DATA.addresses[sel]||[]);
   const banks    = ENTITY_DATA.bankAccounts[sel]||[];
-  const charges  = ENTITY_DATA.charges[sel]||[];
+  const charges  = det ? det.charges.map(c=>({ id:c.id, chargee:c.chargee, type:c.charge_type, amount:(c.ccy||"")+" "+Number(c.amount||0).toLocaleString(), registered:fmtD(c.registered_date), satisfied:c.satisfied_date?fmtD(c.satisfied_date):null, currency:c.ccy })) : (ENTITY_DATA.charges[sel]||[]);
   const assets   = ENTITY_DATA.assets[sel]||[];
   const divs     = ENTITY_DATA.dividends[sel]||[];
   const nameChgs = ENTITY_DATA.nameChanges[sel]||[];
   const forgRegs = ENTITY_DATA.foreignRegs[sel]||[];
   const fileNotes= ENTITY_DATA.fileNotes[sel]||[];
-  const meetings = ENTITY_DATA.meetings[sel]||[];
+  const meetings = det ? det.meetings.map(m=>({ id:m.id, type:m.meeting_type, date:fmtD(m.meeting_date), location:"—", attendees:"—", agenda:m.notes, status:"Recorded" })) : (ENTITY_DATA.meetings[sel]||[]);
   const safeItems= ENTITY_DATA.safeItems[sel]||[];
-  const relations= ENTITY_DATA.relations[sel]||[];
+  const relations= det ? det.ubos.map(u=>({ id:u.id, name:u.name, role:u.role+(u.ownership_pct!=null?" ("+u.ownership_pct+"%)":""), dob:fmtD(u.dob), nationality:u.nationality, shared:false, linkedEntities:[] })) : (ENTITY_DATA.relations[sel]||[]);
 
   const nb = { padding:"5px 12px", fontSize:11, borderRadius:5, border:"0.5px solid var(--border-tertiary,#e5e5e5)", background:"transparent", color:"var(--text-secondary,#666)", cursor:"pointer" };
   const nba = { ...nb, background:CY, color:"#fff", border:`0.5px solid ${CY}`, fontWeight:500 };
@@ -866,7 +908,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="" }) {
       );
 
       case "egaming": {
-        const entity = ENTITIES.find(e=>e.id===sel);
+        const entity = ents.find(e=>e.id===sel);
         return (
           <div>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:14 }}>
@@ -1074,11 +1116,11 @@ export default function AffinityCoreEntityAdmin({ officeFilter="" }) {
                 onChange={e=>{
                   const v=e.target.value;
                   setSearch(v);
-                  const m=ENTITIES.find(en=>en.name===v||en.ref===v);
+                  const m=ents.find(en=>en.name===v||en.ref===v);
                   if(m){ setSel(m.id); setTab("overview"); }
                 }}
               />
-              <datalist id="ea-entity-list">{ENTITIES.flatMap(e=>[<option key={"n"+e.id} value={e.name}>{e.ref}</option>,<option key={"r"+e.id} value={e.ref}>{e.name}</option>])}</datalist>
+              <datalist id="ea-entity-list">{ents.flatMap(e=>[<option key={"n"+e.id} value={e.name}>{e.ref}</option>,<option key={"r"+e.id} value={e.ref}>{e.name}</option>])}</datalist>
             </div>
             {entity&&<button style={s.btn(false)} onClick={()=>{ setSel(null); setSearch(""); }}>Clear ✕</button>}
             <button style={s.btn(true)} onClick={()=>setModal("newEntity")}>＋ New entity</button>
