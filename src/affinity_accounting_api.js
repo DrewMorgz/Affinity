@@ -61,3 +61,11 @@ export async function getFixedAssets(entityId, start, end) {
   if (!isConfigured) return off();
   return supabase.rpc("note_fixed_assets", { p_entity: entityId, p_cur_start: start, p_cur_end: end });
 }
+export async function getTrialBalance(entityId, asAt) {
+  if (!isConfigured) return off();
+  return supabase.rpc("trial_balance", { p_entity: entityId, p_as_at: asAt });
+}
+export async function getRecentJournals(entityId) {
+  if (!isConfigured) return off();
+  return supabase.rpc("recent_journals", { p_entity: entityId });
+}

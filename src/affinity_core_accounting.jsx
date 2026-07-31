@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { isConfigured } from "./affinity_accounting_supabase";
 import { listEntities, getKpiDashboard, getCashFlow, getCreditStatus, getCollections,
-  apVendors, apAging, apPurchaseOrders, getFixedAssets, getIcLoans } from "./affinity_accounting_api";
+  apVendors, apAging, apPurchaseOrders, getFixedAssets, getIcLoans,
+  getBudgetVsActualForEntity, getTrialBalance, getRecentJournals } from "./affinity_accounting_api";
 
 /*
   Affinity Accounting — Core module
@@ -104,21 +105,27 @@ const PANELS = {
       </>
     );
   },
-  acc_gl() {
-    return (
-      <>
-        <Panel title="Trial balance"><Table head={["Account", "Debit", "Credit"]} rows={[
+  acc_gl(gl) {
+    const tb = (gl && gl.tb && gl.tb.length)
+      ? gl.tb.map((r) => [r.code + " · " + r.name, Number(r.debit) ? { n: f0(r.debit) } : "", Number(r.credit) ? { n: f0(r.credit) } : ""])
+      : [
           ["1000 · Cash at bank", { n: f0(18420) }, ""], ["1100 · Trade debtors", { n: f0(33406) }, ""],
           ["1500 · Fixed assets — cost", { n: f0(24000) }, ""], ["2100 · Trade creditors", "", { n: f0(5960) }],
           ["2200 · VAT", "", { n: f0(2507) }], ["3100 · Capital", "", { n: f0(10000) }],
           ["4000 · Turnover", "", { n: f0(29060) }], ["6000 · Administrative expenses", { n: f0(12110) }, ""],
-        ]} /></Panel>
-        <Panel title="Recent journals & approval queue"><Table head={["Journal", "Date", "Narrative", "By", "Status"]} rows={[
+        ];
+    const jrows = (gl && gl.journals && gl.journals.length)
+      ? gl.journals.map((r) => [r.ref, r.journal_date, r.narrative, r.created_by, { pill: [r.status === "posted" ? "Posted" : r.status, r.status === "posted" ? POS : AMBER] }])
+      : [
           ["JL-1042", "30 Jun", "Management fee recharge", "danny", { pill: ["Posted", POS] }],
           ["JL-1041", "28 Jun", "Monthly retainer", "danny", { pill: ["Posted", POS] }],
           ["JL-1055", "01 Jul", "Large drawdown", "garry", { pill: ["Awaiting approval", AMBER] }],
-        ]} /></Panel>
-        <Note>Multi-entity double-entry GL · reversing & recurring journals · accruals/prepayments · year-end close · maker-checker approval gate.</Note>
+        ];
+    return (
+      <>
+        <Panel title="Trial balance"><Table head={["Account", "Debit", "Credit"]} rows={tb} /></Panel>
+        <Panel title="Recent journals &amp; approval queue"><Table head={["Journal", "Date", "Narrative", "By", "Status"]} rows={jrows} /></Panel>
+        <Note>Multi-entity double-entry GL · reversing &amp; recurring journals · accruals/prepayments · year-end close · maker-checker approval gate.</Note>
       </>
     );
   },
@@ -295,20 +302,26 @@ const PANELS = {
       </>
     );
   },
-  acc_bud() {
-    return (
-      <>
-        <Panel title="Budget vs actual"><Table head={["Account", "Period", "Budget", "Actual", "Variance"]} rows={[
+  acc_bud(bud) {
+    const rows = (bud && bud.length)
+      ? bud.map((r) => {
+          const v = Number(r.variance);
+          return [r.account_name, r.period, { n: f0(r.budget) }, { n: f0(r.actual) }, { n: f0(r.variance), pos: v > 0 ? 1 : 0, neg: v < 0 ? 1 : 0 }];
+        })
+      : [
           ["Sales", "2026-01", { n: f0(5000) }, { n: f0(5000) }, { n: f0(0) }],
           ["Sales", "2026-02", { n: f0(5000) }, { n: f0(6000) }, { n: f0(1000), pos: 1 }],
           ["Admin", "2026-01", { n: f0(2200) }, { n: f0(2000) }, { n: f0(-200), neg: 1 }],
           ["Admin", "2026-02", { n: f0(2200) }, { n: f0(2500) }, { n: f0(300), pos: 1 }],
-        ]} /></Panel>
+        ];
+    return (
+      <>
+        <Panel title="Budget vs actual"><Table head={["Account", "Period", "Budget", "Actual", "Variance"]} rows={rows} /></Panel>
         <div style={cards}>
           <Mini title="Scenarios" rows={[["Base — sales FY", f0(10000)], ["Best case — sales FY", f0(12000)]]} />
           <Mini title="Rolling forecast" rows={[["Sales latest estimate", f0(10000)], ["Admin latest estimate", f0(4200)]]} />
         </div>
-        <Note>Annual budgets · entity & departmental · budget-vs-actual · scenarios · rolling forecast · submit→approve workflow.</Note>
+        <Note>Annual budgets · entity &amp; departmental · budget-vs-actual · scenarios · rolling forecast · submit→approve workflow.</Note>
       </>
     );
   },
@@ -457,6 +470,8 @@ export default function Accounting({ module }) {
   const [liveAp, setLiveAp] = useState(null);
   const [liveFa, setLiveFa] = useState(null);
   const [liveIc, setLiveIc] = useState(null);
+  const [liveGl, setLiveGl] = useState(null);
+  const [liveBud, setLiveBud] = useState(null);
 
   // reset to the first tab whenever the nav group changes
   useEffect(() => { setTab(GROUPS[group][0][0]); }, [group]);
@@ -527,10 +542,29 @@ export default function Accounting({ module }) {
     return () => { ok = false; };
   }, [tab, entityId]);
 
+  // fetch live General Ledger (trial balance + recent journals) when on that tab
+  useEffect(() => {
+    if (!isConfigured || tab !== "acc_gl" || !entityId) { setLiveGl(null); return; }
+    let ok = true;
+    Promise.all([getTrialBalance(entityId, end), getRecentJournals(entityId)]).then(([tb, jr]) => {
+      if (ok) setLiveGl({ tb: tb.data || null, journals: jr.data || null });
+    }).catch(() => { if (ok) setLiveGl(null); });
+    return () => { ok = false; };
+  }, [tab, entityId, end]);
+
+  // fetch live Budget vs Actual when on that tab
+  useEffect(() => {
+    if (!isConfigured || tab !== "acc_bud" || !entityId) { setLiveBud(null); return; }
+    let ok = true;
+    getBudgetVsActualForEntity(entityId).then(({ data }) => { if (ok) setLiveBud(data && data.length ? data : null); }).catch(() => { if (ok) setLiveBud(null); });
+    return () => { ok = false; };
+  }, [tab, entityId]);
+
   const live = (tab === "acc_ov" && !!liveKpis) || (tab === "acc_cf" && !!liveCf)
     || (tab === "acc_ar" && (!!liveArCredit || !!liveArCol))
     || (tab === "acc_ap" && !!liveAp && (liveAp.vendors || liveAp.aging || liveAp.pos))
-    || (tab === "acc_fa" && !!liveFa) || (tab === "acc_ic" && !!liveIc);
+    || (tab === "acc_fa" && !!liveFa) || (tab === "acc_ic" && !!liveIc)
+    || (tab === "acc_gl" && !!liveGl && (liveGl.tb || liveGl.journals)) || (tab === "acc_bud" && !!liveBud);
   const render = PANELS[tab] || PANELS.acc_ov;
 
   return (
@@ -555,7 +589,7 @@ export default function Accounting({ module }) {
           ))}
         </div>
       )}
-      {tab === "acc_ov" ? render(liveKpis) : tab === "acc_cf" ? render(liveCf) : tab === "acc_ar" ? render({ credit: liveArCredit, collections: liveArCol }) : tab === "acc_ap" ? render(liveAp) : tab === "acc_fa" ? render(liveFa) : tab === "acc_ic" ? render(liveIc) : render()}
+      {tab === "acc_ov" ? render(liveKpis) : tab === "acc_cf" ? render(liveCf) : tab === "acc_ar" ? render({ credit: liveArCredit, collections: liveArCol }) : tab === "acc_ap" ? render(liveAp) : tab === "acc_fa" ? render(liveFa) : tab === "acc_ic" ? render(liveIc) : tab === "acc_gl" ? render(liveGl) : tab === "acc_bud" ? render(liveBud) : render()}
     </div>
   );
 }
