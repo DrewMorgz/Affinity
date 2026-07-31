@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { bkEntities, bkTxnsAll, bkPnlAll, bkBanksAll, isConfigured } from "./affinity_ops_api";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 const CY = "#00C4CC";
 const Badge = ({ label, colors }) => (<span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:600, background:colors?.bg||"#eee", color:colors?.color||"#333", whiteSpace:"nowrap" }}>{label}</span>);
@@ -61,15 +62,26 @@ const VIEWS = ["ledger","pnl","banks","journals","reports"];
 const VLABELS = ["Entity ledger","P&L summary","Bank accounts","Journals","Reports"];
 
 export default function AffinityBookkeeping({ onNav }) {
+  const [bkE,setBkE]=useState(null),[bkT,setBkT]=useState(null),[bkP,setBkP]=useState(null),[bkB,setBkB]=useState(null);
+  useEffect(()=>{ if(!isConfigured) return; let ok=true;
+    bkEntities().then(({data})=>{if(ok&&data&&data.length)setBkE(data);}).catch(()=>{});
+    bkTxnsAll().then(({data})=>{if(ok&&data)setBkT(data);}).catch(()=>{});
+    bkPnlAll().then(({data})=>{if(ok&&data)setBkP(data);}).catch(()=>{});
+    bkBanksAll().then(({data})=>{if(ok&&data)setBkB(data);}).catch(()=>{});
+    return ()=>{ok=false;}; },[]);
+  const ents = bkE || ENTITIES;
+  const txnsMap = bkT ? bkT.reduce((m,t)=>{(m[t.entity_id]=m[t.entity_id]||[]).push(t);return m;},{}) : TXNS;
+  const pnlMap = bkP ? bkP.reduce((m,p)=>{m[p.entity_id]=p;return m;},{}) : PNL;
+  const banksMap = bkB ? bkB.reduce((m,b)=>{(m[b.entity_id]=m[b.entity_id]||[]).push(b);return m;},{}) : BANKS;
   const [view, setView]     = useState("ledger");
   const [entityId, setEId]  = useState(1);
   const [search, setSearch] = useState("");
   const [modal, setModal]   = useState(null);
 
-  const entity = ENTITIES.find(e=>e.id===entityId);
-  const txns   = TXNS[entityId]||[];
-  const pnl    = PNL[entityId];
-  const banks  = BANKS[entityId]||[];
+  const entity = ents.find(e=>e.id===entityId);
+  const txns   = txnsMap[entityId]||[];
+  const pnl    = pnlMap[entityId];
+  const banks  = banksMap[entityId]||[];
   const sym    = entity?.sym||"£";
 
   const filtered = useMemo(()=>txns.filter(t=>
@@ -87,7 +99,7 @@ export default function AffinityBookkeeping({ onNav }) {
   const Toolbar = () => (
     <div style={{ display:"flex", gap:8, padding:"10px 20px", borderBottom:"0.5px solid #e5e5e5", flexWrap:"wrap", alignItems:"center" }}>
       <select style={{ ...sel, minWidth:220, fontWeight:500 }} value={entityId} onChange={e=>setEId(Number(e.target.value))}>
-        {ENTITIES.map(e=><option key={e.id} value={e.id}>{e.name}</option>)}
+        {ents.map(e=><option key={e.id} value={e.id}>{e.name}</option>)}
       </select>
       <div style={{ display:"flex", alignItems:"center", gap:6, background:"var(--bg-primary,#fff)", border:"0.5px solid #ccc", borderRadius:5, padding:"0 10px", flex:1 }}>
         <span style={{ color:"#aaa" }}>🔍</span>
@@ -166,7 +178,7 @@ export default function AffinityBookkeeping({ onNav }) {
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
                 <div>
                   <div style={{ fontSize:10, color:"#aaa", marginBottom:8, textTransform:"uppercase", letterSpacing:"0.4px" }}>Income</div>
-                  {(TXNS[entityId]||[]).filter(t=>t.type==="Income").map(t=>(
+                  {(txnsMap[entityId]||[]).filter(t=>t.type==="Income").map(t=>(
                     <div key={t.id} style={{ display:"flex", justifyContent:"space-between", padding:"5px 0", borderBottom:"0.5px solid #e5e5e5", fontSize:12 }}>
                       <span style={{ color:"#666" }}>{t.desc}</span>
                       <span style={{ fontWeight:500, color:"#27500A" }}>{fmt(t.cr,sym)}</span>
@@ -178,7 +190,7 @@ export default function AffinityBookkeeping({ onNav }) {
                 </div>
                 <div>
                   <div style={{ fontSize:10, color:"#aaa", marginBottom:8, textTransform:"uppercase", letterSpacing:"0.4px" }}>Expenses</div>
-                  {(TXNS[entityId]||[]).filter(t=>t.type==="Expense").map(t=>(
+                  {(txnsMap[entityId]||[]).filter(t=>t.type==="Expense").map(t=>(
                     <div key={t.id} style={{ display:"flex", justifyContent:"space-between", padding:"5px 0", borderBottom:"0.5px solid #e5e5e5", fontSize:12 }}>
                       <span style={{ color:"#666" }}>{t.desc}</span>
                       <span style={{ fontWeight:500, color:"#A32D2D" }}>{fmt(t.dr,sym)}</span>
@@ -205,7 +217,7 @@ export default function AffinityBookkeeping({ onNav }) {
               <th style={{ ...th, width:"18%", textAlign:"right" }}>Net position</th>
             </tr></thead>
             <tbody>
-              {ENTITIES.map(e=>{ const p=PNL[e.id]; if(!p) return null; return (
+              {ents.map(e=>{ const p=pnlMap[e.id]; if(!p) return null; return (
                 <tr key={e.id} onClick={()=>setEId(e.id)} style={{ borderBottom:"0.5px solid #e5e5e5", cursor:"pointer", background:entityId===e.id?"var(--bg-secondary,#f9f9f9)":undefined }}>
                   <td style={{ ...td, fontWeight:500 }}>{e.name}</td>
                   <td style={{ ...td, color:"#666" }}>{p.currency}</td>
@@ -255,7 +267,7 @@ export default function AffinityBookkeeping({ onNav }) {
               <th style={{ ...th, width:"12%" }}>As at</th>
             </tr></thead>
             <tbody>
-              {ENTITIES.flatMap(e=>(BANKS[e.id]||[]).map((b,j)=>({ ...b, eName:e.name, eId:e.id, key:`${e.id}-${j}` }))).map(b=>(
+              {ents.flatMap(e=>(banksMap[e.id]||[]).map((b,j)=>({ ...b, eName:e.name, eId:e.id, key:`${e.id}-${j}` }))).map(b=>(
                 <tr key={b.key} onClick={()=>setEId(b.eId)} style={{ borderBottom:"0.5px solid #e5e5e5", cursor:"pointer", background:entityId===b.eId?"var(--bg-secondary,#f9f9f9)":undefined }}>
                   <td style={{ ...td, fontWeight:500 }}>{b.eName}</td>
                   <td style={{ ...td, color:"#666", fontSize:10 }}>{b.bank}</td>
@@ -315,7 +327,7 @@ export default function AffinityBookkeeping({ onNav }) {
                 <div style={{ fontSize:12, fontWeight:600, marginBottom:8 }}>{r}</div>
                 <div style={{ display:"flex", gap:6 }}>
                   <select style={{ ...sel, flex:1, height:28, fontSize:11 }}><option>YTD 2025</option><option>Q2 2025</option><option>FY 2024</option></select>
-                  <select style={{ ...sel, flex:1, height:28, fontSize:11 }}><option>All entities</option>{ENTITIES.map(e=><option key={e.id}>{e.name}</option>)}</select>
+                  <select style={{ ...sel, flex:1, height:28, fontSize:11 }}><option>All entities</option>{ents.map(e=><option key={e.id}>{e.name}</option>)}</select>
                   <button style={nba}>Generate ↗</button>
                 </div>
               </div>
@@ -344,7 +356,7 @@ export default function AffinityBookkeeping({ onNav }) {
             <div style={{ fontSize:14, fontWeight:600, marginBottom:16 }}>{modal==="journal"?"Post journal entry":"Add bank account"}</div>
             {modal==="journal"&&(
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-                {[["Entity","select",ENTITIES.map(e=>e.name)],["Journal reference","text","JNL-2025-"],["Date","text","DD/MM/YYYY"],["Description","text","Narrative"],["Debit account","text","e.g. Debtors"],["Debit amount","number","0.00"],["Credit account","text","e.g. Income"],["Credit amount","number","0.00"],["Currency","select",["GBP","USD","EUR"]]].map(([l,t,opts])=>(
+                {[["Entity","select",ents.map(e=>e.name)],["Journal reference","text","JNL-2025-"],["Date","text","DD/MM/YYYY"],["Description","text","Narrative"],["Debit account","text","e.g. Debtors"],["Debit amount","number","0.00"],["Credit account","text","e.g. Income"],["Credit amount","number","0.00"],["Currency","select",["GBP","USD","EUR"]]].map(([l,t,opts])=>(
                   <div key={l} style={{ display:"flex", flexDirection:"column", gap:3 }}>
                     <label style={{ fontSize:11, color:"#666" }}>{l}</label>
                     {t==="select"?<select style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)" }}>{(Array.isArray(opts)?opts:[]).map(o=><option key={o}>{o}</option>)}</select>
