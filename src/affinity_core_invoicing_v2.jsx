@@ -1,4 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { isConfigured } from "./affinity_accounting_supabase";
+import { feeInvoices } from "./affinity_invoicing_api";
 const CY = "#00C4CC";
 const Badge = ({ label, colors }) => (<span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:600, background:colors?.bg||"#eee", color:colors?.color||"#333", whiteSpace:"nowrap" }}>{label}</span>);
 const fmt = (n,s="£") => s+Math.abs(Number(n||0)).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -41,25 +43,28 @@ const VIEWS = ["raise","invoices","client","bookkeeping","aged","retainers","cre
 const VLABELS = ["Raise invoice","Invoice ledger","By client","Auto-bookkeeping","Aged debt","Retainers","Credit control"];
 
 export default function AffinityInvoicing({ onNav }) {
+  const [liveInv,setLiveInv] = useState(null);
+  useEffect(()=>{ if(!isConfigured) return; let ok=true; feeInvoices().then(({data})=>{ if(ok && data && data.length) setLiveInv(data); }).catch(()=>{}); return ()=>{ok=false;}; },[]);
+  const invoices = liveInv || INVOICES;
   const [view, setView] = useState("invoices");
   const [search, setSearch] = useState("");
   const [statF, setStatF] = useState("");
   const [selInv, setSelInv] = useState(null);
   const [modal, setModal] = useState(null);
 
-  const filtered = useMemo(()=>INVOICES.filter(i=>
+  const filtered = useMemo(()=>invoices.filter(i=>
     (!search||i.ref.toLowerCase().includes(search.toLowerCase())||i.entity.toLowerCase().includes(search.toLowerCase())||i.client.toLowerCase().includes(search.toLowerCase()))&&
     (!statF||i.status===statF)
   ),[search,statF]);
 
-  const outstanding = INVOICES.filter(i=>["Sent","Overdue","Partial"].includes(i.status)).reduce((s,i)=>s+i.balance,0);
-  const overdue     = INVOICES.filter(i=>i.status==="Overdue").reduce((s,i)=>s+i.balance,0);
-  const collected   = INVOICES.filter(i=>i.status==="Paid").reduce((s,i)=>s+i.amount,0);
+  const outstanding = invoices.filter(i=>["Sent","Overdue","Partial"].includes(i.status)).reduce((s,i)=>s+i.balance,0);
+  const overdue     = invoices.filter(i=>i.status==="Overdue").reduce((s,i)=>s+i.balance,0);
+  const collected   = invoices.filter(i=>i.status==="Paid").reduce((s,i)=>s+i.amount,0);
 
   // Group by client
   const byClient = useMemo(()=>{
     const map = {};
-    INVOICES.forEach(i=>{
+    invoices.forEach(i=>{
       if(!map[i.client]) map[i.client]={ client:i.client, invoices:[], total:0, outstanding:0 };
       map[i.client].invoices.push(i);
       map[i.client].total += i.amount;
@@ -68,7 +73,7 @@ export default function AffinityInvoicing({ onNav }) {
     return Object.values(map).sort((a,b)=>b.outstanding-a.outstanding);
   },[]);
 
-  const selI = selInv ? INVOICES.find(i=>i.id===selInv) : null;
+  const selI = selInv ? invoices.find(i=>i.id===selInv) : null;
   const bkEntries = selI ? BOOKKEEPING_ENTRIES.filter(b=>b.invRef===selI.ref) : [];
 
   const nb  = { padding:"5px 12px", fontSize:11, borderRadius:5, border:"0.5px solid #e5e5e5", background:"transparent", color:"#666", cursor:"pointer" };
@@ -185,9 +190,9 @@ export default function AffinityInvoicing({ onNav }) {
           {[
             { l:"Outstanding",   v:fmt(outstanding), c:CY },
             { l:"Overdue",       v:fmt(overdue),      c:"#EF4444" },
-            { l:"Drafts",        v:INVOICES.filter(i=>i.status==="Draft").length, c:"#F59E0B" },
+            { l:"Drafts",        v:invoices.filter(i=>i.status==="Draft").length, c:"#F59E0B" },
             { l:"Collected YTD", v:fmt(collected),    c:"#4CAF7D" },
-            { l:"Invoiced YTD",  v:fmt(INVOICES.reduce((s,i)=>s+i.amount,0)), c:null },
+            { l:"Invoiced YTD",  v:fmt(invoices.reduce((s,i)=>s+i.amount,0)), c:null },
           ].map(k=>(
             <div key={k.l} style={sc}><div style={{ fontSize:10, color:"#666", marginBottom:3 }}>{k.l}</div><div style={{ fontSize:18, fontWeight:500, color:k.c||"var(--text-primary,#111)" }}>{k.v}</div></div>
           ))}
@@ -432,7 +437,7 @@ export default function AffinityInvoicing({ onNav }) {
       {view==="credit"&&(
         <div style={{ padding:"16px 20px" }}>
           <div style={{ fontSize:13, fontWeight:500, marginBottom:12 }}>Credit control — overdue invoices</div>
-          {INVOICES.filter(i=>["Overdue","Partial"].includes(i.status)).map(i=>{
+          {invoices.filter(i=>["Overdue","Partial"].includes(i.status)).map(i=>{
             const parts = i.due.split("/");
             const days = Math.round((new Date()-new Date(`${parts[2]}-${parts[1]}-${parts[0]}`))/(1000*60*60*24));
             return (
