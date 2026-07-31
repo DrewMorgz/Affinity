@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { isConfigured } from "./affinity_accounting_supabase";
-import { eaEntitiesList, eaProfile, eaOfficers, eaShareholders, eaCharges, eaUbos, eaAddresses, eaMeetings } from "./affinity_eadmin_api";
+import { eaEntitiesList, eaProfile, eaOfficers, eaShareholders, eaCharges, eaUbos, eaAddresses, eaMeetings,
+  eaBanks, eaAssets, eaDividends, eaSafeItems, eaFileNotes } from "./affinity_eadmin_api";
 import EntityChart from "./affinity_core_entity_chart";
 const CY = "#00C4CC";
 const NAVY = "#001242";
@@ -356,10 +357,12 @@ export default function AffinityCoreEntityAdmin({ officeFilter="" }) {
   useEffect(() => {
     if (!isConfigured || !liveEnts || sel == null) { setDet(null); return; }
     let ok = true;
-    Promise.all([eaProfile(sel), eaOfficers(sel), eaShareholders(sel), eaCharges(sel), eaUbos(sel), eaAddresses(sel), eaMeetings(sel)])
-      .then(([p, o, sh, c, u, a, m]) => { if (ok) setDet({
+    Promise.all([eaProfile(sel), eaOfficers(sel), eaShareholders(sel), eaCharges(sel), eaUbos(sel), eaAddresses(sel), eaMeetings(sel),
+                 eaBanks(sel), eaAssets(sel), eaDividends(sel), eaSafeItems(sel), eaFileNotes(sel)])
+      .then(([p, o, sh, c, u, a, m, bk, as, dv, sf, fn]) => { if (ok) setDet({
         profile: (p.data && p.data[0]) || null, officers: o.data || [], shareholders: sh.data || [],
-        charges: c.data || [], ubos: u.data || [], addresses: a.data || [], meetings: m.data || [] }); })
+        charges: c.data || [], ubos: u.data || [], addresses: a.data || [], meetings: m.data || [],
+        banks: bk.data || [], assets: as.data || [], dividends: dv.data || [], safe: sf.data || [], fileNotes: fn.data || [] }); })
       .catch(() => { if (ok) setDet(null); });
     return () => { ok = false; };
   }, [sel, liveEnts]);
@@ -380,15 +383,15 @@ export default function AffinityCoreEntityAdmin({ officeFilter="" }) {
   const dirs     = det ? det.officers.map(o=>({ id:o.id, name:o.name, role:o.role, appointed:fmtD(o.appointed), resigned:fmtD(o.resigned), nationality:o.nationality, dob:fmtD(o.dob), address:o.address })) : (ENTITY_DATA.directors[sel]||[]);
   const shares   = det ? det.shareholders.map(x=>({ id:x.id, name:x.name, type:"—", shares:x.shares, class:x.share_class, pct:(x.pct!=null?x.pct+"%":"—"), nominal:"—", paid:"—", regDate:fmtD(x.held_from) })) : (ENTITY_DATA.shareholders[sel]||[]);
   const addrs    = det ? det.addresses.map(a=>({ type:a.address_type, address:a.address, from:fmtD(a.from_date), to:a.to_date?fmtD(a.to_date):null })) : (ENTITY_DATA.addresses[sel]||[]);
-  const banks    = ENTITY_DATA.bankAccounts[sel]||[];
+  const banks    = det ? det.banks.map(b=>({ id:b.id, bank:b.bank, account:b.account_name, number:b.number, currency:b.ccy, signatories:b.signatories, resolution:fmtD(b.resolution_date), closed:b.closed_date?fmtD(b.closed_date):null })) : (ENTITY_DATA.bankAccounts[sel]||[]);
   const charges  = det ? det.charges.map(c=>({ id:c.id, chargee:c.chargee, type:c.charge_type, amount:(c.ccy||"")+" "+Number(c.amount||0).toLocaleString(), registered:fmtD(c.registered_date), satisfied:c.satisfied_date?fmtD(c.satisfied_date):null, currency:c.ccy })) : (ENTITY_DATA.charges[sel]||[]);
-  const assets   = ENTITY_DATA.assets[sel]||[];
-  const divs     = ENTITY_DATA.dividends[sel]||[];
+  const assets   = det ? det.assets.map(a=>({ id:a.id, desc:a.description, acquired:fmtD(a.acquired_date), lastValuation:fmtD(a.last_valuation_date), value:(a.ccy||"")+" "+Number(a.value||0).toLocaleString(), currency:a.ccy, notes:a.notes })) : (ENTITY_DATA.assets[sel]||[]);
+  const divs     = det ? det.dividends.map(d=>({ id:d.id, class:d.share_class, name:d.name, requested:fmtD(d.requested_date), paid:fmtD(d.paid_date), perShare:d.per_share, notes:d.notes })) : (ENTITY_DATA.dividends[sel]||[]);
   const nameChgs = ENTITY_DATA.nameChanges[sel]||[];
   const forgRegs = ENTITY_DATA.foreignRegs[sel]||[];
-  const fileNotes= ENTITY_DATA.fileNotes[sel]||[];
+  const fileNotes= det ? det.fileNotes.map(f=>({ id:f.id, date:fmtD(f.note_date), author:f.author, subject:f.subject, note:f.note })) : (ENTITY_DATA.fileNotes[sel]||[]);
   const meetings = det ? det.meetings.map(m=>({ id:m.id, type:m.meeting_type, date:fmtD(m.meeting_date), location:"—", attendees:"—", agenda:m.notes, status:"Recorded" })) : (ENTITY_DATA.meetings[sel]||[]);
-  const safeItems= ENTITY_DATA.safeItems[sel]||[];
+  const safeItems= det ? det.safe.map(x=>({ id:x.id, item:x.item, deposited:fmtD(x.deposited_date), retrieved:x.retrieved_date?fmtD(x.retrieved_date):null, auth:x.authorised_by })) : (ENTITY_DATA.safeItems[sel]||[]);
   const relations= det ? det.ubos.map(u=>({ id:u.id, name:u.name, role:u.role+(u.ownership_pct!=null?" ("+u.ownership_pct+"%)":""), dob:fmtD(u.dob), nationality:u.nationality, shared:false, linkedEntities:[] })) : (ENTITY_DATA.relations[sel]||[]);
 
   const nb = { padding:"5px 12px", fontSize:11, borderRadius:5, border:"0.5px solid var(--border-tertiary,#e5e5e5)", background:"transparent", color:"var(--text-secondary,#666)", cursor:"pointer" };

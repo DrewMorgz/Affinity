@@ -36,3 +36,23 @@ export async function eaMeetings(entityId) {
   if (!isConfigured) return off();
   return supabase.rpc("ea_meetings", { p_entity: entityId });
 }
+export async function eaBanks(entityId) {
+  if (!isConfigured) return off();
+  return supabase.rpc("ea_banks", { p_entity: entityId });
+}
+export async function eaAssets(entityId) {
+  if (!isConfigured) return off();
+  return supabase.rpc("ea_assets", { p_entity: entityId });
+}
+export async function eaDividends(entityId) {
+  if (!isConfigured) return off();
+  return supabase.rpc("ea_dividends", { p_entity: entityId });
+}
+export async function eaSafeItems(entityId) {
+  if (!isConfigured) return off();
+  return supabase.rpc("ea_safe_items", { p_entity: entityId });
+}
+export async function eaFileNotes(entityId) {
+  if (!isConfigured) return off();
+  return supabase.rpc("ea_file_notes", { p_entity: entityId });
+}
