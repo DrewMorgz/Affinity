@@ -1,8 +1,9 @@
 -- =====================================================================
 -- AFFINITY — SYSTEM ADMIN USERS + INTRANET/PORTAL/JURISDICTION DATASETS
+-- (uses sys_user to avoid any collision with an existing app_user table)
 -- Run once. Safe to re-run.
 -- =====================================================================
-CREATE TABLE IF NOT EXISTS app_user (
+CREATE TABLE IF NOT EXISTS sys_user (
   id int PRIMARY KEY, name text, email text, role text, office text, flag text,
   status text, last_login text, mfa boolean, modules text[]
 );
@@ -10,27 +11,27 @@ DROP FUNCTION IF EXISTS app_users();
 CREATE FUNCTION app_users()
 RETURNS TABLE(id int, name text, email text, role text, office text, flag text, status text, "lastLogin" text, mfa boolean, modules text[])
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
-  SELECT id,name,email,role,office,flag,status,last_login,mfa,modules FROM app_user ORDER BY id; $$;
+  SELECT su.id,su.name,su.email,su.role,su.office,su.flag,su.status,su.last_login,su.mfa,su.modules FROM sys_user su ORDER BY su.id; $$;
 GRANT EXECUTE ON FUNCTION app_users() TO anon, authenticated;
 
 DO $$ BEGIN
-IF NOT EXISTS(SELECT 1 FROM app_user) THEN
-  INSERT INTO app_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (1,'Andrew Morgan','andrew.morgan@affinityco.com','CEO — Super Admin','USA','🇺🇸','Active','Today 09:14',true,ARRAY['All']::text[]);
-  INSERT INTO app_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (2,'Michael Barlow','michael.barlow@affinityco.com','Compliance Manager (IOM)','Isle of Man','🇮🇲','Active','Today 08:52',true,ARRAY['Compliance','Entities','Reporting']::text[]);
-  INSERT INTO app_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (3,'Joanne Fenech','joanne.fenech@affinityco.com','Managing Director (IOM)','Malta','🇲🇹','Active','Yesterday',true,ARRAY['All — Malta']::text[]);
-  INSERT INTO app_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (4,'Krista Fenech','krista.fenech@affinityco.com','Client Administrator','Malta','🇲🇹','Active','Today 07:38',false,ARRAY['Entities','Documents','Timesheets']::text[]);
-  INSERT INTO app_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (5,'Alexandra Gardner','alexandra.gardner@affinityco.com','COO — Super Admin','USA','🇺🇸','Active','Today 09:01',true,ARRAY['All']::text[]);
-  INSERT INTO app_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (6,'Debbie Gooding','debbie.gooding@affinityco.com','Manager','Isle of Man','🇮🇲','Active','Today 08:45',true,ARRAY['Entities','Documents','Timesheets','Onboarding']::text[]);
-  INSERT INTO app_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (7,'Natalie Johnson','natalie.johnson@affinityco.com','Assistant Compliance Administrator','USA','🇺🇸','Active','Today 08:21',true,ARRAY['Compliance','Entities','Reporting']::text[]);
-  INSERT INTO app_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (8,'Neil Kelly','neil.kelly@affinityco.com','CFO','USA','🇺🇸','Active','2d ago',false,ARRAY['Reporting','Invoicing','Timesheets','Entities']::text[]);
-  INSERT INTO app_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (9,'Elena Pace','elena.pace@affinityco.com','Manager','Isle of Man','🇮🇲','Active','Yesterday',true,ARRAY['Entities','Documents','Timesheets','Onboarding']::text[]);
-  INSERT INTO app_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (10,'Shanya Pickett','shanya.pickett@affinityco.com','Assistant Manager','Isle of Man','🇮🇲','Active','Today 10:02',true,ARRAY['Entities','Documents','Timesheets']::text[]);
-  INSERT INTO app_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (11,'Mattei Pisani','mattei.pisani@affinityco.com','Director (Malta)','Isle of Man','🇮🇲','Active','3d ago',true,ARRAY['Entities','Documents','Timesheets']::text[]);
-  INSERT INTO app_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (12,'Colin Quayle','colin.quayle@affinityco.com','Director and Company Secretary (IOM)','Isle of Man','🇮🇲','Active','Today 08:30',false,ARRAY['Entities','Documents','Timesheets']::text[]);
-  INSERT INTO app_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (13,'Kate Shaw','kate.shaw@affinityco.com','Manager','Isle of Man','🇮🇲','Active','4d ago',true,ARRAY['Entities','Documents','Timesheets','Onboarding']::text[]);
-  INSERT INTO app_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (14,'Roxy Sheeley','roxy.sheeley@affinityco.com','Managing Director (IOM)','Isle of Man','🇮🇲','Active','Today 09:25',true,ARRAY['All — Isle of Man']::text[]);
-  INSERT INTO app_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (15,'Gilbert Spiteri Spadaro','gilbert.spiterispadaro@affinityco.com','Compliance Officer (Malta)','Malta','🇲🇹','Active','Today 08:55',true,ARRAY['Compliance','Entities','Reporting']::text[]);
-  INSERT INTO app_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (16,'Gary Harrison','gary.harrison@affinityco.com','COO','Isle of Man','🇮🇲','Active','Today 09:30',true,ARRAY['All — Isle of Man']::text[]);
+IF NOT EXISTS(SELECT 1 FROM sys_user) THEN
+  INSERT INTO sys_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (1,'Andrew Morgan','andrew.morgan@affinityco.com','CEO — Super Admin','USA','🇺🇸','Active','Today 09:14',true,ARRAY['All']::text[]);
+  INSERT INTO sys_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (2,'Michael Barlow','michael.barlow@affinityco.com','Compliance Manager (IOM)','Isle of Man','🇮🇲','Active','Today 08:52',true,ARRAY['Compliance','Entities','Reporting']::text[]);
+  INSERT INTO sys_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (3,'Joanne Fenech','joanne.fenech@affinityco.com','Managing Director (IOM)','Malta','🇲🇹','Active','Yesterday',true,ARRAY['All — Malta']::text[]);
+  INSERT INTO sys_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (4,'Krista Fenech','krista.fenech@affinityco.com','Client Administrator','Malta','🇲🇹','Active','Today 07:38',false,ARRAY['Entities','Documents','Timesheets']::text[]);
+  INSERT INTO sys_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (5,'Alexandra Gardner','alexandra.gardner@affinityco.com','COO — Super Admin','USA','🇺🇸','Active','Today 09:01',true,ARRAY['All']::text[]);
+  INSERT INTO sys_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (6,'Debbie Gooding','debbie.gooding@affinityco.com','Manager','Isle of Man','🇮🇲','Active','Today 08:45',true,ARRAY['Entities','Documents','Timesheets','Onboarding']::text[]);
+  INSERT INTO sys_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (7,'Natalie Johnson','natalie.johnson@affinityco.com','Assistant Compliance Administrator','USA','🇺🇸','Active','Today 08:21',true,ARRAY['Compliance','Entities','Reporting']::text[]);
+  INSERT INTO sys_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (8,'Neil Kelly','neil.kelly@affinityco.com','CFO','USA','🇺🇸','Active','2d ago',false,ARRAY['Reporting','Invoicing','Timesheets','Entities']::text[]);
+  INSERT INTO sys_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (9,'Elena Pace','elena.pace@affinityco.com','Manager','Isle of Man','🇮🇲','Active','Yesterday',true,ARRAY['Entities','Documents','Timesheets','Onboarding']::text[]);
+  INSERT INTO sys_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (10,'Shanya Pickett','shanya.pickett@affinityco.com','Assistant Manager','Isle of Man','🇮🇲','Active','Today 10:02',true,ARRAY['Entities','Documents','Timesheets']::text[]);
+  INSERT INTO sys_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (11,'Mattei Pisani','mattei.pisani@affinityco.com','Director (Malta)','Isle of Man','🇮🇲','Active','3d ago',true,ARRAY['Entities','Documents','Timesheets']::text[]);
+  INSERT INTO sys_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (12,'Colin Quayle','colin.quayle@affinityco.com','Director and Company Secretary (IOM)','Isle of Man','🇮🇲','Active','Today 08:30',false,ARRAY['Entities','Documents','Timesheets']::text[]);
+  INSERT INTO sys_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (13,'Kate Shaw','kate.shaw@affinityco.com','Manager','Isle of Man','🇮🇲','Active','4d ago',true,ARRAY['Entities','Documents','Timesheets','Onboarding']::text[]);
+  INSERT INTO sys_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (14,'Roxy Sheeley','roxy.sheeley@affinityco.com','Managing Director (IOM)','Isle of Man','🇮🇲','Active','Today 09:25',true,ARRAY['All — Isle of Man']::text[]);
+  INSERT INTO sys_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (15,'Gilbert Spiteri Spadaro','gilbert.spiterispadaro@affinityco.com','Compliance Officer (Malta)','Malta','🇲🇹','Active','Today 08:55',true,ARRAY['Compliance','Entities','Reporting']::text[]);
+  INSERT INTO sys_user(id,name,email,role,office,flag,status,last_login,mfa,modules) VALUES (16,'Gary Harrison','gary.harrison@affinityco.com','COO','Isle of Man','🇮🇲','Active','Today 09:30',true,ARRAY['All — Isle of Man']::text[]);
 END IF; END $$;
 
 CREATE TABLE IF NOT EXISTS ui_dataset ( dkey text PRIMARY KEY, data jsonb NOT NULL );

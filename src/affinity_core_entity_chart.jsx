@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getDatasets, isConfigured } from "./affinity_ops_api";
 const CY = "#00C4CC";
 const NAVY = "#001242";
 
@@ -106,10 +107,13 @@ function Edge({ from, to }) {
 }
 
 export default function AffinityEntityChart() {
+  const [liveS,setLiveS]=useState(null);
+  useEffect(()=>{ if(!isConfigured) return; let ok=true; getDatasets("chart.").then(({data})=>{ if(ok&&data&&data.length){ const r=data.find(x=>x.dkey==="chart.structures"); if(r&&r.data&&r.data.length)setLiveS(r.data);} }).catch(()=>{}); return ()=>{ok=false;}; },[]);
+  const structures = liveS || STRUCTURES;
   const [selGroup, setSelGroup] = useState(0);
   const [selNode,  setSelNode]  = useState(null);
 
-  const group = STRUCTURES[selGroup];
+  const group = structures[selGroup];
   const nodeMap = Object.fromEntries(group.nodes.map(n => [n.id, n]));
   const selNodeData = selNode ? nodeMap[selNode] : null;
 
@@ -141,7 +145,7 @@ export default function AffinityEntityChart() {
       {/* Group selector */}
       <div style={{ background:"#fff", borderBottom:"0.5px solid #e5e5e5", padding:"10px 24px", display:"flex", gap:8, alignItems:"center", overflowX:"auto" }}>
         <span style={{ fontSize:11, color:"#888", marginRight:4, flexShrink:0 }}>Group:</span>
-        {STRUCTURES.map((g, i) => (
+        {structures.map((g, i) => (
           <button key={g.id} onClick={() => { setSelGroup(i); setSelNode(null); }}
             style={{ padding:"5px 14px", borderRadius:20, border:`0.5px solid ${selGroup===i?"#ccc":"#e5e5e5"}`, background:selGroup===i?"#fff":"transparent", fontSize:12, fontWeight:selGroup===i?600:400, cursor:"pointer", color:selGroup===i?"#111":"#666", whiteSpace:"nowrap" }}>
             {g.name}
