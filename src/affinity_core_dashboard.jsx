@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { isConfigured } from "./affinity_accounting_supabase";
 import { tasksList } from "./affinity_tasks_api";
 import { onboardingCases } from "./affinity_onboarding_api";
+import { feeInvoices } from "./affinity_invoicing_api";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 const CY = "#00C4CC";
@@ -208,6 +209,7 @@ export default function Dashboard({userId, onNav}) {
   const [taskFilter,setTaskFilter]   = useState("mine");
   const [liveTasks,setLiveTasks]     = useState(null);
   const [liveOnb,setLiveOnb]         = useState(null);
+  const [liveDebtors,setLiveDebtors] = useState(null);
 
   useEffect(()=>{
     if(!isConfigured) return;
@@ -218,6 +220,13 @@ export default function Dashboard({userId, onNav}) {
     }).catch(()=>{});
     onboardingCases().then(({data})=>{
       if(ok && data && data.length) setLiveOnb(data.map(o=>({ name:o.name, pct:o.pct, overdue:o.overdue })));
+    }).catch(()=>{});
+    feeInvoices().then(({data})=>{
+      if(ok && data && data.length){
+        const outstanding = data.filter(i=>Number(i.balance)>0 && i.status!=="Draft")
+          .map(i=>({ entity:i.entity, amount:Number(i.balance), age:i.status==="Overdue"?"Overdue":i.status==="Partial"?"Partial":"Current", status:i.status }));
+        if(outstanding.length) setLiveDebtors(outstanding);
+      }
     }).catch(()=>{});
     return ()=>{ok=false;};
   },[]);
@@ -238,7 +247,7 @@ export default function Dashboard({userId, onNav}) {
   const shownInbox = inboxFilter==="mine" ? myInbox : inboxFilter==="team" ? teamInbox : INBOX_ITEMS;
   const overdueInbox = shownInbox.filter(i=>i.daysOld>=7);
 
-  const myDebtors = DEBTORS[userId]||[];
+  const myDebtors = liveDebtors || DEBTORS[userId]||[];
   const debtTotal = myDebtors.reduce((s,d)=>s+d.amount,0);
   const wip = userId===2?18240:userId===3?16800:userId===4?8138:userId===6?0:48320;
   const util = userId===1?56:userId===2?76:userId===3?82:userId===4?74:userId===5?75:77;
