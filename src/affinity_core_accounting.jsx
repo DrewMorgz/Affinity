@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { isConfigured } from "./affinity_accounting_supabase";
-import { listEntities, getKpiDashboard, getCashFlow, getCreditStatus, getCollections } from "./affinity_accounting_api";
+import { listEntities, getKpiDashboard, getCashFlow, getCreditStatus, getCollections,
+  apVendors, apAging, apPurchaseOrders, getFixedAssets, getIcLoans } from "./affinity_accounting_api";
 
 /*
   Affinity Accounting — Core module
@@ -121,22 +122,31 @@ const PANELS = {
       </>
     );
   },
-  acc_ap() {
-    return (
-      <>
-        <Panel title="Vendors"><Table head={["Vendor", "Currency", "Terms", "Status"]} rows={[
+  acc_ap(ap) {
+    const hasV = ap && ap.vendors && ap.vendors.length;
+    const vendors = hasV
+      ? ap.vendors.map((v) => [v.name, v.ccy, { n: f0(v.outstanding) }, { pill: [v.status, v.status === "Active" ? POS : NEG] }])
+      : [
           ["V001 · Lighthouse IT Ltd", "GBP", { n: "30 days" }, { pill: ["Active", POS] }],
           ["V002 · Quill & Co Advisers", "GBP", { n: "14 days" }, { pill: ["Active", POS] }],
           ["V003 · Brightwater Facilities", "EUR", { n: "30 days" }, { pill: ["On hold", NEG] }],
-        ]} /></Panel>
-        <Panel title="Purchase order matching"><Table head={["PO", "Vendor", "Match", "Status"]} rows={[
+        ];
+    const hasP = ap && ap.pos && ap.pos.length;
+    const pos = hasP
+      ? ap.pos.map((p) => [p.po_number, p.supplier, { pill: [p.status, p.status === "open" ? AMBER : POS] }])
+      : [
           ["PO-2025", "Lighthouse IT", "3-way", { pill: ["Matched", POS] }],
           ["PO-2026", "Brightwater", "2-way", { pill: ["Awaiting receipt", AMBER] }],
           ["PO-2031", "Quill & Co", "3-way", { pill: ["Over-invoiced", NEG] }],
-        ]} /></Panel>
-        <Panel title="AP aging"><Table head={["Bucket", "Outstanding"]} rows={[
-          ["Current", { n: f0(3960) }], ["1–30 days", { n: f0(1200) }], ["31–60 days", { n: f0(0) }], ["60+ days", { n: f0(800) }],
-        ]} /></Panel>
+        ];
+    const aging = (ap && ap.aging && ap.aging.length)
+      ? ap.aging.map((a) => [a.bucket, { n: f0(a.amount) }])
+      : [["Current", { n: f0(3960) }], ["1–30 days", { n: f0(1200) }], ["31–60 days", { n: f0(0) }], ["60+ days", { n: f0(800) }]];
+    return (
+      <>
+        <Panel title="Vendors"><Table head={hasV ? ["Vendor", "Ccy", "Outstanding", "Status"] : ["Vendor", "Currency", "Terms", "Status"]} rows={vendors} /></Panel>
+        <Panel title="Purchase order matching"><Table head={hasP ? ["PO", "Vendor", "Status"] : ["PO", "Vendor", "Match", "Status"]} rows={pos} /></Panel>
+        <Panel title="AP aging"><Table head={["Bucket", "Outstanding"]} rows={aging} /></Panel>
         <Note>Vendor master · invoice approval · 2/3-way PO matching · SEPA payment runs (pain.001) · credit notes · supplier statements.</Note>
       </>
     );
@@ -179,13 +189,17 @@ const PANELS = {
       </>
     );
   },
-  acc_fa() {
-    return (
-      <>
-        <Panel title="Asset register"><Table head={["Asset", "Method", "Cost", "Depreciation", "Net book value"]} rows={[
+  acc_fa(fa) {
+    const has = fa && fa.length;
+    const rows = has
+      ? fa.map((r) => [r.line_label || "Total", { n: f0(r.cost) }, { n: f0(r.depreciation) }, { n: f0(r.net_book_value) }])
+      : [
           ["Fixtures & fittings", "Straight line", { n: f0(24000) }, { n: f0(4000) }, { n: f0(20000) }],
           ["IT equipment (server rack)", "Reducing balance 25%", { n: f0(10000) }, { n: f0(4000) }, { n: f0(6000) }],
-        ]} /></Panel>
+        ];
+    return (
+      <>
+        <Panel title="Asset register"><Table head={has ? ["Line", "Cost", "Depreciation", "Net book value"] : ["Asset", "Method", "Cost", "Depreciation", "Net book value"]} rows={rows} /></Panel>
         <Panel title="Movements"><Table head={["Asset", "Movement"]} rows={[
           ["Server rack", "Impaired £1,500 · transferred to Malta"], ["Fixtures", "In service"],
         ]} /></Panel>
@@ -193,16 +207,23 @@ const PANELS = {
       </>
     );
   },
-  acc_ic() {
+  acc_ic(ic) {
+    const loans = (ic && ic.length)
+      ? ic.map((r) => [r.counterparty, r.direction, r.ccy, { n: f0(r.principal) }, r.start_date])
+      : null;
     return (
       <>
         <Panel title="Intercompany charges"><Table head={["Direction", "Type", "Ccy", "Amount"]} rows={[
           ["A00001 → A00002", "Management fee", "GBP", { n: f0(1000) }],
           ["A00001 → A00002", "Transfer pricing (cost+8%)", "GBP", { n: f0(10800) }],
         ]} /></Panel>
-        <Panel title="Intercompany loans"><Table head={["Direction", "Facility", "Outstanding", "Interest accrued"]} rows={[
-          ["A00001 → A00002", "£100,000 @ 5%", { n: "£80,000" }, { n: "£1,232.88" }],
-        ]} /></Panel>
+        <Panel title="Intercompany loans">
+          {loans
+            ? <Table head={["Counterparty", "Direction", "Ccy", "Principal", "Since"]} rows={loans} />
+            : <Table head={["Direction", "Facility", "Outstanding", "Interest accrued"]} rows={[
+                ["A00001 → A00002", "£100,000 @ 5%", { n: "£80,000" }, { n: "£1,232.88" }],
+              ]} />}
+        </Panel>
         <Panel title="Reconciliation"><Table rows={[["A00001 ↔ A00002", { pill: ["Balanced · diff £0.00", POS] }]]} /></Panel>
         <Note>Recharges · loans · transfer pricing · auto-reciprocal postings · reconciliation · settlement · elimination.</Note>
       </>
@@ -433,6 +454,9 @@ export default function Accounting({ module }) {
   const [liveCf, setLiveCf] = useState(null);
   const [liveArCredit, setLiveArCredit] = useState(null);
   const [liveArCol, setLiveArCol] = useState(null);
+  const [liveAp, setLiveAp] = useState(null);
+  const [liveFa, setLiveFa] = useState(null);
+  const [liveIc, setLiveIc] = useState(null);
 
   // reset to the first tab whenever the nav group changes
   useEffect(() => { setTab(GROUPS[group][0][0]); }, [group]);
@@ -477,7 +501,36 @@ export default function Accounting({ module }) {
     return () => { ok = false; };
   }, [tab, entityId, end]);
 
-  const live = (tab === "acc_ov" && !!liveKpis) || (tab === "acc_cf" && !!liveCf) || (tab === "acc_ar" && (!!liveArCredit || !!liveArCol));
+  // fetch live AP (vendors + aging + POs) when on that tab
+  useEffect(() => {
+    if (!isConfigured || tab !== "acc_ap" || !entityId) { setLiveAp(null); return; }
+    let ok = true;
+    Promise.all([apVendors(entityId), apAging(entityId), apPurchaseOrders(entityId)]).then(([v, a, p]) => {
+      if (ok) setLiveAp({ vendors: v.data || null, aging: a.data || null, pos: p.data || null });
+    }).catch(() => { if (ok) setLiveAp(null); });
+    return () => { ok = false; };
+  }, [tab, entityId]);
+
+  // fetch live Fixed Assets register when on that tab
+  useEffect(() => {
+    if (!isConfigured || tab !== "acc_fa" || !entityId) { setLiveFa(null); return; }
+    let ok = true;
+    getFixedAssets(entityId, start, end).then(({ data }) => { if (ok) setLiveFa(data && data.length ? data : null); }).catch(() => { if (ok) setLiveFa(null); });
+    return () => { ok = false; };
+  }, [tab, entityId, start, end]);
+
+  // fetch live Intercompany loans when on that tab
+  useEffect(() => {
+    if (!isConfigured || tab !== "acc_ic" || !entityId) { setLiveIc(null); return; }
+    let ok = true;
+    getIcLoans(entityId).then(({ data }) => { if (ok) setLiveIc(data && data.length ? data : null); }).catch(() => { if (ok) setLiveIc(null); });
+    return () => { ok = false; };
+  }, [tab, entityId]);
+
+  const live = (tab === "acc_ov" && !!liveKpis) || (tab === "acc_cf" && !!liveCf)
+    || (tab === "acc_ar" && (!!liveArCredit || !!liveArCol))
+    || (tab === "acc_ap" && !!liveAp && (liveAp.vendors || liveAp.aging || liveAp.pos))
+    || (tab === "acc_fa" && !!liveFa) || (tab === "acc_ic" && !!liveIc);
   const render = PANELS[tab] || PANELS.acc_ov;
 
   return (
@@ -502,7 +555,7 @@ export default function Accounting({ module }) {
           ))}
         </div>
       )}
-      {tab === "acc_ov" ? render(liveKpis) : tab === "acc_cf" ? render(liveCf) : tab === "acc_ar" ? render({ credit: liveArCredit, collections: liveArCol }) : render()}
+      {tab === "acc_ov" ? render(liveKpis) : tab === "acc_cf" ? render(liveCf) : tab === "acc_ar" ? render({ credit: liveArCredit, collections: liveArCol }) : tab === "acc_ap" ? render(liveAp) : tab === "acc_fa" ? render(liveFa) : tab === "acc_ic" ? render(liveIc) : render()}
     </div>
   );
 }

@@ -37,3 +37,27 @@ export async function getBudgetVsActual(budgetId) {
   if (!isConfigured) return off();
   return supabase.rpc("report_budget_vs_actual", { p_budget: budgetId });
 }
+export async function apVendors(entityId) {
+  if (!isConfigured) return off();
+  return supabase.rpc("ap_vendors", { p_entity: entityId });
+}
+export async function apAging(entityId) {
+  if (!isConfigured) return off();
+  return supabase.rpc("ap_aging", { p_entity: entityId });
+}
+export async function apPurchaseOrders(entityId) {
+  if (!isConfigured) return off();
+  return supabase.rpc("ap_purchase_orders", { p_entity: entityId });
+}
+export async function getBudgetVsActualForEntity(entityId) {
+  if (!isConfigured) return off();
+  return supabase.rpc("budget_vs_actual_for_entity", { p_entity: entityId });
+}
+export async function getIcLoans(entityId) {
+  if (!isConfigured) return off();
+  return supabase.rpc("ic_loans_for_entity", { p_entity: entityId });
+}
+export async function getFixedAssets(entityId, start, end) {
+  if (!isConfigured) return off();
+  return supabase.rpc("note_fixed_assets", { p_entity: entityId, p_cur_start: start, p_cur_end: end });
+}
