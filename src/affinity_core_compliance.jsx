@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { isConfigured } from "./affinity_accounting_supabase";
+import { compReviews, compRegObligations, compBreaches, compTraining } from "./affinity_compliance_api";
 const CY = "#00C4CC";
 const Badge = ({ label, colors }) => (
   <span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:600, background:colors?.bg||"#eee", color:colors?.color||"#333", whiteSpace:"nowrap" }}>{label}</span>
@@ -47,6 +49,30 @@ const training = [
 export default function AffinityIOMCompliance() {
   const [view, setView] = useState("overview");
   const [modal, setModal] = useState(null);
+  const [live, setLive] = useState(null);
+
+  useEffect(() => {
+    if (!isConfigured) return;
+    let ok = true;
+    Promise.all([compReviews(), compRegObligations(), compBreaches(), compTraining()])
+      .then(([rv, ob, br, tr]) => {
+        if (!ok) return;
+        setLive({
+          revs: (rv.data || []).map(r => ({ id:r.id, name:r.name, ref:r.ref, type:r.type, risk:r.risk, reviewer:r.reviewer, nextReview:r.next_review, status:r.status })),
+          obs: ob.data || [],
+          breaches: br.data || [],
+          trg: (tr.data || []).map(t => ({ name:t.name, role:t.role, aml:t.aml, csp:t.csp, refreshDue:t.refresh_due, status:t.status })),
+        });
+      }).catch(() => {});
+    return () => { ok = false; };
+  }, []);
+
+  const revs     = (live && live.revs.length)     ? live.revs     : entities;
+  const obs      = (live && live.obs.length)      ? live.obs      : reportingObs;
+  const breaches = (live && live.breaches.length) ? live.breaches : breachLog;
+  const trg      = (live && live.trg.length)      ? live.trg      : training;
+  const overdueReviews = revs.filter(r => r.status === "Overdue").length;
+  const openBreaches   = breaches.filter(b => b.status === "Open").length;
   const fg = { display:"flex", flexDirection:"column", gap:3, marginBottom:12 };
   const fgl = { fontSize:11, color:"#666" };
   const fgi = { fontSize:13, borderRadius:6, border:"0.5px solid #ccc", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)", padding:"0 10px", height:34, outline:"none" };
@@ -67,7 +93,7 @@ export default function AffinityIOMCompliance() {
       {view==="overview"&&(
         <div style={{ padding:"16px 20px" }}>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:20 }}>
-            {[{l:"IOM entities",v:5,c:CY},{l:"CSP licence status",v:"Active",c:"#4CAF7D"},{l:"Overdue reviews",v:2,c:"#EF4444"},{l:"Open breaches",v:2,c:"#F59E0B"}].map(k=>(
+            {[{l:"IOM entities",v:5,c:CY},{l:"CSP licence status",v:"Active",c:"#4CAF7D"},{l:"Overdue reviews",v:overdueReviews,c:"#EF4444"},{l:"Open breaches",v:openBreaches,c:"#F59E0B"}].map(k=>(
               <div key={k.l} style={sc}><div style={{ fontSize:11, color:"#666", marginBottom:3 }}>{k.l}</div><div style={{ fontSize:20, fontWeight:700, color:k.c||"var(--text-primary,#111)" }}>{k.v}</div></div>
             ))}
           </div>
@@ -98,7 +124,7 @@ export default function AffinityIOMCompliance() {
                   <th style={th}>Entity</th><th style={th}>Risk</th><th style={th}>Next review</th><th style={th}>Status</th>
                 </tr></thead>
                 <tbody>
-                  {entities.map(e=>(
+                  {revs.map(e=>(
                     <tr key={e.id} style={{ borderBottom:"0.5px solid #e5e5e5" }}>
                       <td style={td}><div style={{ fontWeight:600, fontSize:12 }}>{e.name}</div></td>
                       <td style={td}><Badge label={e.risk} colors={{ High:{bg:"#FCEBEB",color:"#A32D2D"}, Medium:{bg:"#FAEEDA",color:"#633806"}, Low:{bg:"#EAF3DE",color:"#27500A"} }[e.risk]||{bg:"#eee",color:"#666"}} /></td>
@@ -219,7 +245,7 @@ export default function AffinityIOMCompliance() {
               <th style={{ ...th, width:"16%" }}>Status</th>
             </tr></thead>
             <tbody>
-              {reportingObs.map(r=>(
+              {obs.map(r=>(
                 <tr key={r.id} style={{ borderBottom:"0.5px solid #e5e5e5" }}>
                   <td style={{ ...td, fontWeight:600 }}>{r.type}</td>
                   <td style={{ ...td, color:"#666" }}>{r.regulator}</td>
@@ -243,7 +269,7 @@ export default function AffinityIOMCompliance() {
           <div style={{ background:"var(--bg-secondary,#f9f9f9)", borderRadius:6, padding:"10px 14px", fontSize:12, color:"#666", marginBottom:16 }}>
             ℹ️ All compliance breaches, near misses and regulatory incidents must be logged here. Material breaches must be reported to IOMFSA within the required timeframe. MLRO maintains oversight of all entries.
           </div>
-          {breachLog.map(b=>(
+          {breaches.map(b=>(
             <div key={b.id} style={{ background:"var(--bg-primary,#fff)", border:`0.5px solid ${b.severity==="Moderate"?"#F59E0B":"#e5e5e5"}`, borderRadius:8, padding:"12px 16px", marginBottom:10 }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
                 <div>
@@ -278,7 +304,7 @@ export default function AffinityIOMCompliance() {
               <th style={{ ...th, width:"14%" }}>Status</th>
             </tr></thead>
             <tbody>
-              {training.map((t,i)=>(
+              {trg.map((t,i)=>(
                 <tr key={i} style={{ borderBottom:"0.5px solid #e5e5e5" }}>
                   <td style={{ ...td, fontWeight:600 }}>{t.name}</td>
                   <td style={{ ...td, color:"#666" }}>{t.role}</td>
