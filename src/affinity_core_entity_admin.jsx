@@ -315,7 +315,7 @@ function SubstanceTab({entity}) {
   </div>;
 }
 
-export default function AffinityCoreEntityAdmin({ officeFilter="" }) {
+export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
   const [sel, setSel]       = useState(1);
   const [tab, setTab]       = useState("overview");
   const [search, setSearch] = useState("");
@@ -1098,10 +1098,10 @@ export default function AffinityCoreEntityAdmin({ officeFilter="" }) {
       <div style={s.hdr}>
         <div style={s.logo}>Entity Admin</div>
         <div style={{ display:"flex", gap:5 }}>
-          {["Compliance","Documents","Timesheets","Invoicing","Reporting"].map(n=>(
-            <button key={n} style={{ ...nb, fontSize:11 }}>{n}</button>
+          {[["Compliance","compliance"],["Documents","documents"],["Timesheets","timesheets"],["Invoicing","invoicing"],["Reporting","reporting"]].map(([n,m])=>(
+            <button key={n} style={{ ...nb, fontSize:11 }} onClick={()=>onNav&&onNav(m)}>{n}</button>
           ))}
-          <button style={nba}>Entity Admin</button>
+          <button style={nba} onClick={()=>onNav&&onNav("entities")}>Entity Admin</button>
         </div>
       </div>
 

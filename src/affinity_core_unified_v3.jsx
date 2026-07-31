@@ -15,6 +15,8 @@ import SystemAdmin   from "./affinity_core_system_admin";
 import Chatbot      from "./affinity_core_chatbot";
 import Intranet     from "./affinity_core_intranet";
 import EGaming      from "./affinity_core_egaming";
+import Compliance   from "./affinity_core_compliance";
+import Statutory    from "./affinity_core_statutory_registers";
 import GenerateDoc  from "./affinity_core_generate_document";
 import Feedback     from "./affinity_core_feedback";
 import AuditLog     from "./affinity_core_audit_log";
@@ -188,6 +190,11 @@ const NAV = [
   {s:"Internal Accounts", items:[
     {id:"acc_wip",   label:"WIP",            icon:"\u23F3",b:null},
     {id:"invoicing", label:"Invoicing",      icon:"\uD83D\uDCB7",b:null},
+  ]},
+  {s:"Compliance", items:[
+    {id:"compliance",   label:"Compliance",     icon:"\uD83D\uDEE1",b:null},
+    {id:"statutory",    label:"Statutory",      icon:"\uD83D\uDCCB",b:null},
+    {id:"egaming",      label:"eGaming / OGRA", icon:"\uD83C\uDFB2",b:null},
   ]},
   {s:"Affinity Accounting", items:[
     {id:"acc_overview", label:"Overview",        icon:"\u229E",b:null},
@@ -616,7 +623,9 @@ export default function AffinityCore(){
       case "audit":        return <AuditLog userName={user?.name||""} isSuperAdmin={!!(user&&user.role&&user.role.indexOf("Super Admin")>-1)}/>;
       case "notifications":return <Notifications onNav={setMod}/>;
       case "client_portal": return <ClientPortal/>;
-      case "entities":     return <EntityAdmin officeFilter={officeFilter}/>;
+      case "entities":     return <EntityAdmin officeFilter={officeFilter} onNav={setMod}/>;
+      case "compliance":   return <Compliance/>;
+      case "statutory":    return <Statutory/>;
       case "crm":          return <CRM/>;
       case "documents":    return <Documents/>;
       case "onboarding":   return <Onboarding/>;
