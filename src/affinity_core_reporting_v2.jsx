@@ -57,7 +57,7 @@ const VLABELS = ["Executive overview","Finance","Compliance","Entity portfolio",
 const th = { padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:600, color:"#666", textTransform:"uppercase", letterSpacing:"0.4px", borderBottom:"0.5px solid #e5e5e5", background:"var(--bg-secondary,#f9f9f9)" };
 const td = { padding:"8px 12px", fontSize:11, borderBottom:"0.5px solid #e5e5e5" };
 
-export default function AffinityReporting() {
+export default function AffinityReporting({ onNav }) {
   const [view, setView] = useState("executive");
   const [period, setPeriod] = useState("YTD 2025");
 
@@ -76,7 +76,7 @@ export default function AffinityReporting() {
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 20px", borderBottom:"0.5px solid #e5e5e5" }}>
         <div style={{ fontSize:18, fontWeight:500, color:CY }}>Affinity <span style={{ color:"var(--text-primary,#111)", fontWeight:300 }}>Core</span><small style={{ fontSize:11, color:"#999", fontWeight:300, marginLeft:8 }}>Reporting</small></div>
         <div style={{ display:"flex", gap:5 }}>
-          {["Entities","Compliance","Timesheets","Invoicing"].map(n=><button key={n} style={nb}>{n}</button>)}
+          {["Entities","Compliance","Timesheets","Invoicing"].map(n=><button key={n} style={nb} onClick={()=>onNav&&onNav({Entities:"entities",Compliance:"compliance",Timesheets:"timesheets",Invoicing:"invoicing",Reporting:"reporting",Documents:"documents",Bookkeeping:"bookkeeping"}[n])}>{n}</button>)}
           <button style={nba}>Reporting</button>
         </div>
       </div>

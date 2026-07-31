@@ -167,7 +167,7 @@ const s = {
 const nb = { padding:"5px 12px", fontSize:12, borderRadius:6, border:"0.5px solid var(--border-tertiary,#e5e5e5)", background:"transparent", color:"var(--text-secondary,#666)", cursor:"pointer" };
 const nbActive = { ...nb, background:CY, color:"#fff", border:`0.5px solid ${CY}`, fontWeight:700 };
 
-export default function AffinityCoreSystemAdmin() {
+export default function AffinityCoreSystemAdmin({ onNav }) {
   const [view, setView] = useState("users");
   const [search, setSearch] = useState("");
   const [officeF, setOfficeF] = useState("");
@@ -219,7 +219,7 @@ export default function AffinityCoreSystemAdmin() {
       <div style={s.header}>
         <div style={s.logo}>System Admin</div>
         <div style={{ display:"flex", gap:5 }}>
-          {["Entities","Compliance","Documents","Invoicing","Reporting"].map(n => <button key={n} style={nb}>{n}</button>)}
+          {["Entities","Compliance","Documents","Invoicing","Reporting"].map(n=><button key={n} style={nb} onClick={()=>onNav&&onNav({Entities:"entities",Compliance:"compliance",Timesheets:"timesheets",Invoicing:"invoicing",Reporting:"reporting",Documents:"documents",Bookkeeping:"bookkeeping"}[n])}>{n}</button>)}
           <button style={nbActive}>System</button>
         </div>
       </div>

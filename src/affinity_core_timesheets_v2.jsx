@@ -46,7 +46,7 @@ const ENTRIES = [
 const VIEWS = ["entry","wip","utilisation","missing","approval","reports"];
 const VLABELS = ["Time entry","WIP by entity","Utilisation","Missing timesheets","Approval queue","Reports"];
 
-export default function AffinityTimesheets() {
+export default function AffinityTimesheets({ onNav }) {
   const [view, setView] = useState("entry");
   const [staffF, setStaffF] = useState("1");
   const [weekF] = useState("W/C 14 Jul 2025");
@@ -120,7 +120,7 @@ export default function AffinityTimesheets() {
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 20px", borderBottom:"0.5px solid #e5e5e5" }}>
         <div style={{ fontSize:18, fontWeight:500, color:"#001242" }}>Timesheets</div>
         <div style={{ display:"flex", gap:5 }}>
-          {["Entities","Compliance","Invoicing","Reporting"].map(n=><button key={n} style={nb}>{n}</button>)}
+          {["Entities","Compliance","Invoicing","Reporting"].map(n=><button key={n} style={nb} onClick={()=>onNav&&onNav({Entities:"entities",Compliance:"compliance",Timesheets:"timesheets",Invoicing:"invoicing",Reporting:"reporting",Documents:"documents",Bookkeeping:"bookkeeping"}[n])}>{n}</button>)}
           <button style={nba}>Timesheets</button>
         </div>
       </div>

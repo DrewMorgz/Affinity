@@ -60,7 +60,7 @@ const wipTrend = [
 const VIEWS = ["ledger","pnl","banks","journals","reports"];
 const VLABELS = ["Entity ledger","P&L summary","Bank accounts","Journals","Reports"];
 
-export default function AffinityBookkeeping() {
+export default function AffinityBookkeeping({ onNav }) {
   const [view, setView]     = useState("ledger");
   const [entityId, setEId]  = useState(1);
   const [search, setSearch] = useState("");
@@ -101,7 +101,7 @@ export default function AffinityBookkeeping() {
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 20px", borderBottom:"0.5px solid #e5e5e5" }}>
         <div style={{ fontSize:18, fontWeight:500, color:"#001242" }}>Bookkeeping</div>
         <div style={{ display:"flex", gap:5 }}>
-          {["Entities","Timesheets","Invoicing","Reporting"].map(n=><button key={n} style={nb}>{n}</button>)}
+          {["Entities","Timesheets","Invoicing","Reporting"].map(n=><button key={n} style={nb} onClick={()=>onNav&&onNav({Entities:"entities",Compliance:"compliance",Timesheets:"timesheets",Invoicing:"invoicing",Reporting:"reporting",Documents:"documents",Bookkeeping:"bookkeeping"}[n])}>{n}</button>)}
           <button style={nba}>Bookkeeping</button>
         </div>
       </div>

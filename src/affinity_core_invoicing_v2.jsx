@@ -40,7 +40,7 @@ const invStatus = { Draft:{bg:"#FAEEDA",color:"#633806"}, Sent:{bg:"#E6F1FB",col
 const VIEWS = ["raise","invoices","client","bookkeeping","aged","retainers","credit"];
 const VLABELS = ["Raise invoice","Invoice ledger","By client","Auto-bookkeeping","Aged debt","Retainers","Credit control"];
 
-export default function AffinityInvoicing() {
+export default function AffinityInvoicing({ onNav }) {
   const [view, setView] = useState("invoices");
   const [search, setSearch] = useState("");
   const [statF, setStatF] = useState("");
@@ -81,7 +81,7 @@ export default function AffinityInvoicing() {
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 20px", borderBottom:"0.5px solid #e5e5e5" }}>
         <div style={{ fontSize:18, fontWeight:500, color:CY }}>Affinity <span style={{ color:"var(--text-primary,#111)", fontWeight:300 }}>Core</span><small style={{ fontSize:11, color:"#999", fontWeight:300, marginLeft:8 }}>Invoicing</small></div>
         <div style={{ display:"flex", gap:5 }}>
-          {["Entities","Compliance","Timesheets","Reporting"].map(n=><button key={n} style={nb}>{n}</button>)}
+          {["Entities","Compliance","Timesheets","Reporting"].map(n=><button key={n} style={nb} onClick={()=>onNav&&onNav({Entities:"entities",Compliance:"compliance",Timesheets:"timesheets",Invoicing:"invoicing",Reporting:"reporting",Documents:"documents",Bookkeeping:"bookkeeping"}[n])}>{n}</button>)}
           <button style={nba}>Invoicing</button>
         </div>
       </div>
