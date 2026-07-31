@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { isConfigured } from "./affinity_accounting_supabase";
+import { egLicences, egLog } from "./affinity_egaming_api";
 const CY = "#00C4CC";
 const NAVY = "#001242";
 
@@ -63,11 +65,24 @@ export default function AffinityEGaming() {
   const [view, setView]   = useState("overview");
   const [sel, setSel]     = useState(null);
   const [modal, setModal] = useState(null);
+  const [live, setLive]   = useState(null);
+
+  useEffect(() => {
+    if (!isConfigured) return;
+    let ok = true;
+    Promise.all([egLicences(), egLog()]).then(([l, g]) => {
+      if (ok) setLive({ lics: l.data || [], clog: g.data || [] });
+    }).catch(() => {});
+    return () => { ok = false; };
+  }, []);
+
+  const lics = (live && live.lics.length) ? live.lics : LICENCES;
+  const clog = (live && live.clog.length) ? live.clog : COMPLIANCE_LOG;
 
   const nb  = { padding:"5px 12px", fontSize:11, borderRadius:5, border:"0.5px solid #e5e5e5", background:"transparent", color:"#666", cursor:"pointer" };
   const nba = { ...nb, background:CY, color:"#fff", border:`0.5px solid ${CY}`, fontWeight:500 };
 
-  const selLic   = LICENCES.find(l => l.id === sel);
+  const selLic   = lics.find(l => l.id === sel);
   const checklist = sel ? (OGRA_CHECKLIST[sel] || []) : [];
 
   return (
@@ -99,10 +114,10 @@ export default function AffinityEGaming() {
           <div>
             <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:20 }}>
               {[
-                { l:"Live licences",     v:LICENCES.filter(l=>l.status==="Live").length,         c:"#4CAF7D" },
-                { l:"Applications open", v:LICENCES.filter(l=>l.status.includes("Application")||l.status==="Under review").length, c:CY },
+                { l:"Live licences",     v:lics.filter(l=>l.status==="Live").length,         c:"#4CAF7D" },
+                { l:"Applications open", v:lics.filter(l=>l.status.includes("Application")||l.status==="Under review").length, c:CY },
                 { l:"Returns overdue",   v:ANNUAL_RETURNS.filter(r=>r.status==="Overdue").length, c:"#EF4444" },
-                { l:"Compliance issues", v:COMPLIANCE_LOG.filter(c=>c.status==="Open").length,    c:"#F59E0B" },
+                { l:"Compliance issues", v:clog.filter(c=>c.status==="Open").length,    c:"#F59E0B" },
               ].map(k=>(
                 <div key={k.l} style={{ background:"#f9f9f9", borderRadius:8, padding:"12px 14px" }}>
                   <div style={{ fontSize:10, color:"#666", marginBottom:4 }}>{k.l}</div>
@@ -126,7 +141,7 @@ export default function AffinityEGaming() {
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
               <div style={{ background:"#fff", border:"0.5px solid #e5e5e5", borderRadius:10, padding:14 }}>
                 <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.4px", color:"#888", marginBottom:12 }}>Licence register summary</div>
-                {LICENCES.map(l=>(
+                {lics.map(l=>(
                   <div key={l.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 0", borderBottom:"0.5px solid #f5f5f5", cursor:"pointer" }} onClick={()=>{ setSel(l.id); setView("licences"); }}>
                     <div>
                       <div style={{ fontSize:12, fontWeight:500 }}>{l.entity}</div>
@@ -162,7 +177,7 @@ export default function AffinityEGaming() {
         {view==="licences"&&(
           <div style={{ display:"flex", height:"calc(100vh - 120px)" }}>
             <div style={{ width:320, borderRight:"0.5px solid #e5e5e5", overflowY:"auto" }}>
-              {LICENCES.map(l=>(
+              {lics.map(l=>(
                 <div key={l.id} onClick={()=>setSel(l.id)} style={{ padding:"12px 14px", borderBottom:"0.5px solid #f0f0f0", cursor:"pointer", background:sel===l.id?"#f0f8fb":"transparent", borderLeft:`3px solid ${sel===l.id?CY:"transparent"}` }}>
                   <div style={{ fontSize:12, fontWeight:600, marginBottom:4 }}>{l.entity}</div>
                   <div style={{ display:"flex", gap:6, marginBottom:4 }}>
@@ -235,7 +250,7 @@ export default function AffinityEGaming() {
               <div style={{ fontSize:12, fontWeight:500 }}>Active OGRA applications</div>
               <button style={nba} onClick={()=>setModal("newApp")}>＋ New application</button>
             </div>
-            {LICENCES.filter(l=>!["Live"].includes(l.status)).map(l=>(
+            {lics.filter(l=>!["Live"].includes(l.status)).map(l=>(
               <div key={l.id} style={{ background:"#fff", border:"0.5px solid #e5e5e5", borderRadius:10, padding:16, marginBottom:12 }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:12 }}>
                   <div>
@@ -307,7 +322,7 @@ export default function AffinityEGaming() {
                 {["Entity","Date","Type","Status","Detail","Action"].map(h=><th key={h} style={th}>{h}</th>)}
               </tr></thead>
               <tbody>
-                {COMPLIANCE_LOG.map(c=>(
+                {clog.map(c=>(
                   <tr key={c.id} style={{ borderBottom:"0.5px solid #f0f0f0", background:c.status==="Open"?"#FFF5F5":"transparent" }}>
                     <td style={{ ...td, fontWeight:500 }}>{c.entity}</td>
                     <td style={{ ...td, color:"#666" }}>{c.date}</td>
