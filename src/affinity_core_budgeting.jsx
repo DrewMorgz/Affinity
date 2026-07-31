@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getDatasets, isConfigured } from "./affinity_ops_api";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 const CY = "#00C4CC";
@@ -65,15 +66,23 @@ const POS = [
 ];
 
 export default function AffinityBudgeting() {
+  const [ds,setDs]=useState(null);
+  useEffect(()=>{ if(!isConfigured) return; let ok=true; getDatasets("budget.").then(({data})=>{ if(ok&&data&&data.length){ const m={}; data.forEach(r=>{ m[r.dkey.split(".")[1]]=r.data; }); setDs(m); } }).catch(()=>{}); return ()=>{ok=false;}; },[]);
+  const BUDGETSL = (ds&&ds["budgets"])||BUDGETS;
+  const MONTHLYL = (ds&&ds["monthly"])||MONTHLY;
+  const SCENARIOSL = (ds&&ds["scenarios"])||SCENARIOS;
+  const VARIANCEL = (ds&&ds["variance"])||VARIANCE;
+  const SERVICELINESL = (ds&&ds["servicelines"])||SERVICELINES;
+  const POSL = (ds&&ds["pos"])||POS;
   const [tab,setTab]       = useState(0);
   const [selBudget,setSel] = useState(1);
   const [scenario,setScen] = useState(0);
   const [modal,setModal]   = useState(null);
 
-  const budget = BUDGETS.find(b=>b.id===selBudget);
-  const ytdRev  = MONTHLY.filter(m=>m.actual).reduce((s,m)=>s+(m.actual||0),0);
-  const ytdCost = MONTHLY.filter(m=>m.actualC).reduce((s,m)=>s+(m.actualC||0),0);
-  const ytdBudRev = MONTHLY.filter(m=>m.actual).reduce((s,m)=>s+m.budget,0);
+  const budget = BUDGETSL.find(b=>b.id===selBudget);
+  const ytdRev  = MONTHLYL.filter(m=>m.actual).reduce((s,m)=>s+(m.actual||0),0);
+  const ytdCost = MONTHLYL.filter(m=>m.actualC).reduce((s,m)=>s+(m.actualC||0),0);
+  const ytdBudRev = MONTHLYL.filter(m=>m.actual).reduce((s,m)=>s+m.budget,0);
 
   const th = {padding:"7px 12px",textAlign:"left",fontSize:10,fontWeight:600,color:"#999",textTransform:"uppercase",letterSpacing:"0.4px",borderBottom:"0.5px solid #e5e5e5",background:"#f9f9f9",whiteSpace:"nowrap"};
   const td = {padding:"8px 12px",fontSize:11,borderBottom:"0.5px solid #e5e5e5",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"};
@@ -91,7 +100,7 @@ export default function AffinityBudgeting() {
 
       {/* Budget selector */}
       <div style={{display:"flex",gap:0,padding:"0 20px",borderBottom:"0.5px solid #e5e5e5",overflowX:"auto"}}>
-        {BUDGETS.map(b=>(
+        {BUDGETSL.map(b=>(
           <div key={b.id} onClick={()=>setSel(b.id)} style={{padding:"10px 16px",cursor:"pointer",borderBottom:`2px solid ${selBudget===b.id?CY:"transparent"}`,whiteSpace:"nowrap",fontSize:12,fontWeight:selBudget===b.id?600:400,color:selBudget===b.id?CY:"#666"}}>
             {b.name}
             <span style={{marginLeft:6,display:"inline-block",padding:"1px 6px",borderRadius:10,fontSize:9,fontWeight:600,background:b.status==="Approved"?"#EAF3DE":b.status==="Draft"?"#FAEEDA":"#E6F7FB",color:b.status==="Approved"?"#27500A":b.status==="Draft"?"#633806":"#0077A8"}}>{b.status}</span>
@@ -125,7 +134,7 @@ export default function AffinityBudgeting() {
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
             <Card title="Revenue — budget vs actual vs forecast">
               <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={MONTHLY} margin={{top:0,right:0,left:-10,bottom:0}}>
+                <BarChart data={MONTHLYL} margin={{top:0,right:0,left:-10,bottom:0}}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5"/>
                   <XAxis dataKey="month" tick={{fontSize:10}}/>
                   <YAxis tick={{fontSize:10}} tickFormatter={v=>"£"+(v/1000).toFixed(0)+"k"}/>
@@ -165,7 +174,7 @@ export default function AffinityBudgeting() {
           </div>
           <Card title="Monthly revenue — budget vs forecast vs actual">
             <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={MONTHLY} margin={{top:0,right:10,left:-10,bottom:0}}>
+              <LineChart data={MONTHLYL} margin={{top:0,right:10,left:-10,bottom:0}}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5"/>
                 <XAxis dataKey="month" tick={{fontSize:10}}/>
                 <YAxis tick={{fontSize:10}} tickFormatter={v=>"£"+(v/1000).toFixed(0)+"k"}/>
@@ -188,7 +197,7 @@ export default function AffinityBudgeting() {
                 <th style={{...th,width:"12%"}}>Status</th>
               </tr></thead>
               <tbody>
-                {VARIANCE.map((v,i)=>(
+                {VARIANCEL.map((v,i)=>(
                   <tr key={i} style={{borderBottom:"0.5px solid #e5e5e5"}}>
                     <td style={{...td,fontWeight:500}}>{v.line}</td>
                     <td style={{...td,textAlign:"right",color:"#666"}}>{fmt(v.budget)}</td>
@@ -203,12 +212,12 @@ export default function AffinityBudgeting() {
           </Card>
         </>)}
 
-        {/* SCENARIOS */}
+        {/* SCENARIOSL */}
         {tab===2&&(<>
           <div style={{fontSize:13,fontWeight:500,marginBottom:4}}>Scenario modelling — FY 2025/26</div>
           <div style={{fontSize:11,color:"#666",marginBottom:14}}>Compare base case, best case, and downside scenarios. Adjust assumptions to model different outcomes.</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:16}}>
-            {SCENARIOS.map((s,i)=>(
+            {SCENARIOSL.map((s,i)=>(
               <div key={i} onClick={()=>setScen(i)} style={{background:"#fff",border:`2px solid ${scenario===i?s.color:"#e5e5e5"}`,borderRadius:10,padding:16,cursor:"pointer"}}>
                 <div style={{fontSize:13,fontWeight:700,color:s.color,marginBottom:8}}>{s.name}</div>
                 {[["Revenue",fmt(s.rev)],["Costs",fmt(s.cost)],["Profit",fmt(s.rev-s.cost)],["Margin",s.margin+"%"],["Probability",s.prob]].map(([k,v])=>(
@@ -221,23 +230,23 @@ export default function AffinityBudgeting() {
           </div>
           <Card title="Scenario comparison — revenue">
             <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={[{name:"Revenue",...Object.fromEntries(SCENARIOS.map(s=>[s.name,s.rev]))},{name:"Costs",...Object.fromEntries(SCENARIOS.map(s=>[s.name,s.cost]))},{name:"Profit",...Object.fromEntries(SCENARIOS.map(s=>[s.name,s.rev-s.cost]))}]} margin={{top:0,right:0,left:-10,bottom:0}}>
+              <BarChart data={[{name:"Revenue",...Object.fromEntries(SCENARIOSL.map(s=>[s.name,s.rev]))},{name:"Costs",...Object.fromEntries(SCENARIOSL.map(s=>[s.name,s.cost]))},{name:"Profit",...Object.fromEntries(SCENARIOSL.map(s=>[s.name,s.rev-s.cost]))}]} margin={{top:0,right:0,left:-10,bottom:0}}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5"/>
                 <XAxis dataKey="name" tick={{fontSize:11}}/>
                 <YAxis tick={{fontSize:10}} tickFormatter={v=>"£"+(v/1000000).toFixed(1)+"m"}/>
                 <Tooltip formatter={v=>["£"+Number(v).toLocaleString()]}/>
                 <Legend iconSize={8} wrapperStyle={{fontSize:10}}/>
-                {SCENARIOS.map(s=><Bar key={s.name} dataKey={s.name} fill={s.color} opacity={0.85}/>)}
+                {SCENARIOSL.map(s=><Bar key={s.name} dataKey={s.name} fill={s.color} opacity={0.85}/>)}
               </BarChart>
             </ResponsiveContainer>
           </Card>
           <div style={{background:"#f9f9f9",borderRadius:8,padding:14}}>
-            <div style={{fontSize:12,fontWeight:600,marginBottom:10}}>Key assumptions — {SCENARIOS[scenario].name}</div>
+            <div style={{fontSize:12,fontWeight:600,marginBottom:10}}>Key assumptions — {SCENARIOSL[scenario].name}</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
               {[["Revenue growth vs prior year",scenario===0?"8%":scenario===1?"15%":"-5%"],["New client onboardings",scenario===0?"12":scenario===1?"18":"6"],["Client attrition rate",scenario===0?"3%":scenario===1?"1%":"8%"],["Average fee increase",scenario===0?"3%":scenario===1?"5%":"0%"],["Staff cost increase",scenario===0?"4%":scenario===1?"4%":"4%"],["Headcount change",scenario===0?"+1":scenario===1?"+2":"-1"]].map(([k,v])=>(
                 <div key={k} style={{background:"#fff",borderRadius:6,padding:"8px 12px"}}>
                   <div style={{fontSize:10,color:"#999",marginBottom:2}}>{k}</div>
-                  <div style={{fontSize:13,fontWeight:600,color:SCENARIOS[scenario].color}}>{v}</div>
+                  <div style={{fontSize:13,fontWeight:600,color:SCENARIOSL[scenario].color}}>{v}</div>
                 </div>
               ))}
             </div>
@@ -247,14 +256,14 @@ export default function AffinityBudgeting() {
         {/* SERVICE LINES */}
         {tab===3&&(<>
           <KG cols={4} items={[
-            {l:"Service lines tracked",v:SERVICELINES.length,c:CY},
+            {l:"Service lines tracked",v:SERVICELINESL.length,c:CY},
             {l:"Highest margin",v:"Yachting 52%",c:"#4CAF7D"},
-            {l:"Total budgeted revenue",v:fmt(SERVICELINES.reduce((s,l)=>s+l.budget,0)),c:null},
+            {l:"Total budgeted revenue",v:fmt(SERVICELINESL.reduce((s,l)=>s+l.budget,0)),c:null},
             {l:"YTD actual vs budget",v:"+3.2%",c:"#4CAF7D",s:"Ahead"},
           ]}/>
           <Card title="Revenue by service line — budget vs forecast vs actual">
             <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={SERVICELINES.map(l=>({name:l.line.split(" — ")[0].replace(" administration","").replace(" services",""),budget:l.budget,forecast:l.forecast,actual:l.actual}))} margin={{top:0,right:0,left:-10,bottom:0}}>
+              <BarChart data={SERVICELINESL.map(l=>({name:l.line.split(" — ")[0].replace(" administration","").replace(" services",""),budget:l.budget,forecast:l.forecast,actual:l.actual}))} margin={{top:0,right:0,left:-10,bottom:0}}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5"/>
                 <XAxis dataKey="name" tick={{fontSize:9}}/>
                 <YAxis tick={{fontSize:10}} tickFormatter={v=>"£"+(v/1000).toFixed(0)+"k"}/>
@@ -276,7 +285,7 @@ export default function AffinityBudgeting() {
               <th style={{...th,width:"10%",textAlign:"right"}}>Margin</th>
             </tr></thead>
             <tbody>
-              {SERVICELINES.map((l,i)=>{
+              {SERVICELINESL.map((l,i)=>{
                 const v=l.actual-(l.budget/2);
                 return (
                   <tr key={i} style={{borderBottom:"0.5px solid #e5e5e5"}}>
@@ -291,10 +300,10 @@ export default function AffinityBudgeting() {
               })}
               <tr style={{background:"#f9f9f9",fontWeight:700}}>
                 <td style={{...td,fontWeight:700}}>Total</td>
-                <td style={{...td,textAlign:"right",fontWeight:700}}>{fmt(SERVICELINES.reduce((s,l)=>s+l.budget,0))}</td>
-                <td style={{...td,textAlign:"right",fontWeight:700,color:CY}}>{fmt(SERVICELINES.reduce((s,l)=>s+l.forecast,0))}</td>
-                <td style={{...td,textAlign:"right",fontWeight:700}}>{fmt(SERVICELINES.reduce((s,l)=>s+l.actual,0))}</td>
-                <td style={{...td,textAlign:"right",fontWeight:700,color:"#4CAF7D"}}>+{fmt(SERVICELINES.reduce((s,l)=>s+(l.actual-(l.budget/2)),0))}</td>
+                <td style={{...td,textAlign:"right",fontWeight:700}}>{fmt(SERVICELINESL.reduce((s,l)=>s+l.budget,0))}</td>
+                <td style={{...td,textAlign:"right",fontWeight:700,color:CY}}>{fmt(SERVICELINESL.reduce((s,l)=>s+l.forecast,0))}</td>
+                <td style={{...td,textAlign:"right",fontWeight:700}}>{fmt(SERVICELINESL.reduce((s,l)=>s+l.actual,0))}</td>
+                <td style={{...td,textAlign:"right",fontWeight:700,color:"#4CAF7D"}}>+{fmt(SERVICELINESL.reduce((s,l)=>s+(l.actual-(l.budget/2)),0))}</td>
                 <td style={{...td,textAlign:"right",fontWeight:700,color:"#4CAF7D"}}>43%</td>
               </tr>
             </tbody>
@@ -305,10 +314,10 @@ export default function AffinityBudgeting() {
         {tab===4&&(<>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
             <KG cols={4} items={[
-              {l:"Total POs raised",     v:POS.length,                                         c:CY},
-              {l:"Total committed",      v:fmt(POS.reduce((s,p)=>s+p.amount,0)),              c:null},
-              {l:"Pending approval",     v:POS.filter(p=>p.status==="Pending").length,         c:"#F59E0B"},
-              {l:"Budget remaining (IT)",v:fmt(95000-POS.filter(p=>p.dept==="IT").reduce((s,p)=>s+p.amount,0)),c:"#4CAF7D"},
+              {l:"Total POs raised",     v:POSL.length,                                         c:CY},
+              {l:"Total committed",      v:fmt(POSL.reduce((s,p)=>s+p.amount,0)),              c:null},
+              {l:"Pending approval",     v:POSL.filter(p=>p.status==="Pending").length,         c:"#F59E0B"},
+              {l:"Budget remaining (IT)",v:fmt(95000-POSL.filter(p=>p.dept==="IT").reduce((s,p)=>s+p.amount,0)),c:"#4CAF7D"},
             ]}/>
           </div>
           <div style={{display:"flex",justifyContent:"flex-end",marginBottom:10}}>
@@ -325,7 +334,7 @@ export default function AffinityBudgeting() {
               <th style={{...th,width:"10%"}}>Action</th>
             </tr></thead>
             <tbody>
-              {POS.map((p,i)=>(
+              {POSL.map((p,i)=>(
                 <tr key={i} style={{borderBottom:"0.5px solid #e5e5e5"}}>
                   <td style={{...td,fontWeight:500,fontSize:10}}>{p.ref}</td>
                   <td style={{...td,fontWeight:500}}>{p.supplier}</td>
@@ -354,7 +363,7 @@ export default function AffinityBudgeting() {
               ))}
             </Card>
             <Card title="Budget versions">
-              {BUDGETS.map(b=>(
+              {BUDGETSL.map(b=>(
                 <div key={b.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:"0.5px solid #e5e5e5"}}>
                   <div><div style={{fontSize:12,fontWeight:500}}>{b.name}</div><div style={{fontSize:10,color:"#999"}}>{b.version} &middot; {b.owner}</div></div>
                   <Badge label={b.status} colors={b.status==="Approved"?{bg:"#EAF3DE",color:"#27500A"}:b.status==="Draft"?{bg:"#FAEEDA",color:"#633806"}:{bg:"#E6F7FB",color:"#0077A8"}}/>

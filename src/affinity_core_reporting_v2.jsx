@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getDatasets, isConfigured } from "./affinity_ops_api";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 const CY = "#00C4CC";
 const Badge = ({ label, colors }) => (<span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:600, background:colors?.bg||"#eee", color:colors?.color||"#333", whiteSpace:"nowrap" }}>{label}</span>);
@@ -105,7 +106,7 @@ export default function AffinityReporting({ onNav }) {
             <div style={card}>
               <div style={cardT}>Revenue by office — {period}</div>
               <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={revenueByOffice} margin={{ top:0, right:0, left:-10, bottom:0 }}>
+                <BarChart data={revenueByOfficeL} margin={{ top:0, right:0, left:-10, bottom:0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
                   <XAxis dataKey="month" tick={{ fontSize:10 }} />
                   <YAxis tick={{ fontSize:10 }} tickFormatter={v=>"£"+(v/1000).toFixed(0)+"k"} />
@@ -124,14 +125,14 @@ export default function AffinityReporting({ onNav }) {
               <div style={{ display:"flex", alignItems:"center", gap:20 }}>
                 <ResponsiveContainer width="50%" height={180}>
                   <PieChart>
-                    <Pie data={jurPie} dataKey="value" cx="50%" cy="50%" outerRadius={70} innerRadius={35}>
-                      {jurPie.map((e,i)=><Cell key={i} fill={e.color} />)}
+                    <Pie data={jurPieL} dataKey="value" cx="50%" cy="50%" outerRadius={70} innerRadius={35}>
+                      {jurPieL.map((e,i)=><Cell key={i} fill={e.color} />)}
                     </Pie>
                     <Tooltip formatter={(v,n)=>[v+" entities",n]} />
                   </PieChart>
                 </ResponsiveContainer>
                 <div style={{ flex:1 }}>
-                  {jurPie.map(j=>(
+                  {jurPieL.map(j=>(
                     <div key={j.name} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"4px 0", fontSize:12 }}>
                       <div style={{ display:"flex", alignItems:"center", gap:6 }}>
                         <div style={{ width:8, height:8, borderRadius:2, background:j.color, flexShrink:0 }} />
@@ -148,7 +149,7 @@ export default function AffinityReporting({ onNav }) {
             <div style={card}>
               <div style={cardT}>WIP trend</div>
               <ResponsiveContainer width="100%" height={140}>
-                <LineChart data={wipTrend} margin={{ top:0, right:5, left:-20, bottom:0 }}>
+                <LineChart data={wipTrendL} margin={{ top:0, right:5, left:-20, bottom:0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
                   <XAxis dataKey="month" tick={{ fontSize:10 }} />
                   <YAxis tick={{ fontSize:10 }} tickFormatter={v=>"£"+(v/1000).toFixed(0)+"k"} />
@@ -160,7 +161,7 @@ export default function AffinityReporting({ onNav }) {
             <div style={card}>
               <div style={cardT}>Overdue debt trend</div>
               <ResponsiveContainer width="100%" height={140}>
-                <LineChart data={debtorTrend} margin={{ top:0, right:5, left:-20, bottom:0 }}>
+                <LineChart data={debtorTrendL} margin={{ top:0, right:5, left:-20, bottom:0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
                   <XAxis dataKey="month" tick={{ fontSize:10 }} />
                   <YAxis tick={{ fontSize:10 }} tickFormatter={v=>"£"+(v/1000).toFixed(0)+"k"} />
@@ -174,13 +175,13 @@ export default function AffinityReporting({ onNav }) {
               <div style={{ display:"flex", alignItems:"center", gap:12 }}>
                 <ResponsiveContainer width="50%" height={140}>
                   <PieChart>
-                    <Pie data={riskPie} dataKey="value" cx="50%" cy="50%" outerRadius={55} innerRadius={25}>
-                      {riskPie.map((e,i)=><Cell key={i} fill={e.color} />)}
+                    <Pie data={riskPieL} dataKey="value" cx="50%" cy="50%" outerRadius={55} innerRadius={25}>
+                      {riskPieL.map((e,i)=><Cell key={i} fill={e.color} />)}
                     </Pie>
                   </PieChart>
                 </ResponsiveContainer>
                 <div>
-                  {riskPie.map(r=>(
+                  {riskPieL.map(r=>(
                     <div key={r.name} style={{ display:"flex", justifyContent:"space-between", gap:16, padding:"3px 0", fontSize:11 }}>
                       <div style={{ display:"flex", alignItems:"center", gap:5 }}><div style={{ width:7, height:7, borderRadius:2, background:r.color }} /><span style={{ color:"#666" }}>{r.name}</span></div>
                       <span style={{ fontWeight:600 }}>{r.value}</span>
@@ -203,7 +204,7 @@ export default function AffinityReporting({ onNav }) {
             <div style={card}>
               <div style={cardT}>Revenue by office — monthly</div>
               <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={revenueByOffice} margin={{ top:0, right:0, left:-10, bottom:0 }}>
+                <BarChart data={revenueByOfficeL} margin={{ top:0, right:0, left:-10, bottom:0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
                   <XAxis dataKey="month" tick={{ fontSize:10 }} />
                   <YAxis tick={{ fontSize:10 }} tickFormatter={v=>"£"+(v/1000).toFixed(0)+"k"} />
@@ -244,7 +245,7 @@ export default function AffinityReporting({ onNav }) {
             <div style={card}>
               <div style={cardT}>WIP & debtors trend</div>
               <ResponsiveContainer width="100%" height={160}>
-                <LineChart data={wipTrend} margin={{ top:0, right:5, left:-10, bottom:0 }}>
+                <LineChart data={wipTrendL} margin={{ top:0, right:5, left:-10, bottom:0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
                   <XAxis dataKey="month" tick={{ fontSize:10 }} />
                   <YAxis tick={{ fontSize:10 }} tickFormatter={v=>"£"+(v/1000).toFixed(0)+"k"} />
@@ -300,14 +301,14 @@ export default function AffinityReporting({ onNav }) {
               <div style={{ display:"flex", alignItems:"center", gap:16 }}>
                 <ResponsiveContainer width="45%" height={160}>
                   <PieChart>
-                    <Pie data={riskPie} dataKey="value" cx="50%" cy="50%" outerRadius={60} innerRadius={28}>
-                      {riskPie.map((e,i)=><Cell key={i} fill={e.color} />)}
+                    <Pie data={riskPieL} dataKey="value" cx="50%" cy="50%" outerRadius={60} innerRadius={28}>
+                      {riskPieL.map((e,i)=><Cell key={i} fill={e.color} />)}
                     </Pie>
                     <Tooltip formatter={(v,n)=>[v+" entities",n]} />
                   </PieChart>
                 </ResponsiveContainer>
                 <div style={{ flex:1 }}>
-                  {riskPie.map(r=>(
+                  {riskPieL.map(r=>(
                     <div key={r.name} style={{ marginBottom:8 }}>
                       <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, marginBottom:2 }}>
                         <span style={{ color:"#666" }}>{r.name}</span><span style={{ fontWeight:600 }}>{r.value}</span>
@@ -403,7 +404,7 @@ export default function AffinityReporting({ onNav }) {
             <div style={card}>
               <div style={cardT}>Team utilisation — week ending 14 Jul 2025</div>
               <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={utilData} layout="vertical" margin={{ top:0, right:30, left:80, bottom:0 }}>
+                <BarChart data={utilDataL} layout="vertical" margin={{ top:0, right:30, left:80, bottom:0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" horizontal={false} />
                   <XAxis type="number" domain={[0,100]} tick={{ fontSize:10 }} tickFormatter={v=>v+"%"} />
                   <YAxis dataKey="name" type="category" tick={{ fontSize:10 }} width={80} />

@@ -12,3 +12,4 @@ export async function bkEntities()  { if (!isConfigured) return off(); return su
 export async function bkTxnsAll()   { if (!isConfigured) return off(); return supabase.rpc("bk_txns_all", {}); }
 export async function bkPnlAll()    { if (!isConfigured) return off(); return supabase.rpc("bk_pnl_all", {}); }
 export async function bkBanksAll()  { if (!isConfigured) return off(); return supabase.rpc("bk_banks_all", {}); }
+export async function getDatasets(prefix) { if (!isConfigured) return off(); return supabase.rpc("get_datasets", { p_prefix: prefix }); }
