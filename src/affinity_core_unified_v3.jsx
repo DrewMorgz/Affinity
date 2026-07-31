@@ -628,8 +628,8 @@ export default function AffinityCore(){
       case "statutory":    return <Statutory/>;
       case "crm":          return <CRM/>;
       case "documents":    return <Documents/>;
-      case "onboarding":   return <Onboarding/>;
-      case "attrition":    return <Onboarding initialView="attrition"/>;
+      case "onboarding":   return <Onboarding onNav={setMod}/>;
+      case "attrition":    return <Onboarding initialView="attrition" onNav={setMod}/>;
       case "timesheets":   return <Timesheets officeFilter={officeFilter} onNav={setMod}/>;
       case "invoicing":    return <Invoicing onNav={setMod}/>;
       case "bookkeeping":  return <Bookkeeping onNav={setMod}/>;

@@ -47,7 +47,7 @@ const jurShort = { "Isle of Man":"IOM","Malta":"MLT","Cayman Islands":"CYM" };
 const VIEWS = ["pipeline","active","transfer","attrition","portal"];
 const VLABELS = ["Overview","Active onboardings","Transfer-in","Attrition","Client portal"];
 
-export default function AffinityOnboarding({ initialView }) {
+export default function AffinityOnboarding({ initialView , onNav }) {
   const [view, setView]   = useState(initialView || "pipeline");
   // When user lands here via the Attrition sidebar entry, only the
   // Attrition tab is shown — everything else stripped from the nav.
@@ -67,7 +67,7 @@ export default function AffinityOnboarding({ initialView }) {
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 20px", borderBottom:"0.5px solid #e5e5e5" }}>
         <div style={{ fontSize:18, fontWeight:500, color:"#001242" }}>Onboarding</div>
         <div style={{ display:"flex", gap:5 }}>
-          {["Entities","Compliance","Documents","Invoicing"].map(n=><button key={n} style={nb}>{n}</button>)}
+          {["Entities","Compliance","Documents","Invoicing"].map(n=><button key={n} style={nb} onClick={()=>onNav&&onNav({Entities:"entities",Compliance:"compliance",Timesheets:"timesheets",Invoicing:"invoicing",Reporting:"reporting",Documents:"documents",Bookkeeping:"bookkeeping"}[n])}>{n}</button>)}
           <button style={nba}>Onboarding</button>
         </div>
       </div>
