@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { appUsers, isConfigured } from "./affinity_ops_api";
 import { ROLES, ROLE_LABELS, permsFor } from "./affinity_core_rbac";
 
 const CY = "#00C4CC";
@@ -168,6 +169,9 @@ const nb = { padding:"5px 12px", fontSize:12, borderRadius:6, border:"0.5px soli
 const nbActive = { ...nb, background:CY, color:"#fff", border:`0.5px solid ${CY}`, fontWeight:700 };
 
 export default function AffinityCoreSystemAdmin({ onNav }) {
+  const [liveU,setLiveU]=useState(null);
+  useEffect(()=>{ if(!isConfigured) return; let ok=true; appUsers().then(({data})=>{ if(ok&&data&&data.length) setLiveU(data); }).catch(()=>{}); return ()=>{ok=false;}; },[]);
+  const users = liveU || users;
   const [view, setView] = useState("users");
   const [search, setSearch] = useState("");
   const [officeF, setOfficeF] = useState("");
@@ -193,13 +197,13 @@ export default function AffinityCoreSystemAdmin({ onNav }) {
     kycAlerts: true, retainerAuto: false, portalEnabled: false,
   });
 
-  const filteredUsers = usersData.filter(u =>
+  const filteredUsers = users.filter(u =>
     (!search || u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())) &&
     (!officeF || u.office === officeF) &&
     (!roleF || u.role === roleF)
   );
 
-  const selUser = sel ? usersData.find(u => u.id === sel) : null;
+  const selUser = sel ? users.find(u => u.id === sel) : null;
 
   const Toggle = ({ label, sub, key2 }) => (
     <div style={s.toggle}>
@@ -245,10 +249,10 @@ export default function AffinityCoreSystemAdmin({ onNav }) {
         </div>
         <div style={s.stats}>
           {[
-            { label:"Total users", val:usersData.length, color:CY },
-            { label:"Active", val:usersData.filter(u=>u.status==="Active").length, color:"#4CAF7D" },
-            { label:"MFA enabled", val:usersData.filter(u=>u.mfa).length, color:CY },
-            { label:"Without MFA", val:usersData.filter(u=>!u.mfa).length, color:"#F59E0B" },
+            { label:"Total users", val:users.length, color:CY },
+            { label:"Active", val:users.filter(u=>u.status==="Active").length, color:"#4CAF7D" },
+            { label:"MFA enabled", val:users.filter(u=>u.mfa).length, color:CY },
+            { label:"Without MFA", val:users.filter(u=>!u.mfa).length, color:"#F59E0B" },
           ].map(c=>(
             <div key={c.label} style={s.sc}><div style={s.scL}>{c.label}</div><div style={s.scV(c.color)}>{c.val}</div></div>
           ))}

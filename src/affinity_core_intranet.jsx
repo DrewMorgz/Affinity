@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getDatasets, isConfigured } from "./affinity_ops_api";
 
 const CY = "#00C4CC";
 const TEAL_DARK = "#00929A"; // single darker shade of CY used only inside gradients
@@ -66,6 +67,9 @@ function Clock({office}) {
 }
 
 export default function AffinityIntranet() {
+  const [ds,setDs]=useState(null);
+  useEffect(()=>{ if(!isConfigured) return; let ok=true; getDatasets("intranet.").then(({data})=>{ if(ok&&data&&data.length){ const m={}; data.forEach(r=>{m[r.dkey.split(".")[1]]=r.data;}); setDs(m);} }).catch(()=>{}); return ()=>{ok=false;}; },[]);
+  const OFFICESL=(ds&&ds.OFFICES)||OFFICES, NEWSL=(ds&&ds.NEWS)||NEWS, EVENTSL=(ds&&ds.EVENTS)||EVENTS, RESOURCESL=(ds&&ds.RESOURCES)||RESOURCES, ADVENTURE_VALUESL=(ds&&ds.VALUES)||ADVENTURE_VALUES;
   const [page,setPage]     = useState("home");
   const [newsId,setNewsId] = useState(null);
 
@@ -77,7 +81,7 @@ export default function AffinityIntranet() {
       <div style={{position:"relative",zIndex:1}}>
         <div style={{fontSize:28,fontWeight:700,color:"#fff",marginBottom:20}}>Affinity Group Intranet</div>
         <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-          {OFFICES.map(o=><Clock key={o.city} office={o}/>)}
+          {OFFICESL.map(o=><Clock key={o.city} office={o}/>)}
         </div>
       </div>
     </div>
@@ -106,7 +110,7 @@ export default function AffinityIntranet() {
             <button style={{fontSize:12,color:CY,background:"none",border:"none",cursor:"pointer",fontWeight:500}}>See all ↗</button>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-            {NEWS.map(n=>(
+            {NEWSL.map(n=>(
               <div key={n.id} onClick={()=>setNewsId(n.id)} style={{background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:10,overflow:"hidden",cursor:"pointer",display:"flex",gap:0}}>
                 <div style={{width:90,minWidth:90,backgroundImage:`url('${n.img}')`,backgroundSize:"cover",backgroundPosition:"center"}}/>
                 <div style={{padding:"12px 14px",flex:1}}>
@@ -126,7 +130,7 @@ export default function AffinityIntranet() {
             <button style={{fontSize:12,color:CY,background:"none",border:"none",cursor:"pointer",fontWeight:500}}>+ Add event</button>
           </div>
           <div style={{display:"flex",gap:10,overflowX:"auto",paddingBottom:6}}>
-            {EVENTS.map(e=>(
+            {EVENTSL.map(e=>(
               <div key={e.id} style={{background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:8,padding:"10px 14px",minWidth:180,flexShrink:0}}>
                 <div style={{display:"inline-block",padding:"2px 8px",borderRadius:20,fontSize:9,fontWeight:600,marginBottom:6,background:e.type==="Group"?"#E6F7FB":e.type==="Training"?"#EAF3DE":"#FAEEDA",color:e.type==="Group"?"#0077A8":e.type==="Training"?"#27500A":"#633806"}}>{e.type}</div>
                 <div style={{fontSize:12,fontWeight:600,color:NAVY,marginBottom:4,lineHeight:1.4}}>{e.title}</div>
@@ -171,7 +175,7 @@ export default function AffinityIntranet() {
       <div style={{padding:"24px 28px"}}>
         <div style={{fontSize:18,fontWeight:700,color:NAVY,marginBottom:16}}>Adventure Values</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:24}}>
-          {ADVENTURE_VALUES.map(v=>(
+          {ADVENTURE_VALUESL.map(v=>(
             <div key={v.v} style={{background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:10,padding:"16px 18px",borderLeft:`3px solid ${CY}`}}>
               <div style={{fontSize:15,fontWeight:700,color:NAVY,marginBottom:6,display:"flex",alignItems:"center",gap:8}}><span dangerouslySetInnerHTML={{__html:v.icon}}/>{v.v}</div>
               <div style={{fontSize:12,color:"#555",lineHeight:1.7}}>{v.desc}</div>
@@ -200,7 +204,7 @@ export default function AffinityIntranet() {
       <div style={{fontSize:20,fontWeight:700,color:NAVY,marginBottom:4}}>Your Resources</div>
       <div style={{fontSize:12,color:"#666",marginBottom:20}}>Forms, policies, handbooks and useful links for Affinity team members.</div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-        {RESOURCES.map(r=>(
+        {RESOURCESL.map(r=>(
           <div key={r.name} style={{background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:8,padding:"12px 14px",display:"flex",gap:12,alignItems:"flex-start"}}>
             <div style={{width:32,height:32,borderRadius:6,background:r.type==="Form"?"#E6F7FB":r.type==="Link"?"#EAF3DE":"#EEF0FB",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>
               {r.type==="Form"?"📄":r.type==="Link"?"🔗":"📄"}
@@ -249,7 +253,7 @@ export default function AffinityIntranet() {
   );
 
   const NewsDetail = () => {
-    const n = NEWS.find(x=>x.id===newsId);
+    const n = NEWSL.find(x=>x.id===newsId);
     if(!n) return null;
     return <div style={{padding:"24px 28px"}}>
       <button onClick={()=>setNewsId(null)} style={{fontSize:11,color:CY,background:"none",border:"none",cursor:"pointer",marginBottom:14,padding:0}}>← Back to news</button>

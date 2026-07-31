@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getDatasets, isConfigured } from "./affinity_ops_api";
 
 const CY    = "#00C4CC";
 const NAVY  = "#001242";
@@ -63,7 +64,9 @@ function timeAgo(iso) {
 }
 
 export default function AffinityClientPortal() {
-  const c = SAMPLE_CLIENT;
+  const [liveC,setLiveC]=useState(null);
+  useEffect(()=>{ if(!isConfigured) return; let ok=true; getDatasets("portal.").then(({data})=>{ if(ok&&data&&data.length){ const r=data.find(x=>x.dkey==="portal.client"); if(r)setLiveC(r.data);} }).catch(()=>{}); return ()=>{ok=false;}; },[]);
+  const c = liveC || SAMPLE_CLIENT;
   const [tab, setTab] = useState("home");
   const [message, setMessage] = useState("");
   const [thread, setThread] = useState(c.messages);

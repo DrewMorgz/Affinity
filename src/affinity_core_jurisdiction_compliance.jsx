@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getDatasets, isConfigured } from "./affinity_ops_api";
 const CY = "#00C4CC";
 const NAVY = "#001242";
 
@@ -80,6 +81,8 @@ const th = { padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:600, 
 const td = { padding:"9px 12px", fontSize:11, borderBottom:"0.5px solid #e5e5e5" };
 
 export default function AffinityJurisdictionCompliance() {
+  const [liveJ,setLiveJ]=useState(null);
+  useEffect(()=>{ if(!isConfigured) return; let ok=true; getDatasets("jur.").then(({data})=>{ if(ok&&data&&data.length){ const r=data.find(x=>x.dkey==="jur.info"); if(r)setLiveJ(r.data);} }).catch(()=>{}); return ()=>{ok=false;}; },[]);
   const [jur, setJur]   = useState("Cayman");
   const [view, setView] = useState("overview");
   const [modal, setModal] = useState(null);
@@ -87,7 +90,7 @@ export default function AffinityJurisdictionCompliance() {
   const nb  = { padding:"5px 12px", fontSize:11, borderRadius:5, border:"0.5px solid #e5e5e5", background:"transparent", color:"#666", cursor:"pointer" };
   const nba = { ...nb, background:CY, color:"#fff", border:`0.5px solid ${CY}`, fontWeight:500 };
 
-  const data = JUR_INFO[jur];
+  const data = (liveJ||JUR_INFO)[jur];
   const overdueCount = data.obligations.filter(o=>o.status==="Overdue").length;
 
   return (
