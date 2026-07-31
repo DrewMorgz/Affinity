@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { auditEvents, isConfigured } from "./affinity_ops_api";
 
 const CY   = "#00C4CC";
 const NAVY = "#001242";
@@ -116,13 +117,16 @@ export default function AffinityAuditLog(props) {
   const [severityFilter, setSeverityFilter] = useState("All");
   const [dateFilter, setDateFilter] = useState("7d"); // 24h, 7d, 30d, all
   const [expandedRow, setExpandedRow] = useState(null);
+  const [liveLog,setLiveLog]=useState(null);
+  useEffect(()=>{ if(!isConfigured) return; let ok=true; auditEvents().then(({data})=>{ if(ok&&data&&data.length) setLiveLog(data); }).catch(()=>{}); return ()=>{ok=false;}; },[]);
+  const log = liveLog || LOG_DATA;
 
   // Unique values for filter dropdowns
-  const users = useMemo(() => Array.from(new Set(LOG_DATA.map(e => e.user))).sort(), []);
-  const modules = useMemo(() => Array.from(new Set(LOG_DATA.map(e => e.mod))).sort(), []);
+  const users = useMemo(() => Array.from(new Set(log.map(e => e.user))).sort(), [log]);
+  const modules = useMemo(() => Array.from(new Set(log.map(e => e.mod))).sort(), [log]);
 
   const filtered = useMemo(() => {
-    return LOG_DATA.filter(e => {
+    return log.filter(e => {
       // Date filter
       if (dateFilter !== "all") {
         const diff = Date.now() - new Date(e.t).getTime();
@@ -145,7 +149,7 @@ export default function AffinityAuditLog(props) {
       }
       return true;
     }).sort((a, b) => new Date(b.t).getTime() - new Date(a.t).getTime());
-  }, [search, userFilter, modFilter, severityFilter, dateFilter]);
+  }, [search, userFilter, modFilter, severityFilter, dateFilter, log]);
 
   function exportCsv() {
     function esc(v) { return '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"'; }

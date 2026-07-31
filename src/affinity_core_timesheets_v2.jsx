@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { tsEntries, isConfigured } from "./affinity_ops_api";
 const CY = "#00C4CC";
 const Badge = ({ label, colors }) => (<span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:600, background:colors?.bg||"#eee", color:colors?.color||"#333", whiteSpace:"nowrap" }}>{label}</span>);
 const fmt = (n,s="£") => s+Math.abs(Number(n||0)).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -47,6 +48,9 @@ const VIEWS = ["entry","wip","utilisation","missing","approval","reports"];
 const VLABELS = ["Time entry","WIP by entity","Utilisation","Missing timesheets","Approval queue","Reports"];
 
 export default function AffinityTimesheets({ onNav }) {
+  const [liveEntries,setLiveEntries]=useState(null);
+  useEffect(()=>{ if(!isConfigured) return; let ok=true; tsEntries().then(({data})=>{ if(ok&&data&&data.length) setLiveEntries(data); }).catch(()=>{}); return ()=>{ok=false;}; },[]);
+  const entries = liveEntries || ENTRIES;
   const [view, setView] = useState("entry");
   const [staffF, setStaffF] = useState("1");
   const [weekF] = useState("W/C 14 Jul 2025");
@@ -87,7 +91,7 @@ export default function AffinityTimesheets({ onNav }) {
     setTimerEntity(""); setTimerMatter("");
   };
 
-  const staffEntries = useMemo(()=>ENTRIES.filter(e=>e.staffId===parseInt(staffF)),[staffF]);
+  const staffEntries = useMemo(()=>entries.filter(e=>e.staffId===parseInt(staffF)),[staffF,entries]);
   const staff = STAFF.find(s=>s.id===parseInt(staffF));
   const totalUnits = staffEntries.reduce((s,e)=>s+e.units,0);
   const billableValue = staffEntries.filter(e=>e.billable).reduce((s,e)=>s+e.value,0);
@@ -97,7 +101,7 @@ export default function AffinityTimesheets({ onNav }) {
   // WIP by entity
   const wipByEntity = useMemo(()=>{
     const map = {};
-    ENTRIES.filter(e=>e.billable&&e.status!=="Written off").forEach(e=>{
+    entries.filter(e=>e.billable&&e.status!=="Written off").forEach(e=>{
       if(!map[e.entity]) map[e.entity]={ entity:e.entity, units:0, hours:0, value:0, entries:0 };
       map[e.entity].units += e.units;
       map[e.entity].hours += e.hours;
@@ -105,7 +109,7 @@ export default function AffinityTimesheets({ onNav }) {
       map[e.entity].entries++;
     });
     return Object.values(map).sort((a,b)=>b.value-a.value);
-  },[]);
+  },[entries]);
 
   // Missing timesheets
   const missing = STAFF.filter(s=>[6].includes(s.id)); // Sarah Cole missing
@@ -225,9 +229,9 @@ export default function AffinityTimesheets({ onNav }) {
         <div style={{ padding:"16px 20px" }}>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:16 }}>
             {[
-              { l:"Total WIP",        v:fmt(ENTRIES.filter(e=>e.billable).reduce((s,e)=>s+e.value,0)), c:CY },
+              { l:"Total WIP",        v:fmt(entries.filter(e=>e.billable).reduce((s,e)=>s+e.value,0)), c:CY },
               { l:"Entities with WIP",v:wipByEntity.length,                                             c:null },
-              { l:"Unbilled entries", v:ENTRIES.filter(e=>e.billable&&e.status!=="Locked").length,     c:null },
+              { l:"Unbilled entries", v:entries.filter(e=>e.billable&&e.status!=="Locked").length,     c:null },
               { l:"WIP > 60 days",    v:"£8,200",                                                       c:"#F59E0B" },
             ].map(k=>(
               <div key={k.l} style={sc}><div style={{ fontSize:10, color:"#666", marginBottom:3 }}>{k.l}</div><div style={{ fontSize:18, fontWeight:500, color:k.c||"var(--text-primary,#111)" }}>{k.v}</div></div>
@@ -314,7 +318,7 @@ export default function AffinityTimesheets({ onNav }) {
       {view==="approval"&&(
         <div style={{ padding:"16px 20px" }}>
           <div style={{ fontSize:13, fontWeight:500, marginBottom:12 }}>Approval queue — submitted timesheets</div>
-          {ENTRIES.filter(e=>e.status==="Submitted").slice(0,8).map((e,i)=>{
+          {entries.filter(e=>e.status==="Submitted").slice(0,8).map((e,i)=>{
             const st = STAFF.find(s=>s.id===e.staffId);
             return (
               <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"9px 0", borderBottom:"0.5px solid #e5e5e5" }}>

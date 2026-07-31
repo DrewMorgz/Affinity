@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { notificationsList, isConfigured } from "./affinity_ops_api";
 
 const CY   = "#00C4CC";
 const NAVY = "#001242";
@@ -58,9 +59,12 @@ export function NotificationsPanel(props) {
   const readIds = (props && props.readIds) || {};
   const setReadIds = (props && props.setReadIds) || function() {};
   const [tab, setTab] = useState("all");
+  const [liveN,setLiveN]=useState(null);
+  useEffect(function(){ if(!isConfigured) return; var ok=true; notificationsList().then(function(r){ if(ok&&r.data&&r.data.length) setLiveN(r.data); }).catch(function(){}); return function(){ok=false;}; },[]);
+  var notifs = liveN || NOTIFICATIONS_DATA;
 
   const items = useMemo(function() {
-    var list = NOTIFICATIONS_DATA;
+    var list = notifs;
     if (tab === "unread")   list = list.filter(function(n){ return !readIds[n.id]; });
     if (tab === "mentions") list = list.filter(function(n){ return n.type === "mention"; });
     return list.slice(0, 12);
@@ -68,7 +72,7 @@ export function NotificationsPanel(props) {
 
   function markAllRead() {
     var all = {};
-    NOTIFICATIONS_DATA.forEach(function(n){ all[n.id] = true; });
+    notifs.forEach(function(n){ all[n.id] = true; });
     setReadIds(all);
   }
 
@@ -143,6 +147,9 @@ export default function AffinityNotifications(props) {
   const [readIds, setReadIds] = useState({});
   const [tab, setTab] = useState("all");
   const [typeFilter, setTypeFilter] = useState("All");
+  const [liveN2,setLiveN2]=useState(null);
+  useEffect(function(){ if(!isConfigured) return; var ok=true; notificationsList().then(function(r){ if(ok&&r.data&&r.data.length) setLiveN2(r.data); }).catch(function(){}); return function(){ok=false;}; },[]);
+  var notifs2 = liveN2 || NOTIFICATIONS_DATA;
 
   useEffect(function() {
     try {
@@ -159,17 +166,17 @@ export default function AffinityNotifications(props) {
   }, [readIds]);
 
   const filtered = useMemo(function() {
-    var list = NOTIFICATIONS_DATA;
+    var list = notifs2;
     if (tab === "unread") list = list.filter(function(n){ return !readIds[n.id]; });
     if (typeFilter !== "All") list = list.filter(function(n){ return n.type === typeFilter; });
     return list;
-  }, [tab, typeFilter, readIds]);
+  }, [tab, typeFilter, readIds, notifs2]);
 
-  const unreadCount = NOTIFICATIONS_DATA.filter(function(n){ return !readIds[n.id]; }).length;
+  const unreadCount = notifs2.filter(function(n){ return !readIds[n.id]; }).length;
 
   function markAllRead() {
     var all = {};
-    NOTIFICATIONS_DATA.forEach(function(n){ all[n.id] = true; });
+    notifs2.forEach(function(n){ all[n.id] = true; });
     setReadIds(all);
   }
   function markAllUnread() { setReadIds({}); }

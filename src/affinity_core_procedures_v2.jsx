@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { proceduresList, procedureRuns, procedureHist, isConfigured } from "./affinity_ops_api";
 const CY = "#00C4CC";
 const NAVY = "#001242";
 
@@ -60,6 +61,9 @@ const VLABELS = ["Overview","Procedure library","Active runs","History"];
 const CATS = ["Onboarding","Compliance","Statutory","Finance","Operations"];
 
 export default function AffinityProcedures() {
+  const [pL,setPL]=useState(null),[pR,setPR]=useState(null),[pH,setPH]=useState(null);
+  useEffect(()=>{ if(!isConfigured) return; let ok=true; proceduresList().then(({data})=>{if(ok&&data&&data.length)setPL(data);}).catch(()=>{}); procedureRuns().then(({data})=>{if(ok&&data)setPR(data);}).catch(()=>{}); procedureHist().then(({data})=>{if(ok&&data)setPH(data);}).catch(()=>{}); return ()=>{ok=false;}; },[]);
+  const proceduresLive=pL||PROCEDURES, runsLive=pR||RUNS, histLive=pH||HISTORY;
   const [view, setView]   = useState("overview");
   const [search, setSrch] = useState("");
   const [catF, setCatF]   = useState("");
@@ -70,7 +74,7 @@ export default function AffinityProcedures() {
   const th  = { padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:600, color:"#666", textTransform:"uppercase", letterSpacing:"0.4px", borderBottom:"0.5px solid #e5e5e5", background:"#f9f9f9", whiteSpace:"nowrap" };
   const td  = { padding:"9px 12px", fontSize:11, borderBottom:"0.5px solid #f0f0f0" };
 
-  const filtered = PROCEDURES.filter(p =>
+  const filtered = proceduresLive.filter(p =>
     (!catF || p.category === catF) &&
     (!search || p.title.toLowerCase().includes(search.toLowerCase()) || p.id.includes(search))
   );
@@ -89,7 +93,7 @@ export default function AffinityProcedures() {
         {VIEWS.map((v,i) => (
           <button key={v} onClick={()=>setView(v)} style={{ padding:"10px 14px", fontSize:12, border:"none", borderBottom:`2px solid ${view===v?CY:"transparent"}`, background:"transparent", color:view===v?CY:"#666", cursor:"pointer", fontWeight:view===v?600:400 }}>
             {VLABELS[i]}
-            {v==="active"&&RUNS.length>0&&<span style={{ marginLeft:4, background:CY, color:"#fff", borderRadius:10, padding:"1px 5px", fontSize:9, fontWeight:700 }}>{RUNS.length}</span>}
+            {v==="active"&&runsLive.length>0&&<span style={{ marginLeft:4, background:CY, color:"#fff", borderRadius:10, padding:"1px 5px", fontSize:9, fontWeight:700 }}>{runsLive.length}</span>}
           </button>
         ))}
       </div>
@@ -100,9 +104,9 @@ export default function AffinityProcedures() {
           <div>
             <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:20 }}>
               {[
-                { l:"Active runs",      v:RUNS.length,                                          c:CY },
-                { l:"Total procedures", v:PROCEDURES.length,                                    c:"#111" },
-                { l:"Completed this month", v:HISTORY.length,                                   c:"#4CAF7D" },
+                { l:"Active runs",      v:runsLive.length,                                          c:CY },
+                { l:"Total procedures", v:proceduresLive.length,                                    c:"#111" },
+                { l:"Completed this month", v:histLive.length,                                   c:"#4CAF7D" },
                 { l:"Overdue",          v:0,                                                     c:"#EF4444" },
               ].map(k => (
                 <div key={k.l} style={{ background:"#f9f9f9", borderRadius:8, padding:"12px 14px" }}>
@@ -114,7 +118,7 @@ export default function AffinityProcedures() {
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
               <div style={{ background:"#fff", border:"0.5px solid #e5e5e5", borderRadius:10, padding:14 }}>
                 <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.4px", color:"#888", marginBottom:12 }}>Active runs</div>
-                {RUNS.slice(0,4).map(r => (
+                {runsLive.slice(0,4).map(r => (
                   <div key={r.id} style={{ padding:"8px 0", borderBottom:"0.5px solid #f5f5f5" }}>
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
                       <div style={{ fontSize:12, fontWeight:500 }}>{r.entity}</div>
@@ -132,7 +136,7 @@ export default function AffinityProcedures() {
               </div>
               <div style={{ background:"#fff", border:"0.5px solid #e5e5e5", borderRadius:10, padding:14 }}>
                 <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.4px", color:"#888", marginBottom:12 }}>Recently completed</div>
-                {HISTORY.slice(0,5).map((h,i) => (
+                {histLive.slice(0,5).map((h,i) => (
                   <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"7px 0", borderBottom:"0.5px solid #f5f5f5" }}>
                     <div>
                       <div style={{ fontSize:11, fontWeight:500 }}>{h.entity}</div>
@@ -183,14 +187,14 @@ export default function AffinityProcedures() {
                 ))}
               </tbody>
             </table>
-            <div style={{ marginTop:10, fontSize:11, color:"#aaa" }}>Showing {filtered.length} of {PROCEDURES.length} procedures · Authoritative versions stored in SharePoint</div>
+            <div style={{ marginTop:10, fontSize:11, color:"#aaa" }}>Showing {filtered.length} of {proceduresLive.length} procedures · Authoritative versions stored in SharePoint</div>
           </div>
         )}
 
         {view==="active"&&(
           <div>
-            <div style={{ fontSize:12, fontWeight:500, marginBottom:14 }}>Active procedure runs ({RUNS.length})</div>
-            {RUNS.map(r => (
+            <div style={{ fontSize:12, fontWeight:500, marginBottom:14 }}>Active procedure runs ({runsLive.length})</div>
+            {runsLive.map(r => (
               <div key={r.id} style={{ background:"#fff", border:"0.5px solid #e5e5e5", borderRadius:10, padding:16, marginBottom:12 }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:12 }}>
                   <div>
@@ -222,7 +226,7 @@ export default function AffinityProcedures() {
                 {["Ref","Title","Entity","Date","Duration","Completed by","Result"].map(h=><th key={h} style={th}>{h}</th>)}
               </tr></thead>
               <tbody>
-                {HISTORY.map((h,i) => (
+                {histLive.map((h,i) => (
                   <tr key={i} style={{ borderBottom:"0.5px solid #f0f0f0" }}>
                     <td style={{ ...td, fontWeight:600, color:CY }}>{h.proc}</td>
                     <td style={{ ...td, fontWeight:500 }}>{h.title}</td>
