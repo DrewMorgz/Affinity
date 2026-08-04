@@ -13,6 +13,7 @@ const FOLDER_TREE = [
   {name:"Accounts",subs:["AEOI","Budgets/Funding Requests","Captains Cash","Financial Statements","Management Accounts","Payroll","Player Reconciliations","Substance","Year End"]},
   {name:"Aircraft/Yacht", subs:["Aircraft/Yacht Documents","Charter","Construction","Crew","Import & Export","Purchase","Radio/EPIRB","Registration","Sale"]},
   {name:"Bank",           subs:["Application Forms/Mandate","Payments","Source of Funds","Statements"]},
+  {name:"Compliance",     subs:["Errors","Breaches","Deviations","Complaints","Conflicts of Interest","Gifts & Hospitality","Compliance Monitoring","Risk Assessments"]},
   {name:"Correspondence", subs:["Correspondence","Emails"]},
   {name:"Data Protection",subs:["DPIA's","Policy and Procedures","Registration/Renewals"]},
   {name:"Delete Documents",subs:["Delete"]},

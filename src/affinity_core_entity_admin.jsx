@@ -378,9 +378,9 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
   const entity = (det && det.profile)
     ? { ...baseEntity, regNo:det.profile.reg_no, yearEnd:det.profile.year_end, principalActivity:det.profile.business_activity,
         jur:det.profile.jurisdiction, type:det.profile.entity_type, incorporated:fmtD(det.profile.incorporation_date),
-        status:det.profile.admin_status, risk:det.profile.risk_rating }
+        status:det.profile.admin_status, risk:det.profile.risk_rating, companiesAct:det.profile.incorporation_regime }
     : baseEntity;
-  const dirs     = det ? det.officers.map(o=>({ id:o.id, name:o.name, role:o.role, appointed:fmtD(o.appointed), resigned:fmtD(o.resigned), nationality:o.nationality, dob:fmtD(o.dob), address:o.address })) : (ENTITY_DATA.directors[sel]||[]);
+  const dirs     = det ? det.officers.map(o=>({ id:o.id, name:o.name, role:o.role, appointed:fmtD(o.appointed), resigned:fmtD(o.resigned), nationality:o.nationality, dob:fmtD(o.dob), address:o.address, tin:o.tin, taxResidence:o.tax_residence }))  : (ENTITY_DATA.directors[sel]||[]);
   const shares   = det ? det.shareholders.map(x=>({ id:x.id, name:x.name, type:"—", shares:x.shares, class:x.share_class, pct:(x.pct!=null?x.pct+"%":"—"), nominal:"—", paid:"—", regDate:fmtD(x.held_from) })) : (ENTITY_DATA.shareholders[sel]||[]);
   const addrs    = det ? det.addresses.map(a=>({ type:a.address_type, address:a.address, from:fmtD(a.from_date), to:a.to_date?fmtD(a.to_date):null })) : (ENTITY_DATA.addresses[sel]||[]);
   const banks    = det ? det.banks.map(b=>({ id:b.id, bank:b.bank, account:b.account_name, number:b.number, currency:b.ccy, signatories:b.signatories, resolution:fmtD(b.resolution_date), closed:b.closed_date?fmtD(b.closed_date):null })) : (ENTITY_DATA.bankAccounts[sel]||[]);
@@ -392,7 +392,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
   const fileNotes= det ? det.fileNotes.map(f=>({ id:f.id, date:fmtD(f.note_date), author:f.author, subject:f.subject, note:f.note })) : (ENTITY_DATA.fileNotes[sel]||[]);
   const meetings = det ? det.meetings.map(m=>({ id:m.id, type:m.meeting_type, date:fmtD(m.meeting_date), location:"—", attendees:"—", agenda:m.notes, status:"Recorded" })) : (ENTITY_DATA.meetings[sel]||[]);
   const safeItems= det ? det.safe.map(x=>({ id:x.id, item:x.item, deposited:fmtD(x.deposited_date), retrieved:x.retrieved_date?fmtD(x.retrieved_date):null, auth:x.authorised_by })) : (ENTITY_DATA.safeItems[sel]||[]);
-  const relations= det ? det.ubos.map(u=>({ id:u.id, name:u.name, role:u.role+(u.ownership_pct!=null?" ("+u.ownership_pct+"%)":""), dob:fmtD(u.dob), nationality:u.nationality, shared:false, linkedEntities:[] })) : (ENTITY_DATA.relations[sel]||[]);
+  const relations= det ? det.ubos.map(u=>({ id:u.id, name:u.name, role:u.role+(u.ownership_pct!=null?" ("+u.ownership_pct+"%)":""), dob:fmtD(u.dob), nationality:u.nationality, tin:u.tin, taxResidence:u.tax_residence, shared:false, linkedEntities:[] })) : (ENTITY_DATA.relations[sel]||[]);
 
   const nb = { padding:"5px 12px", fontSize:11, borderRadius:5, border:"0.5px solid var(--border-tertiary,#e5e5e5)", background:"transparent", color:"var(--text-secondary,#666)", cursor:"pointer" };
   const nba = { ...nb, background:CY, color:"#fff", border:`0.5px solid ${CY}`, fontWeight:500 };
@@ -435,6 +435,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
                 ["Client / group",entity.group],
                 ["Principal activity",entity.principalActivity],
                 ["Entity type",entity.type],
+                ...(entity.companiesAct?[["Incorporation regime",entity.companiesAct]]:[]),
                 ["Jurisdiction",entity.jur],
                 ["Registration number",entity.regNo],
                 ["Incorporated",entity.incorporated],
@@ -543,7 +544,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
             <div style={{ fontSize:12, fontWeight:500 }}>{entity.type==="Trust"?"Trustees & parties":"Directors & officers"}</div>
             <button style={s.btn(true)} onClick={()=>setModal("director")}>＋ Appoint officer</button>
           </div>
-          <Tbl cols={[{l:"Name",w:"22%"},{l:"Role",w:"16%"},{l:"Appointed",w:"12%"},{l:"Resigned",w:"12%"},{l:"Nationality",w:"12%"},{l:"Date of birth",w:"12%"},{l:"Address",w:"14%"}]}
+          <Tbl cols={[{l:"Name",w:"16%"},{l:"Role",w:"13%"},{l:"Appointed",w:"9%"},{l:"Resigned",w:"8%"},{l:"Nationality",w:"10%"},{l:"Tax residence",w:"12%"},{l:"TIN",w:"11%"},{l:"Date of birth",w:"9%"},{l:"Address",w:"12%"}]}
             rows={dirs.map(d=>(
               <tr key={d.id} style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)", background:d.resigned?"var(--bg-secondary,#f9f9f9)":"transparent" }}>
                 <td style={{ ...s.td, fontWeight:500, color:d.resigned?"var(--text-secondary,#666)":undefined }}>{d.name}</td>
@@ -551,6 +552,8 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
                 <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{d.appointed}</td>
                 <td style={s.td}>{d.resigned?<Badge label="Resigned" colors={{ bg:"#F1EFE8", color:"#888" }} />:<span style={{ color:"var(--text-secondary,#666)" }}>—</span>}</td>
                 <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{d.nationality}</td>
+                <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{d.taxResidence||"—"}</td>
+                <td style={{ ...s.td, color:"var(--text-secondary,#666)", fontFamily:"monospace", fontSize:10 }}>{d.tin||"—"}</td>
                 <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{d.dob}</td>
                 <td style={{ ...s.td, color:"var(--text-secondary,#666)", overflow:"hidden", textOverflow:"ellipsis" }}>{d.address}</td>
               </tr>
@@ -741,6 +744,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
                 <div>
                   <div style={{ fontSize:13, fontWeight:600 }}>{r.name}</div>
                   <div style={{ fontSize:11, color:"var(--text-secondary,#666)", marginTop:3 }}>{r.role} · DOB: {r.dob} · {r.nationality}</div>
+                  {(r.taxResidence||r.tin)&&<div style={{ fontSize:11, color:"var(--text-secondary,#666)", marginTop:2 }}>Tax residence: {r.taxResidence||"—"} · TIN: <span style={{ fontFamily:"monospace" }}>{r.tin||"—"}</span></div>}
                   {r.shared&&<div style={{ fontSize:10, color:CY, marginTop:4 }}>⟳ Shared record — also linked to: {r.linkedEntities.join(", ")}</div>}
                 </div>
                 <Badge label={r.shared?"Shared record":"This entity only"} colors={r.shared?{bg:"#E6F7FB",color:"#0077A8"}:{bg:"#F1EFE8",color:"#666"}} />

@@ -9,9 +9,9 @@ const STRUCTURES = [
     name: "Harrington Family Group",
     admin: "Roxy Sheeley",
     nodes: [
-      { id:"hft",  label:"Harrington Family Trust",    type:"Trust",      jur:"Isle of Man",    risk:"High",   x:340, y:40,  children:["hnl","hhl"] },
+      { id:"hft",  label:"Harrington Family Trust",    type:"Trust",      jur:"Isle of Man",    risk:"High",   x:340, y:40,  children:[{id:"hnl",pct:100},{id:"hhl",pct:75}] },
       { id:"hnl",  label:"Harrington Nominees Ltd",     type:"Company",    jur:"Isle of Man",    risk:"Medium", x:160, y:180, children:[] },
-      { id:"hhl",  label:"Harrington Holdings Ltd",     type:"Company",    jur:"Cayman Islands", risk:"Medium", x:520, y:180, children:["hpa"] },
+      { id:"hhl",  label:"Harrington Holdings Ltd",     type:"Company",    jur:"Cayman Islands", risk:"Medium", x:520, y:180, children:[{id:"hpa",pct:100}] },
       { id:"hpa",  label:"Harrington Property Assoc",   type:"Company",    jur:"United Kingdom", risk:"Low",    x:520, y:320, children:[] },
     ],
     roles: [
@@ -25,7 +25,7 @@ const STRUCTURES = [
     name: "Meridian Group",
     admin: "Roxy Sheeley",
     nodes: [
-      { id:"mhl",  label:"Meridian Holdings Ltd",       type:"Company",    jur:"Isle of Man",    risk:"Medium", x:340, y:40,  children:["mdl","msa"] },
+      { id:"mhl",  label:"Meridian Holdings Ltd",       type:"Company",    jur:"Isle of Man",    risk:"Medium", x:340, y:40,  children:[{id:"mdl",pct:100},{id:"msa",pct:60}] },
       { id:"mdl",  label:"Meridian Digital Ltd",        type:"Company",    jur:"Isle of Man",    risk:"Medium", x:160, y:180, children:[] },
       { id:"msa",  label:"Meridian Services Asia Ltd",  type:"Company",    jur:"Cayman Islands", risk:"Low",    x:520, y:180, children:[] },
     ],
@@ -39,7 +39,7 @@ const STRUCTURES = [
     name: "Pacific Wealth",
     admin: "Garry Crossan",
     nodes: [
-      { id:"pwt",  label:"Pacific Wealth Trust",        type:"Trust",      jur:"Cayman Islands", risk:"High",   x:340, y:40,  children:["pwh","pwa"] },
+      { id:"pwt",  label:"Pacific Wealth Trust",        type:"Trust",      jur:"Cayman Islands", risk:"High",   x:340, y:40,  children:[{id:"pwh",pct:100},{id:"pwa",pct:80}] },
       { id:"pwh",  label:"Pacific Wealth Holdings Ltd", type:"Company",    jur:"Cayman Islands", risk:"Medium", x:160, y:180, children:[] },
       { id:"pwa",  label:"Pacific Wealth Asia Ltd",     type:"Company",    jur:"Cayman Islands", risk:"Medium", x:520, y:180, children:[] },
     ],
@@ -93,16 +93,22 @@ function Node({ node, selected, onClick }) {
   );
 }
 
-function Edge({ from, to }) {
+function Edge({ from, to, pct }) {
   const x1 = from.x, y1 = from.y + 64;
   const x2 = to.x,   y2 = to.y;
   const mx = (x1 + x2) / 2;
   const my = (y1 + y2) / 2;
   return (
-    <path
-      d={`M ${x1} ${y1} C ${x1} ${my}, ${x2} ${my}, ${x2} ${y2}`}
-      stroke="#ccd" strokeWidth={1.5} fill="none" strokeDasharray="4 2"
-    />
+    <g>
+      <path
+        d={`M ${x1} ${y1} C ${x1} ${my}, ${x2} ${my}, ${x2} ${y2}`}
+        stroke="#ccd" strokeWidth={1.5} fill="none" strokeDasharray="4 2"
+      />
+      {pct != null && (<g>
+        <rect x={mx - 16} y={my - 9} width={32} height={16} rx={8} fill="#fff" stroke="#e5e5e5" strokeWidth={0.5} />
+        <text x={mx} y={my + 3} fontSize={9.5} fontWeight={600} fill="#00929A" textAnchor="middle" fontFamily="Catamaran,sans-serif">{pct}%</text>
+      </g>)}
+    </g>
   );
 }
 
@@ -123,9 +129,11 @@ export default function AffinityEntityChart() {
   // Build edges from children
   const edges = [];
   group.nodes.forEach(n => {
-    (n.children||[]).forEach(childId => {
-      const child = nodeMap[childId];
-      if (child) edges.push({ from:n, to:child });
+    (n.children||[]).forEach(c => {
+      const cid = typeof c === "string" ? c : c.id;
+      const pct = typeof c === "object" ? c.pct : null;
+      const child = nodeMap[cid];
+      if (child) edges.push({ from:n, to:child, pct });
     });
   });
 
@@ -179,7 +187,7 @@ export default function AffinityEntityChart() {
             {/* SVG Chart */}
             <svg width="100%" height="420" viewBox="0 0 700 420" style={{ overflow:"visible" }}>
               {/* Edges first (behind nodes) */}
-              {edges.map((e, i) => <Edge key={i} from={e.from} to={e.to} />)}
+              {edges.map((e, i) => <Edge key={i} from={e.from} to={e.to} pct={e.pct} />)}
               {/* Nodes */}
               {group.nodes.map(n => (
                 <Node key={n.id} node={n} selected={selNode} onClick={setSelNode} />
