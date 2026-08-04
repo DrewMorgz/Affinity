@@ -319,6 +319,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
   const [sel, setSel]       = useState(1);
   const [tab, setTab]       = useState("overview");
   const [search, setSearch] = useState("");
+  const [classF, setClassF] = useState("");  // ""=all, "client", "group"
   const [jurF, setJurF]     = useState("");
   const [typeF, setTypeF]   = useState("");
   const [statF, setStatF]   = useState("");
@@ -345,7 +346,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
       const mapped = data.map((r) => {
         const demo = ENTITIES.find((e) => e.ref === r.ref) || {};
         return { ...demo, id: r.id, ref: r.ref, name: r.name, type: r.entity_type, jur: r.jurisdiction,
-                 status: r.admin_status, risk: r.risk_rating, incorporated: fmtD(r.incorporation_date) };
+                 status: r.admin_status, risk: r.risk_rating, incorporated: fmtD(r.incorporation_date), entityClass: r.entity_class };
       });
       setLiveEnts(mapped);
       setSel((s) => (mapped.find((e) => e.id === s) ? s : mapped[0].id));
@@ -371,14 +372,14 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
 
   const filtered = useMemo(()=>ents.filter(e=>
     (!search||e.name.toLowerCase().includes(search.toLowerCase())||e.ref.toLowerCase().includes(search.toLowerCase()))&&
-    (!activeJurF||e.jur===activeJurF)&&(!typeF||e.type===typeF)&&(!statF||e.status===statF)
+    (!activeJurF||e.jur===activeJurF)&&(!typeF||e.type===typeF)&&(!statF||e.status===statF)&&(!classF||(e.entityClass||"client")===classF)
   ),[search,activeJurF,typeF,statF,jurF,officeFilter,ents]);
 
   const baseEntity = ents.find(e=>e.id===sel);
   const entity = (det && det.profile)
     ? { ...baseEntity, regNo:det.profile.reg_no, yearEnd:det.profile.year_end, principalActivity:det.profile.business_activity,
         jur:det.profile.jurisdiction, type:det.profile.entity_type, incorporated:fmtD(det.profile.incorporation_date),
-        status:det.profile.admin_status, risk:det.profile.risk_rating, companiesAct:det.profile.incorporation_regime }
+        status:det.profile.admin_status, risk:det.profile.risk_rating, companiesAct:det.profile.incorporation_regime, regulator:det.profile.regulator, mlroOfficer:det.profile.mlro, regOffice:det.profile.registered_office, entityClass:baseEntity.entityClass }
     : baseEntity;
   const dirs     = det ? det.officers.map(o=>({ id:o.id, name:o.name, role:o.role, appointed:fmtD(o.appointed), resigned:fmtD(o.resigned), nationality:o.nationality, dob:fmtD(o.dob), address:o.address, tin:o.tin, taxResidence:o.tax_residence }))  : (ENTITY_DATA.directors[sel]||[]);
   const shares   = det ? det.shareholders.map(x=>({ id:x.id, name:x.name, type:"—", shares:x.shares, class:x.share_class, pct:(x.pct!=null?x.pct+"%":"—"), nominal:"—", paid:"—", regDate:fmtD(x.held_from) })) : (ENTITY_DATA.shareholders[sel]||[]);
@@ -443,7 +444,8 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
                 ["Currency",entity.currency],
                 ["Status",entity.status],
                 ["Risk rating",entity.risk],
-                ["Registered office",`Affinity Group, ${entity.jur}`],
+                ["Registered office", entity.regOffice || `Affinity Group, ${entity.jur}`],
+                ...(entity.regulator ? [["Regulator", entity.regulator], ...(entity.mlroOfficer?[["MLRO / Compliance Officer", entity.mlroOfficer]]:[])] : []),
                 ["Business address","Same as registered"],
                 ["Communication address","Same as registered"],
                 ...((entity.foreignRegs && entity.foreignRegs.length>0)
@@ -1140,10 +1142,11 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
                     <div style={{ fontSize:16, fontWeight:600, marginBottom:4 }}>{entity.name}</div>
                     <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
                       <Badge label={entity.ref} colors={{ bg:"var(--bg-secondary,#f9f9f9)", color:"var(--text-secondary,#666)" }} />
+                      {entity.entityClass==="group" && <Badge label="Group entity" colors={{ bg:"#EAF0FB", color:"#274690" }} />}
                       <Badge label={jurShort[entity.jur]||entity.jur} colors={officeColors[entity.jur]} />
                       <Badge label={entity.type} colors={{ bg:"var(--bg-secondary,#f9f9f9)", color:"var(--text-secondary,#666)" }} />
                       <Badge label={entity.status} colors={statusBadge(entity.status)} />
-                      <Badge label={entity.risk+" risk"} colors={riskColors[entity.risk]} />
+                      {entity.risk && entity.risk!=="—" && <Badge label={entity.risk+" risk"} colors={riskColors[entity.risk]} />}
                     </div>
                   </div>
                   <div style={{ display:"flex", gap:6 }}>
