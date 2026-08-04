@@ -16,12 +16,24 @@ const VIEWS = ["overview","csp","aml","reporting","breaches","training"];
 const VLABELS = ["Overview","CSP licence","AML/CFT framework","Regulatory reporting","Breach log","Staff training"];
 
 const entities = [
-  { id:1, name:"Meridian Holdings Ltd",    ref:"AC-2024-001", type:"Company", risk:"Medium", reviewer:"Roxy Sheeley",   nextReview:"14/09/2025", status:"Due this month" },
-  { id:2, name:"Harrington Family Trust",  ref:"AC-2019-014", type:"Trust",   risk:"High",   reviewer:"Gary Harrison",  nextReview:"05/01/2025", status:"Overdue" },
-  { id:3, name:"North Star Holdings Ltd",  ref:"AC-2016-003", type:"Company", risk:"High",   reviewer:"Gary Harrison",  nextReview:"30/03/2025", status:"Overdue" },
-  { id:4, name:"Rosewood Legacy Trust",    ref:"AC-2021-027", type:"Trust",   risk:"Medium", reviewer:"Roxy Sheeley",   nextReview:"25/03/2026", status:"Upcoming" },
-  { id:5, name:"Thornbury Asset Co Ltd",   ref:"AC-2017-055", type:"Company", risk:"Medium", reviewer:"Neil Kelly",     nextReview:"03/07/2026", status:"Upcoming" },
+  { id:1, name:"Meridian Holdings Ltd",    ref:"AC-2024-001", type:"Company", risk:"Medium", reviewer:"Roxy Sheeley",   nextReview:"14/09/2025", status:"Due this month", jurisdiction:"Isle of Man" },
+  { id:2, name:"Harrington Family Trust",  ref:"AC-2019-014", type:"Trust",   risk:"High",   reviewer:"Gary Harrison",  nextReview:"05/01/2025", status:"Overdue", jurisdiction:"Isle of Man" },
+  { id:3, name:"North Star Holdings Ltd",  ref:"AC-2016-003", type:"Company", risk:"High",   reviewer:"Gary Harrison",  nextReview:"30/03/2025", status:"Overdue", jurisdiction:"Isle of Man" },
+  { id:4, name:"Rosewood Legacy Trust",    ref:"AC-2021-027", type:"Trust",   risk:"Medium", reviewer:"Roxy Sheeley",   nextReview:"25/03/2026", status:"Upcoming", jurisdiction:"Isle of Man" },
+  { id:5, name:"Caledonian Ventures Ltd",  ref:"AC-2021-032", type:"Company", risk:"Medium", reviewer:"Garry Crossan",  nextReview:"12/12/2025", status:"Upcoming", jurisdiction:"Cayman Islands" },
+  { id:6, name:"Pacific Wealth Trust",     ref:"AC-2022-019", type:"Trust",   risk:"High",   reviewer:"Garry Crossan",  nextReview:"08/02/2025", status:"Overdue", jurisdiction:"Cayman Islands" },
+  { id:7, name:"Azure Mediterranean Fdn",  ref:"AC-2020-008", type:"Foundation", risk:"Low", reviewer:"Joanne Fenech",  nextReview:"20/04/2026", status:"Upcoming", jurisdiction:"Malta" },
+  { id:8, name:"Stonebridge Capital Ltd",  ref:"AC-2023-041", type:"Company", risk:"Low",    reviewer:"Joanne Fenech",  nextReview:"15/10/2025", status:"Due this month", jurisdiction:"Malta" },
 ];
+
+// Managed legal entity / regulatory context per jurisdiction.
+// Regulator + legislation facts are accurate; Affinity-specific fields (entity, licence no, MLRO) update in System Admin.
+const REG = {
+  "Isle of Man": { short:"IOMFSA Regulated", regulator:"Isle of Man Financial Services Authority (IOMFSA)", licence:"Corporate & Trust Service Provider (CSP)", entity:"Affinity Group Ltd", office:"2nd Floor, 14 Athol Street, Douglas, IM1 1JA", mlro:"Gary Harrison", legislation:"Proceeds of Crime Act 2008, AML/CFT Code 2019", obligation:"Risk-based AML/CFT, periodic reviews, suspicious activity reporting to the FIU" },
+  "Cayman Islands": { short:"CIMA Regulated", regulator:"Cayman Islands Monetary Authority (CIMA)", licence:"Companies Management / Corporate Services", entity:"HRL (Cayman) — update in System Admin", office:"George Town, Grand Cayman", mlro:"Garry Crossan", legislation:"Proceeds of Crime Act (Revised), Anti-Money Laundering Regulations", obligation:"CDD, risk-based monitoring, SAR reporting to the Financial Reporting Authority" },
+  "Malta": { short:"MFSA Regulated", regulator:"Malta Financial Services Authority (MFSA)", licence:"Company Service Provider (CSP)", entity:"Affinity (Malta) — update in System Admin", office:"Valletta, Malta", mlro:"Joanne Fenech", legislation:"Prevention of Money Laundering Act (PMLA), PMLFTR", obligation:"CDD, risk-based monitoring, STR reporting to the FIAU" },
+};
+const JUR_OPTS = ["Isle of Man","Cayman Islands","Malta","All jurisdictions"];
 
 const reportingObs = [
   { id:1, type:"Annual compliance return", regulator:"IOMFSA", due:"31/03/2026", filed:"31/03/2025", status:"Filed",    freq:"Annual" },
@@ -50,6 +62,7 @@ export default function AffinityIOMCompliance() {
   const [view, setView] = useState("overview");
   const [modal, setModal] = useState(null);
   const [live, setLive] = useState(null);
+  const [jur, setJur] = useState("Isle of Man");
 
   useEffect(() => {
     if (!isConfigured) return;
@@ -58,7 +71,7 @@ export default function AffinityIOMCompliance() {
       .then(([rv, ob, br, tr]) => {
         if (!ok) return;
         setLive({
-          revs: (rv.data || []).map(r => ({ id:r.id, name:r.name, ref:r.ref, type:r.type, risk:r.risk, reviewer:r.reviewer, nextReview:r.next_review, status:r.status })),
+          revs: (rv.data || []).map(r => ({ id:r.id, name:r.name, ref:r.ref, type:r.type, risk:r.risk, reviewer:r.reviewer, nextReview:r.next_review, status:r.status, jurisdiction:r.jurisdiction })),
           obs: ob.data || [],
           breaches: br.data || [],
           trg: (tr.data || []).map(t => ({ name:t.name, role:t.role, aml:t.aml, csp:t.csp, refreshDue:t.refresh_due, status:t.status })),
@@ -71,7 +84,9 @@ export default function AffinityIOMCompliance() {
   const obs      = (live && live.obs.length)      ? live.obs      : reportingObs;
   const breaches = (live && live.breaches.length) ? live.breaches : breachLog;
   const trg      = (live && live.trg.length)      ? live.trg      : training;
-  const overdueReviews = revs.filter(r => r.status === "Overdue").length;
+  const jurRevs = jur==="All jurisdictions" ? revs : revs.filter(r => r.jurisdiction === jur);
+  const ctx = REG[jur] || null;
+  const overdueReviews = jurRevs.filter(r => r.status === "Overdue").length;
   const openBreaches   = breaches.filter(b => b.status === "Open").length;
   const fg = { display:"flex", flexDirection:"column", gap:3, marginBottom:12 };
   const fgl = { fontSize:11, color:"#666" };
@@ -80,10 +95,13 @@ export default function AffinityIOMCompliance() {
   return (
     <div style={{ fontFamily:"'Catamaran',system-ui,sans-serif", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)", minHeight:600 }}>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 20px", borderBottom:"0.5px solid #e5e5e5" }}>
-        <div style={{ fontSize:18, fontWeight:500, color:"#001242" }}>Isle of Man — Compliance Framework</div>
+        <div style={{ fontSize:18, fontWeight:500, color:"#001242" }}>{jur==="All jurisdictions"?"Group":jur} — Compliance Framework</div>
         <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-          <Badge label="IOMFSA Regulated" colors={{ bg:"#E6F7FB", color:"#0077A8" }} />
-          <Badge label="CSP Licence Active" colors={{ bg:"#EAF3DE", color:"#27500A" }} />
+          <select value={jur} onChange={e=>setJur(e.target.value)} style={{ ...fgi, height:32, fontWeight:500 }}>
+            {JUR_OPTS.map(j=><option key={j} value={j}>{j==="All jurisdictions"?"All jurisdictions":`Managed entity — ${j}`}</option>)}
+          </select>
+          {ctx && <Badge label={ctx.short} colors={{ bg:"#E6F7FB", color:"#0077A8" }} />}
+          {ctx && <Badge label="CSP Licence Active" colors={{ bg:"#EAF3DE", color:"#27500A" }} />}
         </div>
       </div>
       <div style={{ display:"flex", gap:4, padding:"10px 20px", borderBottom:"0.5px solid #e5e5e5", background:"var(--bg-secondary,#f9f9f9)", flexWrap:"wrap" }}>
@@ -93,40 +111,45 @@ export default function AffinityIOMCompliance() {
       {view==="overview"&&(
         <div style={{ padding:"16px 20px" }}>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:20 }}>
-            {[{l:"IOM entities",v:5,c:CY},{l:"CSP licence status",v:"Active",c:"#4CAF7D"},{l:"Overdue reviews",v:overdueReviews,c:"#EF4444"},{l:"Open breaches",v:openBreaches,c:"#F59E0B"}].map(k=>(
+            {[{l:(jur==="All jurisdictions"?"Total":jur)+" entities",v:jurRevs.length,c:CY},{l:"CSP licence status",v:ctx?"Active":"—",c:"#4CAF7D"},{l:"Overdue reviews",v:overdueReviews,c:"#EF4444"},{l:"Open breaches",v:openBreaches,c:"#F59E0B"}].map(k=>(
               <div key={k.l} style={sc}><div style={{ fontSize:11, color:"#666", marginBottom:3 }}>{k.l}</div><div style={{ fontSize:20, fontWeight:700, color:k.c||"var(--text-primary,#111)" }}>{k.v}</div></div>
             ))}
           </div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
             <div style={card}>
-              <div style={{ fontSize:12, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.4px", marginBottom:12 }}>IOM regulatory framework</div>
-              {[
-                ["Regulator","Isle of Man Financial Services Authority (IOMFSA)"],
-                ["Licence type","Corporate & Trust Service Provider (CSP)"],
+              <div style={{ fontSize:12, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.4px", marginBottom:12 }}>{ctx?`${jur} regulatory framework`:"Group regulatory framework"}</div>
+              {ctx ? [
+                ["Regulator",ctx.regulator],
+                ["Licence type",ctx.licence],
                 ["Licence number","XXXXXX (update in System Admin)"],
-                ["Registered entity","Affinity Group Ltd"],
-                ["Registered office","2nd Floor, 14 Athol Street, Douglas, IM1 1JA"],
-                ["MLRO","Gary Harrison"],
-                ["Compliance officer","Gary Harrison"],
-                ["AML legislation","Proceeds of Crime Act 2008, Anti-Money Laundering Code 2019"],
-                ["Key obligation","Risk-based AML/CFT, periodic reviews, suspicious activity reporting"],
+                ["Registered entity",ctx.entity],
+                ["Registered office",ctx.office],
+                ["MLRO",ctx.mlro],
+                ["Compliance officer",ctx.mlro],
+                ["AML legislation",ctx.legislation],
+                ["Key obligation",ctx.obligation],
               ].map(([k,v])=>(
                 <div key={k} style={{ display:"flex", justifyContent:"space-between", padding:"5px 0", borderBottom:"0.5px solid #e5e5e5", fontSize:12, gap:12 }}>
                   <span style={{ color:"#666", flexShrink:0 }}>{k}</span>
                   <span style={{ fontWeight:500, textAlign:"right" }}>{v}</span>
                 </div>
-              ))}
+              )) : (
+                <div style={{ fontSize:12, color:"#666", lineHeight:1.7 }}>
+                  Affinity operates regulated managed entities across {Object.keys(REG).join(", ")}. Select a managed entity above to view its regulator, licence and framework. The schedule opposite shows the periodic review timetable across all jurisdictions.
+                </div>
+              )}
             </div>
             <div style={card}>
-              <div style={{ fontSize:12, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.4px", marginBottom:12 }}>IOM entity review schedule</div>
+              <div style={{ fontSize:12, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.4px", marginBottom:12 }}>{ctx?jur:"All"} entity review schedule</div>
               <table style={{ width:"100%", borderCollapse:"collapse" }}>
                 <thead><tr>
-                  <th style={th}>Entity</th><th style={th}>Risk</th><th style={th}>Next review</th><th style={th}>Status</th>
+                  <th style={th}>Entity</th>{jur==="All jurisdictions"&&<th style={th}>Jurisdiction</th>}<th style={th}>Risk</th><th style={th}>Next review</th><th style={th}>Status</th>
                 </tr></thead>
                 <tbody>
-                  {revs.map(e=>(
+                  {jurRevs.map(e=>(
                     <tr key={e.id} style={{ borderBottom:"0.5px solid #e5e5e5" }}>
                       <td style={td}><div style={{ fontWeight:600, fontSize:12 }}>{e.name}</div></td>
+                      {jur==="All jurisdictions"&&<td style={{ ...td, color:"#666" }}>{e.jurisdiction}</td>}
                       <td style={td}><Badge label={e.risk} colors={{ High:{bg:"#FCEBEB",color:"#A32D2D"}, Medium:{bg:"#FAEEDA",color:"#633806"}, Low:{bg:"#EAF3DE",color:"#27500A"} }[e.risk]||{bg:"#eee",color:"#666"}} /></td>
                       <td style={{ ...td, color:e.status==="Overdue"?"#EF4444":"#666" }}>{e.nextReview}</td>
                       <td style={td}><Badge label={e.status} colors={{ Overdue:{bg:"#FCEBEB",color:"#A32D2D"}, "Due this month":{bg:"#FAEEDA",color:"#633806"}, Upcoming:{bg:"#E6F7FB",color:"#0077A8"}, Complete:{bg:"#EAF3DE",color:"#27500A"} }[e.status]||{bg:"#eee",color:"#666"}} /></td>
