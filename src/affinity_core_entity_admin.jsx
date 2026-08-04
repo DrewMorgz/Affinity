@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { isConfigured } from "./affinity_accounting_supabase";
 import { eaEntitiesList, eaProfile, eaOfficers, eaShareholders, eaCharges, eaUbos, eaAddresses, eaMeetings,
-  eaBanks, eaAssets, eaDividends, eaSafeItems, eaFileNotes } from "./affinity_eadmin_api";
+  eaBanks, eaAssets, eaDividends, eaSafeItems, eaFileNotes, eaSafeMovements, eaSignatories } from "./affinity_eadmin_api";
 import EntityChart from "./affinity_core_entity_chart";
 const CY = "#00C4CC";
 const NAVY = "#001242";
@@ -359,11 +359,12 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
     if (!isConfigured || !liveEnts || sel == null) { setDet(null); return; }
     let ok = true;
     Promise.all([eaProfile(sel), eaOfficers(sel), eaShareholders(sel), eaCharges(sel), eaUbos(sel), eaAddresses(sel), eaMeetings(sel),
-                 eaBanks(sel), eaAssets(sel), eaDividends(sel), eaSafeItems(sel), eaFileNotes(sel)])
-      .then(([p, o, sh, c, u, a, m, bk, as, dv, sf, fn]) => { if (ok) setDet({
+                 eaBanks(sel), eaAssets(sel), eaDividends(sel), eaSafeItems(sel), eaFileNotes(sel), eaSafeMovements(sel), eaSignatories(sel)])
+      .then(([p, o, sh, c, u, a, m, bk, as, dv, sf, fn, sm, sg]) => { if (ok) setDet({
         profile: (p.data && p.data[0]) || null, officers: o.data || [], shareholders: sh.data || [],
         charges: c.data || [], ubos: u.data || [], addresses: a.data || [], meetings: m.data || [],
-        banks: bk.data || [], assets: as.data || [], dividends: dv.data || [], safe: sf.data || [], fileNotes: fn.data || [] }); })
+        banks: bk.data || [], assets: as.data || [], dividends: dv.data || [], safe: sf.data || [], fileNotes: fn.data || [],
+        safeMovements: sm.data || [], signatories: sg.data || [] }); })
       .catch(() => { if (ok) setDet(null); });
     return () => { ok = false; };
   }, [sel, liveEnts]);
@@ -379,20 +380,22 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
   const entity = (det && det.profile)
     ? { ...baseEntity, regNo:det.profile.reg_no, yearEnd:det.profile.year_end, principalActivity:det.profile.business_activity,
         jur:det.profile.jurisdiction, type:det.profile.entity_type, incorporated:fmtD(det.profile.incorporation_date),
-        status:det.profile.admin_status, risk:det.profile.risk_rating, companiesAct:det.profile.incorporation_regime, regulator:det.profile.regulator, mlroOfficer:det.profile.mlro, regOffice:det.profile.registered_office, entityClass:baseEntity.entityClass }
+        status:det.profile.admin_status, risk:det.profile.risk_rating, companiesAct:det.profile.incorporation_regime, regulator:det.profile.regulator, mlroOfficer:det.profile.mlro, regOffice:det.profile.registered_office, auditStatus:det.profile.audit_status, entityClass:baseEntity.entityClass }
     : baseEntity;
   const dirs     = det ? det.officers.map(o=>({ id:o.id, name:o.name, role:o.role, appointed:fmtD(o.appointed), resigned:fmtD(o.resigned), nationality:o.nationality, dob:fmtD(o.dob), address:o.address, tin:o.tin, taxResidence:o.tax_residence }))  : (ENTITY_DATA.directors[sel]||[]);
   const shares   = det ? det.shareholders.map(x=>({ id:x.id, name:x.name, type:"—", shares:x.shares, class:x.share_class, pct:(x.pct!=null?x.pct+"%":"—"), nominal:"—", paid:"—", regDate:fmtD(x.held_from) })) : (ENTITY_DATA.shareholders[sel]||[]);
   const addrs    = det ? det.addresses.map(a=>({ type:a.address_type, address:a.address, from:fmtD(a.from_date), to:a.to_date?fmtD(a.to_date):null })) : (ENTITY_DATA.addresses[sel]||[]);
-  const banks    = det ? det.banks.map(b=>({ id:b.id, bank:b.bank, account:b.account_name, number:b.number, currency:b.ccy, signatories:b.signatories, resolution:fmtD(b.resolution_date), closed:b.closed_date?fmtD(b.closed_date):null })) : (ENTITY_DATA.bankAccounts[sel]||[]);
+  const banks    = det ? det.banks.map(b=>({ id:b.id, bank:b.bank, account:b.account_name, number:b.number, currency:b.ccy, signatories:b.signatories, resolution:fmtD(b.resolution_date), closed:b.closed_date?fmtD(b.closed_date):null, iban:b.iban, sortCode:b.sort_code, balance:b.balance, balanceDate:b.balance_date?fmtD(b.balance_date):null })) : (ENTITY_DATA.bankAccounts[sel]||[]);
   const charges  = det ? det.charges.map(c=>({ id:c.id, chargee:c.chargee, type:c.charge_type, amount:(c.ccy||"")+" "+Number(c.amount||0).toLocaleString(), registered:fmtD(c.registered_date), satisfied:c.satisfied_date?fmtD(c.satisfied_date):null, currency:c.ccy })) : (ENTITY_DATA.charges[sel]||[]);
-  const assets   = det ? det.assets.map(a=>({ id:a.id, desc:a.description, acquired:fmtD(a.acquired_date), lastValuation:fmtD(a.last_valuation_date), value:(a.ccy||"")+" "+Number(a.value||0).toLocaleString(), currency:a.ccy, notes:a.notes })) : (ENTITY_DATA.assets[sel]||[]);
+  const assets   = det ? det.assets.map(a=>({ id:a.id, desc:a.description, acquired:fmtD(a.acquired_date), lastValuation:fmtD(a.last_valuation_date), value:(a.ccy||"")+" "+Number(a.value||0).toLocaleString(), currency:a.ccy, notes:a.notes, disposal:a.disposal_date?fmtD(a.disposal_date):null, disposalValue:(a.disposal_value!=null?(a.ccy||"")+" "+Number(a.disposal_value).toLocaleString():null) })) : (ENTITY_DATA.assets[sel]||[]);
   const divs     = det ? det.dividends.map(d=>({ id:d.id, class:d.share_class, name:d.name, requested:fmtD(d.requested_date), paid:fmtD(d.paid_date), perShare:d.per_share, notes:d.notes })) : (ENTITY_DATA.dividends[sel]||[]);
   const nameChgs = ENTITY_DATA.nameChanges[sel]||[];
   const forgRegs = ENTITY_DATA.foreignRegs[sel]||[];
-  const fileNotes= det ? det.fileNotes.map(f=>({ id:f.id, date:fmtD(f.note_date), author:f.author, subject:f.subject, note:f.note })) : (ENTITY_DATA.fileNotes[sel]||[]);
+  const fileNotes= det ? det.fileNotes.map(f=>({ id:f.id, date:fmtD(f.note_date), author:f.author, employee:f.employee_name, linkedEntityId:f.linked_entity_id, subject:f.subject, note:f.note })) : (ENTITY_DATA.fileNotes[sel]||[]);
   const meetings = det ? det.meetings.map(m=>({ id:m.id, type:m.meeting_type, date:fmtD(m.meeting_date), location:"—", attendees:"—", agenda:m.notes, status:"Recorded" })) : (ENTITY_DATA.meetings[sel]||[]);
-  const safeItems= det ? det.safe.map(x=>({ id:x.id, item:x.item, deposited:fmtD(x.deposited_date), retrieved:x.retrieved_date?fmtD(x.retrieved_date):null, auth:x.authorised_by })) : (ENTITY_DATA.safeItems[sel]||[]);
+  const safeItems= det ? det.safe.map(x=>({ id:x.id, item:x.item, deposited:fmtD(x.deposited_date), retrieved:x.retrieved_date?fmtD(x.retrieved_date):null, auth:x.authorised_by, recordType:x.record_type||"Safe custody", location:x.location, boxNumber:x.box_number, description:x.description })) : (ENTITY_DATA.safeItems[sel]||[]);
+  const safeMovements = det ? (det.safeMovements||[]).map(m=>({ id:m.id, requestedBy:m.requested_by, action:m.action, date:fmtD(m.movement_date), reason:m.reason })) : [];
+  const signatories = det ? (det.signatories||[]).map(s=>({ id:s.id, name:s.name, category:s.category, class:s.class, from:fmtD(s.from_date), to:s.to_date?fmtD(s.to_date):null })) : [];
   const relations= det ? det.ubos.map(u=>({ id:u.id, name:u.name, role:u.role+(u.ownership_pct!=null?" ("+u.ownership_pct+"%)":""), dob:fmtD(u.dob), nationality:u.nationality, tin:u.tin, taxResidence:u.tax_residence, shared:false, linkedEntities:[] })) : (ENTITY_DATA.relations[sel]||[]);
 
   const nb = { padding:"5px 12px", fontSize:11, borderRadius:5, border:"0.5px solid var(--border-tertiary,#e5e5e5)", background:"transparent", color:"var(--text-secondary,#666)", cursor:"pointer" };
@@ -444,6 +447,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
                 ["Currency",entity.currency],
                 ["Status",entity.status],
                 ["Risk rating",entity.risk],
+                ...(entity.auditStatus?[["Audit status", <Bx label={entity.auditStatus} colors={{"Up to date":{bg:"#EAF3DE",color:"#27500A"},"In progress":{bg:"#FAEEDA",color:"#633806"},"Overdue":{bg:"#FCEBEB",color:"#A32D2D"},"Not required":{bg:"#F1EFE8",color:"#888"}}[entity.auditStatus]||{bg:"#eee",color:"#666"}}/>]]:[]),
                 ["Registered office", entity.regOffice || `Affinity Group, ${entity.jur}`],
                 ...(entity.regulator ? [["Regulator", entity.regulator], ...(entity.mlroOfficer?[["MLRO / Compliance Officer", entity.mlroOfficer]]:[])] : []),
                 ["Business address","Same as registered"],
@@ -618,20 +622,39 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
             <button style={s.btn(true)} onClick={()=>setModal("bank")}>＋ Add account</button>
           </div>
           {banks.length>0?(
-            <Tbl cols={[{l:"Bank / broker",w:"18%"},{l:"Account name",w:"14%"},{l:"Account no.",w:"12%"},{l:"Currency",w:"7%"},{l:"Signatories",w:"22%"},{l:"Resolution date",w:"12%"},{l:"Status",w:"10%"}]}
+            <Tbl cols={[{l:"Bank / broker",w:"14%"},{l:"Account name",w:"12%"},{l:"Account no.",w:"10%"},{l:"IBAN",w:"16%"},{l:"Sort code",w:"8%"},{l:"Ccy",w:"5%"},{l:"Balance",w:"15%"},{l:"Status",w:"8%"}]}
               rows={banks.map(b=>(
                 <tr key={b.id} style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)" }}>
                   <td style={{ ...s.td, fontWeight:500 }}>{b.bank}</td>
                   <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{b.account}</td>
                   <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{b.number}</td>
+                  <td style={{ ...s.td, color:"var(--text-secondary,#666)", fontFamily:"monospace", fontSize:10 }}>{b.iban||"—"}</td>
+                  <td style={{ ...s.td, color:"var(--text-secondary,#666)", fontFamily:"monospace", fontSize:10 }}>{b.sortCode||"—"}</td>
                   <td style={s.td}>{b.currency}</td>
-                  <td style={{ ...s.td, color:"var(--text-secondary,#666)", fontSize:11 }}>{b.signatories||"—"}</td>
-                  <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{b.resolution}</td>
+                  <td style={{ ...s.td, fontWeight:600 }}>{b.balance!=null?`${b.currency||""} ${Number(b.balance).toLocaleString()}`:"—"}{b.balanceDate&&<span style={{ display:"block", fontSize:9, fontWeight:400, color:"var(--text-secondary,#999)" }}>as at {b.balanceDate}</span>}</td>
                   <td style={s.td}><Badge label={b.closed?"Closed":"Active"} colors={b.closed?{bg:"#F1EFE8",color:"#888"}:{bg:"#EAF3DE",color:"#27500A"}} /></td>
                 </tr>
               ))}
             />
           ):<div style={{ color:"var(--text-secondary,#666)", fontSize:12, padding:"20px 0", textAlign:"center" }}>No bank accounts recorded.</div>}
+
+          <div style={{ display:"flex", justifyContent:"space-between", margin:"18px 0 10px" }}>
+            <div style={{ fontSize:12, fontWeight:500 }}>Authorised signatory list</div>
+            <button style={s.btn(true)} onClick={()=>setModal("signatory")}>＋ Add signatory</button>
+          </div>
+          {signatories.length>0?(
+            <Tbl cols={[{l:"Signatory",w:"28%"},{l:"Category",w:"24%"},{l:"Class",w:"16%"},{l:"From",w:"14%"},{l:"To",w:"14%"}]}
+              rows={signatories.map(sg=>(
+                <tr key={sg.id} style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)", background:sg.to?"var(--bg-secondary,#f9f9f9)":"transparent" }}>
+                  <td style={{ ...s.td, fontWeight:500 }}>{sg.name}</td>
+                  <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{sg.category||"—"}</td>
+                  <td style={s.td}>{sg.class?<Badge label={sg.class} colors={{bg:"#E6F7FB",color:"#0077A8"}} />:"—"}</td>
+                  <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{sg.from}</td>
+                  <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{sg.to||"Current"}</td>
+                </tr>
+              ))}
+            />
+          ):<div style={{ color:"var(--text-secondary,#666)", fontSize:12, padding:"14px 0", textAlign:"center" }}>No authorised signatories recorded.</div>}
         </div>
       );
 
@@ -669,14 +692,16 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
             ℹ️ Assets are recorded at entity level. This includes all asset types — property, investments, vessels, aircraft, and other holdings.
           </div>
           {assets.length>0?(
-            <Tbl cols={[{l:"Description",w:"28%"},{l:"Date acquired",w:"14%"},{l:"Last valuation",w:"14%"},{l:"Purchase value",w:"14%"},{l:"Currency",w:"10%"},{l:"Notes",w:"20%"}]}
+            <Tbl cols={[{l:"Description",w:"24%"},{l:"Acquired",w:"11%"},{l:"Last valuation",w:"12%"},{l:"Purchase value",w:"13%"},{l:"Disposed",w:"11%"},{l:"Disposal value",w:"13%"},{l:"Status",w:"8%"},{l:"Notes",w:"8%"}]}
               rows={assets.map(a=>(
-                <tr key={a.id} style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)" }}>
+                <tr key={a.id} style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)", background:a.disposal?"var(--bg-secondary,#f9f9f9)":"transparent" }}>
                   <td style={{ ...s.td, fontWeight:500 }}>{a.desc}</td>
                   <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{a.acquired}</td>
                   <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{a.lastValuation}</td>
                   <td style={{ ...s.td, fontWeight:600 }}>{a.value}</td>
-                  <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{a.currency}</td>
+                  <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{a.disposal||"—"}</td>
+                  <td style={{ ...s.td, fontWeight:a.disposalValue?600:400, color:a.disposalValue?undefined:"var(--text-secondary,#666)" }}>{a.disposalValue||"—"}</td>
+                  <td style={s.td}><Badge label={a.disposal?"Disposed":"Held"} colors={a.disposal?{bg:"#F1EFE8",color:"#888"}:{bg:"#EAF3DE",color:"#27500A"}} /></td>
                   <td style={{ ...s.td, color:"var(--text-secondary,#666)", whiteSpace:"normal", lineHeight:1.3 }}>{a.notes}</td>
                 </tr>
               ))}
@@ -788,66 +813,88 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
             <div style={{ fontSize:12, fontWeight:500 }}>File notes</div>
             <button style={s.btn(true)} onClick={()=>setModal("fileNote")}>＋ Add file note</button>
           </div>
-          {fileNotes.length>0?(fileNotes.map(n=>(
+          {fileNotes.length>0?(fileNotes.map(n=>{
+            const linked = n.linkedEntityId ? (ents.find(e=>e.id===n.linkedEntityId)||{}).name : null;
+            return (
             <div key={n.id} style={{ ...s.card, marginBottom:8 }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
                 <div><div style={{ fontSize:12, fontWeight:600 }}>{n.subject}</div>
-                  <div style={{ fontSize:10, color:"var(--text-secondary,#666)", marginTop:2 }}>{n.date} · {n.author}</div></div>
+                  <div style={{ fontSize:10, color:"var(--text-secondary,#666)", marginTop:2 }}>{n.date}{n.employee?` · ${n.employee}`:(n.author?` · ${n.author}`:"")}</div></div>
               </div>
               <div style={{ fontSize:12, color:"var(--text-secondary,#666)", lineHeight:1.5 }}>{n.note}</div>
+              {linked&&<div style={{ fontSize:10, color:CY, marginTop:6 }}>⟳ Also linked to master file: {linked}</div>}
             </div>
-          ))):<div style={{ color:"var(--text-secondary,#666)", fontSize:12, padding:"20px 0", textAlign:"center" }}>No file notes recorded.</div>}
+          );})):<div style={{ color:"var(--text-secondary,#666)", fontSize:12, padding:"20px 0", textAlign:"center" }}>No file notes recorded.</div>}
         </div>
       );
 
       case "archive": {
-        // Archive shows historical / closed records (same table format as safe custody)
-        const archived = safeItems.filter(si=>si.retrieved); // retrieved items are the archive
+        // Archiving register — box-numbered archived records (record_type = 'Archiving')
+        const archived = safeItems.filter(si=>si.recordType==="Archiving");
         return (
           <div>
             <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
-              <div style={{ fontSize:12, fontWeight:500 }}>Archive — historical records</div>
+              <div style={{ fontSize:12, fontWeight:500 }}>Archiving register</div>
               <button style={s.btn(true)} onClick={()=>setModal("safeItem")}>＋ Add archive entry</button>
             </div>
             {archived.length>0?(
-              <Tbl cols={[{l:"Item description",w:"34%"},{l:"Date archived",w:"18%"},{l:"Date retrieved",w:"18%"},{l:"Authorised by",w:"18%"},{l:"Status",w:"12%"}]}
+              <Tbl cols={[{l:"Item",w:"26%"},{l:"Description",w:"20%"},{l:"Location",w:"18%"},{l:"Box no.",w:"12%"},{l:"Date archived",w:"14%"},{l:"Authorised by",w:"10%"}]}
                 rows={archived.map(si=>(
                   <tr key={si.id} style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)" }}>
                     <td style={{ ...s.td, fontWeight:500 }}>{si.item}</td>
+                    <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{si.description||"—"}</td>
+                    <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{si.location||"—"}</td>
+                    <td style={{ ...s.td, color:"var(--text-secondary,#666)", fontFamily:"monospace", fontSize:10 }}>{si.boxNumber||"—"}</td>
                     <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{si.deposited}</td>
-                    <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{si.retrieved||"—"}</td>
                     <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{si.auth}</td>
-                    <td style={s.td}><Badge label="Archived" colors={{bg:"#F1EFE8",color:"#888"}} /></td>
                   </tr>
                 ))}
               />
-            ):<div style={{ color:"var(--text-secondary,#666)", fontSize:12, padding:"20px 0", textAlign:"center" }}>No archived records.</div>}
+            ):<div style={{ color:"var(--text-secondary,#666)", fontSize:12, padding:"20px 0", textAlign:"center" }}>No archiving records. Items marked as "Archiving" in Safe custody appear here.</div>}
           </div>
         );
       }
 
       case "safe": {
-        // Safe custody = items currently held (not yet retrieved)
-        const inSafe = safeItems.filter(si=>!si.retrieved);
         return (
           <div>
             <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
-              <div style={{ fontSize:12, fontWeight:500 }}>Safe custody register</div>
+              <div style={{ fontSize:12, fontWeight:500 }}>Safe custody &amp; archiving register</div>
               <button style={s.btn(true)} onClick={()=>setModal("safeItem")}>＋ Add item</button>
             </div>
-            {inSafe.length>0?(
-              <Tbl cols={[{l:"Item description",w:"34%"},{l:"Date deposited",w:"18%"},{l:"Date retrieved",w:"18%"},{l:"Authorised by",w:"18%"},{l:"Status",w:"12%"}]}
-                rows={inSafe.map(si=>(
-                  <tr key={si.id} style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)" }}>
-                    <td style={{ ...s.td, fontWeight:500 }}>{si.item}</td>
+            {safeItems.length>0?(
+              <Tbl cols={[{l:"Type",w:"12%"},{l:"Item",w:"22%"},{l:"Location",w:"18%"},{l:"Box no.",w:"10%"},{l:"Deposited",w:"11%"},{l:"Retrieved",w:"11%"},{l:"Authorised by",w:"12%"},{l:"Status",w:"9%"}]}
+                rows={safeItems.map(si=>(
+                  <tr key={si.id} style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)", background:si.retrieved?"var(--bg-secondary,#f9f9f9)":"transparent" }}>
+                    <td style={s.td}><Badge label={si.recordType||"Safe custody"} colors={si.recordType==="Archiving"?{bg:"#EEF0FB",color:"#3C3489"}:{bg:"#E6F7FB",color:"#0077A8"}} /></td>
+                    <td style={{ ...s.td, fontWeight:500 }}>{si.item}{si.description&&<span style={{ display:"block", fontSize:10, fontWeight:400, color:"var(--text-secondary,#999)" }}>{si.description}</span>}</td>
+                    <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{si.location||"—"}</td>
+                    <td style={{ ...s.td, color:"var(--text-secondary,#666)", fontFamily:"monospace", fontSize:10 }}>{si.boxNumber||"—"}</td>
                     <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{si.deposited}</td>
                     <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{si.retrieved||"—"}</td>
                     <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{si.auth}</td>
-                    <td style={s.td}><Badge label="In safe" colors={{bg:"#EAF3DE",color:"#27500A"}} /></td>
+                    <td style={s.td}><Badge label={si.retrieved?"Out":"Held"} colors={si.retrieved?{bg:"#F1EFE8",color:"#888"}:{bg:"#EAF3DE",color:"#27500A"}} /></td>
                   </tr>
                 ))}
               />
-            ):<div style={{ color:"var(--text-secondary,#666)", fontSize:12, padding:"20px 0", textAlign:"center" }}>No safe custody items recorded.</div>}
+            ):<div style={{ color:"var(--text-secondary,#666)", fontSize:12, padding:"20px 0", textAlign:"center" }}>No safe custody or archiving items recorded.</div>}
+
+            <div style={{ display:"flex", justifyContent:"space-between", margin:"18px 0 10px" }}>
+              <div style={{ fontSize:12, fontWeight:500 }}>Movements log</div>
+              <button style={s.btn(true)} onClick={()=>setModal("safeMovement")}>＋ Log movement</button>
+            </div>
+            {safeMovements.length>0?(
+              <Tbl cols={[{l:"Date",w:"16%"},{l:"Action",w:"20%"},{l:"Requested by",w:"22%"},{l:"Reason",w:"42%"}]}
+                rows={safeMovements.map(mv=>(
+                  <tr key={mv.id} style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)" }}>
+                    <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{mv.date}</td>
+                    <td style={s.td}><Badge label={mv.action} colors={/remov/i.test(mv.action)?{bg:"#FAEEDA",color:"#633806"}:/return|deposit/i.test(mv.action)?{bg:"#EAF3DE",color:"#27500A"}:{bg:"#eee",color:"#666"}} /></td>
+                    <td style={{ ...s.td, fontWeight:500 }}>{mv.requestedBy}</td>
+                    <td style={{ ...s.td, color:"var(--text-secondary,#666)", whiteSpace:"normal", lineHeight:1.3 }}>{mv.reason}</td>
+                  </tr>
+                ))}
+              />
+            ):<div style={{ color:"var(--text-secondary,#666)", fontSize:12, padding:"14px 0", textAlign:"center" }}>No movements logged.</div>}
           </div>
         );
       }
@@ -1065,7 +1112,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
     ]},
     relation: { title:"Add relation", fields:[
       {label:"Full legal name",placeholder:"Full name",full:true},
-      {label:"Role / connection",type:"select",opts:["Beneficial owner","Director","Shareholder","Trustee","Settlor","Beneficiary","Attorney","Protector","Introducer","Service provider","Other"]},
+      {label:"Role / connection",type:"select",opts:["Beneficial owner","Director","Shareholder","Trustee","Settlor","Beneficiary","Attorney","Protector","Introducer","Service provider","Customer","Supplier","Designated Officer","Operations Manager","Data Protection Officer","MLRO","DMLRO","AML/CFT Compliance Officer","Nominated AML/CFT Compliance Officer","Other"]},
       {label:"Date of birth",placeholder:"DD/MM/YYYY"},
       {label:"Nationality",placeholder:"Nationality"},
       {label:"Also linked to (other entities)",placeholder:"Leave blank or enter entity names",full:true},

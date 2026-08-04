@@ -56,3 +56,11 @@ export async function eaFileNotes(entityId) {
   if (!isConfigured) return off();
   return supabase.rpc("ea_file_notes", { p_entity: entityId });
 }
+export async function eaSafeMovements(entityId) {
+  if (!isConfigured) return off();
+  return supabase.rpc("ea_safe_movements", { p_entity: entityId });
+}
+export async function eaSignatories(entityId) {
+  if (!isConfigured) return off();
+  return supabase.rpc("ea_signatories", { p_entity: entityId });
+}
