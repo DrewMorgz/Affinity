@@ -107,7 +107,7 @@ const TABS = [
   { id:"charges",    label:"Charges",                 group:"Entity" },
   { id:"assets",     label:"Assets",                  group:"Entity" },
   { id:"dividends",  label:"Dividends",               group:"Entity" },
-  { id:"relations",  label:"Relations",               group:"Entity" },
+  { id:"relations",  label:"Beneficial owners",        group:"Entity" },
   { id:"meetings",   label:"Meetings",                group:"Entity" },
   { id:"structure",  label:"Structure / chart",       group:"Entity" },
   { id:"fileNotes",  label:"File notes",              group:"Entity" },
@@ -422,7 +422,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
   const safeItems= det ? det.safe.map(x=>({ id:x.id, item:x.item, deposited:fmtD(x.deposited_date), retrieved:x.retrieved_date?fmtD(x.retrieved_date):null, auth:x.authorised_by, recordType:x.record_type||"Safe custody", location:x.location, boxNumber:x.box_number, description:x.description })) : (ENTITY_DATA.safeItems[sel]||[]);
   const safeMovements = det ? (det.safeMovements||[]).map(m=>({ id:m.id, requestedBy:m.requested_by, action:m.action, date:fmtD(m.movement_date), reason:m.reason })) : [];
   const signatories = det ? (det.signatories||[]).map(s=>({ id:s.id, name:s.name, category:s.category, class:s.class, from:fmtD(s.from_date), to:s.to_date?fmtD(s.to_date):null })) : [];
-  const relations= det ? det.ubos.map(u=>({ id:u.id, name:u.name, role:u.role+(u.ownership_pct!=null?" ("+u.ownership_pct+"%)":""), dob:fmtD(u.dob), nationality:u.nationality, tin:u.tin, taxResidence:u.tax_residence, shared:false, linkedEntities:[] })) : (ENTITY_DATA.relations[sel]||[]);
+  const relations= det ? det.ubos.map(u=>({ id:u.id, name:u.name, role:u.role, nature:u.nature_of_control, ownershipPct:u.ownership_pct, dob:fmtD(u.dob), nationality:u.nationality, tin:u.tin, taxResidence:u.tax_residence, shared:false, linkedEntities:[] })) : (ENTITY_DATA.relations[sel]||[]);
 
   const nb = { padding:"5px 12px", fontSize:11, borderRadius:5, border:"0.5px solid var(--border-tertiary,#e5e5e5)", background:"transparent", color:"var(--text-secondary,#666)", cursor:"pointer" };
   const nba = { ...nb, background:CY, color:"#fff", border:`0.5px solid ${CY}`, fontWeight:500 };
@@ -785,25 +785,28 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
       case "relations": return (
         <div>
           <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
-            <div style={{ fontSize:12, fontWeight:500 }}>Relations — reusable across entities (no duplicate entry)</div>
-            <button style={s.btn(true)} onClick={()=>setModal("relation")}>＋ Add relation</button>
+            <div style={{ fontSize:12, fontWeight:500 }}>Beneficial owners register — owners &amp; controllers</div>
+            <button style={s.btn(true)} onClick={()=>setModal("relation")}>＋ Add beneficial owner</button>
           </div>
           <div style={{ background:"var(--bg-secondary,#f9f9f9)", borderRadius:6, padding:"8px 12px", fontSize:11, color:"var(--text-secondary,#666)", marginBottom:12 }}>
-            ℹ️ Relations are individuals or entities connected to this file. When a relation is also connected to another entity, the record is shared — no duplicate data entry required.
+            ℹ️ Beneficial owners (owners &amp; controllers) are held here, distinct from the officer register. A person may appear both here and as an officer where they hold both roles.
           </div>
-          {relations.length>0?(relations.map(r=>(
-            <div key={r.id} style={{ ...s.card, marginBottom:8 }}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
-                <div>
-                  <div style={{ fontSize:13, fontWeight:600 }}>{r.name}</div>
-                  <div style={{ fontSize:11, color:"var(--text-secondary,#666)", marginTop:3 }}>{r.role} · DOB: {r.dob} · {r.nationality}</div>
-                  {(r.taxResidence||r.tin)&&<div style={{ fontSize:11, color:"var(--text-secondary,#666)", marginTop:2 }}>Tax residence: {r.taxResidence||"—"} · TIN: <span style={{ fontFamily:"monospace" }}>{r.tin||"—"}</span></div>}
-                  {r.shared&&<div style={{ fontSize:10, color:CY, marginTop:4 }}>⟳ Shared record — also linked to: {r.linkedEntities.join(", ")}</div>}
-                </div>
-                <Badge label={r.shared?"Shared record":"This entity only"} colors={r.shared?{bg:"#E6F7FB",color:"#0077A8"}:{bg:"#F1EFE8",color:"#666"}} />
-              </div>
-            </div>
-          ))):<div style={{ color:"var(--text-secondary,#666)", fontSize:12, padding:"20px 0", textAlign:"center" }}>No relations recorded.</div>}
+          {relations.length>0?(
+            <Tbl cols={[{l:"Name",w:"18%"},{l:"Nature of control",w:"22%"},{l:"Ownership",w:"9%"},{l:"DOB",w:"11%"},{l:"Nationality",w:"11%"},{l:"Tax residence",w:"11%"},{l:"TIN",w:"11%"},{l:"Record",w:"7%"}]}
+              rows={relations.map(r=>(
+                <tr key={r.id} style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)" }}>
+                  <td style={{ ...s.td, fontWeight:500 }}>{r.name}{r.role&&<span style={{ display:"block", fontSize:10, fontWeight:400, color:"var(--text-secondary,#999)" }}>{r.role}</span>}</td>
+                  <td style={{ ...s.td, color:"var(--text-secondary,#666)", whiteSpace:"normal", lineHeight:1.3 }}>{r.nature||"—"}</td>
+                  <td style={{ ...s.td, fontWeight:600 }}>{r.ownershipPct!=null?r.ownershipPct+"%":"—"}</td>
+                  <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{r.dob}</td>
+                  <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{r.nationality}</td>
+                  <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{r.taxResidence||"—"}</td>
+                  <td style={{ ...s.td, color:"var(--text-secondary,#666)", fontFamily:"monospace", fontSize:10 }}>{r.tin||"—"}</td>
+                  <td style={s.td}>{r.shared?<Badge label="Shared" colors={{bg:"#E6F7FB",color:"#0077A8"}} title={r.linkedEntities.join(", ")} />:<span style={{ color:"var(--text-secondary,#999)" }}>—</span>}</td>
+                </tr>
+              ))}
+            />
+          ):<div style={{ color:"var(--text-secondary,#666)", fontSize:12, padding:"20px 0", textAlign:"center" }}>No beneficial owners recorded.</div>}
         </div>
       );
 
@@ -1278,7 +1281,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
             {label:"Date incorporated",placeholder:"DD/MM/YYYY"},
             {label:"Administrator",placeholder:"Name"},
             {label:"Lead director",placeholder:"Name"},
-            {label:"Principal activity",placeholder:"e.g. Holding company"},
+            {label:"Principal activity",type:"select",opts:["Holding company","Investment holding","Trading company","Property holding","Family trust","Wealth & estate planning","Fund / investment fund","eGaming operator","eGaming B2B supply","Yacht / aircraft ownership","Philanthropy / foundation","Intellectual property holding","Financing / treasury","Consultancy / services","Dormant","Other"]},
             {label:"Currency",type:"select",opts:["GBP","USD","EUR"]},
             {label:"Year end",placeholder:"DD/MM"},
             {label:"Initial status",type:"select",opts:["Active","Pending incorporation","Dormant"]},
