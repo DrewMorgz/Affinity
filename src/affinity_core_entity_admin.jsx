@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { isConfigured } from "./affinity_accounting_supabase";
 import { eaEntitiesList, eaProfile, eaOfficers, eaShareholders, eaCharges, eaUbos, eaAddresses, eaMeetings,
-  eaBanks, eaAssets, eaDividends, eaSafeItems, eaFileNotes, eaSafeMovements, eaSignatories } from "./affinity_eadmin_api";
+  eaBanks, eaAssets, eaDividends, eaSafeItems, eaFileNotes, eaSafeMovements, eaSignatories,
+  repAum, repBankBalances, repSafeCustody, repSignatories } from "./affinity_eadmin_api";
 import EntityChart from "./affinity_core_entity_chart";
 const CY = "#00C4CC";
 const NAVY = "#001242";
@@ -324,6 +325,16 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
   const [typeF, setTypeF]   = useState("");
   const [statF, setStatF]   = useState("");
   const [modal, setModal]   = useState(null);
+  const [reportsOpen, setReportsOpen] = useState(false);
+  const [repTab, setRepTab] = useState("aum");
+  const [repRows, setRepRows] = useState([]);
+  const [repLoading, setRepLoading] = useState(false);
+  const REPORTS = {
+    aum:  { label:"Assets under management", fetch:()=>repAum(),          cols:[["entity","Entity"],["jurisdiction","Jurisdiction"],["description","Asset"],["acquired","Acquired"],["value","Value"],["ccy","Ccy"],["disposed","Disposed"],["disposal_value","Disposal value"],["status","Status"]] },
+    bank: { label:"Bank balances (FSA)",      fetch:()=>repBankBalances(), cols:[["entity","Entity"],["bank","Bank"],["account_name","Account"],["ccy","Ccy"],["balance","Balance"],["balance_date","As at"],["iban","IBAN"],["sort_code","Sort code"]] },
+    safe: { label:"Safe custody & archiving",  fetch:()=>repSafeCustody(null), cols:[["entity","Entity"],["record_type","Type"],["item","Item"],["location","Location"],["box_number","Box no."],["deposited","Deposited"],["retrieved","Retrieved"],["authorised_by","Authorised by"]] },
+    sig:  { label:"Authorised signatories",    fetch:()=>repSignatories(),  cols:[["entity","Entity"],["signatory","Signatory"],["category","Category"],["class","Class"],["bank","Bank"],["from_date","From"],["to_date","To"]] },
+  };
 
   // Map office name to jurisdiction for cross-filter
   const officeToJur = {
@@ -370,6 +381,21 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
   }, [sel, liveEnts]);
 
   const ents = liveEnts || ENTITIES;
+
+  useEffect(()=>{
+    if(!reportsOpen || !isConfigured) return;
+    let ok=true; setRepLoading(true);
+    REPORTS[repTab].fetch().then(({data})=>{ if(ok){ setRepRows(data||[]); setRepLoading(false); } })
+      .catch(()=>{ if(ok){ setRepRows([]); setRepLoading(false); } });
+    return ()=>{ok=false;};
+  },[reportsOpen, repTab]);
+  const exportRepCsv = () => {
+    const cols = REPORTS[repTab].cols;
+    const head = cols.map(c=>c[1]).join(",");
+    const body = repRows.map(r=>cols.map(c=>`"${String(r[c[0]]??"").replace(/"/g,'""')}"`).join(",")).join("\n");
+    const blob = new Blob([head+"\n"+body], { type:"text/csv" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `affinity-${repTab}-report.csv`; a.click();
+  };
 
   const filtered = useMemo(()=>ents.filter(e=>
     (!search||e.name.toLowerCase().includes(search.toLowerCase())||e.ref.toLowerCase().includes(search.toLowerCase()))&&
@@ -1179,6 +1205,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
               <datalist id="ea-entity-list">{ents.flatMap(e=>[<option key={"n"+e.id} value={e.name}>{e.ref}</option>,<option key={"r"+e.id} value={e.ref}>{e.name}</option>])}</datalist>
             </div>
             {entity&&<button style={s.btn(false)} onClick={()=>{ setSel(null); setSearch(""); }}>Clear ✕</button>}
+            <button style={s.btn(false)} onClick={()=>setReportsOpen(true)}>📊 Reports</button>
             <button style={s.btn(true)} onClick={()=>setModal("newEntity")}>＋ New entity</button>
           </div>
           {entity?(
@@ -1258,6 +1285,39 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
           ]}
           onClose={()=>setModal(null)}
         />
+      )}
+
+      {reportsOpen && (
+        <div onClick={()=>setReportsOpen(false)} style={{ position:"fixed", inset:0, background:"rgba(0,18,66,0.45)", zIndex:200, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
+          <div onClick={e=>e.stopPropagation()} style={{ background:"var(--bg-primary,#fff)", borderRadius:10, width:"min(1040px,96vw)", maxHeight:"90vh", display:"flex", flexDirection:"column", overflow:"hidden", boxShadow:"0 10px 40px rgba(0,0,0,0.3)" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"14px 18px", borderBottom:"0.5px solid #e5e5e5" }}>
+              <div style={{ fontSize:15, fontWeight:600, color:"#001242" }}>Entity Admin — Reports</div>
+              <button style={s.btn(false)} onClick={()=>setReportsOpen(false)}>Close ✕</button>
+            </div>
+            <div style={{ display:"flex", gap:6, padding:"10px 18px", borderBottom:"0.5px solid #e5e5e5", flexWrap:"wrap" }}>
+              {Object.entries(REPORTS).map(([k,r])=>(
+                <button key={k} onClick={()=>setRepTab(k)} style={{ padding:"5px 14px", fontSize:12, borderRadius:20, border:`0.5px solid ${repTab===k?CY:"#e5e5e5"}`, background:repTab===k?CY:"transparent", color:repTab===k?"#fff":"#666", cursor:"pointer", fontWeight:repTab===k?600:400 }}>{r.label}</button>
+              ))}
+            </div>
+            <div style={{ padding:"14px 18px", overflow:"auto" }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+                <div style={{ fontSize:12, color:"var(--text-secondary,#666)" }}>{repLoading?"Loading…":`${repRows.length} record${repRows.length===1?"":"s"}`}</div>
+                <button style={s.btn(true)} onClick={exportRepCsv} disabled={!repRows.length}>⭳ Export CSV</button>
+              </div>
+              <table style={{ width:"100%", borderCollapse:"collapse" }}>
+                <thead><tr>{REPORTS[repTab].cols.map(c=><th key={c[0]} style={{ padding:"8px 10px", textAlign:"left", fontSize:10, fontWeight:600, color:"#666", textTransform:"uppercase", letterSpacing:"0.4px", borderBottom:"0.5px solid #e5e5e5", position:"sticky", top:0, background:"var(--bg-primary,#fff)" }}>{c[1]}</th>)}</tr></thead>
+                <tbody>
+                  {repRows.map((r,i)=>(
+                    <tr key={i} style={{ borderBottom:"0.5px solid #e5e5e5" }}>
+                      {REPORTS[repTab].cols.map(c=><td key={c[0]} style={{ ...s.td, fontSize:11 }}>{r[c[0]]==null||r[c[0]]===""?"—":String(r[c[0]])}</td>)}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {!repLoading&&!repRows.length&&<div style={{ textAlign:"center", padding:"24px 0", color:"var(--text-secondary,#666)", fontSize:12 }}>No records for this report yet. Run the round-2 SQL (and, once the write layer is live, staff-entered records will populate these).</div>}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

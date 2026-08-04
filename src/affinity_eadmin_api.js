@@ -64,3 +64,7 @@ export async function eaSignatories(entityId) {
   if (!isConfigured) return off();
   return supabase.rpc("ea_signatories", { p_entity: entityId });
 }
+export async function repAum()          { if (!isConfigured) return off(); return supabase.rpc("rep_aum", {}); }
+export async function repBankBalances() { if (!isConfigured) return off(); return supabase.rpc("rep_bank_balances", {}); }
+export async function repSafeCustody(t) { if (!isConfigured) return off(); return supabase.rpc("rep_safe_custody", { p_type: t||null }); }
+export async function repSignatories()  { if (!isConfigured) return off(); return supabase.rpc("rep_signatories", {}); }
