@@ -22,8 +22,8 @@ BEGIN
      ('AFG-IOM','Affinity (Isle of Man) Limited','group','COMPANY','IOM','GBP'),
      ('AFG-MLT','Affinity (Malta) Limited','group','COMPANY','MALTA','EUR'),
      ('AFG-CYM','Affinity (Cayman) Limited','group','COMPANY','CYM','USD'),
-     ('AFG-SD','Affinity South Dakota, LLC','group','COMPANY','US','USD'),
-     ('AFG-FL','Affinity South Florida, LLC','group','COMPANY','US','USD'),
+     ('AFG-SD','Affinity South Dakota, LLC','group','COMPANY','USA','USD'),
+     ('AFG-FL','Affinity South Florida, LLC','group','COMPANY','USA','USD'),
      ('AFG-UK','Affinity (UK) Limited','group','COMPANY','UK','GBP');
   END IF;
 
