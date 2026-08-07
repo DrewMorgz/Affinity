@@ -29,7 +29,7 @@ const f2 = (n) => n == null ? "—" : new Intl.NumberFormat("en-GB", { style: "c
 const TITLES = {
   acc_ov: "Overview", acc_gl: "General Ledger", acc_ap: "Accounts Payable", acc_ar: "Accounts Receivable",
   acc_bank: "Banking & Reconciliation", acc_fa: "Fixed Assets", acc_ic: "Intercompany", acc_con: "Consolidation",
-  acc_cf: "Cash Flow & Treasury", acc_fx: "Multi-currency / FX", acc_tax: "Tax & VAT", acc_bud: "Budgeting",
+  acc_cf: "Cash Flow & Treasury", acc_fx: "FX rates & multi-currency", acc_tax: "Tax & VAT", acc_bud: "Budgeting",
   acc_fs: "Financial Statements", acc_mgmt: "Management Reports", acc_ctl: "Controls", acc_doc: "Documents",
   acc_aud: "Auditor Pack",
 };
@@ -373,7 +373,10 @@ const PANELS = {
     const hasP = fx && fx.positions && fx.positions.length;
     return (
       <>
-        <Panel title="Exchange rates (auto-fetched daily)"><Table head={["Pair", "Rate", "As at"]} rows={rates} /></Panel>
+        <div style={{ background: "#FBFCFD", border: `1px solid ${LINE}`, borderRadius: 10, padding: "10px 14px", fontSize: 12.5, color: MUT, marginBottom: 16 }}>
+          ⚙️ <strong style={{ color: NAVY }}>Accounting admin — FX rates.</strong> Rates are entered and managed here (not fetched globally), and pull through to the relevant client files. Per-client / per-reporting-basis rates will be selectable, so a client can be reported on its own rate set. <em>(Rate entry activates with the write layer.)</em>
+        </div>
+        <Panel title="FX rate table"><Table head={["Pair", "Rate", "As at"]} rows={rates} /></Panel>
         {hasP
           ? <Panel title="Currency exposure by entity"><Table head={["Entity", "Ccy", "Net position"]} rows={fx.positions.map((p) => [p.entity_code, p.ccy, { n: f0(p.net_position) }])} /></Panel>
           : <div style={cards}>
@@ -381,7 +384,7 @@ const PANELS = {
               <Mini title="Unrealised (revaluation)" rows={[["At period end", f0(185)]]} />
               <Mini title="Translation reserve" rows={[["EUR subsidiary", f0(250)]]} />
             </div>}
-        <Note>Functional + transaction currency · daily rate feed · realised &amp; unrealised FX · translation reserves.</Note>
+        <Note>Functional + transaction currency · manual rate entry · per-client rate sets · realised &amp; unrealised FX · translation reserves.</Note>
       </>
     );
   },
@@ -550,12 +553,14 @@ const GROUPS = {
   acc_wip:      [["wip", "Work in progress"]],
   acc_txn:      [["acc_gl", "General Ledger"], ["acc_ar", "Accounts Receivable"], ["acc_ap", "Accounts Payable"], ["acc_bank", "Banking & Reconciliation"]],
   acc_assets:   [["acc_fa", "Fixed Assets"], ["acc_ic", "Intercompany"], ["acc_con", "Consolidation"]],
-  acc_report:   [["acc_cf", "Cash Flow & Treasury"], ["acc_fx", "Multi-currency / FX"], ["acc_tax", "Tax & VAT"], ["acc_fs", "Financial Statements"], ["acc_mgmt", "Management Reports"]],
+  acc_report:   [["acc_cf", "Cash Flow & Treasury"], ["acc_tax", "Tax & VAT"], ["acc_fs", "Financial Statements"], ["acc_mgmt", "Management Reports"]],
   acc_gov:      [["acc_ctl", "Controls"], ["acc_aud", "Auditor Pack"]],
+  acc_admin:    [["acc_fx", "FX rates & multi-currency"]],
 };
 const GROUP_TITLE = {
   acc_overview: "Overview", acc_wip: "Work in progress", acc_txn: "Transactions",
   acc_assets: "Assets & Groups", acc_report: "Reporting", acc_gov: "Governance",
+  acc_admin: "Accounting admin",
 };
 
 const DEMO_ENTITIES = [
