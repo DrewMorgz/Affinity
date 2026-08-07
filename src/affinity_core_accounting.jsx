@@ -82,6 +82,84 @@ function Mini({ title, rows }) {
 }
 const cards = { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(230px,1fr))", gap: 14, marginBottom: 16 };
 
+// ---- WIP drill-down (All offices -> office -> client -> staff & time) ----
+const WIP_TREE = {
+  "Isle of Man": { clients: {
+    "Northwind Holdings — annual admin": [{ staff: "R. Sheeley", hrs: 12.5, rate: 285, value: 3562, age: "21 days" }, { staff: "A. Gardner", hrs: 6.0, rate: 250, value: 1500, age: "14 days" }],
+    "Rosewood Legacy Trust — trustee": [{ staff: "R. Sheeley", hrs: 8.0, rate: 285, value: 2280, age: "9 days" }],
+    "Meridian Holdings — accounts prep": [{ staff: "N. Kelly", hrs: 15.0, rate: 300, value: 4500, age: "30 days" }],
+  } },
+  "Malta": { clients: {
+    "Azure Mediterranean Fdn — admin": [{ staff: "J. Fenech", hrs: 9.0, rate: 260, value: 2340, age: "8 days" }],
+    "Stonebridge Capital — restructuring": [{ staff: "M. Borg", hrs: 11.0, rate: 240, value: 2640, age: "17 days" }],
+  } },
+  "Cayman": { clients: {
+    "Seabright Trust — restructuring": [{ staff: "G. Crossan", hrs: 28.0, rate: 310, value: 8680, age: "34 days" }],
+    "Maple Fund SPC — incorporation": [{ staff: "G. Crossan", hrs: 9.0, rate: 260, value: 2340, age: "8 days" }],
+  } },
+};
+const wipClientTotal = (o, c) => WIP_TREE[o].clients[c].reduce((s, r) => s + r.value, 0);
+const wipOfficeTotal = (o) => Object.keys(WIP_TREE[o].clients).reduce((s, c) => s + wipClientTotal(o, c), 0);
+function WipLink({ onClick, children }) {
+  return <button onClick={onClick} style={{ background: "none", border: "none", color: CY, cursor: "pointer", fontSize: 13, padding: 0, fontWeight: 600, textAlign: "left" }}>{children}</button>;
+}
+function WipDrilldown() {
+  const [office, setOffice] = useState(null);
+  const [client, setClient] = useState(null);
+  const offices = Object.keys(WIP_TREE);
+  const grand = offices.reduce((s, o) => s + wipOfficeTotal(o), 0);
+  const crumbBtn = (active) => ({ background: "none", border: "none", cursor: "pointer", fontSize: 12, padding: 0, color: active ? NAVY : CY, fontWeight: active ? 700 : 600 });
+  const crumb = (
+    <div style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 12, marginBottom: 14 }}>
+      <button onClick={() => { setOffice(null); setClient(null); }} style={crumbBtn(!office)}>All offices</button>
+      {office && <><span style={{ color: MUT }}>›</span><button onClick={() => setClient(null)} style={crumbBtn(office && !client)}>{office}</button></>}
+      {client && <><span style={{ color: MUT }}>›</span><span style={{ fontWeight: 700, color: NAVY }}>{client.split(" — ")[0]}</span></>}
+    </div>
+  );
+  if (!office) {
+    return (<>
+      {crumb}
+      <div style={cards}>
+        <Mini title="Total unbilled WIP" rows={[["All offices", f0(grand)]]} />
+        <Mini title="Offices" rows={offices.map((o) => [o, f0(wipOfficeTotal(o))])} />
+      </div>
+      <Panel title="By office — select to drill down">
+        <Table head={["Office", "Clients", "WIP value", ""]} rows={offices.map((o) => [
+          <WipLink onClick={() => setOffice(o)}>{o}</WipLink>,
+          { n: Object.keys(WIP_TREE[o].clients).length },
+          { n: f0(wipOfficeTotal(o)) },
+          <WipLink onClick={() => setOffice(o)}>Drill down ›</WipLink>,
+        ])} />
+      </Panel>
+      <Note>Start at all offices and drill into office → client → fee earner. Access to each level will follow user permissions once security is enabled.</Note>
+    </>);
+  }
+  if (!client) {
+    const clients = Object.keys(WIP_TREE[office].clients);
+    return (<>
+      {crumb}
+      <Panel title={`${office} — work in progress by client`}>
+        <Table head={["Client / matter", "Fee earners", "WIP value", ""]} rows={clients.map((c) => [
+          <WipLink onClick={() => setClient(c)}>{c}</WipLink>,
+          { n: new Set(WIP_TREE[office].clients[c].map((r) => r.staff)).size },
+          { n: f0(wipClientTotal(office, c)) },
+          <WipLink onClick={() => setClient(c)}>Staff &amp; time ›</WipLink>,
+        ])} />
+      </Panel>
+    </>);
+  }
+  const rows = WIP_TREE[office].clients[client];
+  return (<>
+    {crumb}
+    <Panel title={`${client} — fee earners & time`}>
+      <Table head={["Fee earner", "Unbilled hrs", "Rate", "WIP value", "Age"]} rows={rows.map((r) => [
+        r.staff, { n: r.hrs.toFixed(1) }, { n: f0(r.rate) }, { n: f0(r.value) }, { n: r.age },
+      ])} />
+    </Panel>
+    <Note>WIP is unbilled time from Timesheets, valued at each fee earner's rate. Convert to a draft bill in Invoicing.</Note>
+  </>);
+}
+
 // ---- panels ----
 const PANELS = {
   acc_ov(liveKpis) {
@@ -462,22 +540,7 @@ const PANELS = {
     );
   },
   wip() {
-    return (
-      <>
-        <div style={cards}>
-          <Mini title="Total unbilled WIP" rows={[["All offices", f0(184250)]]} />
-          <Mini title="By office" rows={[["Isle of Man", f0(96400)], ["Malta", f0(48200)], ["Cayman", f0(39650)]]} />
-        </div>
-        <Panel title="Work in progress by client / matter (from Timesheets)">
-          <Table head={["Client / matter", "Fee earner", "Unbilled hrs", "Rate", "WIP value", "Age"]} rows={[
-            ["Northwind Holdings — annual admin", "R. Sheeley", { n: "12.5" }, { n: f0(285) }, { n: f0(3562) }, { n: "21 days" }],
-            ["Seabright Trust — restructuring", "G. Crossan", { n: "28.0" }, { n: f0(310) }, { n: f0(8680) }, { n: "34 days" }],
-            ["Maple Fund SPC — incorporation", "J. Fenech", { n: "9.0" }, { n: f0(260) }, { n: f0(2340) }, { n: "8 days" }],
-          ]} />
-        </Panel>
-        <Note>WIP is unbilled time captured in Timesheets, valued at each fee earner's rate. Convert to a draft bill in Invoicing.</Note>
-      </>
-    );
+    return <WipDrilldown />;
   },
 };
 

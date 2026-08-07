@@ -43,6 +43,21 @@ const VIEWS = ["raise","invoices","client","bookkeeping","aged","retainers","cre
 const VLABELS = ["Ad-hoc invoicing","Invoice ledger","By client","Auto-bookkeeping","Aged debt","Retainers","Credit control"];
 
 export default function AffinityInvoicing({ onNav }) {
+  const AGED_ROWS = [
+    { e:"Harrington Family Trust",  c:"Harrington",  c0:0,    c31:0,    c61:1250, c90:500  },
+    { e:"Pacific Wealth Trust",     c:"Pacific",     c0:4200, c31:0,    c61:0,    c90:0    },
+    { e:"Apex Growth Fund Ltd",     c:"Apex",        c0:5500, c31:0,    c61:0,    c90:0    },
+    { e:"Meridian Holdings Ltd",    c:"Meridian",    c0:2000, c31:0,    c61:0,    c90:0    },
+    { e:"Rosewood Legacy Trust",    c:"Cheshire",    c0:2400, c31:0,    c61:0,    c90:0    },
+    { e:"North Star Holdings Ltd",  c:"North Star",  c0:0,    c31:0,    c61:600,  c90:0    },
+  ];
+  const exportAgedCsv = () => {
+    const head = ["Entity","Client","Current","31-60d","61-90d","90d+","Total"];
+    const body = AGED_ROWS.map(r=>[r.e,r.c,r.c0,r.c31,r.c61,r.c90,r.c0+r.c31+r.c61+r.c90].map(x=>`"${String(x).replace(/"/g,'""')}"`).join(","));
+    const blob = new Blob([head.join(",")+"\n"+body.join("\n")], { type:"text/csv" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "affinity-aged-debt.csv"; a.click();
+  };
+  const exportAgedPdf = () => window.print();
   const [liveInv,setLiveInv] = useState(null);
   useEffect(()=>{ if(!isConfigured) return; let ok=true; feeInvoices().then(({data})=>{ if(ok && data && data.length) setLiveInv(data); }).catch(()=>{}); return ()=>{ok=false;}; },[]);
   const invoices = liveInv || INVOICES;
@@ -351,6 +366,16 @@ export default function AffinityInvoicing({ onNav }) {
       {/* AGED DEBT */}
       {view==="aged"&&(
         <div style={{ padding:"16px 20px" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+            <div style={{ fontSize:13, fontWeight:600 }}>Aged debt</div>
+            <div style={{ display:"flex", gap:8 }}>
+              <button style={{ ...nb, fontSize:11 }} onClick={exportAgedCsv}>⭳ Excel (CSV)</button>
+              <button style={{ ...nb, fontSize:11 }} onClick={exportAgedPdf}>⭳ PDF</button>
+            </div>
+          </div>
+          <div style={{ background:"var(--bg-secondary,#f9f9f9)", borderRadius:6, padding:"7px 12px", fontSize:10, color:"#666", marginBottom:14 }}>
+            ℹ️ Scoped to all entities in this demo. Once security is enabled, aged debt will show only the companies you have access to.
+          </div>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:16 }}>
             {[{l:"Current (0-30d)",v:fmt(18450),c:"#4CAF7D"},{l:"31-60 days",v:fmt(12200)},{l:"61-90 days",v:fmt(8750),c:"#F59E0B"},{l:"90+ days",v:fmt(5320),c:"#EF4444"}].map(k=>(
               <div key={k.l} style={sc}><div style={{ fontSize:10, color:"#666", marginBottom:3 }}>{k.l}</div><div style={{ fontSize:18, fontWeight:500, color:k.c||"var(--text-primary,#111)" }}>{k.v}</div></div>
@@ -368,14 +393,7 @@ export default function AffinityInvoicing({ onNav }) {
               <th style={{ ...th, width:"12%" }}>Action</th>
             </tr></thead>
             <tbody>
-              {[
-                { e:"Harrington Family Trust",  c:"Harrington",  c0:0,    c31:0,    c61:1250, c90:500  },
-                { e:"Pacific Wealth Trust",     c:"Pacific",     c0:4200, c31:0,    c61:0,    c90:0    },
-                { e:"Apex Growth Fund Ltd",     c:"Apex",        c0:5500, c31:0,    c61:0,    c90:0    },
-                { e:"Meridian Holdings Ltd",    c:"Meridian",    c0:2000, c31:0,    c61:0,    c90:0    },
-                { e:"Rosewood Legacy Trust",    c:"Cheshire",    c0:2400, c31:0,    c61:0,    c90:0    },
-                { e:"North Star Holdings Ltd",  c:"North Star",  c0:0,    c31:0,    c61:600,  c90:0    },
-              ].map((r,i)=>(
+              {AGED_ROWS.map((r,i)=>(
                 <tr key={i} style={{ borderBottom:"0.5px solid #e5e5e5" }}>
                   <td style={{ ...td, fontWeight:500 }}>{r.e}</td>
                   <td style={{ ...td, color:"#666" }}>{r.c}</td>
