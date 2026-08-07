@@ -58,8 +58,8 @@ const wipTrend = [
   { month:"May", wip:42100 },{ month:"Jun", wip:46300 },{ month:"Jul", wip:48320 },
 ];
 
-const VIEWS = ["ledger","pnl","banks","journals","reports"];
-const VLABELS = ["Entity ledger","P&L summary","Bank accounts","Journals","Reports"];
+const VIEWS = ["ledger","banks","journals","reports"];
+const VLABELS = ["Entity ledger","Bank accounts","Journals","Reports"];
 
 export default function AffinityBookkeeping({ onNav }) {
   const [bkE,setBkE]=useState(null),[bkT,setBkT]=useState(null),[bkP,setBkP]=useState(null),[bkB,setBkB]=useState(null);

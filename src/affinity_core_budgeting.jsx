@@ -109,7 +109,7 @@ export default function AffinityBudgeting() {
       </div>
 
       <div style={{padding:"16px 20px"}}>
-        <SN tabs={["Overview","Budget vs actual","Scenarios","Service lines","Purchase orders","Settings"]} active={tab} onChange={setTab}/>
+        <SN tabs={["Budgets","Scenarios","Purchase orders","Settings"]} active={tab} onChange={setTab}/>
 
         {/* OVERVIEW */}
         {tab===0&&budget&&(<>
@@ -168,7 +168,7 @@ export default function AffinityBudgeting() {
         </>)}
 
         {/* BUDGET VS ACTUAL */}
-        {tab===1&&(<>
+        {false&&(<>
           <div style={{background:"#EAF3DE22",border:"0.5px solid #4CAF7D",borderRadius:8,padding:"10px 14px",fontSize:12,color:"#27500A",marginBottom:14}}>
             YTD revenue <strong>{fmt(ytdRev)}</strong> vs budget <strong>{fmt(ytdBudRev)}</strong> &mdash; <strong style={{color:ytdRev>=ytdBudRev?"#27500A":"#EF4444"}}>{ytdRev>=ytdBudRev?"Ahead":"Behind"} by {fmt(Math.abs(ytdRev-ytdBudRev))}</strong>
           </div>
@@ -213,7 +213,7 @@ export default function AffinityBudgeting() {
         </>)}
 
         {/* SCENARIOSL */}
-        {tab===2&&(<>
+        {tab===1&&(<>
           <div style={{fontSize:13,fontWeight:500,marginBottom:4}}>Scenario modelling — FY 2025/26</div>
           <div style={{fontSize:11,color:"#666",marginBottom:14}}>Compare base case, best case, and downside scenarios. Adjust assumptions to model different outcomes.</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:16}}>
@@ -254,7 +254,7 @@ export default function AffinityBudgeting() {
         </>)}
 
         {/* SERVICE LINES */}
-        {tab===3&&(<>
+        {false&&(<>
           <KG cols={4} items={[
             {l:"Service lines tracked",v:SERVICELINESL.length,c:CY},
             {l:"Highest margin",v:"Yachting 52%",c:"#4CAF7D"},
@@ -311,7 +311,7 @@ export default function AffinityBudgeting() {
         </>)}
 
         {/* PURCHASE ORDERS */}
-        {tab===4&&(<>
+        {tab===2&&(<>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
             <KG cols={4} items={[
               {l:"Total POs raised",     v:POSL.length,                                         c:CY},
@@ -350,7 +350,7 @@ export default function AffinityBudgeting() {
         </>)}
 
         {/* SETTINGS */}
-        {tab===5&&(
+        {tab===3&&(
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
             <Card title="Budget periods">
               {[["Current financial year","Apr 2025 – Mar 2026"],["Next financial year","Apr 2026 – Mar 2027"],["Budget cycle start","1 November"],["Reforecast frequency","Quarterly"],["Approval required","CFO + MD"]].map(([k,v])=>(

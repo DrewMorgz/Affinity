@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getDatasets, isConfigured } from "./affinity_ops_api";
+import { getDatasets, isConfigured, bkPnlAll, bkEntities } from "./affinity_ops_api";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 const CY = "#00C4CC";
 const Badge = ({ label, colors }) => (<span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:600, background:colors?.bg||"#eee", color:colors?.color||"#333", whiteSpace:"nowrap" }}>{label}</span>);
@@ -52,8 +52,8 @@ const jurPie = [
   { name:"Miami",          value:16,  color:"#BF5C7A" },
 ];
 
-const VIEWS = ["executive","finance","compliance","entities","operations","kpis"];
-const VLABELS = ["Executive overview","Finance","Compliance","Entity portfolio","Operations","KPIs & exports"];
+const VIEWS = ["executive","finance","budget","pnl","compliance","entities","operations","kpis"];
+const VLABELS = ["Executive overview","Finance","Budget vs actual","P&L","Compliance","Entity portfolio","Operations","KPIs & exports"];
 
 const th = { padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:600, color:"#666", textTransform:"uppercase", letterSpacing:"0.4px", borderBottom:"0.5px solid #e5e5e5", background:"var(--bg-secondary,#f9f9f9)" };
 const td = { padding:"8px 12px", fontSize:11, borderBottom:"0.5px solid #e5e5e5" };
@@ -61,6 +61,32 @@ const td = { padding:"8px 12px", fontSize:11, borderBottom:"0.5px solid #e5e5e5"
 export default function AffinityReporting({ onNav }) {
   const [view, setView] = useState("executive");
   const [period, setPeriod] = useState("YTD 2025");
+  const [ds, setDs] = useState(null);
+  const [budDs, setBudDs] = useState(null);
+  const [pnlRows, setPnlRows] = useState(null);
+  useEffect(() => {
+    if (!isConfigured) return;
+    let ok = true;
+    getDatasets("report.").then(({ data }) => { if (ok && data && data.length) { const m = {}; data.forEach(r => { m[r.dkey.split(".")[1]] = r.data; }); setDs(m); } }).catch(() => {});
+    getDatasets("budget.").then(({ data }) => { if (ok && data && data.length) { const m = {}; data.forEach(r => { m[r.dkey.split(".")[1]] = r.data; }); setBudDs(m); } }).catch(() => {});
+    Promise.all([bkPnlAll(), bkEntities()]).then(([p, e]) => {
+      if (ok && p.data && e.data) {
+        const emap = {}; e.data.forEach(x => { emap[x.id] = x; });
+        setPnlRows(p.data.map(r => ({ entity: (emap[r.entity_id] || {}).name || ("Entity " + r.entity_id), sym: r.sym || "£", income: Number(r.income), expenses: Number(r.expenses), net: Number(r.net) })));
+      }
+    }).catch(() => {});
+    return () => { ok = false; };
+  }, []);
+  const revenueByOfficeL = (ds && ds.revenueByOffice) || revenueByOffice;
+  const wipTrendL = (ds && ds.wipTrend) || wipTrend;
+  const debtorTrendL = (ds && ds.debtorTrend) || debtorTrend;
+  const utilDataL = (ds && ds.utilData) || utilData;
+  const riskPieL = (ds && ds.riskPie) || riskPie;
+  const jurPieL = (ds && ds.jurPie) || jurPie;
+  const budgetVariance = (budDs && budDs.variance) || [];
+  const budgetMonthly = (budDs && budDs.monthly) || [];
+  const budgetServicelines = (budDs && budDs.servicelines) || [];
+  const pnl = pnlRows || [];
 
   const nb  = { padding:"5px 12px", fontSize:11, borderRadius:5, border:"0.5px solid #e5e5e5", background:"transparent", color:"#666", cursor:"pointer" };
   const nba = { ...nb, background:CY, color:"#fff", border:`0.5px solid ${CY}`, fontWeight:500 };
@@ -263,6 +289,74 @@ export default function AffinityReporting({ onNav }) {
               ))}
             </div>
           </div>
+        </>)}
+
+        {/* BUDGET VS ACTUAL */}
+        {view==="budget"&&(<>
+          <div style={card}>
+            <div style={cardT}>Budget vs actual — by line</div>
+            {budgetVariance.length>0?(
+              <table style={{ width:"100%", borderCollapse:"collapse" }}>
+                <thead><tr>
+                  {["Line","Budget","Actual","Variance","%","Status"].map((h,i)=><th key={h} style={{ padding:"7px 10px", textAlign:i===0?"left":"right", fontSize:10, fontWeight:600, color:"#666", textTransform:"uppercase", letterSpacing:"0.4px", borderBottom:"0.5px solid #e5e5e5" }}>{h}</th>)}
+                </tr></thead>
+                <tbody>
+                  {budgetVariance.map((r,i)=>(
+                    <tr key={i} style={{ borderBottom:"0.5px solid #e5e5e5" }}>
+                      <td style={{ padding:"7px 10px", fontSize:12, fontWeight:500 }}>{r.line}</td>
+                      <td style={{ padding:"7px 10px", fontSize:12, textAlign:"right", color:"#666" }}>{fmt(r.budget)}</td>
+                      <td style={{ padding:"7px 10px", fontSize:12, textAlign:"right" }}>{fmt(r.actual)}</td>
+                      <td style={{ padding:"7px 10px", fontSize:12, textAlign:"right", color:r.variance<0?"#EF4444":"#4CAF7D" }}>{r.variance<0?"-":"+"}{fmt(r.variance)}</td>
+                      <td style={{ padding:"7px 10px", fontSize:12, textAlign:"right", color:"#666" }}>{r.pct}</td>
+                      <td style={{ padding:"7px 10px", textAlign:"right" }}><Badge label={r.status} colors={r.status==="Favourable"?{bg:"#EAF3DE",color:"#27500A"}:{bg:"#FCEBEB",color:"#A32D2D"}} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ):<div style={{ color:"#666", fontSize:12, padding:"16px 0", textAlign:"center" }}>Budget data loads from the ui_dataset store (run affinity_datasets.sql).</div>}
+          </div>
+          {budgetMonthly.length>0&&<div style={card}>
+            <div style={cardT}>Revenue — budget vs forecast vs actual</div>
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={budgetMonthly} margin={{ top:5, right:10, left:-10, bottom:0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#eee" /><XAxis dataKey="month" tick={{ fontSize:11 }} /><YAxis tick={{ fontSize:11 }} /><Tooltip /><Legend wrapperStyle={{ fontSize:11 }} />
+                <Line type="monotone" dataKey="budget" stroke="#999" strokeWidth={1.5} dot={false} />
+                <Line type="monotone" dataKey="forecast" stroke="#F59E0B" strokeWidth={1.5} dot={false} />
+                <Line type="monotone" dataKey="actual" stroke={CY} strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>}
+          <div style={{ fontSize:10, color:"#999", marginTop:4 }}>Budgets and scenarios are entered in the Budgeting section; this is the reporting view of the result.</div>
+        </>)}
+
+        {/* P&L (firm-wide, by entity) */}
+        {view==="pnl"&&(<>
+          <div style={g3}>
+            <div style={sc}><div style={{ fontSize:10, color:"#666", marginBottom:3 }}>Total income</div><div style={{ fontSize:18, fontWeight:600, color:CY }}>{fmt(pnl.reduce((s,r)=>s+r.income,0))}</div></div>
+            <div style={sc}><div style={{ fontSize:10, color:"#666", marginBottom:3 }}>Total expenses</div><div style={{ fontSize:18, fontWeight:600 }}>{fmt(pnl.reduce((s,r)=>s+r.expenses,0))}</div></div>
+            <div style={sc}><div style={{ fontSize:10, color:"#666", marginBottom:3 }}>Net position</div><div style={{ fontSize:18, fontWeight:600, color:pnl.reduce((s,r)=>s+r.net,0)>=0?"#4CAF7D":"#EF4444" }}>{fmt(pnl.reduce((s,r)=>s+r.net,0))}</div></div>
+          </div>
+          <div style={card}>
+            <div style={cardT}>Profit &amp; loss by entity</div>
+            {pnl.length>0?(
+              <table style={{ width:"100%", borderCollapse:"collapse" }}>
+                <thead><tr>
+                  {["Entity","Income","Expenses","Net"].map((h,i)=><th key={h} style={{ padding:"7px 10px", textAlign:i===0?"left":"right", fontSize:10, fontWeight:600, color:"#666", textTransform:"uppercase", letterSpacing:"0.4px", borderBottom:"0.5px solid #e5e5e5" }}>{h}</th>)}
+                </tr></thead>
+                <tbody>
+                  {pnl.map((r,i)=>(
+                    <tr key={i} style={{ borderBottom:"0.5px solid #e5e5e5" }}>
+                      <td style={{ padding:"7px 10px", fontSize:12, fontWeight:500 }}>{r.entity}</td>
+                      <td style={{ padding:"7px 10px", fontSize:12, textAlign:"right", color:"#666" }}>{fmt(r.income, r.sym)}</td>
+                      <td style={{ padding:"7px 10px", fontSize:12, textAlign:"right", color:"#666" }}>{fmt(r.expenses, r.sym)}</td>
+                      <td style={{ padding:"7px 10px", fontSize:12, textAlign:"right", fontWeight:600, color:r.net>=0?"#4CAF7D":"#EF4444" }}>{r.net<0?"-":""}{fmt(r.net, r.sym)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ):<div style={{ color:"#666", fontSize:12, padding:"16px 0", textAlign:"center" }}>P&amp;L loads from the bookkeeping ledgers (run affinity_bookkeeping.sql). Note: entities may be in different currencies.</div>}
+          </div>
+          <div style={{ fontSize:10, color:"#999", marginTop:4 }}>Per-entity P&amp;L is drawn from the bookkeeping ledgers. Entities reported in their own functional currency.</div>
         </>)}
 
         {/* COMPLIANCE */}
