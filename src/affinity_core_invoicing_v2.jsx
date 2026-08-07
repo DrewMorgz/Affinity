@@ -40,7 +40,7 @@ const jurShort = { "Isle of Man":"IOM","Malta":"MLT","Cayman Islands":"CYM","Uni
 const invStatus = { Draft:{bg:"#FAEEDA",color:"#633806"}, Sent:{bg:"#E6F1FB",color:"#0C447C"}, Paid:{bg:"#EAF3DE",color:"#27500A"}, Overdue:{bg:"#FCEBEB",color:"#A32D2D"}, Partial:{bg:"#FAEEDA",color:"#633806"} };
 
 const VIEWS = ["raise","invoices","client","bookkeeping","aged","retainers","credit"];
-const VLABELS = ["Raise invoice","Invoice ledger","By client","Auto-bookkeeping","Aged debt","Retainers","Credit control"];
+const VLABELS = ["Ad-hoc invoicing","Invoice ledger","By client","Auto-bookkeeping","Aged debt","Retainers","Credit control"];
 
 export default function AffinityInvoicing({ onNav }) {
   const [liveInv,setLiveInv] = useState(null);
@@ -98,7 +98,7 @@ export default function AffinityInvoicing({ onNav }) {
       {/* INVOICE LEDGER */}
       {view==="raise"&&(
         <div style={{padding:"16px 20px",maxWidth:800}}>
-          <div style={{fontSize:13,fontWeight:600,marginBottom:4}}>Raise invoice</div>
+          <div style={{fontSize:13,fontWeight:600,marginBottom:4}}>Ad-hoc invoicing</div>
           <div style={{fontSize:11,color:"#666",marginBottom:16}}>Create a new invoice. All fields pre-populate from entity and retainer data where available.</div>
 
           <div style={{background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:10,padding:20,marginBottom:14}}>
@@ -489,7 +489,7 @@ export default function AffinityInvoicing({ onNav }) {
             </div>
             <div style={{ display:"flex", gap:8, justifyContent:"flex-end", marginTop:14 }}>
               <button style={nb} onClick={()=>setModal(null)}>Cancel</button>
-              <button style={nba} onClick={()=>setModal(null)}>Raise invoice + bookkeep</button>
+              <button style={nba} onClick={()=>setModal(null)}>Raise ad-hoc invoice + bookkeep</button>
             </div>
           </div>
         </div>
