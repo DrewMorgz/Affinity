@@ -9,14 +9,16 @@ const Badge = ({ label, colors }) => (
 );
 
 // Per review: new status stages
-const STAGES = ["Initial Call","Proposal Sent","Proposal Accepted","KYC Arriving","KYC Approved","Fees Paid","Declined","Withdrawn"];
+const STAGES = ["Initial Call","Proposal Sent","Proposal Accepted","KYC Arriving","KYC Approved","Invoice Issued","Fees Paid","On Hold","Declined","Withdrawn"];
 const STAGE_COLORS = {
   "Initial Call":      { bg:"#E6F7FB", color:"#0077A8" },
   "Proposal Sent":     { bg:"#EEF0FB", color:"#3C3489" },
   "Proposal Accepted": { bg:"#FAEEDA", color:"#633806" },
   "KYC Arriving":      { bg:"#F3E5F5", color:"#6A1B9A" },
   "KYC Approved":      { bg:"#E6F7FB", color:"#00796B" },
+  "Invoice Issued":    { bg:"#FFF4E5", color:"#B25000" },
   "Fees Paid":         { bg:"#EAF3DE", color:"#27500A" },
+  "On Hold":           { bg:"#ECEFF1", color:"#455A64" },
   "Declined":          { bg:"#FCEBEB", color:"#A32D2D" },
   "Withdrawn":         { bg:"#F5F5F5", color:"#757575" },
 };
@@ -162,6 +164,7 @@ export default function AffinityCRM() {
     "Real estate":"Property Holding Company",
     "Trading":"International Trading Company",
     "IP holding":"IP Holding Company",
+    "Medicinal Cannabis":"Licensed Medicinal Cannabis Company",
   };
   const COUNTRY_NOTES = {
     "Isle of Man":"a stable Crown Dependency with 0% corporate tax for most activities, recognised internationally for its regulatory rigour and political neutrality",
@@ -175,13 +178,16 @@ export default function AffinityCRM() {
   };
   const generateProposal = () => {
     const sp_ = prospects.find(p=>p.id===sel); if(!sp_) return;
-    const { country, sector, annualFee, setupFee, adminFee } = proposalForm;
+    const { country, sector, currency="GBP", annualFee, setupFee, adminFee, transferInFee=0, complianceAdvance=0, govFees=0, optionalCosts=0, timeSpentMin=0 } = proposalForm;
     const structure = SECTOR_STRUCTURE[sector] || "appropriate corporate vehicle";
     const note = COUNTRY_NOTES[country] || "a well-regulated jurisdiction";
     const today = new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"});
-    const total1 = Number(setupFee) + Number(annualFee) + Number(adminFee);
+    const CURSYM = { GBP:"£", EUR:"€", USD:"$" };
+    const cs = CURSYM[currency] || "£";
+    const total1 = Number(setupFee) + Number(transferInFee) + Number(complianceAdvance) + Number(annualFee) + Number(adminFee) + Number(govFees);
     const total2 = Number(annualFee) + Number(adminFee);
-    const fmt = (n) => "£" + Number(n).toLocaleString();
+    const disb = Math.round((Number(setupFee)+Number(annualFee)+Number(adminFee)) * 0.05);
+    const fmt = (n) => cs + Number(n||0).toLocaleString();
     setProposalOutput(
 `AFFINITY GROUP
 PROPOSAL FOR ${sp_.company.toUpperCase()}
@@ -225,16 +231,19 @@ Our annual service package covers:
 
 ————————————————————————————————
 
-FEE SCHEDULE
+FEE SCHEDULE (all fees in ${currency})
 
-Set-up fee (one-time)         ${fmt(setupFee).padStart(12)}
-Annual administration         ${fmt(annualFee).padStart(12)}
-Compliance & KYC (annual)     ${fmt(adminFee).padStart(12)}
-                              ————————————
-Total year 1                  ${fmt(total1).padStart(12)}
-Total year 2 onwards          ${fmt(total2).padStart(12)}
+Set-up fee (one-time)              ${fmt(setupFee)}
+Transfer-in fee (if applicable)    ${fmt(transferInFee)}
+Onboarding compliance (in advance) ${fmt(complianceAdvance)}
+Annual administration              ${fmt(annualFee)}
+Compliance & KYC (annual)          ${fmt(adminFee)}
+Government / statutory fees         ${fmt(govFees)}
+                                   ————————————
+Total year 1                       ${fmt(total1)}
+Total year 2 onwards               ${fmt(total2)}${Number(timeSpentMin)>0 ? `\n\nMinimum time-spent charge          ${fmt(timeSpentMin)} (where work is billed on a time basis)` : ""}${Number(optionalCosts)>0 ? `\nOptional — DPO service (via Nav)    ${fmt(optionalCosts)} — billed separately` : ""}
 
-All fees in GBP, exclusive of VAT and third-party disbursements (filing fees, agent fees, statutory levies). Fees are reviewed annually.
+Fees are quoted in ${currency}, exclusive of VAT. Third-party disbursements are estimated at 5% (${fmt(disb)}) — filing fees, agent fees and statutory levies — and billed as incurred. Government / statutory fees (e.g. annual return, licence application) and optional items such as DPO (charged via Nav) are billed separately. Onboarding compliance fees are payable in advance. Fees are reviewed annually.
 
 ————————————————————————————————
 
@@ -430,7 +439,7 @@ Isle of Man · Malta · Cayman Islands · Cyprus · USA · United Kingdom`
                     </div>
                     <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
                       {["Fees Paid","KYC Approved"].includes(sp.stage)&&<button style={{ ...nba, background:"#4CAF7D", borderColor:"#4CAF7D" }} onClick={()=>setView("convert")}>Convert ↗</button>}
-                      <button style={{ ...nba }} onClick={()=>{ setProposalForm({ country:sp.jur||"Isle of Man", sector:"Holding company", annualFee:sp.annualFee||10000, setupFee:sp.setupFee||2500, adminFee:sp.adminFee||500 }); setProposalOutput(null); setModal("proposal"); }}>📄 Proposal</button>
+                      <button style={{ ...nba }} onClick={()=>{ setProposalForm({ country:sp.jur||"Isle of Man", currency:({"Malta":"EUR","Cayman Islands":"USD","USA":"USD","United States":"USD"}[sp.jur]||"GBP"), sector:"Holding company", annualFee:sp.annualFee||10000, setupFee:sp.setupFee||2500, adminFee:sp.adminFee||500 }); setProposalOutput(null); setModal("proposal"); }}>📄 Proposal</button>
                       <button style={nb} onClick={()=>setModal("interaction")}>＋ Log</button>
                       <button style={nb} onClick={()=>{ setForm({...sp}); setModal("edit"); }}>Edit</button>
                     </div>
@@ -487,7 +496,7 @@ Isle of Man · Malta · Cayman Islands · Cyprus · USA · United Kingdom`
                           <span style={{ fontSize:10, color:"#aaa" }}>{i.date}</span>
                         </div>
                         <div style={{ fontSize:12, color:"#444", lineHeight:1.5 }}>{i.note}</div>
-                        {i.next&&<div style={{ fontSize:11, color:CY, marginTop:3 }}>→ {i.next}</div>}
+                        {i.next&&<div style={{ fontSize:11, color:CY, marginTop:3 }}>→ {i.next}{i.dueDate&&<span style={{ color:"#B25000", fontWeight:600 }}> · due {i.dueDate}</span>}</div>}
                       </div>
                     ))}
                   </div>
@@ -601,14 +610,16 @@ Isle of Man · Malta · Cayman Islands · Cyprus · USA · United Kingdom`
             <Input label="Status" value={form.stage||"Initial Call"} onChange={v=>setForm(p=>({...p,stage:v}))} options={STAGES} />
             <Input label="Office" value={form.office||"Isle of Man"} onChange={v=>setForm(p=>({...p,office:v}))} options={OFFICES} />
             <Input label="Source" value={form.source||"Referral"} onChange={v=>setForm(p=>({...p,source:v}))} options={["Referral","Cold outreach","Trade show","Existing client","Website","Other"]} />
-            <Input label="BD lead" value={form.bd||""} onChange={v=>setForm(p=>({...p,bd:v}))} options={["Andy Morgan","Roxy Sheeley","Garry Crossan","Joanne Fenech","Neil Kelly"]} />
+            <Input label="BD lead" value={form.bd||""} onChange={v=>setForm(p=>({...p,bd:v}))} options={["Andy Morgan","Roxy Sheeley","Garry Crossan","Joanne Fenech","Neil Kelly","Debbie","Kate S","Kate C","Koko","Marcus"]} />
             <Input label="Risk" value={form.risk||"Medium"} onChange={v=>setForm(p=>({...p,risk:v}))} options={["Low","Medium","High","Very High"]} />
           </div>
           <div style={{ fontSize:11, fontWeight:700, color:"#888", textTransform:"uppercase", letterSpacing:"0.4px", margin:"8px 0 6px" }}>Fees</div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"0 12px" }}>
-            <Input label="Annual fee (£)" value={form.annualFee||""} onChange={v=>setForm(p=>({...p,annualFee:v}))} type="number" />
-            <Input label="Setup fee (£)"  value={form.setupFee||""}  onChange={v=>setForm(p=>({...p,setupFee:v}))}  type="number" />
-            <Input label="Admin fee (£/mo)" value={form.adminFee||""} onChange={v=>setForm(p=>({...p,adminFee:v}))} type="number" />
+            <Input label="Fee currency" value={form.currency||"GBP"} onChange={v=>setForm(p=>({...p,currency:v}))} options={["GBP","EUR","USD"]} />
+            <Input label={`Annual fee (${form.currency||"GBP"})`} value={form.annualFee||""} onChange={v=>setForm(p=>({...p,annualFee:v}))} type="number" />
+            <Input label={`Setup fee (${form.currency||"GBP"})`}  value={form.setupFee||""}  onChange={v=>setForm(p=>({...p,setupFee:v}))}  type="number" />
+            <Input label={`Transfer-in fee (${form.currency||"GBP"})`} value={form.transferInFee||""} onChange={v=>setForm(p=>({...p,transferInFee:v}))} type="number" />
+            <Input label={`Admin fee (${form.currency||"GBP"}/mo)`} value={form.adminFee||""} onChange={v=>setForm(p=>({...p,adminFee:v}))} type="number" />
           </div>
           <Input label="Expected conversion date" value={form.conversionDate||""} onChange={v=>setForm(p=>({...p,conversionDate:v}))} placeholder="DD/MM/YYYY" />
           <Input label="Notes" value={form.notes||""} onChange={v=>setForm(p=>({...p,notes:v}))} />
@@ -638,10 +649,16 @@ Isle of Man · Malta · Cayman Islands · Cyprus · USA · United Kingdom`
                 </div>
               </div>
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10, marginBottom:14 }}>
-                {[["Annual fee","annualFee"],["Set-up fee","setupFee"],["Compliance fee","adminFee"]].map(([lbl,key])=>(
+                <div>
+                  <div style={{ fontSize:10, fontWeight:600, color:"#888", marginBottom:4 }}>Currency</div>
+                  <select value={proposalForm.currency||"GBP"} onChange={e=>setProposalForm(f=>({...f,currency:e.target.value}))} style={{ width:"100%", padding:"8px 10px", border:"0.5px solid #ddd", borderRadius:6, fontSize:12 }}>
+                    {["GBP","EUR","USD"].map(o=><option key={o}>{o}</option>)}
+                  </select>
+                </div>
+                {[["Annual fee","annualFee"],["Set-up fee","setupFee"],["Transfer-in fee","transferInFee"],["Onboarding compliance (advance)","complianceAdvance"],["Compliance & KYC (annual)","adminFee"],["Government / statutory fees","govFees"],["Optional — DPO (via Nav)","optionalCosts"],["Min. time-spent charge","timeSpentMin"]].map(([lbl,key])=>(
                   <div key={key}>
-                    <div style={{ fontSize:10, fontWeight:600, color:"#888", marginBottom:4 }}>{lbl} (£)</div>
-                    <input type="number" value={proposalForm[key]} onChange={e=>setProposalForm(f=>({...f,[key]:e.target.value}))} style={{ width:"100%", padding:"8px 10px", border:"0.5px solid #ddd", borderRadius:6, fontSize:12 }} />
+                    <div style={{ fontSize:10, fontWeight:600, color:"#888", marginBottom:4 }}>{lbl}</div>
+                    <input type="number" value={proposalForm[key]||""} onChange={e=>setProposalForm(f=>({...f,[key]:e.target.value}))} style={{ width:"100%", padding:"8px 10px", border:"0.5px solid #ddd", borderRadius:6, fontSize:12 }} />
                   </div>
                 ))}
               </div>
@@ -674,6 +691,7 @@ Isle of Man · Malta · Cayman Islands · Cyprus · USA · United Kingdom`
           <Input label="Date" value={form.date||""} onChange={v=>setForm(p=>({...p,date:v}))} type="date" />
           <Input label="Summary" value={form.note||""} onChange={v=>setForm(p=>({...p,note:v}))} />
           <Input label="Next action" value={form.next||""} onChange={v=>setForm(p=>({...p,next:v}))} />
+          <Input label="Due date" type="date" value={form.dueDate||""} onChange={v=>setForm(p=>({...p,dueDate:v}))} />
           <button onClick={()=>setModal(null)} style={{ width:"100%", background:CY, color:"#fff", border:"none", borderRadius:8, padding:10, fontSize:14, fontWeight:600, cursor:"pointer" }}>Save</button>
         </Modal>
       )}
