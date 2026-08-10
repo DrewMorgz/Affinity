@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import { isConfigured } from "./affinity_accounting_supabase";
 import { compReviews, compRegObligations, compBreaches, compTraining } from "./affinity_compliance_api";
 const CY = "#00C4CC";
+const SideBtn = ({ active, onClick, children }) => (
+  <div onClick={onClick} style={{ padding:"7px 10px", fontSize:12, borderRadius:6, cursor:"pointer", marginBottom:1, background:active?"#E6F7FB":"transparent", color:active?"#0077A8":"#444", fontWeight:active?600:400 }}>{children}</div>
+);
 const Badge = ({ label, colors }) => (
   <span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:600, background:colors?.bg||"#eee", color:colors?.color||"#333", whiteSpace:"nowrap" }}>{label}</span>
 );
@@ -12,8 +15,8 @@ const td  = { padding:"9px 14px", fontSize:12, overflow:"hidden", textOverflow:"
 const sc  = { background:"var(--bg-secondary,#f9f9f9)", borderRadius:6, padding:"10px 14px" };
 const card = { background:"var(--bg-primary,#fff)", border:"0.5px solid #e5e5e5", borderRadius:10, padding:16, marginBottom:14 };
 
-const VIEWS = ["overview","csp","aml","reporting","breaches","training"];
-const VLABELS = ["Overview","CSP licence","AML/CFT framework","Regulatory reporting","Breach log","Staff training"];
+const VIEWS = ["overview","csp","aml","reporting","training"];
+const VLABELS = ["Overview","CSP licence","AML/CFT framework","Regulatory reporting","Staff training"];
 
 const entities = [
   { id:1, name:"Meridian Holdings Ltd",    ref:"AC-2024-001", type:"Company", risk:"Medium", reviewer:"Roxy Sheeley",   nextReview:"14/09/2025", status:"Due this month", jurisdiction:"Isle of Man" },
@@ -57,6 +60,57 @@ const training = [
   { name:"Neil Kelly",     role:"CFO",             aml:"15/01/2025", csp:"N/A",        refreshDue:"15/01/2026", status:"Current" },
   { name:"Andy Morgan",    role:"CEO",             aml:"15/01/2025", csp:"10/02/2025", refreshDue:"15/01/2026", status:"Current" },
 ];
+
+// ---- Compliance registers (Entity-Admin-style). Each = columns + demo rows. ----
+const ST = { open:{bg:"#FCEBEB",color:"#A32D2D"}, closed:{bg:"#EAF3DE",color:"#27500A"}, review:{bg:"#FAEEDA",color:"#633806"}, ok:{bg:"#EAF3DE",color:"#27500A"} };
+const REGISTERS = {
+  errors:     { label:"Errors & omissions", cols:["Date","Description","Entity","Owner","Remediation","Status"], rows:[
+    ["12/06/2025","Incorrect fee note issued","Meridian Holdings Ltd","N. Kelly","Credit note raised, process updated","Closed"],
+    ["28/07/2025","Filing submitted one day late","Rosewood Legacy Trust","R. Sheeley","Filed; no penalty; reminder added","Closed"]] },
+  deviations: { label:"Deviations", cols:["Date","Procedure","Reason","Approved by","Review date","Status"], rows:[
+    ["03/05/2025","Onboarding — certified docs","Notary abroad, delay","C. Grisdale","03/11/2025","Open"],
+    ["19/06/2025","Payment authorisation limit","Director travelling","C. Grisdale","19/09/2025","Closed"]] },
+  complaints: { label:"Complaints", cols:["Date","Complainant","Entity","Nature","Handler","Status"], rows:[
+    ["02/07/2025","J. Client","Pacific Wealth Trust","Delay in distribution","C. Grisdale","Open"],
+    ["14/04/2025","Third party","Meridian Holdings Ltd","Fee query","N. Kelly","Closed"]] },
+  gifts:      { label:"Gifts & hospitality", cols:["Date","Staff","From / to","Description","Value","Approved"], rows:[
+    ["20/06/2025","R. Sheeley","From introducer","Dinner","£85","Approved"],
+    ["11/03/2025","A. Morgan","To client","Corporate event ticket","£150","Approved"]] },
+  conflicts:  { label:"Conflicts of interest", cols:["Date","Staff","Nature of conflict","Entity","Mitigation","Status"], rows:[
+    ["09/05/2025","N. Kelly","Director of related supplier","North Star Holdings Ltd","Recused from decision","Open"],
+    ["22/02/2025","J. Fenech","Family connection","Azure Mediterranean Fdn","Disclosed; monitored","Closed"]] },
+  sanctions:  { label:"Sanctions screening", cols:["Date","Screened party","Entity","List / source","Result","Action"], rows:[
+    ["01/07/2025","New UBO","Stonebridge Capital Ltd","OFAC / UK / EU","No match","Cleared"],
+    ["18/06/2025","Counterparty","Pacific Wealth Trust","World-Check","Possible match","EDD — under review"]] },
+  peps:       { label:"PEP register", cols:["Name","Entity","Position","Country","EDD status","Approved by"], rows:[
+    ["[Redacted]","Caledonian Ventures Ltd","Former minister","—","Complete","C. Grisdale"],
+    ["[Redacted]","Azure Mediterranean Fdn","Family of PEP","—","In progress","J. Fenech"]] },
+  frozen:     { label:"Frozen assets", cols:["Date","Entity","Asset","Reason","Authority","Status"], rows:[
+    ["—","—","—","No frozen assets currently recorded","—","—"]] },
+  declined:   { label:"Declined & terminated business", cols:["Date","Prospect / client","Type","Reason","Decision by","Notes"], rows:[
+    ["15/06/2025","[Prospect]","Declined at onboarding","SoW unsatisfactory","C. Grisdale","Not proceeded"],
+    ["03/04/2025","[Client]","Terminated","Risk appetite / conduct","Board","Exit completed"]] },
+  advertising:{ label:"Advertising & financial promotions", cols:["Date","Item","Channel","Approved by","Review date","Status"], rows:[
+    ["10/06/2025","LinkedIn — service post","LinkedIn","C. Grisdale","10/12/2025","Approved"],
+    ["21/05/2025","Website — gaming page","Web","C. Grisdale","21/11/2025","Approved"]] },
+  outsourcing:{ label:"Outsourcing register", cols:["Provider","Service","Entity","Contract review","Risk","Status"], rows:[
+    ["Quantios","Core system / DMS","Group","01/2026","Medium","Active"],
+    ["[IT MSP]","Managed IT & security","Group","09/2025","Medium","Active"]] },
+  cyber:      { label:"Cyber security incidents", cols:["Date","Incident","Severity","Systems","Response","Status"], rows:[
+    ["—","No incidents recorded this period","—","—","—","—"]] },
+  litigation: { label:"Litigation & risk", cols:["Date","Matter","Entity","Exposure","Adviser","Status"], rows:[
+    ["—","No active litigation","—","—","—","—"]] },
+  insurance:  { label:"Insurance register", cols:["Policy","Insurer","Cover","Limit","Renewal","Status"], rows:[
+    ["Professional indemnity","[Insurer]","PI","£[x]m","31/12/2025","Active"],
+    ["Cyber","[Insurer]","Cyber & data","£[x]m","31/12/2025","Active"]] },
+  keystaff:   { label:"Key staff register", cols:["Name","Role","Function","Regulator approval","Since","Status"], rows:[
+    ["Colette Grisdale","MLRO / Compliance","AML/CFT","IOMFSA","2018","Active"],
+    ["A. Morgan","CEO / Director","Governance","IOMFSA","2004","Active"]] },
+  cpd:        { label:"CPD log", cols:["Staff","Activity","Category","Hours","Date","Verified"], rows:[
+    ["C. Grisdale","AML/CFT annual update","Compliance","4.0","06/2025","Verified"],
+    ["R. Sheeley","Trust administration webinar","Technical","2.0","05/2025","Verified"]] },
+};
+const REGISTER_ORDER = ["breaches","errors","deviations","complaints","gifts","conflicts","sanctions","peps","frozen","declined","advertising","outsourcing","cyber","litigation","insurance","keystaff","cpd"];
 
 export default function AffinityIOMCompliance() {
   const [view, setView] = useState("overview");
@@ -104,9 +158,14 @@ export default function AffinityIOMCompliance() {
           {ctx && <Badge label="CSP Licence Active" colors={{ bg:"#EAF3DE", color:"#27500A" }} />}
         </div>
       </div>
-      <div style={{ display:"flex", gap:4, padding:"10px 20px", borderBottom:"0.5px solid #e5e5e5", background:"var(--bg-secondary,#f9f9f9)", flexWrap:"wrap" }}>
-        {VIEWS.map((v,i)=><button key={v} style={{ padding:"5px 14px", fontSize:12, borderRadius:20, border:`0.5px solid ${view===v?"#ccc":"#e5e5e5"}`, background:view===v?"var(--bg-primary,#fff)":"transparent", color:view===v?"var(--text-primary,#111)":"#666", cursor:"pointer", fontWeight:view===v?600:400 }} onClick={()=>setView(v)}>{VLABELS[i]}</button>)}
-      </div>
+      <div style={{ display:"flex", alignItems:"flex-start" }}>
+        <aside style={{ width:212, flexShrink:0, borderRight:"0.5px solid #e5e5e5", padding:"12px 8px", minHeight:520, background:"var(--bg-secondary,#fafafa)" }}>
+          <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.5px", color:"#999", padding:"6px 10px" }}>Framework</div>
+          {VIEWS.map((v,i)=><SideBtn key={v} active={view===v} onClick={()=>setView(v)}>{VLABELS[i]}</SideBtn>)}
+          <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.5px", color:"#999", padding:"14px 10px 6px" }}>Registers</div>
+          {REGISTER_ORDER.map(r=><SideBtn key={r} active={view===r} onClick={()=>setView(r)}>{r==="breaches"?"Breach log":REGISTERS[r].label}</SideBtn>)}
+        </aside>
+        <div style={{ flex:1, minWidth:0 }}>
 
       {view==="overview"&&(
         <div style={{ padding:"16px 20px" }}>
@@ -341,6 +400,32 @@ export default function AffinityIOMCompliance() {
           </table>
         </div>
       )}
+
+      {REGISTERS[view] && (
+        <div style={{ padding:"16px 20px" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+            <div style={{ fontSize:14, fontWeight:600, color:"#001242" }}>{REGISTERS[view].label}{jur!=="All jurisdictions"?` — ${jur}`:""}</div>
+            <button style={{ background:CY, color:"#fff", border:"none", padding:"6px 14px", borderRadius:6, fontSize:12, fontWeight:600, cursor:"pointer" }} onClick={()=>setModal("add")}>＋ Add entry</button>
+          </div>
+          <table style={{ width:"100%", borderCollapse:"collapse" }}>
+            <thead><tr>{REGISTERS[view].cols.map((c,i)=><th key={c} style={{ padding:"8px 10px", textAlign:"left", fontSize:10, fontWeight:600, color:"#666", textTransform:"uppercase", letterSpacing:"0.4px", borderBottom:"0.5px solid #e5e5e5" }}>{c}</th>)}</tr></thead>
+            <tbody>
+              {REGISTERS[view].rows.map((row,ri)=>(
+                <tr key={ri} style={{ borderBottom:"0.5px solid #eee" }}>
+                  {row.map((cell,ci)=>{
+                    const isStatus = ci===row.length-1;
+                    const sc = { "Open":ST.open,"Closed":ST.closed,"Active":ST.ok,"Approved":ST.ok,"Verified":ST.ok,"Cleared":ST.ok,"Not proceeded":{bg:"#F1EFE8",color:"#888"} }[cell];
+                    return <td key={ci} style={{ padding:"8px 10px", fontSize:12, color:ci===0?"#001242":"#444", fontWeight:ci===0?600:400 }}>{isStatus&&sc?<Badge label={cell} colors={sc} />:(cell==="—"?<span style={{color:"#bbb"}}>—</span>:cell)}</td>;
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div style={{ fontSize:10, color:"#999", marginTop:12 }}>Read-only in beta. Adding and editing register entries activates with the write layer. Registers scope to the selected managed entity / jurisdiction above.</div>
+        </div>
+      )}
+        </div>
+      </div>
 
       {modal&&(
         <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(13,27,42,0.45)", display:"flex", alignItems:"flex-start", justifyContent:"center", paddingTop:40, zIndex:100 }} onClick={e=>e.target===e.currentTarget&&setModal(null)}>
