@@ -369,17 +369,19 @@ const PANELS = {
   acc_fx(fx) {
     const hasR = fx && fx.rates && fx.rates.length;
     const rates = hasR
-      ? fx.rates.map((r) => [r.pair, { n: Number(r.rate).toFixed(4) }, r.rate_date])
+      ? fx.rates.map((r) => [r.rate_type || "Standard", r.pair, { n: Number(r.rate).toFixed(4) }, r.rate_date])
       : [
-          ["GBP/EUR", { n: "1.1765" }, "30 Jun 2026"], ["GBP/USD", { n: "1.2710" }, "30 Jun 2026"], ["EUR/GBP", { n: "0.9000" }, "30 Jun 2026"],
+          ["Standard (M)", "GBP/EUR", { n: "1.1765" }, "01 Jul 2026"], ["Standard (M)", "GBP/USD", { n: "1.2710" }, "01 Jul 2026"],
+          ["Period-end", "GBP/EUR", { n: "1.1690" }, "30 Jun 2026"], ["Period-end", "GBP/USD", { n: "1.2680" }, "30 Jun 2026"],
+          ["Budget", "GBP/EUR", { n: "1.1800" }, "01 Apr 2026"],
         ];
     const hasP = fx && fx.positions && fx.positions.length;
     return (
       <>
         <div style={{ background: "#FBFCFD", border: `1px solid ${LINE}`, borderRadius: 10, padding: "10px 14px", fontSize: 12.5, color: MUT, marginBottom: 16 }}>
-          ⚙️ <strong style={{ color: NAVY }}>Accounting admin — FX rates.</strong> Rates are entered and managed here (not fetched globally), and pull through to the relevant client files. Per-client / per-reporting-basis rates will be selectable, so a client can be reported on its own rate set. <em>(Rate entry activates with the write layer.)</em>
+          ⚙️ <strong style={{ color: NAVY }}>Accounting admin — FX rates (SAP-style model).</strong> One central, date-effective rate table keyed by <strong>rate type + currency pair + valid-from date</strong>. Rate types serve different purposes — <strong>Standard</strong> for posting, <strong>Period-end</strong> for revaluation &amp; balance-sheet translation, <strong>Budget</strong> for planning — so each process pulls the right rate on the document date, and a client can sit on its own rate set. Rates are fed two ways: <strong>manual entry</strong> here, and an <strong>automated daily feed</strong> from an external market-data provider. <em>(Entry &amp; feed activate with the write layer.)</em>
         </div>
-        <Panel title="FX rate table"><Table head={["Pair", "Rate", "As at"]} rows={rates} /></Panel>
+        <Panel title="FX rate table (rate type · pair · valid from)"><Table head={["Rate type", "Pair", "Rate", "Valid from"]} rows={rates} /></Panel>
         {hasP
           ? <Panel title="Currency exposure by entity"><Table head={["Entity", "Ccy", "Net position"]} rows={fx.positions.map((p) => [p.entity_code, p.ccy, { n: f0(p.net_position) }])} /></Panel>
           : <div style={cards}>
@@ -387,7 +389,7 @@ const PANELS = {
               <Mini title="Unrealised (revaluation)" rows={[["At period end", f0(185)]]} />
               <Mini title="Translation reserve" rows={[["EUR subsidiary", f0(250)]]} />
             </div>}
-        <Note>Functional + transaction currency · manual rate entry · per-client rate sets · realised &amp; unrealised FX · translation reserves.</Note>
+        <Note>Rate type + pair + valid-from date · reference currency &amp; cross-rates · manual entry + external feed · per-client rate sets · realised &amp; unrealised FX · translation reserves.</Note>
       </>
     );
   },
