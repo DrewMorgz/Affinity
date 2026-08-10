@@ -18,10 +18,10 @@ export const NOTIFICATIONS_DATA = [
   {id:10, t:"2026-06-04T14:30:00Z", type:"birthday",   title:"It's Colin Quayle's birthday today!",body:"Drop him a line 🎂",                              who:"System",            mod:"intranet"},
   {id:11, t:"2026-06-04T11:18:00Z", type:"task",       title:"Task overdue",                      body:"Renew Pacific Wealth licence — was due yesterday",who:"System",            mod:"tasks"},
   {id:12, t:"2026-06-04T09:22:00Z", type:"system",     title:"Login from new device",             body:"Safari on iPad · Isle of Man IP · Verify if not you",who:"System",         mod:"system"},
-  {id:13, t:"2026-06-03T16:42:00Z", type:"mention",    title:"Gary @mentioned you",               body:"On Apex Growth: 'Annual review trigger fired'",   who:"Gary Harrison",     mod:"compliance"},
+  {id:13, t:"2026-06-03T16:42:00Z", type:"mention",    title:"Gary @mentioned you",               body:"On Apex Growth: 'Annual review trigger fired'",   who:"Colette Grisdale",     mod:"compliance"},
   {id:14, t:"2026-06-03T14:30:00Z", type:"sign",       title:"Document signed via Zoho Sign",     body:"Engagement Letter — Bluewater Family Trust",      who:"Lisa Reston",       mod:"documents"},
   {id:15, t:"2026-06-03T11:42:00Z", type:"compliance", title:"Sanctions screening cleared",       body:"All shareholders of Apex Growth Fund — WorldCheck",who:"Michael Barlow",   mod:"compliance"},
-  {id:16, t:"2026-06-02T15:18:00Z", type:"approval",   title:"Bank account ready to add",         body:"Pacific Wealth Trust · Butterfield Bank",         who:"Gary Harrison",     mod:"entities"},
+  {id:16, t:"2026-06-02T15:18:00Z", type:"approval",   title:"Bank account ready to add",         body:"Pacific Wealth Trust · Butterfield Bank",         who:"Colette Grisdale",     mod:"entities"},
 ];
 
 const TYPE_STYLE = {

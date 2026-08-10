@@ -83,7 +83,7 @@ const ENTITY_DATA = {
   },
   fileNotes: {
     1:[{id:1,date:"14/07/2025",author:"Roxy Sheeley",subject:"Client call — Q3 review",note:"Spoke with James Harrington re Q3 accounts. Expects turnover similar to Q2. No changes to structure anticipated."}],
-    2:[{id:1,date:"12/07/2025",author:"Gary Harrison",subject:"KYC chase — Emma Harrington",note:"Third request for updated passport sent. No response. Escalating to MLRO."}],
+    2:[{id:1,date:"12/07/2025",author:"Colette Grisdale",subject:"KYC chase — Emma Harrington",note:"Third request for updated passport sent. No response. Escalating to MLRO."}],
   },
   meetings: {
     1:[{id:1,type:"Board meeting",date:"15/03/2025",location:"Douglas, Isle of Man",attendees:"James Harrington, Sarah Cole, Andy Morgan",agenda:"Q1 accounts review, dividend declaration",status:"Minutes drafted"}],
@@ -115,7 +115,7 @@ const TABS = [
   { id:"safe",       label:"Safe custody",            group:"Entity" },
   { id:"registers",  label:"Generate registers",      group:"Entity" },
   { id:"compliance", label:"Compliance register",     group:"Regulatory" },
-  { id:"egaming",    label:"eGaming / OGRA",          group:"Regulatory", gamingOnly:true },
+  { id:"egaming",    label:"eGaming / GSC",          group:"Regulatory", gamingOnly:true },
   { id:"fatca",      label:"FATCA",                   group:"Filing Obligations" },
   { id:"crs",        label:"CRS",                     group:"Filing Obligations" },
   { id:"substance",  label:"Substance",               group:"Filing Obligations" },
@@ -490,7 +490,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
             </div>
             <div style={s.card}>
               <div style={s.cardT}>Administration</div>
-              {[["Administrator",entity.admin],["Manager",entity.manager],["Lead director",entity.director],["Accountant","Neil Kelly"],["MLRO","Gary Harrison"],["Office",entity.jur]].map(([k,v])=>(
+              {[["Administrator",entity.admin],["Manager",entity.manager],["Lead director",entity.director],["Accountant","Neil Kelly"],["MLRO","Colette Grisdale"],["Office",entity.jur]].map(([k,v])=>(
                 <div key={k} style={s.dRow}><span style={s.dKey}>{k}</span><span style={s.dVal}>{v}</span></div>
               ))}
               <div style={{ marginTop:10 }}>
@@ -934,7 +934,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
           <div style={s.g2}>
             <div style={s.card}>
               <div style={s.cardT}>Compliance status</div>
-              {[["Risk rating",entity.risk],["Last periodic review","14/03/2024"],["Next review due",entity.risk==="High"?"18/08/2025":entity.risk==="Very High"?"12/07/2025":"14/09/2025"],["MLRO","Gary Harrison"],["Compliance officer","Gary Harrison"],["KYC status",entity.risk==="High"?"Issues outstanding":"Current"],["Worldcheck","Last screened 14/07/2025"],["PEP status","No PEP identified"],["SOF status","Documented"]].map(([k,v])=>(
+              {[["Risk rating",entity.risk],["Last periodic review","14/03/2024"],["Next review due",entity.risk==="High"?"18/08/2025":entity.risk==="Very High"?"12/07/2025":"14/09/2025"],["MLRO","Colette Grisdale"],["Compliance officer","Colette Grisdale"],["KYC status",entity.risk==="High"?"Issues outstanding":"Current"],["Worldcheck","Last screened 14/07/2025"],["PEP status","No PEP identified"],["SOF status","Documented"]].map(([k,v])=>(
                 <div key={k} style={s.dRow}><span style={s.dKey}>{k}</span><span style={{ ...s.dVal, color:v.includes("outstanding")?"#EF4444":v.includes("overdue")?"#EF4444":undefined }}>{v}</span></div>
               ))}
             </div>
@@ -998,7 +998,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
           <div>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:14 }}>
               <div>
-                <div style={{ fontSize:13, fontWeight:600, marginBottom:2 }}>eGaming & OGRA licence</div>
+                <div style={{ fontSize:13, fontWeight:600, marginBottom:2 }}>eGaming & GSC licence</div>
                 <div style={{ fontSize:11, color:"var(--text-secondary,#666)" }}>Gambling Supervision Commission — Isle of Man</div>
               </div>
               <button style={{ padding:"5px 14px", borderRadius:5, border:"none", background:"#00C4CC", color:"#fff", fontSize:11, cursor:"pointer" }}>Update licence data</button>
@@ -1023,7 +1023,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
                 ))}
               </div>
               <div style={{ background:"var(--bg-secondary,#f9f9f9)", borderRadius:8, padding:14 }}>
-                <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.4px", color:"#888", marginBottom:10 }}>OGRA obligations</div>
+                <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.4px", color:"#888", marginBottom:10 }}>GSC obligations</div>
                 {[
                   ["AML/CFT policy",       "Current",    "#4CAF7D"],
                   ["Responsible gambling", "Current",    "#4CAF7D"],
@@ -1043,7 +1043,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
             {/* Application checklist if applicable */}
             {entity?.id===13&&(
               <div style={{ background:"var(--bg-secondary,#f9f9f9)", borderRadius:8, padding:14 }}>
-                <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.4px", color:"#888", marginBottom:10 }}>OGRA application checklist</div>
+                <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.4px", color:"#888", marginBottom:10 }}>GSC application checklist</div>
                 {[
                   { step:"Operator information form (OIF)",            status:"Complete" },
                   { step:"Business plan — 3 year projection",          status:"Complete" },
@@ -1054,7 +1054,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
                   { step:"RNG / game certification",                   status:"Pending" },
                   { step:"Financial resources evidence",               status:"Complete" },
                   { step:"IT & security assessment",                   status:"Pending" },
-                  { step:"OGRA suitability decision",                  status:"Pending" },
+                  { step:"GSC suitability decision",                  status:"Pending" },
                 ].map((c,i)=>(
                   <div key={i} style={{ display:"flex", gap:10, padding:"7px 0", borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)", alignItems:"center" }}>
                     <div style={{ width:22, height:22, borderRadius:"50%", background:c.status==="Complete"?"#4CAF7D":c.status==="In progress"?"#00C4CC":"#f0f0f0", color:c.status==="Complete"||c.status==="In progress"?"#fff":"#aaa", display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, fontWeight:700, flexShrink:0 }}>

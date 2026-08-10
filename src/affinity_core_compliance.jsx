@@ -17,8 +17,8 @@ const VLABELS = ["Overview","CSP licence","AML/CFT framework","Regulatory report
 
 const entities = [
   { id:1, name:"Meridian Holdings Ltd",    ref:"AC-2024-001", type:"Company", risk:"Medium", reviewer:"Roxy Sheeley",   nextReview:"14/09/2025", status:"Due this month", jurisdiction:"Isle of Man" },
-  { id:2, name:"Harrington Family Trust",  ref:"AC-2019-014", type:"Trust",   risk:"High",   reviewer:"Gary Harrison",  nextReview:"05/01/2025", status:"Overdue", jurisdiction:"Isle of Man" },
-  { id:3, name:"North Star Holdings Ltd",  ref:"AC-2016-003", type:"Company", risk:"High",   reviewer:"Gary Harrison",  nextReview:"30/03/2025", status:"Overdue", jurisdiction:"Isle of Man" },
+  { id:2, name:"Harrington Family Trust",  ref:"AC-2019-014", type:"Trust",   risk:"High",   reviewer:"Colette Grisdale",  nextReview:"05/01/2025", status:"Overdue", jurisdiction:"Isle of Man" },
+  { id:3, name:"North Star Holdings Ltd",  ref:"AC-2016-003", type:"Company", risk:"High",   reviewer:"Colette Grisdale",  nextReview:"30/03/2025", status:"Overdue", jurisdiction:"Isle of Man" },
   { id:4, name:"Rosewood Legacy Trust",    ref:"AC-2021-027", type:"Trust",   risk:"Medium", reviewer:"Roxy Sheeley",   nextReview:"25/03/2026", status:"Upcoming", jurisdiction:"Isle of Man" },
   { id:5, name:"Caledonian Ventures Ltd",  ref:"AC-2021-032", type:"Company", risk:"Medium", reviewer:"Garry Crossan",  nextReview:"12/12/2025", status:"Upcoming", jurisdiction:"Cayman Islands" },
   { id:6, name:"Pacific Wealth Trust",     ref:"AC-2022-019", type:"Trust",   risk:"High",   reviewer:"Garry Crossan",  nextReview:"08/02/2025", status:"Overdue", jurisdiction:"Cayman Islands" },
@@ -52,7 +52,7 @@ const breachLog = [
 
 const training = [
   { name:"Roxy Sheeley",   role:"MD — IOM",       aml:"15/01/2025", csp:"10/02/2025", refreshDue:"15/01/2026", status:"Current" },
-  { name:"Gary Harrison",  role:"CCO",             aml:"20/01/2025", csp:"10/02/2025", refreshDue:"20/01/2026", status:"Current" },
+  { name:"Colette Grisdale",  role:"CCO",             aml:"20/01/2025", csp:"10/02/2025", refreshDue:"20/01/2026", status:"Current" },
   { name:"Sarah Cole",     role:"Administrator",   aml:"10/02/2025", csp:"10/02/2025", refreshDue:"10/02/2026", status:"Current" },
   { name:"Neil Kelly",     role:"CFO",             aml:"15/01/2025", csp:"N/A",        refreshDue:"15/01/2026", status:"Current" },
   { name:"Andy Morgan",    role:"CEO",             aml:"15/01/2025", csp:"10/02/2025", refreshDue:"15/01/2026", status:"Current" },
@@ -174,7 +174,7 @@ export default function AffinityIOMCompliance() {
                 ["Last renewal","30/09/2025"],
                 ["Next renewal","30/09/2026"],
                 ["Regulator","IOMFSA"],
-                ["Compliance contact","Gary Harrison (CCO)"],
+                ["Compliance contact","Colette Grisdale (CCO)"],
                 ["Conditions","Standard CSP conditions apply. See IOMFSA website."],
               ].map(([k,v])=>(
                 <div key={k} style={{ display:"flex", justifyContent:"space-between", padding:"5px 0", borderBottom:"0.5px solid #e5e5e5", fontSize:12, gap:12 }}>
@@ -189,7 +189,7 @@ export default function AffinityIOMCompliance() {
                 ["Fit and proper persons in control","✓ Met"],
                 ["AML/CFT policies and procedures","✓ Current — last reviewed Jan 2025"],
                 ["Staff AML training","✓ All current"],
-                ["MLRO appointed and notified to IOMFSA","✓ Gary Harrison"],
+                ["MLRO appointed and notified to IOMFSA","✓ Colette Grisdale"],
                 ["Annual compliance return filed","✓ Filed 31/03/2025"],
                 ["Business risk assessment current","⚠ Due Q4 2025"],
                 ["Outsourcing notifications","✓ None applicable"],
@@ -357,7 +357,7 @@ export default function AffinityIOMCompliance() {
               <div style={fg}><label style={fgl}>Description & action taken</label><textarea style={{ ...fgi, height:80, padding:"8px 10px" }} placeholder="Describe the breach and action taken..." /></div>
             </>}
             {modal==="training"&&<>
-              <div style={fg}><label style={fgl}>Staff member</label><select style={fgi}><option>Roxy Sheeley</option><option>Gary Harrison</option><option>Sarah Cole</option><option>Neil Kelly</option><option>Andy Morgan</option></select></div>
+              <div style={fg}><label style={fgl}>Staff member</label><select style={fgi}><option>Roxy Sheeley</option><option>Colette Grisdale</option><option>Sarah Cole</option><option>Neil Kelly</option><option>Andy Morgan</option></select></div>
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
                 <div style={fg}><label style={fgl}>Training type</label><select style={fgi}><option>AML/CFT awareness</option><option>CSP obligations</option><option>MLRO refresher</option><option>PEP training</option><option>Sanctions training</option></select></div>
                 <div style={fg}><label style={fgl}>Date completed</label><input style={fgi} placeholder="DD/MM/YYYY" /></div>

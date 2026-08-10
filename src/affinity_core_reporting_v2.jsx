@@ -27,7 +27,7 @@ const debtorTrend = [
 
 const utilData = [
   { name:"Garry Crossan", util:82, target:75 },
-  { name:"Gary Harrison",  util:77, target:75 },
+  { name:"Colette Grisdale",  util:77, target:75 },
   { name:"Roxy Sheeley",   util:76, target:75 },
   { name:"Neil Kelly",     util:75, target:75 },
   { name:"Joanne Fenech",  util:74, target:75 },

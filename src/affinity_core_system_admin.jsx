@@ -46,7 +46,7 @@ const usersData = [
   { id:13, name:"Kate Shaw", email:"kate.shaw@affinityco.com", role:"Manager", office:"Isle of Man", flag:"🇮🇲", status:"Active", lastLogin:"4d ago", mfa:true, modules:["Entities","Documents","Timesheets","Onboarding"] },
   { id:14, name:"Roxy Sheeley", email:"roxy.sheeley@affinityco.com", role:"Managing Director (IOM)", office:"Isle of Man", flag:"🇮🇲", status:"Active", lastLogin:"Today 09:25", mfa:true, modules:["All — Isle of Man"] },
   { id:15, name:"Gilbert Spiteri Spadaro", email:"gilbert.spiterispadaro@affinityco.com", role:"Compliance Officer (Malta)", office:"Malta", flag:"🇲🇹", status:"Active", lastLogin:"Today 08:55", mfa:true, modules:["Compliance","Entities","Reporting"] },
-  { id:16, name:"Gary Harrison", email:"gary.harrison@affinityco.com", role:"COO", office:"Isle of Man", flag:"🇮🇲", status:"Active", lastLogin:"Today 09:30", mfa:true, modules:["All — Isle of Man"] },
+  { id:16, name:"Colette Grisdale", email:"gary.harrison@affinityco.com", role:"COO", office:"Isle of Man", flag:"🇮🇲", status:"Active", lastLogin:"Today 09:30", mfa:true, modules:["All — Isle of Man"] },
 ];
 
 const rolesData = [
@@ -76,15 +76,15 @@ const auditLog = [
   { id:3,  ts:"14/07/2025 08:52", user:"Alex Gardner",  action:"User login",                   module:"System",    entity:"—",                      ip:"91.214.xx.xx" },
   { id:4,  ts:"14/07/2025 08:45", user:"Joanne Fenech", action:"KYC record updated",           module:"Compliance",entity:"Stonebridge Capital Ltd", ip:"85.25.xx.xx"  },
   { id:5,  ts:"14/07/2025 08:21", user:"Garry Crossan", action:"Invoice sent to client",       module:"Invoicing", entity:"Pacific Wealth Trust",   ip:"76.185.xx.xx" },
-  { id:6,  ts:"14/07/2025 07:38", user:"Gary Harrison", action:"Compliance case raised",       module:"Compliance",entity:"Apex Growth Fund Ltd",    ip:"89.101.xx.xx" },
+  { id:6,  ts:"14/07/2025 07:38", user:"Colette Grisdale", action:"Compliance case raised",       module:"Compliance",entity:"Apex Growth Fund Ltd",    ip:"89.101.xx.xx" },
   { id:7,  ts:"13/07/2025 17:45", user:"Joanne Fenech", action:"Timesheet submitted",          module:"Timesheets",entity:"—",                       ip:"85.25.xx.xx"  },
   { id:8,  ts:"13/07/2025 17:30", user:"Garry Crossan", action:"Timesheet submitted",          module:"Timesheets",entity:"—",                       ip:"76.185.xx.xx" },
   { id:9,  ts:"13/07/2025 16:22", user:"Roxy Sheeley",  action:"Entity record edited",         module:"Entities",  entity:"North Star Holdings Ltd", ip:"89.101.xx.xx" },
   { id:10, ts:"13/07/2025 15:10", user:"Neil Kelly",    action:"Invoice approved",             module:"Invoicing", entity:"Rosewood Legacy Trust",   ip:"89.101.xx.xx" },
-  { id:11, ts:"13/07/2025 14:05", user:"Gary Harrison", action:"Risk rating changed High→VHigh",module:"Compliance",entity:"Apex Growth Fund Ltd",   ip:"89.101.xx.xx" },
+  { id:11, ts:"13/07/2025 14:05", user:"Colette Grisdale", action:"Risk rating changed High→VHigh",module:"Compliance",entity:"Apex Growth Fund Ltd",   ip:"89.101.xx.xx" },
   { id:12, ts:"13/07/2025 11:30", user:"Andy Morgan",   action:"New user created",             module:"System",    entity:"Tom Reyes",               ip:"89.101.xx.xx" },
   { id:13, ts:"13/07/2025 10:15", user:"Roxy Sheeley",  action:"Onboarding stage advanced",   module:"Onboarding",entity:"Pinnacle Trading Ltd",     ip:"89.101.xx.xx" },
-  { id:14, ts:"12/07/2025 16:44", user:"Gary Harrison", action:"Sanction match flagged — open",module:"Compliance",entity:"Apex Growth Fund Ltd",    ip:"89.101.xx.xx" },
+  { id:14, ts:"12/07/2025 16:44", user:"Colette Grisdale", action:"Sanction match flagged — open",module:"Compliance",entity:"Apex Growth Fund Ltd",    ip:"89.101.xx.xx" },
   { id:15, ts:"12/07/2025 14:20", user:"Neil Kelly",    action:"Credit note raised",           module:"Invoicing", entity:"Thornbury Asset Co Ltd",  ip:"89.101.xx.xx" },
 ];
 

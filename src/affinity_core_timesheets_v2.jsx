@@ -22,7 +22,7 @@ const STAFF = [
   { id:13, name:"Kate Shaw", role:"Manager", office:"Isle of Man", flag:"🇮🇲", rate:200, target:37.5 },
   { id:14, name:"Roxy Sheeley", role:"Managing Director (IOM)", office:"Isle of Man", flag:"🇮🇲", rate:300, target:37.5 },
   { id:15, name:"Gilbert Spiteri Spadaro", role:"Compliance Officer (Malta)", office:"Malta", flag:"🇲🇹", rate:150, target:37.5 },
-  { id:16, name:"Gary Harrison", role:"COO", office:"Isle of Man", flag:"🇮🇲", rate:350, target:37.5 },
+  { id:16, name:"Colette Grisdale", role:"COO", office:"Isle of Man", flag:"🇮🇲", rate:350, target:37.5 },
 ];
 
 const ENTRIES = [
@@ -268,7 +268,7 @@ export default function AffinityTimesheets({ onNav }) {
           <div style={{ marginBottom:16, fontSize:13, fontWeight:500 }}>Team utilisation — week ending 14 Jul 2025</div>
           {[
             { name:"Garry Crossan",  hrs:38, billable:35, target:37.5, util:82 },
-            { name:"Gary Harrison",  hrs:38, billable:32, target:37.5, util:77 },
+            { name:"Colette Grisdale",  hrs:38, billable:32, target:37.5, util:77 },
             { name:"Roxy Sheeley",   hrs:36, billable:28, target:37.5, util:76 },
             { name:"Neil Kelly",     hrs:37, billable:30, target:37.5, util:75 },
             { name:"Patrick Walsh",  hrs:36, billable:28, target:37.5, util:74 },

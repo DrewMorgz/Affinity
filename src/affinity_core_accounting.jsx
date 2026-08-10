@@ -554,17 +554,15 @@ const PANELS = {
 
 // nav groups -> tabbed sets of panels (keeps the sidebar short)
 const GROUPS = {
-  acc_overview: [["acc_ov", "Overview"]],
   acc_wip:      [["wip", "Work in progress"]],
   acc_txn:      [["acc_gl", "General Ledger"], ["acc_ar", "Accounts Receivable"], ["acc_ap", "Accounts Payable"], ["acc_bank", "Banking & Reconciliation"]],
   acc_assets:   [["acc_fa", "Fixed Assets"], ["acc_ic", "Intercompany"], ["acc_con", "Consolidation"]],
-  acc_report:   [["acc_cf", "Cash Flow & Treasury"], ["acc_tax", "Tax & VAT"], ["acc_fs", "Financial Statements"], ["acc_mgmt", "Management Reports"]],
-  acc_gov:      [["acc_ctl", "Controls"], ["acc_aud", "Auditor Pack"]],
+  acc_report:   [["acc_cf", "Cash Flow & Treasury"], ["acc_tax", "Tax & VAT"], ["acc_fs", "Financial Statements"], ["acc_mgmt", "Management Reports"], ["acc_aud", "Auditor Pack"]],
   acc_admin:    [["acc_fx", "FX rates & multi-currency"]],
 };
 const GROUP_TITLE = {
-  acc_overview: "Overview", acc_wip: "Work in progress", acc_txn: "Transactions",
-  acc_assets: "Assets & Groups", acc_report: "Reporting", acc_gov: "Governance",
+  acc_wip: "Work in progress", acc_txn: "Transactions",
+  acc_assets: "Assets & Groups", acc_report: "Reporting",
   acc_admin: "Accounting admin",
 };
 
@@ -575,7 +573,7 @@ const DEMO_ENTITIES = [
 ];
 
 export default function Accounting({ module }) {
-  const group = GROUPS[module] ? module : "acc_overview";
+  const group = GROUPS[module] ? module : "acc_txn";
   const tabs = GROUPS[group];
   const fy = new Date().getFullYear();
   const start = fy + "-01-01", end = fy + "-12-31";

@@ -13,8 +13,8 @@ const JUR_INFO = {
     regulator: "Cayman Islands Monetary Authority (CIMA)",
     legislation: ["Companies Law (2023 Revision)", "Trusts Law (2021 Revision)", "Anti-Money Laundering Regulations (2024)", "Beneficial Ownership Transparency Law 2023", "International Tax Co-operation (ESR) Law 2018", "Mutual Funds Law (2023)", "Securities Investment Business Law (2020)"],
     obligations: [
-      { id:1,  area:"AML/CFT",        title:"AML policies & procedures",               freq:"Annual review", due:"31/12/2025", status:"On track",  owner:"Gary Harrison" },
-      { id:2,  area:"AML/CFT",        title:"Risk assessment — ML/TF",                 freq:"Annual",        due:"31/12/2025", status:"On track",  owner:"Gary Harrison" },
+      { id:1,  area:"AML/CFT",        title:"AML policies & procedures",               freq:"Annual review", due:"31/12/2025", status:"On track",  owner:"Colette Grisdale" },
+      { id:2,  area:"AML/CFT",        title:"Risk assessment — ML/TF",                 freq:"Annual",        due:"31/12/2025", status:"On track",  owner:"Colette Grisdale" },
       { id:3,  area:"AEOI",           title:"FATCA return — CIMA portal",              freq:"Annual",        due:"31/07/2025", status:"Overdue",   owner:"Garry Crossan" },
       { id:4,  area:"AEOI",           title:"CRS return — CIMA portal",                freq:"Annual",        due:"31/07/2025", status:"Overdue",   owner:"Garry Crossan" },
       { id:5,  area:"Substance",      title:"ESR return — all in-scope entities",      freq:"Annual",        due:"12 months after year end", status:"On track",  owner:"Garry Crossan" },
@@ -30,7 +30,7 @@ const JUR_INFO = {
       { name:"Riviera Trust",             type:"STAR Trust",   risk:"Medium", administrator:"Garry Crossan", issues:0 },
     ],
     amlKey: [
-      ["MLRO",                "Gary Harrison (Group CCO)"],
+      ["MLRO",                "Colette Grisdale (Group CCO)"],
       ["DMLRO — Cayman",      "Garry Crossan"],
       ["Screening provider",  "Worldcheck"],
       ["STR filing body",     "Financial Reporting Authority (FRA)"],
@@ -44,12 +44,12 @@ const JUR_INFO = {
     legislation: ["Companies Act (Cap. 386)", "Foundations (Properties) Act", "Financial Intelligence Analysis Unit (FIAU) Regulations", "Prevention of Money Laundering Act (PMLA)", "Beneficial Ownership Registration Regulations 2020", "MFSA Conduct of Business Rulebook"],
     obligations: [
       { id:1,  area:"CSP licence",    title:"Authorisation as Trustee / Administrator",  freq:"Ongoing",  due:"30/09/2025", status:"Active",    owner:"Joanne Fenech" },
-      { id:2,  area:"AML/CFT",        title:"Business risk assessment",                   freq:"Annual",   due:"31/12/2025", status:"On track",  owner:"Gary Harrison" },
-      { id:3,  area:"AML/CFT",        title:"FIAU sectoral risk assessment update",       freq:"Annual",   due:"31/12/2025", status:"On track",  owner:"Gary Harrison" },
+      { id:2,  area:"AML/CFT",        title:"Business risk assessment",                   freq:"Annual",   due:"31/12/2025", status:"On track",  owner:"Colette Grisdale" },
+      { id:3,  area:"AML/CFT",        title:"FIAU sectoral risk assessment update",       freq:"Annual",   due:"31/12/2025", status:"On track",  owner:"Colette Grisdale" },
       { id:4,  area:"AEOI",           title:"CRS/FATCA return — MFSA portal",            freq:"Annual",   due:"31/07/2025", status:"Overdue",   owner:"Joanne Fenech" },
       { id:5,  area:"BO register",    title:"Beneficial ownership register — MFSA BROS", freq:"On change",due:"Ongoing",    status:"Current",   owner:"Joanne Fenech" },
       { id:6,  area:"Annual returns", title:"Annual returns — Malta Business Registry",   freq:"Annual",   due:"Within 42 days of anniversary", status:"On track", owner:"Joanne Fenech" },
-      { id:7,  area:"Reporting",      title:"FIAU supervision annual report",             freq:"Annual",   due:"30/04/2026", status:"On track",  owner:"Gary Harrison" },
+      { id:7,  area:"Reporting",      title:"FIAU supervision annual report",             freq:"Annual",   due:"30/04/2026", status:"On track",  owner:"Colette Grisdale" },
       { id:8,  area:"Data protection","title":"Data Protection Officer annual review",   freq:"Annual",   due:"31/10/2025", status:"On track",  owner:"Joanne Fenech" },
     ],
     entities: [
@@ -59,7 +59,7 @@ const JUR_INFO = {
       { name:"Verano Maritime SA (pend.)", type:"Company",      risk:"Low",    administrator:"Joanne Fenech", issues:0 },
     ],
     amlKey: [
-      ["MLRO",                 "Gary Harrison (Group CCO)"],
+      ["MLRO",                 "Colette Grisdale (Group CCO)"],
       ["DMLRO — Malta",        "Joanne Fenech"],
       ["Screening provider",   "Worldcheck"],
       ["STR filing body",      "Financial Intelligence Analysis Unit (FIAU)"],
@@ -304,7 +304,7 @@ export default function AffinityJurisdictionCompliance() {
               ))}
             </div>
             <div style={{ marginTop:14, background:"#f9f9f9", borderRadius:8, padding:"10px 14px", fontSize:11, color:"#666" }}>
-              ℹ️ Legislation references are updated by the Group CCO as and when amendments are enacted. Changes that require operational action are flagged as compliance events. Contact Gary Harrison with any queries.
+              ℹ️ Legislation references are updated by the Group CCO as and when amendments are enacted. Changes that require operational action are flagged as compliance events. Contact Colette Grisdale with any queries.
             </div>
           </div>
         )}
@@ -317,7 +317,7 @@ export default function AffinityJurisdictionCompliance() {
               <h3 style={{ margin:0, fontSize:15, fontWeight:600 }}>Add regulatory obligation</h3>
               <button onClick={()=>setModal(null)} style={{ background:"none", border:"none", fontSize:20, cursor:"pointer", color:"#888" }}>×</button>
             </div>
-            {[["Area","select",["AML/CFT","AEOI","Substance","BO register","Annual returns","Reporting","Other"]],["Title","text"],["Frequency","select",["Annual","Quarterly","Monthly","On change","Ongoing"]],["Due date","date"],["Owner","select",["Gary Harrison","Garry Crossan","Joanne Fenech","Andy Morgan"]]].map(([l,t,opts])=>(
+            {[["Area","select",["AML/CFT","AEOI","Substance","BO register","Annual returns","Reporting","Other"]],["Title","text"],["Frequency","select",["Annual","Quarterly","Monthly","On change","Ongoing"]],["Due date","date"],["Owner","select",["Colette Grisdale","Garry Crossan","Joanne Fenech","Andy Morgan"]]].map(([l,t,opts])=>(
               <div key={l} style={{ marginBottom:12 }}>
                 <label style={{ display:"block", fontSize:11, fontWeight:600, color:"#555", marginBottom:4 }}>{l}</label>
                 {t==="select"?<select style={{ width:"100%", padding:"8px 10px", border:"1.5px solid #e0e0e0", borderRadius:6, fontSize:12, outline:"none" }}>{(opts||[]).map(o=><option key={o}>{o}</option>)}</select>

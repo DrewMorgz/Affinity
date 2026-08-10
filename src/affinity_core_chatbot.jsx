@@ -43,7 +43,7 @@ function getAnswer(q) {
   if(ql.includes("expired kyc")||ql.includes("kyc expired")) return `There are **${KB.compliance.expiredKYC} expired KYC documents** on file. Emma Harrington (Harrington Family Trust) and Sophie Laurent (Apex Growth Fund Ltd) are the affected principals.`;
   if(ql.includes("compliance rate")||ql.includes("review completion")) return `The current compliance review completion rate is **${KB.compliance.completionRate}**. There are ${KB.compliance.overdueReviews} overdue and ${KB.compliance.dueThisMonth} due this month.`;
   if(ql.includes("open case")||ql.includes("compliance case")) return `There are currently **${KB.compliance.openCases} open compliance cases**. The most critical is the Apex Growth Fund Ltd sanctions match, which is with the MLRO for review.`;
-  if(ql.includes("sanctions")||ql.includes("apex growth")) return `Apex Growth Fund Ltd has an **open sanctions screening match** under MLRO review by Gary Harrison. No new services should be provided to this entity without MLRO clearance. This is a critical item.`;
+  if(ql.includes("sanctions")||ql.includes("apex growth")) return `Apex Growth Fund Ltd has an **open sanctions screening match** under MLRO review by Colette Grisdale. No new services should be provided to this entity without MLRO clearance. This is a critical item.`;
 
   // Finance
   if(ql.includes("revenue")||ql.includes("income ytd")) return `Group revenue YTD 2025 is **£${(KB.finance.revenueYTD/1000).toFixed(0)}k**. The breakdown by office is: Cayman Islands (40%), Isle of Man (28%), Malta (17%), UK (10%), Miami (6%).`;
@@ -71,7 +71,7 @@ function getAnswer(q) {
   if(ql.includes("pacific wealth")) return `**Pacific Wealth Trust** (AC-2022-019) — Cayman Islands. High risk. Administered by Garry Crossan. Current issue: ⚠ Periodic review overdue since 18/02/2025. EDD pack in progress for Wei Chen. No new services without compliance clearance.`;
 
   // Who / team queries
-  if(ql.includes("who is the mlro")) return `The Group MLRO is **Gary Harrison** (Group CCO). All STR referrals, sanctions matters and enhanced due diligence escalations should go through Gary.`;
+  if(ql.includes("who is the mlro")) return `The Group MLRO is **Colette Grisdale** (Group CCO). All STR referrals, sanctions matters and enhanced due diligence escalations should go through Gary.`;
   if(ql.includes("who administers")||ql.includes("who is the administrator")) return `Administrators by office: Roxy Sheeley (Isle of Man), Garry Crossan (Cayman Islands), Joanne Fenech (Malta), Andy Morgan (Group/Miami). Use Entity Admin to find the specific administrator for any entity.`;
   if(ql.includes("who is the cfo")) return `The Group CFO is **Neil Kelly**, based in the Group office. Neil oversees invoicing, bookkeeping, management accounts and budget across all offices.`;
   if(ql.includes("andy morgan")||ql.includes("ceo")) return `**Andy Morgan** is the Group CEO and founded Affinity in 2009. Andy is a Super Admin on Affinity Core and oversees the Group operation including Miami and South Dakota.`;

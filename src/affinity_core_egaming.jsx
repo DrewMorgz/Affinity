@@ -9,24 +9,24 @@ const Badge = ({ label, colors }) => (
 );
 
 const LICENCES = [
-  { id:1, entity:"Phoenix eGaming Ltd",       type:"B2C",  subtype:"Casino",          ref:"GSC-2025-0441", status:"Application — stage 2", issued:null,         expiry:null,         admin:"Roxy Sheeley",  risk:"High",   notes:"IIF submitted. Awaiting OGRA suitability decision." },
-  { id:2, entity:"Meridian Digital Ltd",       type:"B2B",  subtype:"Platform supply", ref:"GSC-2023-0218", status:"Live",                  issued:"01/06/2023",  expiry:"31/05/2026", admin:"Roxy Sheeley",  risk:"Medium", notes:"Annual OGRA return due November 2025." },
-  { id:3, entity:"Neptune Interactive Ltd",    type:"B2C",  subtype:"Sports betting",  ref:"GSC-2022-0104", status:"Live",                  issued:"14/03/2022",  expiry:"13/03/2025", admin:"Roxy Sheeley",  risk:"High",   notes:"⚠️ Renewal overdue — contact OGRA immediately." },
-  { id:4, entity:"Apex Gaming Solutions Ltd",  type:"B2B",  subtype:"Software supply", ref:"GSC-2024-0312", status:"Under review",           issued:null,         expiry:null,         admin:"Roxy Sheeley",  risk:"Medium", notes:"Business plan queries raised by OGRA. Response drafted." },
+  { id:1, entity:"Phoenix eGaming Ltd",       type:"B2C",  subtype:"Casino",          ref:"GSC-2025-0441", status:"Application — stage 2", issued:null,         expiry:null,         admin:"Roxy Sheeley",  risk:"High",   notes:"IIF submitted. Awaiting GSC suitability decision." },
+  { id:2, entity:"Meridian Digital Ltd",       type:"B2B",  subtype:"Platform supply", ref:"GSC-2023-0218", status:"Live",                  issued:"01/06/2023",  expiry:"31/05/2026", admin:"Roxy Sheeley",  risk:"Medium", notes:"Annual GSC return due November 2025." },
+  { id:3, entity:"Neptune Interactive Ltd",    type:"B2C",  subtype:"Sports betting",  ref:"GSC-2022-0104", status:"Live",                  issued:"14/03/2022",  expiry:"13/03/2025", admin:"Roxy Sheeley",  risk:"High",   notes:"⚠️ Renewal overdue — contact GSC immediately." },
+  { id:4, entity:"Apex Gaming Solutions Ltd",  type:"B2B",  subtype:"Software supply", ref:"GSC-2024-0312", status:"Under review",           issued:null,         expiry:null,         admin:"Roxy Sheeley",  risk:"Medium", notes:"Business plan queries raised by GSC. Response drafted." },
 ];
 
-const OGRA_CHECKLIST = {
+const GSC_CHECKLIST = {
   1: [
     { step:1, title:"Operator information form (OIF)",              status:"Complete",    date:"01/03/2025", owner:"Roxy Sheeley",  notes:"Submitted with full corporate structure." },
     { step:2, title:"Business plan — 3 year projection",            status:"Complete",    date:"15/03/2025", owner:"Roxy Sheeley",  notes:"Approved by Andy Morgan." },
     { step:3, title:"System technical standards certification",     status:"In progress", date:null,         owner:"Roxy Sheeley",  notes:"Awaiting GLI test report from client." },
     { step:4, title:"RNG / game certification",                     status:"Pending",     date:null,         owner:"Roxy Sheeley",  notes:"Dependent on step 3." },
-    { step:5, title:"Responsible gambling policy",                  status:"Complete",    date:"01/04/2025", owner:"Gary Harrison", notes:"Policy reviewed and approved." },
-    { step:6, title:"AML/CFT policy",                               status:"Complete",    date:"01/04/2025", owner:"Gary Harrison", notes:"Standard Affinity AML policy adopted." },
-    { step:7, title:"Suitability assessment — directors and UBOs",  status:"In progress", date:null,         owner:"Gary Harrison", notes:"Two directors cleared. One director pending police certificate." },
+    { step:5, title:"Responsible gambling policy",                  status:"Complete",    date:"01/04/2025", owner:"Colette Grisdale", notes:"Policy reviewed and approved." },
+    { step:6, title:"AML/CFT policy",                               status:"Complete",    date:"01/04/2025", owner:"Colette Grisdale", notes:"Standard Affinity AML policy adopted." },
+    { step:7, title:"Suitability assessment — directors and UBOs",  status:"In progress", date:null,         owner:"Colette Grisdale", notes:"Two directors cleared. One director pending police certificate." },
     { step:8, title:"Financial resources — bank evidence",          status:"Complete",    date:"10/04/2025", owner:"Neil Kelly",    notes:"Bank confirmation letter provided." },
     { step:9, title:"IT and security assessment",                   status:"Pending",     date:null,         owner:"Roxy Sheeley",  notes:"Penetration test scheduled for August." },
-    { step:10,title:"OGRA suitability decision",                    status:"Pending",     date:null,         owner:"OGRA",          notes:"Awaiting OGRA confirmation. ETA unknown." },
+    { step:10,title:"GSC suitability decision",                    status:"Pending",     date:null,         owner:"GSC",          notes:"Awaiting GSC confirmation. ETA unknown." },
   ],
 };
 
@@ -37,8 +37,8 @@ const ANNUAL_RETURNS = [
 
 const COMPLIANCE_LOG = [
   { id:1, entity:"Meridian Digital Ltd",    date:"14/07/2025", type:"Player complaint",      status:"Closed",      detail:"Complaint resolved within 48 hours per licence condition 7.3." },
-  { id:2, entity:"Neptune Interactive Ltd", date:"05/06/2025", type:"Licence breach",        status:"Open",        detail:"⚠️ Licence lapsed — no renewal filed. OGRA notified. Urgent." },
-  { id:3, entity:"Apex Gaming Solutions",   date:"20/05/2025", type:"OGRA query response",  status:"In progress", detail:"Business plan queries under consideration. Response due 25/07/2025." },
+  { id:2, entity:"Neptune Interactive Ltd", date:"05/06/2025", type:"Licence breach",        status:"Open",        detail:"⚠️ Licence lapsed — no renewal filed. GSC notified. Urgent." },
+  { id:3, entity:"Apex Gaming Solutions",   date:"20/05/2025", type:"GSC query response",  status:"In progress", detail:"Business plan queries under consideration. Response due 25/07/2025." },
   { id:4, entity:"Meridian Digital Ltd",    date:"01/04/2025", type:"AML/KYC review",        status:"Closed",      detail:"Annual AML review completed. No issues raised." },
 ];
 
@@ -83,14 +83,14 @@ export default function AffinityEGaming() {
   const nba = { ...nb, background:CY, color:"#fff", border:`0.5px solid ${CY}`, fontWeight:500 };
 
   const selLic   = lics.find(l => l.id === sel);
-  const checklist = sel ? (OGRA_CHECKLIST[sel] || []) : [];
+  const checklist = sel ? (GSC_CHECKLIST[sel] || []) : [];
 
   return (
     <div style={{ fontFamily:"'Catamaran',system-ui,sans-serif", background:"#f8f9fc", color:"#111", minHeight:"100vh" }}>
       <div style={{ background:NAVY, padding:"12px 24px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
           <span style={{ color:"#fff", fontWeight:700, fontSize:17 }}>Affinity <span style={{ fontWeight:300 }}>Core</span></span>
-          <span style={{ color:"#8892b0", fontSize:13 }}>eGaming & OGRA Licensing</span>
+          <span style={{ color:"#8892b0", fontSize:13 }}>eGaming & GSC Licensing</span>
         </div>
         <div style={{ display:"flex", gap:5 }}>
           {["Entity Admin","Compliance","Statutory"].map(n=><button key={n} style={{ ...nb, color:"#8892b0", borderColor:"#334" }}>{n}</button>)}
@@ -152,15 +152,15 @@ export default function AffinityEGaming() {
                 ))}
               </div>
               <div style={{ background:"#fff", border:"0.5px solid #e5e5e5", borderRadius:10, padding:14 }}>
-                <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.4px", color:"#888", marginBottom:12 }}>OGRA key obligations — IOM</div>
+                <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.4px", color:"#888", marginBottom:12 }}>GSC key obligations — IOM</div>
                 {[
-                  ["Regulator","Isle of Man Gambling Supervision Commission (OGRA / GSC)"],
+                  ["Regulator","Isle of Man Gambling Supervision Commission (GSC / GSC)"],
                   ["Legislation","Online Gambling Regulation Act 2001 (as amended)"],
                   ["Licence types","B2C (player-facing), B2B (platform/software supply)"],
                   ["Annual return","Required 6 months after year end"],
-                  ["AML obligation","Full AML/CFT policy required; OGRA-specific procedures"],
+                  ["AML obligation","Full AML/CFT policy required; GSC-specific procedures"],
                   ["Responsible gambling","RG policy, self-exclusion register, and affordability checks required"],
-                  ["Technical standards","Systems must meet OGRA technical standards; third-party cert required"],
+                  ["Technical standards","Systems must meet GSC technical standards; third-party cert required"],
                   ["Suitability","All directors and 10%+ shareholders subject to suitability assessment"],
                 ].map(([k,v])=>(
                   <div key={k} style={{ display:"flex", justifyContent:"space-between", padding:"5px 0", borderBottom:"0.5px solid #f5f5f5", fontSize:11 }}>
@@ -221,7 +221,7 @@ export default function AffinityEGaming() {
                   </div>
                   {checklist.length>0&&(
                     <div style={{ background:"#fff", border:"0.5px solid #e5e5e5", borderRadius:10, padding:14 }}>
-                      <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.4px", color:"#888", marginBottom:12 }}>OGRA application checklist</div>
+                      <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.4px", color:"#888", marginBottom:12 }}>GSC application checklist</div>
                       {checklist.map(c=>(
                         <div key={c.step} style={{ display:"flex", gap:12, padding:"8px 0", borderBottom:"0.5px solid #f5f5f5" }}>
                           <div style={{ width:22, height:22, borderRadius:"50%", background:c.status==="Complete"?"#4CAF7D":c.status==="In progress"?CY:"#f0f0f0", color:c.status==="Complete"||c.status==="In progress"?"#fff":"#aaa", display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, fontWeight:700, flexShrink:0, marginTop:1 }}>{c.status==="Complete"?"✓":c.step}</div>
@@ -247,7 +247,7 @@ export default function AffinityEGaming() {
         {view==="applications"&&(
           <div>
             <div style={{ display:"flex", justifyContent:"space-between", marginBottom:14 }}>
-              <div style={{ fontSize:12, fontWeight:500 }}>Active OGRA applications</div>
+              <div style={{ fontSize:12, fontWeight:500 }}>Active GSC applications</div>
               <button style={nba} onClick={()=>setModal("newApp")}>＋ New application</button>
             </div>
             {lics.filter(l=>!["Live"].includes(l.status)).map(l=>(
@@ -260,14 +260,14 @@ export default function AffinityEGaming() {
                   <Badge label={l.status} colors={statusC[l.status]||{bg:"#eee",color:"#666"}} />
                 </div>
                 <div style={{ fontSize:12, color:"#444", marginBottom:12 }}>{l.notes}</div>
-                {OGRA_CHECKLIST[l.id]&&(
+                {GSC_CHECKLIST[l.id]&&(
                   <div style={{ display:"flex", gap:4, flexWrap:"wrap", marginBottom:12 }}>
-                    {OGRA_CHECKLIST[l.id].map(c=>(
+                    {GSC_CHECKLIST[l.id].map(c=>(
                       <div key={c.step} title={c.title} style={{ width:28, height:28, borderRadius:"50%", background:c.status==="Complete"?"#4CAF7D":c.status==="In progress"?CY:"#f0f0f0", color:c.status==="Complete"||c.status==="In progress"?"#fff":"#aaa", display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, fontWeight:700, cursor:"pointer" }}>
                         {c.status==="Complete"?"✓":c.step}
                       </div>
                     ))}
-                    <span style={{ fontSize:11, color:"#aaa", alignSelf:"center", marginLeft:4 }}>{OGRA_CHECKLIST[l.id].filter(c=>c.status==="Complete").length}/{OGRA_CHECKLIST[l.id].length} steps done</span>
+                    <span style={{ fontSize:11, color:"#aaa", alignSelf:"center", marginLeft:4 }}>{GSC_CHECKLIST[l.id].filter(c=>c.status==="Complete").length}/{GSC_CHECKLIST[l.id].length} steps done</span>
                   </div>
                 )}
                 <div style={{ display:"flex", gap:6 }}>
@@ -283,7 +283,7 @@ export default function AffinityEGaming() {
         {view==="returns"&&(
           <div>
             <div style={{ display:"flex", justifyContent:"space-between", marginBottom:14 }}>
-              <div style={{ fontSize:12, fontWeight:500 }}>OGRA annual returns & renewals</div>
+              <div style={{ fontSize:12, fontWeight:500 }}>GSC annual returns & renewals</div>
               <button style={nba} onClick={()=>setModal("return")}>＋ Log filing</button>
             </div>
             {ANNUAL_RETURNS.map(r=>(
@@ -326,7 +326,7 @@ export default function AffinityEGaming() {
                   <tr key={c.id} style={{ borderBottom:"0.5px solid #f0f0f0", background:c.status==="Open"?"#FFF5F5":"transparent" }}>
                     <td style={{ ...td, fontWeight:500 }}>{c.entity}</td>
                     <td style={{ ...td, color:"#666" }}>{c.date}</td>
-                    <td style={td}><Badge label={c.type} colors={{ "Licence breach":{bg:"#FCEBEB",color:"#A32D2D"}, "Player complaint":{bg:"#FAEEDA",color:"#633806"}, "AML/KYC review":{bg:"#EAF3DE",color:"#27500A"}, "OGRA query response":{bg:"#E6F7FB",color:"#0077A8"} }[c.type]||{bg:"#eee",color:"#666"}} /></td>
+                    <td style={td}><Badge label={c.type} colors={{ "Licence breach":{bg:"#FCEBEB",color:"#A32D2D"}, "Player complaint":{bg:"#FAEEDA",color:"#633806"}, "AML/KYC review":{bg:"#EAF3DE",color:"#27500A"}, "GSC query response":{bg:"#E6F7FB",color:"#0077A8"} }[c.type]||{bg:"#eee",color:"#666"}} /></td>
                     <td style={td}><Badge label={c.status} colors={statusC[c.status]||{bg:"#eee",color:"#666"}} /></td>
                     <td style={{ ...td, maxWidth:300, whiteSpace:"normal", fontSize:10, color:"#444", lineHeight:1.4 }}>{c.detail}</td>
                     <td style={td}>{c.status==="Open"?<button style={{ ...nba, fontSize:10 }}>Resolve ↗</button>:<button style={{ ...nb, fontSize:10 }}>View ↗</button>}</td>
@@ -343,7 +343,7 @@ export default function AffinityEGaming() {
           <div style={{ background:"#fff", borderRadius:12, padding:24, width:460, maxWidth:"95vw" }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
               <h3 style={{ margin:0, fontSize:15, fontWeight:600 }}>
-                {modal==="newLic"?"New licence record":modal==="newApp"?"New OGRA application":modal==="return"?"Log annual return filing":"Log compliance event"}
+                {modal==="newLic"?"New licence record":modal==="newApp"?"New GSC application":modal==="return"?"Log annual return filing":"Log compliance event"}
               </h3>
               <button onClick={()=>setModal(null)} style={{ background:"none", border:"none", fontSize:20, cursor:"pointer", color:"#888" }}>×</button>
             </div>

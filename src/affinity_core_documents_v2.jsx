@@ -18,7 +18,7 @@ const FOLDER_TREE = [
   {name:"Data Protection",subs:["DPIA's","Policy and Procedures","Registration/Renewals"]},
   {name:"Delete Documents",subs:["Delete"]},
   {name:"Duty & Taxes",   subs:["GDR","Tax","VAT"]},
-  {name:"E-Gaming",subs:["License Applications","Licenses","OGRA Regulatory Returns","Policies & Procedures","Registers","Regulation","Regulatory Inspection","Technological Risk Assessments","Test Certificates"]},
+  {name:"E-Gaming",subs:["License Applications","Licenses","GSC Regulatory Returns","Policies & Procedures","Registers","Regulation","Regulatory Inspection","Technological Risk Assessments","Test Certificates"]},
   {name:"FINTECH",        subs:["DBA Applications","Policies & Procedures","Registers","Regulation"]},
   {name:"Insurance",      subs:["Insurance"]},
   {name:"Investments",    subs:["Portfolio Statements","Share Certificates"]},
@@ -34,7 +34,7 @@ const FOLDER_TREE = [
 const DOCS = [
   {id:1,  entity:"Harrington Family Trust",   folder:"KYC",           subfolder:"CDD",                        name:"Emma Harrington — Passport",          status:"Expired",     date:"01/07/2019",expiry:"22/04/2024",by:"Roxy Sheeley",  size:"1.2MB"},
   {id:2,  entity:"Harrington Family Trust",   folder:"Statutory",     subfolder:"Memorandum & Articles of Association",name:"Trust deed",                  status:"Executed",    date:"05/07/2019",expiry:null,       by:"Roxy Sheeley",  size:"3.4MB"},
-  {id:3,  entity:"Apex Growth Fund Ltd",      folder:"KYC",           subfolder:"CDD",                        name:"Worldcheck result — Apex Growth Fund", status:"Current",     date:"12/07/2025",expiry:"12/07/2026",by:"Gary Harrison", size:"0.8MB"},
+  {id:3,  entity:"Apex Growth Fund Ltd",      folder:"KYC",           subfolder:"CDD",                        name:"Worldcheck result — Apex Growth Fund", status:"Current",     date:"12/07/2025",expiry:"12/07/2026",by:"Colette Grisdale", size:"0.8MB"},
   {id:4,  entity:"Stonebridge Capital Ltd",   folder:"Statutory",     subfolder:"Minutes of Meetings",        name:"Board resolution — director appt",     status:"Under review",date:"01/07/2025",expiry:null,       by:"Joanne Fenech", size:"0.5MB"},
   {id:5,  entity:"Meridian Holdings Ltd",     folder:"Accounts",      subfolder:"Management Accounts",        name:"Q1 2025 management accounts",          status:"Executed",    date:"10/04/2025",expiry:null,       by:"Neil Kelly",    size:"2.1MB"},
   {id:6,  entity:"Pacific Wealth Trust",      folder:"KYC",           subfolder:"CDD",                        name:"EDD pack — Wei Chen",                  status:"Draft",       date:"10/07/2025",expiry:null,       by:"Garry Crossan", size:"4.2MB"},
@@ -180,7 +180,7 @@ export default function AffinityDMS() {
                 {[
                   {from:"Roxy Sheeley",     to:"emma.harrington@gmail.com",       subject:"RE: Q2 retainer invoice — Meridian Holdings",      date:"14 Jul 14:22", entity:"Meridian Holdings Ltd"},
                   {from:"Garry Crossan",    to:"david.silver@silverstone.ky",     subject:"FW: KYC renewal — Emma Harrington",                date:"14 Jul 11:30", entity:"Harrington Family Trust"},
-                  {from:"Gary Harrison",    to:"compliance@apexgrowth.com",       subject:"RE: Apex sanctions review — MLRO",                 date:"14 Jul 09:08", entity:"Apex Growth Fund Ltd"},
+                  {from:"Colette Grisdale",    to:"compliance@apexgrowth.com",       subject:"RE: Apex sanctions review — MLRO",                 date:"14 Jul 09:08", entity:"Apex Growth Fund Ltd"},
                   {from:"Andrew Morgan",    to:"sofia.adriatic@adriatic.mt",      subject:"Onboarding pack — Adriatic Holdings",              date:"13 Jul 16:45", entity:"Adriatic Holdings Ltd"},
                   {from:"Joanne Fenech",    to:"verona.digital@vdh.com.mt",       subject:"MFSA licence — Verona Digital structure approved", date:"13 Jul 14:12", entity:"Verona Digital Holdings Ltd"},
                   {from:"Neil Kelly",       to:"andrew@stonebridge-capital.co.uk", subject:"Q3 invoice — annual administration fees",         date:"12 Jul 17:30", entity:"Stonebridge Capital Ltd"},

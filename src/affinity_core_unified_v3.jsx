@@ -46,7 +46,7 @@ const USERS = [
   {id:13,name:"Kate Shaw",firstName:"Kate",lastName:"Shaw",office:"Isle of Man",flag:"🇮🇲",role:"Manager",av:"KS",c:"#A0623E",pass:"affinity13"},
   {id:14,name:"Roxy Sheeley",firstName:"Roxy",lastName:"Sheeley",office:"Isle of Man",flag:"🇮🇲",role:"Managing Director (IOM)",av:"RS",c:"#3C5CBF",pass:"affinity14"},
   {id:15,name:"Gilbert Spiteri Spadaro",firstName:"Gilbert",lastName:"Spiteri Spadaro",office:"Malta",flag:"🇲🇹",role:"Compliance Officer (Malta)",av:"GS",c:"#3A6E4A",pass:"affinity15"},
-  {id:16,name:"Gary Harrison",firstName:"Gary",lastName:"Harrison",office:"Isle of Man",flag:"🇮🇲",role:"COO",av:"GH",c:"#0D6E8E",pass:"affinity16"},
+  {id:16,name:"Colette Grisdale",firstName:"Gary",lastName:"Harrison",office:"Isle of Man",flag:"🇮🇲",role:"COO",av:"GH",c:"#0D6E8E",pass:"affinity16"},
 ];
 
 // ── Login screen ─────────────────────────────────────────
@@ -164,7 +164,7 @@ const offC = {
 
 const ALERTS = [
   {id:1,sev:"Critical",cat:"Compliance",title:"Harrington Family Trust — review overdue",  ass:"Roxy Sheeley"},
-  {id:2,sev:"Critical",cat:"Compliance",title:"Apex Growth Fund — sanctions match open",  ass:"Gary Harrison"},
+  {id:2,sev:"Critical",cat:"Compliance",title:"Apex Growth Fund — sanctions match open",  ass:"Colette Grisdale"},
   {id:3,sev:"Critical",cat:"KYC",       title:"Emma Harrington — KYC expired",            ass:"Roxy Sheeley"},
   {id:4,sev:"High",    cat:"Compliance",title:"Pacific Wealth Trust — review overdue",    ass:"Garry Crossan"},
   {id:5,sev:"High",    cat:"Invoicing", title:"Harrington Trust — invoice 60d+ overdue",  ass:"Neil Kelly"},
@@ -178,50 +178,47 @@ const NAV = [
     {id:"dashboard",    label:"Dashboard",     icon:"\u229E",b:null},
     {id:"tasks",        label:"Tasks",          icon:"\u2713",b:3},
     {id:"notifications",label:"Notifications",  icon:"\uD83D\uDD14",b:null},
-    {id:"feedback",     label:"Feedback",       icon:"\uD83D\uDCAC",b:null},
   ]},
   {s:"Core",       items:[
     {id:"entities",     label:"Entity Admin",  icon:"\uD83C\uDFE2",b:null},
+    {id:"statutory",    label:"Statutory",      icon:"\uD83D\uDCCB",b:null},
     {id:"crm",          label:"CRM",           icon:"\uD83E\uDD1D",b:null},
     {id:"documents",    label:"Documents",     icon:"\uD83D\uDCC1",b:2},
-    {id:"onboarding",   label:"Onboarding",    icon:"\u2705",b:1},
     {id:"timesheets",   label:"Timesheets",    icon:"\u23F1",b:1},
+  ]},
+  {s:"Compliance", items:[
+    {id:"compliance",   label:"Compliance",     icon:"\uD83D\uDEE1",b:null},
+    {id:"egaming",      label:"eGaming",        icon:"\uD83C\uDFB2",b:null},
+  ]},
+  {s:"Onboarding", items:[
+    {id:"onboarding",   label:"Onboarding",    icon:"\u2705",b:1},
   ]},
   {s:"Internal Accounts", items:[
     {id:"acc_wip",   label:"WIP",            icon:"\u23F3",b:null},
     {id:"invoicing", label:"Invoicing",      icon:"\uD83D\uDCB7",b:null},
-  ]},
-  {s:"Compliance", items:[
-    {id:"compliance",   label:"Compliance",     icon:"\uD83D\uDEE1",b:null},
-    {id:"statutory",    label:"Statutory",      icon:"\uD83D\uDCCB",b:null},
-    {id:"egaming",      label:"eGaming / OGRA", icon:"\uD83C\uDFB2",b:null},
+    {id:"budgeting", label:"Budgets",        icon:"\uD83D\uDCB0",b:null},
   ]},
   {s:"Affinity Accounting", items:[
-    {id:"acc_overview", label:"Overview",        icon:"\u229E",b:null},
     {id:"bookkeeping",  label:"Bookkeeping",     icon:"\uD83D\uDCCA",b:null},
     {id:"acc_txn",      label:"Transactions",    icon:"\uD83D\uDCD2",b:null},
     {id:"acc_assets",   label:"Assets & Groups", icon:"\uD83C\uDFE2",b:null},
     {id:"acc_report",   label:"Reporting",       icon:"\uD83D\uDCC8",b:null},
-    {id:"acc_gov",      label:"Governance",      icon:"\uD83D\uDD12",b:null},
+    {id:"acc_admin",    label:"Accounting admin",icon:"\u2699",b:null},
   ]},
-  {s:"Budgeting", items:[
-    {id:"budgeting",    label:"Budgeting",       icon:"\uD83D\uDCB0",b:null},
+  {s:"Reporting",   items:[
+    {id:"reporting",    label:"Financial Reporting", icon:"\uD83D\uDCC8",b:null},
   ]},
-  {s:"Insights",   items:[
-    {id:"reporting",    label:"Reporting",     icon:"\uD83D\uDCC8",b:null},
-  ]},
-  {s:"Governance", items:[
+  {s:"Affinity Core", items:[
     {id:"procedures",   label:"Procedures",    icon:"\u2699",b:null},
     {id:"generate",     label:"Generate doc",  icon:"\uD83D\uDCC4",b:null},
-    {id:"audit",        label:"Audit log",     icon:"\uD83D\uDCDC",b:null},
     {id:"client_portal",label:"Client portal", icon:"\uD83D\uDC64",b:null},
   ]},
   {s:"People", items:[
     {id:"intranet",     label:"Intranet",      icon:"\uD83C\uDFE0",b:null},
     {id:"chatbot",      label:"Assistant",     icon:"\uD83E\uDD16",b:null},
-    {id:"attrition",    label:"Attrition",     icon:"\uD83D\uDDD1",b:null},
   ]},
   {s:"System",     items:[
+    {id:"audit",        label:"Audit log",     icon:"\uD83D\uDCDC",b:null},
     {id:"system",       label:"System admin",  icon:"\uD83D\uDD27",b:null},
   ]},
 ];
@@ -229,7 +226,7 @@ const NAV = [
 // Tasks module (inline)
 const TASKS_DATA = [
   {id:1,title:"Harrington Trust — CPR overdue",           entity:"Harrington Family Trust",   assignee:"Roxy Sheeley",  due:"Today",      priority:"Critical",cat:"Compliance",  status:"Open"},
-  {id:2,title:"Apex Growth Fund — sanctions MLRO review", entity:"Apex Growth Fund Ltd",      assignee:"Gary Harrison", due:"Today",      priority:"Critical",cat:"Compliance",  status:"Open"},
+  {id:2,title:"Apex Growth Fund — sanctions MLRO review", entity:"Apex Growth Fund Ltd",      assignee:"Colette Grisdale", due:"Today",      priority:"Critical",cat:"Compliance",  status:"Open"},
   {id:3,title:"Emma Harrington — KYC expired",            entity:"Harrington Family Trust",   assignee:"Roxy Sheeley",  due:"Overdue",    priority:"Critical",cat:"KYC",         status:"Open"},
   {id:4,title:"Q3 retainer invoices — approve batch",     entity:"All entities",              assignee:"Neil Kelly",    due:"15/07/2025", priority:"High",    cat:"Invoicing",   status:"Open"},
   {id:5,title:"Sarah Cole — missing timesheet",           entity:"—",                         assignee:"Roxy Sheeley",  due:"Today",      priority:"High",    cat:"Timesheets",  status:"Open"},
@@ -311,7 +308,7 @@ function Tasks(){
       <div style={{background:"#fff",borderRadius:10,border:"0.5px solid #e5e5e5",padding:22,width:500,maxWidth:"96vw"}}>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:14}}><div style={{fontSize:14,fontWeight:600}}>New task</div><button onClick={()=>setModal(false)} style={{background:"none",border:"none",cursor:"pointer",fontSize:18,color:"#aaa"}}>✕</button></div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-          {[["Task title","text","Description of task",true],["Entity","text","Entity name or —"],["Assignee","select","",false,["Andy Morgan","Roxy Sheeley","Garry Crossan","Joanne Fenech","Neil Kelly","Gary Harrison","Sarah Cole"]],["Due date","text","DD/MM/YYYY"],["Category","select","",false,["Compliance","KYC","Invoicing","Timesheets","Onboarding","Corporate","Statutory","System","Accounts","Other"]],["Status","select","",false,["Open","In progress"]]].map(([l,t,ph,full,opts])=><div key={l} style={{display:"flex",flexDirection:"column",gap:3,gridColumn:full?"1/-1":"auto"}}>
+          {[["Task title","text","Description of task",true],["Entity","text","Entity name or —"],["Assignee","select","",false,["Andy Morgan","Roxy Sheeley","Garry Crossan","Joanne Fenech","Neil Kelly","Colette Grisdale","Sarah Cole"]],["Due date","text","DD/MM/YYYY"],["Category","select","",false,["Compliance","KYC","Invoicing","Timesheets","Onboarding","Corporate","Statutory","System","Accounts","Other"]],["Status","select","",false,["Open","In progress"]]].map(([l,t,ph,full,opts])=><div key={l} style={{display:"flex",flexDirection:"column",gap:3,gridColumn:full?"1/-1":"auto"}}>
             <label style={{fontSize:11,color:"#666"}}>{l}</label>
             {t==="select"?<select style={{fontSize:12,borderRadius:5,border:"0.5px solid #ccc",background:"#fff",padding:"0 8px",height:32,color:"#111"}}>{(opts||[]).map(o=><option key={o}>{o}</option>)}</select>:<input type={t} style={{fontSize:12,borderRadius:5,border:"0.5px solid #ccc",padding:"0 8px",height:32,background:"#fff",color:"#111"}} placeholder={ph}/>}
           </div>)}
@@ -430,7 +427,7 @@ const SEARCH_INDEX = [
   // ─── People (staff) ───────────────────────────────────────
   {type:"Person",  label:"Andrew Morgan",                  sub:"CEO · USA · Super Admin",         mod:"intranet"},
   {type:"Person",  label:"Alexandra Gardner",              sub:"COO · USA · Super Admin",         mod:"intranet"},
-  {type:"Person",  label:"Gary Harrison",                  sub:"COO · Isle of Man",               mod:"intranet"},
+  {type:"Person",  label:"Colette Grisdale",                  sub:"COO · Isle of Man",               mod:"intranet"},
   {type:"Person",  label:"Roxy Sheeley",                   sub:"Managing Director · IOM",         mod:"intranet"},
   {type:"Person",  label:"Joanne Fenech",                  sub:"Managing Director · Malta",       mod:"intranet"},
   {type:"Person",  label:"Michael Barlow",                 sub:"Compliance Manager · IOM",        mod:"intranet"},
@@ -466,7 +463,7 @@ const SEARCH_INDEX = [
   {type:"Section", label:"FATCA register",                 sub:"Reportable accounts",             mod:"entities"},
   {type:"Section", label:"CRS register",                   sub:"Common Reporting Standard",       mod:"entities"},
   {type:"Section", label:"Substance returns",              sub:"Economic substance filings",      mod:"entities"},
-  {type:"Section", label:"eGaming / OGRA register",        sub:"Gaming licence holders",          mod:"entities"},
+  {type:"Section", label:"eGaming / GSC register",        sub:"Gaming licence holders",          mod:"entities"},
   {type:"Section", label:"Compliance dashboard",           sub:"Firm-wide compliance KPIs",       mod:"compliance"},
   {type:"Section", label:"Statutory registers",            sub:"Generate registers PDF",          mod:"statutory_registers"},
 
@@ -481,12 +478,11 @@ const SEARCH_INDEX = [
   {type:"Module",  label:"CRM",                            sub:"Pipeline & prospects",            mod:"crm"},
   {type:"Module",  label:"Documents",                      sub:"DMS & file management",           mod:"documents"},
   {type:"Module",  label:"Onboarding",                     sub:"New business & KYC",              mod:"onboarding"},
-  {type:"Module",  label:"Attrition",                      sub:"Exits & off-boarding",            mod:"attrition"},
   {type:"Module",  label:"Timesheets",                     sub:"Time recording",                  mod:"timesheets"},
   {type:"Module",  label:"Invoicing",                      sub:"Billing & debtors",               mod:"invoicing"},
   {type:"Module",  label:"Bookkeeping",                    sub:"Ledger & accounts",               mod:"bookkeeping"},
-  {type:"Module",  label:"Budgeting",                      sub:"Forecasts & variance",            mod:"budgeting"},
-  {type:"Module",  label:"Reporting",                      sub:"MI & custom reports",             mod:"reporting"},
+  {type:"Module",  label:"Budgets",                         sub:"Budgets & scenarios",             mod:"budgeting"},
+  {type:"Module",  label:"Financial Reporting",            sub:"MI & financial statements",       mod:"reporting"},
   {type:"Module",  label:"Procedures",                     sub:"Process library",                 mod:"procedures"},
   {type:"Module",  label:"Generate Document",              sub:"Templates & statutory forms",     mod:"generate"},
   {type:"Module",  label:"Compliance",                     sub:"Compliance register",             mod:"compliance"},
@@ -499,7 +495,7 @@ const SHORTCUTS = [
   {key:"e", label:"Entities",   mod:"entities"},
   {key:"t", label:"Timesheets", mod:"timesheets"},
   {key:"i", label:"Invoicing",  mod:"invoicing"},
-  {key:"r", label:"Reporting",  mod:"reporting"},
+  {key:"r", label:"Financial Reporting", mod:"reporting"},
   {key:"s", label:"Search",     mod:null},
 ];
 

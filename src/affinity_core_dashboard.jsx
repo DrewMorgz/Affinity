@@ -28,12 +28,12 @@ const USERS = [
   {id:13,name:"Kate Shaw",office:"Isle of Man",flag:"🇮🇲",role:"Manager",av:"KS",c:"#A0623E",isManager:false, team:[]},
   {id:14,name:"Roxy Sheeley",office:"Isle of Man",flag:"🇮🇲",role:"Managing Director (IOM)",av:"RS",c:"#3C5CBF",isManager:true, team:["Michael Barlow","Debbie Gooding","Elena Pace","Shanya Pickett","Mattei Pisani","Colin Quayle","Kate Shaw"]},
   {id:15,name:"Gilbert Spiteri Spadaro",office:"Malta",flag:"🇲🇹",role:"Compliance Officer (Malta)",av:"GS",c:"#3A6E4A",isManager:false, team:[]},
-  {id:16,name:"Gary Harrison",office:"Isle of Man",flag:"🇮🇲",role:"COO",av:"GH",c:"#0D6E8E",isManager:true, team:["Michael Barlow","Debbie Gooding","Elena Pace","Shanya Pickett"]},
+  {id:16,name:"Colette Grisdale",office:"Isle of Man",flag:"🇮🇲",role:"COO",av:"GH",c:"#0D6E8E",isManager:true, team:["Michael Barlow","Debbie Gooding","Elena Pace","Shanya Pickett"]},
 ];
 
 const ALL_TASKS = [
   {id:1, title:"Harrington Trust — CPR overdue",          assignee:"Roxy Sheeley",  module:"Compliance",priority:"Critical",due:"Today",    entity:"Harrington Family Trust"},
-  {id:2, title:"Apex Growth Fund — sanctions MLRO review",assignee:"Gary Harrison", module:"Compliance",priority:"Critical",due:"Today",    entity:"Apex Growth Fund Ltd"},
+  {id:2, title:"Apex Growth Fund — sanctions MLRO review",assignee:"Colette Grisdale", module:"Compliance",priority:"Critical",due:"Today",    entity:"Apex Growth Fund Ltd"},
   {id:3, title:"Emma Harrington — KYC expired",           assignee:"Roxy Sheeley",  module:"KYC",       priority:"Critical",due:"Overdue",  entity:"Harrington Family Trust"},
   {id:4, title:"Q3 retainer invoices — approve batch",    assignee:"Neil Kelly",    module:"Invoicing", priority:"High",    due:"15/07",    entity:"All entities"},
   {id:5, title:"Sarah Cole — missing timesheet",          assignee:"Roxy Sheeley",  module:"Timesheets",priority:"High",    due:"Today",    entity:"—"},
@@ -53,7 +53,7 @@ const INBOX_ITEMS = [
   {id:4, from:"Postroom — IOM office",entity:"Rosewood Legacy Trust",      subject:"Letter from HMRC re: trust registration",    received:"05/07/2025",type:"Post",    read:false, assignee:"Roxy Sheeley",  daysOld:9},
   {id:5, from:"Wei Chen",             entity:"Pacific Wealth Trust",       subject:"Source of wealth — updated documentation",   received:"11/07/2025",type:"Scan",    read:false, assignee:"Garry Crossan", daysOld:3},
   {id:6, from:"Postroom — Malta",     entity:"Stonebridge Capital Ltd",    subject:"MFSA letter — director appointment acknowledgement",received:"04/07/2025",type:"Post",read:false,assignee:"Joanne Fenech", daysOld:10},
-  {id:7, from:"IOMFSA",               entity:"All entities",               subject:"AML guidance update — July 2025",            received:"08/07/2025",type:"Post",    read:true,  assignee:"Gary Harrison", daysOld:6},
+  {id:7, from:"IOMFSA",               entity:"All entities",               subject:"AML guidance update — July 2025",            received:"08/07/2025",type:"Post",    read:true,  assignee:"Colette Grisdale", daysOld:6},
   {id:8, from:"Carlos Reyes",         entity:"Suncoast Ventures LLC",      subject:"Signed accounts — FY2024",                   received:"12/07/2025",type:"Scan",    read:false, assignee:"Andy Morgan",   daysOld:2},
 ];
 
@@ -111,7 +111,7 @@ const STAFF_PROFILES = [
   { name:"Colette Grisdale", birthday:{d:1,m:10}, joined:{d:18,m:3,y:2024}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"CG", c:"#6A8E2E" },
   { name:"Mónica Guedes", birthday:{d:18,m:1}, joined:{d:4,m:8,y:2025}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"MG", c:"#BF9A3C" },
   { name:"Martin Hall", birthday:{d:6,m:10}, joined:{d:26,m:3,y:2025}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"MH", c:"#4F6E8E" },
-  { name:"Gary Harrison", birthday:{d:31,m:12}, joined:{d:25,m:5,y:2021}, office:"Isle of Man", flag:"🇮🇲", role:"COO", av:"GH", c:"#0D6E8E" },
+  { name:"Colette Grisdale", birthday:{d:31,m:12}, joined:{d:25,m:5,y:2021}, office:"Isle of Man", flag:"🇮🇲", role:"COO", av:"GH", c:"#0D6E8E" },
   { name:"Lucy Harrison", birthday:{d:21,m:9}, joined:{d:9,m:2,y:2026}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"LH", c:"#3C5CBF" },
   { name:"Natalie Johnson", birthday:{d:4,m:12}, joined:{d:15,m:12,y:2025}, office:"USA", flag:"🇺🇸", role:"Assistant Compliance Administrator", av:"NJ", c:"#2E7A8A" },
   { name:"Stelios Kazamia", birthday:{d:8,m:4}, joined:{d:27,m:1,y:2026}, office:"Isle of Man", flag:"🇮🇲", role:"Staff", av:"SK", c:"#7C5CBF" },
@@ -153,7 +153,7 @@ const STAFF_PROFILES = [
 ];
 
 const GROUP_ANNOUNCEMENTS = [
-  { id:1, title:"ISO 27001 audit — 18–19 August 2025",      author:"Gary Harrison",  date:"14/07/2025", priority:"urgent", preview:"The external ISO 27001 surveillance audit is scheduled for 18–19 August. All staff must ensure their DMS filing is up to date." },
+  { id:1, title:"ISO 27001 audit — 18–19 August 2025",      author:"Colette Grisdale",  date:"14/07/2025", priority:"urgent", preview:"The external ISO 27001 surveillance audit is scheduled for 18–19 August. All staff must ensure their DMS filing is up to date." },
   { id:2, title:"Q3 billing deadline — all timesheets by 17:00 Friday", author:"Neil Kelly", date:"08/07/2025", priority:"urgent", preview:"All fee-earners must submit Q3 timesheets by 17:00 this Friday. Neil Kelly will run the billing batch on Monday morning." },
   { id:3, title:"Welcome — Maria Borg joins Malta team",    author:"Joanne Fenech", date:"01/07/2025", priority:"normal",  preview:"We are pleased to welcome Maria Borg to the Malta office as Administrator. Maria joins from Fenlex." },
   { id:4, title:"New office hours — Cayman — effective 1 August", author:"Garry Crossan", date:"10/07/2025", priority:"normal", preview:"Following the team expansion in Cayman, office hours will extend to 08:00–18:00 local time from 1 August." },

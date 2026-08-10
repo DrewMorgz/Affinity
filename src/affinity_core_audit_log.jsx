@@ -12,7 +12,7 @@ const LOG_DATA = [
   {t:"2026-06-05T14:42:18Z", user:"Andrew Morgan",   userId:1,  action:"Logged in",          mod:"System",      target:"Affinity Core",                 details:"Login from Miami office IP",                ip:"104.28.241.18", severity:"info"},
   {t:"2026-06-05T14:31:02Z", user:"Roxy Sheeley",    userId:14, action:"Document uploaded",  mod:"Documents",   target:"AGM Minutes — Meridian Holdings",details:"4.2 MB · Correspondence / Statutory",       ip:"86.176.20.4",   severity:"info"},
   {t:"2026-06-05T13:55:44Z", user:"Colin Quayle",    userId:12, action:"Director added",     mod:"Entity Admin",target:"Stonebridge Capital Ltd",        details:"Appointed Andrew Thornbury as Director",     ip:"86.176.21.92",  severity:"info"},
-  {t:"2026-06-05T13:18:09Z", user:"Gary Harrison",   userId:16, action:"Risk rating changed",mod:"Entity Admin",target:"Apex Growth Fund Ltd",           details:"High → Very High (annual review)",           ip:"86.176.21.92",  severity:"warn"},
+  {t:"2026-06-05T13:18:09Z", user:"Colette Grisdale",   userId:16, action:"Risk rating changed",mod:"Entity Admin",target:"Apex Growth Fund Ltd",           details:"High → Very High (annual review)",           ip:"86.176.21.92",  severity:"warn"},
   {t:"2026-06-05T12:50:33Z", user:"Krista Fenech",   userId:4,  action:"KYC submitted",      mod:"Onboarding",  target:"Verona Digital Holdings Ltd",    details:"EDD pack uploaded, awaiting review",         ip:"194.158.32.7",  severity:"info"},
   {t:"2026-06-05T12:04:11Z", user:"Joanne Fenech",   userId:3,  action:"KYC approved",       mod:"Onboarding",  target:"Adriatic Holdings Ltd",          details:"All CDD requirements satisfied",             ip:"194.158.32.7",  severity:"info"},
   {t:"2026-06-05T11:38:21Z", user:"Andrew Morgan",   userId:1,  action:"User added",         mod:"System Admin",target:"Lucy Harrison",                  details:"Added as Client Admin · IOM",                ip:"104.28.241.18", severity:"warn"},
@@ -22,7 +22,7 @@ const LOG_DATA = [
   {t:"2026-06-05T09:22:15Z", user:"Andrew Morgan",   userId:1,  action:"Logged in",          mod:"System",      target:"Affinity Core",                 details:"Login from Miami office IP",                ip:"104.28.241.18", severity:"info"},
 
   // — Yesterday —
-  {t:"2026-06-04T17:55:42Z", user:"Gary Harrison",   userId:16, action:"Bank account added", mod:"Entity Admin",target:"Pacific Wealth Trust",           details:"Butterfield Bank · Account 4427",            ip:"86.176.21.92",  severity:"info"},
+  {t:"2026-06-04T17:55:42Z", user:"Colette Grisdale",   userId:16, action:"Bank account added", mod:"Entity Admin",target:"Pacific Wealth Trust",           details:"Butterfield Bank · Account 4427",            ip:"86.176.21.92",  severity:"info"},
   {t:"2026-06-04T16:30:18Z", user:"Elena Pace",      userId:9,  action:"Task completed",     mod:"Tasks",       target:"Renew Pacific Wealth licence",   details:"Marked done · 4 hours logged",               ip:"86.176.21.92",  severity:"info"},
   {t:"2026-06-04T16:01:55Z", user:"Colin Quayle",    userId:12, action:"Resolution drafted", mod:"Generate Doc",target:"Meridian Holdings Ltd",          details:"Capital reorganisation · awaiting signatures",ip:"86.176.21.92",  severity:"info"},
   {t:"2026-06-04T15:44:22Z", user:"Shanya Pickett",  userId:10, action:"Document approved",  mod:"Documents",   target:"Engagement Letter — Adriatic",   details:"Approved by Manager · ready to send",        ip:"86.176.21.92",  severity:"info"},
@@ -31,7 +31,7 @@ const LOG_DATA = [
   {t:"2026-06-04T12:50:31Z", user:"Kate Shaw",       userId:13, action:"Time entry logged",  mod:"Timesheets",  target:"Caledonian Ventures Ltd",        details:"2.5 hours · Annual return preparation",      ip:"86.176.21.92",  severity:"info"},
   {t:"2026-06-04T11:42:18Z", user:"Debbie Gooding",  userId:6,  action:"Document downloaded",mod:"Documents",   target:"Trust Deed — Harrington Family", details:"PDF · 2.8 MB · Statutory folder",            ip:"86.176.21.92",  severity:"info"},
   {t:"2026-06-04T10:55:07Z", user:"Andrew Morgan",   userId:1,  action:"Entity created",     mod:"Entity Admin",target:"Thornbury Asset Co Ltd",         details:"New UK company · Low risk · Set up complete",ip:"104.28.241.18", severity:"info"},
-  {t:"2026-06-04T09:30:14Z", user:"Gary Harrison",   userId:16, action:"Logged in",          mod:"System",      target:"Affinity Core",                 details:"Login from Isle of Man office IP",          ip:"86.176.21.92",  severity:"info"},
+  {t:"2026-06-04T09:30:14Z", user:"Colette Grisdale",   userId:16, action:"Logged in",          mod:"System",      target:"Affinity Core",                 details:"Login from Isle of Man office IP",          ip:"86.176.21.92",  severity:"info"},
 
   // — 2 days ago —
   {t:"2026-06-03T17:12:55Z", user:"Roxy Sheeley",    userId:14, action:"CRM stage changed",  mod:"CRM",         target:"Silverstone Capital — David Silver",details:"Proposal Sent → Proposal Accepted",       ip:"86.176.20.4",   severity:"info"},
@@ -57,7 +57,7 @@ const LOG_DATA = [
   {t:"2026-06-01T16:18:33Z", user:"Alexandra Gardner",userId:5, action:"Permission elevated",mod:"System Admin",target:"Roxy Sheeley",                   details:"Added super-admin privileges (temporary)",   ip:"104.28.241.18", severity:"alert"},
   {t:"2026-06-01T14:30:55Z", user:"Roxy Sheeley",    userId:14, action:"Onboarding completed",mod:"Onboarding", target:"Apex Growth Fund Ltd",           details:"All steps complete · entity now active",     ip:"86.176.20.4",   severity:"info"},
   {t:"2026-06-01T11:42:09Z", user:"Joanne Fenech",   userId:3,  action:"Director removed",   mod:"Entity Admin",target:"Azure Mediterranean Foundation", details:"Maria Vella resigned · effective 31 May",    ip:"194.158.32.7",  severity:"info"},
-  {t:"2026-05-31T15:18:09Z", user:"Gary Harrison",   userId:16, action:"Approval requested", mod:"Tasks",       target:"Quarterly fee review",           details:"Awaiting CEO sign-off",                      ip:"86.176.21.92",  severity:"info"},
+  {t:"2026-05-31T15:18:09Z", user:"Colette Grisdale",   userId:16, action:"Approval requested", mod:"Tasks",       target:"Quarterly fee review",           details:"Awaiting CEO sign-off",                      ip:"86.176.21.92",  severity:"info"},
   {t:"2026-05-31T13:30:22Z", user:"Michael Barlow",  userId:2,  action:"Compliance flag raised",mod:"Compliance",target:"Apex Growth Fund Ltd",         details:"Annual review trigger · 12-month interval",  ip:"86.176.21.92",  severity:"warn"},
   {t:"2026-05-30T11:42:18Z", user:"Elena Pace",      userId:9,  action:"Document uploaded",  mod:"Documents",   target:"Stonebridge Capital Ltd",        details:"Bank mandate · Onboarding folder",           ip:"86.176.21.92",  severity:"info"},
   {t:"2026-05-30T10:18:55Z", user:"Andrew Morgan",   userId:1,  action:"Settings exported",  mod:"System Admin",target:"Firm-wide configuration",        details:"Config snapshot for DR backup",              ip:"104.28.241.18", severity:"info"},
