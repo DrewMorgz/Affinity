@@ -203,9 +203,12 @@ const PANELS = {
         ];
     return (
       <>
+        <div style={{ background: "#FBFCFD", border: `1px solid ${LINE}`, borderRadius: 10, padding: "10px 14px", fontSize: 12.5, color: MUT, marginBottom: 16 }}>
+          📌 <strong style={{ color: NAVY }}>How posting works.</strong> Routine transactions — invoices, bills, payments and receipts, bank items — are entered on their own forms in <strong>Accounts Receivable</strong>, <strong>Accounts Payable</strong> and <strong>Banking</strong>, and each posts its double-entry to the ledger automatically. <strong>Manual journals are for adjustments only</strong> (accruals, prepayments, depreciation, reclassifications, corrections) — the same separation QuickBooks and other ledgers use. You don't post a payment as a raw journal. <em>(Transaction forms activate with the write layer; the double-entry engine underneath already supports this.)</em>
+        </div>
         <Panel title="Trial balance"><Table head={["Account", "Debit", "Credit"]} rows={tb} /></Panel>
-        <Panel title="Recent journals &amp; approval queue"><Table head={["Journal", "Date", "Narrative", "By", "Status"]} rows={jrows} /></Panel>
-        <Note>Multi-entity double-entry GL · reversing &amp; recurring journals · accruals/prepayments · year-end close · maker-checker approval gate.</Note>
+        <Panel title="Manual journals (adjustments) &amp; approval queue"><Table head={["Journal", "Date", "Narrative", "By", "Status"]} rows={jrows} /></Panel>
+        <Note>Multi-entity double-entry GL · transaction forms auto-post to the GL · manual journals for adjustments only · reversing &amp; recurring journals · maker-checker approval gate.</Note>
       </>
     );
   },
