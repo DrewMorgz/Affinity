@@ -107,9 +107,9 @@ export default function AffinityBookkeeping({ onNav }) {
 
   const Toolbar = () => (
     <div style={{ display:"flex", gap:8, padding:"10px 20px", borderBottom:"0.5px solid #e5e5e5", flexWrap:"wrap", alignItems:"center" }}>
-      <select style={{ ...sel, minWidth:220, fontWeight:500 }} value={entityId} onChange={e=>setEId(Number(e.target.value))}>
-        {ents.map(e=><option key={e.id} value={e.id}>{e.name}</option>)}
-      </select>
+      <input list="bk-entity-list" style={{ ...sel, minWidth:220, fontWeight:500 }} placeholder="Search entity by name…" defaultValue={entity?.name||""}
+        onChange={e=>{ const m=ents.find(x=>x.name===e.target.value); if(m) setEId(m.id); }} />
+      <datalist id="bk-entity-list">{ents.map(e=><option key={e.id} value={e.name}>{e.ref||""}</option>)}</datalist>
       <div style={{ display:"flex", alignItems:"center", gap:6, background:"var(--bg-primary,#fff)", border:"0.5px solid #ccc", borderRadius:5, padding:"0 10px", flex:1 }}>
         <span style={{ color:"#aaa" }}>🔍</span>
         <input style={{ border:"none", background:"transparent", fontSize:12, outline:"none", width:"100%", height:30, color:"var(--text-primary,#111)" }} placeholder="Search transactions..." value={search} onChange={e=>setSearch(e.target.value)} />

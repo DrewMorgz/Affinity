@@ -106,8 +106,12 @@ function WipLink({ onClick, children }) {
 function WipDrilldown() {
   const [office, setOffice] = useState(null);
   const [client, setClient] = useState(null);
+  const [q, setQ] = useState("");
   const offices = Object.keys(WIP_TREE);
   const grand = offices.reduce((s, o) => s + wipOfficeTotal(o), 0);
+  // flat client index for type-search across all offices
+  const allClients = offices.flatMap(o => Object.keys(WIP_TREE[o].clients).map(c => ({ office:o, client:c })));
+  const matches = q.trim() ? allClients.filter(x => x.client.toLowerCase().includes(q.toLowerCase())) : [];
   const crumbBtn = (active) => ({ background: "none", border: "none", cursor: "pointer", fontSize: 12, padding: 0, color: active ? NAVY : CY, fontWeight: active ? 700 : 600 });
   const crumb = (
     <div style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 12, marginBottom: 14 }}>
@@ -119,6 +123,18 @@ function WipDrilldown() {
   if (!office) {
     return (<>
       {crumb}
+      <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#fff", border: "0.5px solid #ccc", borderRadius: 6, padding: "0 10px", marginBottom: 14, maxWidth: 420 }}>
+        <span style={{ color: "#aaa" }}>🔍</span>
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search WIP by client / entity…" style={{ border: "none", outline: "none", fontSize: 12, height: 34, width: "100%", background: "transparent" }} />
+      </div>
+      {q.trim() ? (
+        <Panel title={`Search — ${matches.length} match${matches.length===1?"":"es"}`}>
+          <Table head={["Client / matter", "Office", "WIP value", ""]} rows={matches.map(m => [
+            m.client, m.office, { n: f0(wipClientTotal(m.office, m.client)) },
+            <WipLink onClick={() => { setOffice(m.office); setClient(m.client); setQ(""); }}>Open ›</WipLink>,
+          ])} />
+        </Panel>
+      ) : (<>
       <div style={cards}>
         <Mini title="Total unbilled WIP" rows={[["All offices", f0(grand)]]} />
         <Mini title="Offices" rows={offices.map((o) => [o, f0(wipOfficeTotal(o))])} />
@@ -131,7 +147,8 @@ function WipDrilldown() {
           <WipLink onClick={() => setOffice(o)}>Drill down ›</WipLink>,
         ])} />
       </Panel>
-      <Note>Start at all offices and drill into office → client → fee earner. Access to each level will follow user permissions once security is enabled.</Note>
+      <Note>Start at all offices and drill into office → client → fee earner, or search for a client directly. Access to each level will follow user permissions once security is enabled.</Note>
+      </>)}
     </>);
   }
   if (!client) {
