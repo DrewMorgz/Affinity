@@ -58,8 +58,8 @@ const wipTrend = [
   { month:"May", wip:42100 },{ month:"Jun", wip:46300 },{ month:"Jul", wip:48320 },
 ];
 
-const VIEWS = ["ledger","banks","journals","reports"];
-const VLABELS = ["Entity ledger","Bank accounts","Journals","Reports"];
+const VIEWS = ["sales","purchases","cashbook","journals","reports"];
+const VLABELS = ["Sales","Purchases","Cashbook","Journals (adjustments)","Reports"];
 
 export default function AffinityBookkeeping({ onNav }) {
   const [bkE,setBkE]=useState(null),[bkT,setBkT]=useState(null),[bkP,setBkP]=useState(null),[bkB,setBkB]=useState(null);
@@ -73,7 +73,7 @@ export default function AffinityBookkeeping({ onNav }) {
   const txnsMap = bkT ? bkT.reduce((m,t)=>{(m[t.entity_id]=m[t.entity_id]||[]).push(t);return m;},{}) : TXNS;
   const pnlMap = bkP ? bkP.reduce((m,p)=>{m[p.entity_id]=p;return m;},{}) : PNL;
   const banksMap = bkB ? bkB.reduce((m,b)=>{(m[b.entity_id]=m[b.entity_id]||[]).push(b);return m;},{}) : BANKS;
-  const [view, setView]     = useState("ledger");
+  const [view, setView]     = useState("sales");
   const [entityId, setEId]  = useState(1);
   const [search, setSearch] = useState("");
   const [modal, setModal]   = useState(null);
@@ -90,6 +90,15 @@ export default function AffinityBookkeeping({ onNav }) {
 
   let running = 0;
   const withBal = filtered.map(t=>{ running+=(t.cr-t.dr); return {...t,balance:running}; });
+
+  // day-book splits (QuickBooks-style): Sales = invoices+receipts, Purchases = bills/expenses
+  const salesTxns    = filtered.filter(t=>t.type==="Income"||t.type==="Receipt");
+  const purchaseTxns = filtered.filter(t=>t.type==="Expense");
+  const salesInvoiced = salesTxns.filter(t=>t.type==="Income").reduce((s,t)=>s+t.cr,0);
+  const salesReceived = salesTxns.filter(t=>t.type==="Receipt").reduce((s,t)=>s+t.cr,0);
+  const purchTotal    = purchaseTxns.reduce((s,t)=>s+t.dr,0);
+  const purchPaid     = purchaseTxns.filter(t=>t.status==="Posted").reduce((s,t)=>s+t.dr,0);
+  const bankList = banksMap[entityId]||[];
 
   const nb  = { padding:"5px 12px", fontSize:11, borderRadius:5, border:"0.5px solid #e5e5e5", background:"transparent", color:"#666", cursor:"pointer" };
   const nba = { ...nb, background:CY, color:"#fff", border:`0.5px solid ${CY}`, fontWeight:500 };
@@ -121,8 +130,82 @@ export default function AffinityBookkeeping({ onNav }) {
         {VIEWS.map((v,i)=><button key={v} style={{ padding:"4px 12px", fontSize:11, borderRadius:20, border:`0.5px solid ${view===v?"#ccc":"#e5e5e5"}`, background:view===v?"var(--bg-primary,#fff)":"transparent", color:view===v?"var(--text-primary,#111)":"#666", cursor:"pointer", fontWeight:view===v?500:400 }} onClick={()=>setView(v)}>{VLABELS[i]}</button>)}
       </div>
 
-      {view==="ledger"&&(<>
+      {view==="sales"&&(<>
         <Toolbar />
+        <div style={{ display:"flex", gap:8, padding:"10px 20px", borderBottom:"0.5px solid #e5e5e5", alignItems:"center" }}>
+          <button style={nba} onClick={()=>setModal("invoice")}>＋ New sales invoice</button>
+          <button style={nb} onClick={()=>setModal("receipt")}>＋ Receive payment</button>
+          <div style={{ marginLeft:"auto", fontSize:10, color:"#999" }}>Sales day book — customer invoices &amp; receipts</div>
+        </div>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10, padding:"12px 20px", borderBottom:"0.5px solid #e5e5e5" }}>
+          {[{l:"Invoiced YTD",v:fmt(salesInvoiced,sym),c:CY},{l:"Received YTD",v:fmt(salesReceived,sym),c:"#4CAF7D"},{l:"Outstanding",v:fmt(salesInvoiced-salesReceived,sym),c:salesInvoiced-salesReceived>0?"#F59E0B":"#4CAF7D"}].map(k=><div key={k.l} style={sc}><div style={{fontSize:10,color:"#666",marginBottom:3}}>{k.l}</div><div style={{fontSize:18,fontWeight:500,color:k.c}}>{k.v}</div></div>)}
+        </div>
+        <div style={{ overflowX:"auto" }}>
+          <table style={{ width:"100%", borderCollapse:"collapse", tableLayout:"fixed" }}>
+            <thead><tr>
+              <th style={{...th,width:"12%"}}>Date</th><th style={{...th,width:"12%"}}>Ref</th>
+              <th style={{...th,width:"38%"}}>Customer / description</th><th style={{...th,width:"12%"}}>Type</th>
+              <th style={{...th,width:"14%",textAlign:"right"}}>Amount</th><th style={{...th,width:"12%"}}>Status</th>
+            </tr></thead>
+            <tbody>
+              {salesTxns.length?salesTxns.map(t=>(
+                <tr key={t.id} style={{ borderBottom:"0.5px solid #e5e5e5" }}>
+                  <td style={{...td,color:"#666"}}>{t.date}</td>
+                  <td style={{...td,fontSize:10,color:"#666"}}>{t.ref}</td>
+                  <td style={{...td,fontWeight:500}}>{t.desc}</td>
+                  <td style={td}><Badge label={t.type==="Income"?"Invoice":"Receipt"} colors={t.type==="Income"?{bg:"#EAF3DE",color:"#27500A"}:{bg:"#EEF0FB",color:"#3C3489"}} /></td>
+                  <td style={{...td,textAlign:"right",fontWeight:600,color:"#27500A"}}>{fmt(t.cr,sym)}</td>
+                  <td style={td}><Badge label={t.status} colors={{Posted:{bg:"#EAF3DE",color:"#27500A"},Draft:{bg:"#FAEEDA",color:"#633806"},Locked:{bg:"#F1EFE8",color:"#888"}}[t.status]||{bg:"#eee",color:"#666"}} /></td>
+                </tr>
+              )):<tr><td colSpan={6} style={{...td,textAlign:"center",color:"#aaa",padding:30}}>No sales transactions for this entity</td></tr>}
+            </tbody>
+          </table>
+        </div>
+        <div style={{ padding:"8px 20px", fontSize:10, color:"#999" }}>Posting a sales invoice or receipt generates the double-entry automatically (Dr Debtors / Cr Income; Dr Bank / Cr Debtors). Live entry activates with the write layer.</div>
+      </>)}
+
+      {view==="purchases"&&(<>
+        <Toolbar />
+        <div style={{ display:"flex", gap:8, padding:"10px 20px", borderBottom:"0.5px solid #e5e5e5", alignItems:"center" }}>
+          <button style={nba} onClick={()=>setModal("bill")}>＋ New bill</button>
+          <button style={nb} onClick={()=>setModal("payment")}>＋ Pay bill</button>
+          <div style={{ marginLeft:"auto", fontSize:10, color:"#999" }}>Purchase day book — supplier bills &amp; payments</div>
+        </div>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10, padding:"12px 20px", borderBottom:"0.5px solid #e5e5e5" }}>
+          {[{l:"Purchases YTD",v:fmt(purchTotal,sym),c:CY},{l:"Paid",v:fmt(purchPaid,sym),c:"#4CAF7D"},{l:"Outstanding",v:fmt(purchTotal-purchPaid,sym),c:purchTotal-purchPaid>0?"#F59E0B":"#4CAF7D"}].map(k=><div key={k.l} style={sc}><div style={{fontSize:10,color:"#666",marginBottom:3}}>{k.l}</div><div style={{fontSize:18,fontWeight:500,color:k.c}}>{k.v}</div></div>)}
+        </div>
+        <div style={{ overflowX:"auto" }}>
+          <table style={{ width:"100%", borderCollapse:"collapse", tableLayout:"fixed" }}>
+            <thead><tr>
+              <th style={{...th,width:"12%"}}>Date</th><th style={{...th,width:"12%"}}>Ref</th>
+              <th style={{...th,width:"42%"}}>Supplier / description</th>
+              <th style={{...th,width:"14%",textAlign:"right"}}>Amount</th><th style={{...th,width:"12%"}}>Status</th>
+            </tr></thead>
+            <tbody>
+              {purchaseTxns.length?purchaseTxns.map(t=>(
+                <tr key={t.id} style={{ borderBottom:"0.5px solid #e5e5e5" }}>
+                  <td style={{...td,color:"#666"}}>{t.date}</td>
+                  <td style={{...td,fontSize:10,color:"#666"}}>{t.ref}</td>
+                  <td style={{...td,fontWeight:500}}>{t.desc}</td>
+                  <td style={{...td,textAlign:"right",fontWeight:600,color:"#A32D2D"}}>{fmt(t.dr,sym)}</td>
+                  <td style={td}><Badge label={t.status} colors={{Posted:{bg:"#EAF3DE",color:"#27500A"},Draft:{bg:"#FAEEDA",color:"#633806"},Locked:{bg:"#F1EFE8",color:"#888"}}[t.status]||{bg:"#eee",color:"#666"}} /></td>
+                </tr>
+              )):<tr><td colSpan={5} style={{...td,textAlign:"center",color:"#aaa",padding:30}}>No purchase transactions for this entity</td></tr>}
+            </tbody>
+          </table>
+        </div>
+        <div style={{ padding:"8px 20px", fontSize:10, color:"#999" }}>Posting a bill or payment generates the double-entry automatically (Dr Expense / Cr Creditors; Dr Creditors / Cr Bank). Live entry activates with the write layer.</div>
+      </>)}
+
+      {view==="cashbook"&&(<>
+        <Toolbar />
+        {bankList.length>0&&<div style={{ display:"flex", gap:10, padding:"12px 20px", borderBottom:"0.5px solid #e5e5e5", flexWrap:"wrap" }}>
+          {bankList.map((b,i)=><div key={i} style={{ ...sc, minWidth:170 }}><div style={{ fontSize:10, color:"#666", marginBottom:3 }}>{(b.name||b.bank)} · {b.currency}</div><div style={{ fontSize:16, fontWeight:600 }}>{fmt(b.balance,sym)}</div><div style={{ fontSize:9, color:"#999", marginTop:2 }}>{b.bank}</div></div>)}
+          <div style={{ marginLeft:"auto", alignSelf:"center", display:"flex", gap:8 }}>
+            <button style={nba} onClick={()=>setModal("moneyin")}>＋ Money in</button>
+            <button style={nb} onClick={()=>setModal("moneyout")}>＋ Money out</button>
+          </div>
+        </div>}
         {pnl&&<div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:10, padding:"12px 20px", borderBottom:"0.5px solid #e5e5e5" }}>
           {[
             { l:"Total income YTD",   v:fmt(pnl.income,sym),                                                   c:CY },
@@ -285,11 +368,11 @@ export default function AffinityBookkeeping({ onNav }) {
       {view==="journals"&&(
         <div style={{ padding:"16px 20px" }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-            <div style={{ fontSize:13, fontWeight:500 }}>Journal entries</div>
+            <div style={{ fontSize:13, fontWeight:500 }}>Manual journals — adjustments only</div>
             <button style={nba} onClick={()=>setModal("journal")}>＋ Post journal</button>
           </div>
           <div style={{ background:"var(--bg-secondary,#f9f9f9)", borderRadius:6, padding:"10px 12px", fontSize:11, color:"#666", marginBottom:14 }}>
-            ℹ️ All journals are double-entry — debits must equal credits. Auto-journals are posted by the system when invoices are raised or payments received. Manual journals require preparer and approver sign-off.
+            ℹ️ Manual journals are for <strong>adjustments only</strong> — accruals, prepayments, depreciation, reclassifications and corrections. Routine transactions are entered in <strong>Sales</strong>, <strong>Purchases</strong> and <strong>Cashbook</strong>, which post their double-entry automatically. Debits must equal credits; manual journals require preparer and approver sign-off.
           </div>
           {[
             { ref:"JNL-2025-007", date:"01/07/2025", entity:"Meridian Holdings Ltd",    desc:"Q3 retainer accrual",           dr:"Debtors £2,000",      cr:"Income £2,000",     by:"Neil Kelly",   status:"Posted", auto:false },
