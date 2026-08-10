@@ -166,6 +166,25 @@ export default function AffinityCRM() {
     "IP holding":"IP Holding Company",
     "Medicinal Cannabis":"Licensed Medicinal Cannabis Company",
   };
+  // Sector-specific proposal key points (high-level; refine with reviewer wording)
+  const SECTOR_NOTES = {
+    "eGaming": [
+      "Licensing runs as a two-strand process — incorporation of the operating company alongside the gaming licence application (e.g. Isle of Man GSC B2C/B2B); we manage both strands in parallel.",
+      "Substance & functionaries: appointment of the required key persons / functionaries and demonstration of adequate local substance to the regulator.",
+      "Player protection: segregation of player funds and appropriate safeguarding arrangements.",
+      "AML/CFT: enhanced, gaming-specific monitoring and reporting aligned to the regulator's codes.",
+      "Banking & payments: the sector attracts heightened bank scrutiny; we assist with introductions to gaming-friendly banking and payment providers.",
+      "Ongoing regulatory reporting: periodic returns and key-change notifications to the gaming regulator.",
+    ],
+    "Medicinal Cannabis": [
+      "Licensing & approvals: activity-specific approvals (cultivation, import/export, distribution) within a heavily regulated, controlled-substance framework requiring careful structuring.",
+      "Banking: many institutions decline the sector — specialist, sector-experienced banking is essential and arranged early.",
+      "Enhanced due diligence: elevated source-of-funds and source-of-wealth scrutiny given the sector's risk profile.",
+      "Controlled-substance compliance: adherence to licensing conditions and controlled-drug regulations in each relevant jurisdiction.",
+      "Cross-border: import/export controls and differing legality across jurisdictions require careful mapping.",
+      "Operational: sector-specific insurance, security and regulatory reporting obligations.",
+    ],
+  };
   const COUNTRY_NOTES = {
     "Isle of Man":"a stable Crown Dependency with 0% corporate tax for most activities, recognised internationally for its regulatory rigour and political neutrality",
     "Malta":"a respected EU jurisdiction offering full passporting rights, an attractive refundable tax credit system, and a deep network of double-tax treaties",
@@ -188,6 +207,14 @@ export default function AffinityCRM() {
     const total2 = Number(annualFee) + Number(adminFee);
     const disb = Math.round((Number(setupFee)+Number(annualFee)+Number(adminFee)) * 0.05);
     const fmt = (n) => cs + Number(n||0).toLocaleString();
+    const sectorPts = SECTOR_NOTES[sector];
+    const sectorBlock = sectorPts ? `
+————————————————————————————————
+
+SECTOR — KEY CONSIDERATIONS (${sector})
+
+${sectorPts.map(p=>"  • "+p).join("\n\n")}
+` : "";
     setProposalOutput(
 `AFFINITY GROUP
 PROPOSAL FOR ${sp_.company.toUpperCase()}
@@ -228,7 +255,7 @@ Our annual service package covers:
   • AML/KYC ongoing monitoring and periodic review
   • Bookkeeping and management account preparation
   • Dedicated client manager and quarterly review calls
-
+${sectorBlock}
 ————————————————————————————————
 
 FEE SCHEDULE (all fees in ${currency})
