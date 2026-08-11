@@ -56,12 +56,12 @@ const statusC = {
 };
 
 const VIEWS = ["overview","licences","applications","returns","compliance"];
-const VLBLS = ["Overview","Licence register","Applications","Annual returns","Compliance log"];
+const VLBLS = ["Overview","Licence register","Applications","Returns","Compliance log"];
 
 const th = { padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:600, color:"#666", textTransform:"uppercase", letterSpacing:"0.4px", borderBottom:"0.5px solid #e5e5e5", background:"#f9f9f9", whiteSpace:"nowrap" };
 const td = { padding:"9px 12px", fontSize:11, borderBottom:"0.5px solid #e5e5e5", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" };
 
-export default function AffinityEGaming() {
+export default function AffinityEGaming({ entity }) {
   const [view, setView]   = useState("overview");
   const [sel, setSel]     = useState(null);
   const [modal, setModal] = useState(null);
@@ -76,8 +76,14 @@ export default function AffinityEGaming() {
     return () => { ok = false; };
   }, []);
 
-  const lics = (live && live.lics.length) ? live.lics : LICENCES;
-  const clog = (live && live.clog.length) ? live.clog : COMPLIANCE_LOG;
+  // Scope to the open entity when embedded in Entity Admin (not a cross-entity dashboard)
+  const ename = entity && entity.name;
+  const allLics = (live && live.lics.length) ? live.lics : LICENCES;
+  const allClog = (live && live.clog.length) ? live.clog : COMPLIANCE_LOG;
+  const lics = ename ? allLics.filter(l => l.entity === ename) : allLics;
+  const clog = ename ? allClog.filter(c => c.entity === ename) : allClog;
+  const scopedNoData = ename && lics.length === 0;
+  const rtns = ename ? ANNUAL_RETURNS.filter(r => r.entity === ename) : ANNUAL_RETURNS;
 
   const nb  = { padding:"5px 12px", fontSize:11, borderRadius:5, border:"0.5px solid #e5e5e5", background:"transparent", color:"#666", cursor:"pointer" };
   const nba = { ...nb, background:CY, color:"#fff", border:`0.5px solid ${CY}`, fontWeight:500 };
@@ -102,12 +108,19 @@ export default function AffinityEGaming() {
       <div style={{ background:"#fff", borderBottom:"0.5px solid #e5e5e5", padding:"0 24px", display:"flex", gap:2 }}>
         {VIEWS.map((v,i)=>(
           <button key={v} onClick={()=>setView(v)} style={{ padding:"10px 14px", fontSize:12, border:"none", borderBottom:`2px solid ${view===v?CY:"transparent"}`, background:"transparent", color:view===v?CY:"#666", cursor:"pointer", fontWeight:view===v?600:400 }}>{VLBLS[i]}
-            {v==="returns"&&ANNUAL_RETURNS.filter(r=>r.status==="Overdue").length>0&&<span style={{ marginLeft:4, background:"#EF4444", color:"#fff", borderRadius:10, padding:"1px 5px", fontSize:9, fontWeight:700 }}>{ANNUAL_RETURNS.filter(r=>r.status==="Overdue").length}</span>}
+            {v==="returns"&&rtns.filter(r=>r.status==="Overdue").length>0&&<span style={{ marginLeft:4, background:"#EF4444", color:"#fff", borderRadius:10, padding:"1px 5px", fontSize:9, fontWeight:700 }}>{rtns.filter(r=>r.status==="Overdue").length}</span>}
           </button>
         ))}
       </div>
 
       <div style={{ background:"#fff", minHeight:"calc(100vh - 89px)", padding:"16px 24px" }}>
+
+        {scopedNoData && (
+          <div style={{ background:"#F8F9FC", border:"1px solid #e5e5e5", borderRadius:8, padding:"14px 16px", fontSize:13, color:"#555" }}>
+            <strong style={{ color:NAVY }}>{ename}</strong> has no gaming licence, application or return on record. The Gaming register shows only data for the open entity.
+          </div>
+        )}
+        {!scopedNoData && <>
 
         {/* OVERVIEW */}
         {view==="overview"&&(
@@ -116,7 +129,7 @@ export default function AffinityEGaming() {
               {[
                 { l:"Live licences",     v:lics.filter(l=>l.status==="Live").length,         c:"#4CAF7D" },
                 { l:"Applications open", v:lics.filter(l=>l.status.includes("Application")||l.status==="Under review").length, c:CY },
-                { l:"Returns overdue",   v:ANNUAL_RETURNS.filter(r=>r.status==="Overdue").length, c:"#EF4444" },
+                { l:"Returns overdue",   v:rtns.filter(r=>r.status==="Overdue").length, c:"#EF4444" },
                 { l:"Compliance issues", v:clog.filter(c=>c.status==="Open").length,    c:"#F59E0B" },
               ].map(k=>(
                 <div key={k.l} style={{ background:"#f9f9f9", borderRadius:8, padding:"12px 14px" }}>
@@ -126,10 +139,10 @@ export default function AffinityEGaming() {
               ))}
             </div>
 
-            {ANNUAL_RETURNS.filter(r=>r.status==="Overdue").length>0&&(
+            {rtns.filter(r=>r.status==="Overdue").length>0&&(
               <div style={{ background:"#FCEBEB22", border:"0.5px solid #EF4444", borderRadius:8, padding:"10px 14px", marginBottom:16 }}>
                 <div style={{ fontSize:12, fontWeight:600, color:"#A32D2D", marginBottom:6 }}>⚠️ Licence renewal overdue — immediate action required</div>
-                {ANNUAL_RETURNS.filter(r=>r.status==="Overdue").map(r=>(
+                {rtns.filter(r=>r.status==="Overdue").map(r=>(
                   <div key={r.id} style={{ fontSize:11, color:"#A32D2D", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                     <span>{r.entity} — {r.ref} — due {r.due}</span>
                     <button style={{ ...nba, background:"#EF4444", borderColor:"#EF4444", fontSize:10 }}>Take action ↗</button>
@@ -286,7 +299,7 @@ export default function AffinityEGaming() {
               <div style={{ fontSize:12, fontWeight:500 }}>GSC annual returns & renewals</div>
               <button style={nba} onClick={()=>setModal("return")}>＋ Log filing</button>
             </div>
-            {ANNUAL_RETURNS.map(r=>(
+            {rtns.map(r=>(
               <div key={r.id} style={{ background:"#fff", border:`0.5px solid ${r.status==="Overdue"?"#EF4444":"#e5e5e5"}`, borderRadius:10, padding:16, marginBottom:12 }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
                   <div>
@@ -336,6 +349,7 @@ export default function AffinityEGaming() {
             </table>
           </div>
         )}
+        </>}
       </div>
 
       {modal&&(

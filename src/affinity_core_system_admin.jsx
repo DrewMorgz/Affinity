@@ -46,7 +46,7 @@ const usersData = [
   { id:13, name:"Kate Shaw", email:"kate.shaw@affinityco.com", role:"Manager", office:"Isle of Man", flag:"🇮🇲", status:"Active", lastLogin:"4d ago", mfa:true, modules:["Entities","Documents","Timesheets","Onboarding"] },
   { id:14, name:"Roxy Sheeley", email:"roxy.sheeley@affinityco.com", role:"Managing Director (IOM)", office:"Isle of Man", flag:"🇮🇲", status:"Active", lastLogin:"Today 09:25", mfa:true, modules:["All — Isle of Man"] },
   { id:15, name:"Gilbert Spiteri Spadaro", email:"gilbert.spiterispadaro@affinityco.com", role:"Compliance Officer (Malta)", office:"Malta", flag:"🇲🇹", status:"Active", lastLogin:"Today 08:55", mfa:true, modules:["Compliance","Entities","Reporting"] },
-  { id:16, name:"Colette Grisdale", email:"gary.harrison@affinityco.com", role:"COO", office:"Isle of Man", flag:"🇮🇲", status:"Active", lastLogin:"Today 09:30", mfa:true, modules:["All — Isle of Man"] },
+  { id:16, name:"Colette Grisdale", email:"colette.grisdale@affinityco.com", role:"COO", office:"Isle of Man", flag:"🇮🇲", status:"Active", lastLogin:"Today 09:30", mfa:true, modules:["All — Isle of Man"] },
 ];
 
 const rolesData = [
@@ -103,8 +103,8 @@ const feeSchedules = [
   { office:"Miami",          type:"Company admin",     fee:"$2,400",  freq:"Per annum",  currency:"USD" },
 ];
 
-const VIEWS = ["users","roles","matrix","offices","fees","audit","config","checklist"];
-const VIEW_LABELS = ["Users","Roles & permissions","Permission matrix","Offices","Fee schedules","Audit log","System config","Implementation checklist"];
+const VIEWS = ["users","roles","matrix","offices","fees","audit","config"];
+const VIEW_LABELS = ["Users","Roles & permissions","Permission matrix","Offices","Fee schedules","Audit log","System config"];
 const MATRIX_MODULES = [
   ["Entity Admin","entities"],["CRM","crm"],["Documents","documents"],["Onboarding","onboarding"],["Timesheets","timesheets"],
   ["WIP","acc_wip"],["Invoicing","invoicing"],["Bookkeeping","bookkeeping"],
@@ -606,7 +606,15 @@ export default function AffinityCoreSystemAdmin({ onNav }) {
                 <div style={s.fg}><label style={s.fgl}>Last name</label><input style={s.fgi} placeholder="Last name" /></div>
                 <div style={{ ...s.fg, gridColumn:"1/-1" }}><label style={s.fgl}>Email address</label><input style={s.fgi} placeholder="name@affinityco.com" /></div>
                 <div style={s.fg}><label style={s.fgl}>Role</label><select style={s.fgi}>{Object.keys(roleColors).map(r=><option key={r}>{r}</option>)}</select></div>
-                <div style={s.fg}><label style={s.fgl}>Office</label><select style={s.fgi}>{Object.keys(officeColors).map(o=><option key={o}>{o}</option>)}</select></div>
+                <div style={{ ...s.fg, gridColumn:"1/-1" }}><label style={s.fgl}>Offices (select one or more)</label>
+                  <div style={{ display:"flex", flexWrap:"wrap", gap:14, padding:"6px 0" }}>
+                    {Object.keys(officeColors).map(o=>(
+                      <label key={o} style={{ display:"flex", alignItems:"center", gap:6, fontSize:13, cursor:"pointer" }}>
+                        <input type="checkbox" style={{ accentColor:CY }} /> {o}
+                      </label>
+                    ))}
+                  </div>
+                </div>
                 <div style={{ ...s.fg, gridColumn:"1/-1" }}><label style={s.fgl}>Module access</label><select style={s.fgi}><option>All modules (office only)</option><option>Custom — select below</option></select></div>
               </div>
               <div style={{ ...s.infoBox }}>An invitation email will be sent to the user with instructions to set their password and configure MFA.</div>

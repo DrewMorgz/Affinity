@@ -4,7 +4,6 @@ import { eaEntitiesList, eaProfile, eaOfficers, eaShareholders, eaCharges, eaUbo
   eaBanks, eaAssets, eaDividends, eaSafeItems, eaFileNotes, eaSafeMovements, eaSignatories,
   repAum, repBankBalances, repSafeCustody, repSignatories } from "./affinity_eadmin_api";
 import EntityChart from "./affinity_core_entity_chart";
-import AffinityStatutory from "./affinity_core_statutory_registers";
 import AffinityEGaming from "./affinity_core_egaming";
 const CY = "#00C4CC";
 const NAVY = "#001242";
@@ -117,8 +116,7 @@ const TABS = [
   { id:"safe",       label:"Safe custody",            group:"Entity" },
   { id:"registers",  label:"Generate registers",      group:"Entity" },
   { id:"compliance", label:"Compliance register",     group:"Regulatory" },
-  { id:"statutory_reg", label:"Statutory registers",  group:"Registers" },
-  { id:"egaming_reg",   label:"eGaming register",     group:"Registers" },
+  { id:"egaming_reg",   label:"Gaming",               group:"Registers" },
   { id:"fatca",      label:"FATCA",                   group:"Filing Obligations" },
   { id:"crs",        label:"CRS",                     group:"Filing Obligations" },
   { id:"substance",  label:"Substance",               group:"Filing Obligations" },
@@ -1252,9 +1250,8 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
                   {tab==="crs"&&<CRSTab entity={entity}/>}
                   {tab==="substance"&&<SubstanceTab entity={entity}/>}
                   {tab==="structure"&&<div style={{margin:"-20px -24px"}}><EntityChart/></div>}
-                  {tab==="statutory_reg"&&<div style={{margin:"-14px -20px"}}><AffinityStatutory/></div>}
-                  {tab==="egaming_reg"&&<div style={{margin:"-14px -20px"}}><AffinityEGaming/></div>}
-                  {tab!=="fatca"&&tab!=="crs"&&tab!=="substance"&&tab!=="structure"&&tab!=="statutory_reg"&&tab!=="egaming_reg"&&renderTab()}
+                  {tab==="egaming_reg"&&<div style={{margin:"-14px -20px"}}><AffinityEGaming entity={entity}/></div>}
+                  {tab!=="fatca"&&tab!=="crs"&&tab!=="substance"&&tab!=="structure"&&tab!=="egaming_reg"&&renderTab()}
                 </div>
               </div>
             </>
