@@ -120,7 +120,7 @@ export default function AffinityInvoicing({ onNav }) {
             <div style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.4px",color:"#888",marginBottom:14}}>Invoice details</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 16px"}}>
               {[
-                ["Entity","select",["Meridian Holdings Ltd","Harrington Family Trust","Caledonian Ventures Ltd","Pacific Wealth Trust","Stonebridge Capital Ltd","North Star Holdings Ltd","Azure Mediterranean Fdn","Rosewood Legacy Trust","Apex Growth Fund Ltd"]],
+                ["Entity","search",["Meridian Holdings Ltd","Harrington Family Trust","Caledonian Ventures Ltd","Pacific Wealth Trust","Stonebridge Capital Ltd","North Star Holdings Ltd","Azure Mediterranean Fdn","Rosewood Legacy Trust","Apex Growth Fund Ltd"]],
                 ["Invoice date","date"],
                 ["Due date","date"],
                 ["Invoice number","text","Auto-generated: INV-2025-0041"],
@@ -133,6 +133,9 @@ export default function AffinityInvoicing({ onNav }) {
                     ?<select style={{width:"100%",padding:"8px 10px",border:"1.5px solid #e0e0e0",borderRadius:6,fontSize:12,outline:"none"}}>
                       {(opts||[]).map(o=><option key={o}>{o}</option>)}
                     </select>
+                    :t==="search"
+                    ?<><input list={`inv-${l}`} placeholder={`Search ${l.toLowerCase()} by name…`} style={{width:"100%",padding:"8px 10px",border:"1.5px solid #e0e0e0",borderRadius:6,fontSize:12,outline:"none",boxSizing:"border-box"}}/>
+                       <datalist id={`inv-${l}`}>{(opts||[]).map(o=><option key={o} value={o}/>)}</datalist></>
                     :<input type={t} placeholder={typeof opts==="string"?opts:""} style={{width:"100%",padding:"8px 10px",border:"1.5px solid #e0e0e0",borderRadius:6,fontSize:12,outline:"none",boxSizing:"border-box"}}/>}
                 </div>
               ))}
