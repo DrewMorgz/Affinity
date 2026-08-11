@@ -9,9 +9,9 @@ const Row = ({ l, v, bold, hl }) => (
   </div>
 );
 const REPORT_CATALOG = [
-  { label:"Financial statements", sub:"P&L & balance sheet per entity", view:"statements" },
-  { label:"P&L (firm-wide)",       sub:"Profit & loss by entity",        view:"pnl" },
-  { label:"Budget vs actual",      sub:"Variance & forecast",            view:"budget" },
+  { label:"Financial statements", sub:"In Financial Reporting (accounting)", nav:"acc_report" },
+  { label:"P&L (firm-wide)",       sub:"In Financial Reporting (accounting)", nav:"acc_report" },
+  { label:"Budget vs actual",      sub:"In Financial Reporting (accounting)", nav:"acc_report" },
   { label:"Entity portfolio",      sub:"All entities & attributes",      nav:"entities" },
   { label:"Compliance registers",  sub:"Breaches, gifts, PEPs, CPD…",    nav:"compliance" },
   { label:"WIP",                   sub:"Unbilled time by office/client", nav:"acc_wip" },
@@ -75,8 +75,8 @@ const jurPie = [
   { name:"Miami",          value:16,  color:"#BF5C7A" },
 ];
 
-const VIEWS = ["executive","statements","library","finance","budget","pnl","compliance","entities","operations","kpis"];
-const VLABELS = ["Executive overview","Financial statements","Report library","Finance","Budget vs actual","P&L","Compliance","Entity portfolio","Operations","KPIs & exports"];
+const VIEWS = ["executive","library","compliance","entities","operations","kpis"];
+const VLABELS = ["Executive overview","Report library","Compliance","Entity portfolio","Operations","KPIs & exports"];
 
 const th = { padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:600, color:"#666", textTransform:"uppercase", letterSpacing:"0.4px", borderBottom:"0.5px solid #e5e5e5", background:"var(--bg-secondary,#f9f9f9)" };
 const td = { padding:"8px 12px", fontSize:11, borderBottom:"0.5px solid #e5e5e5" };

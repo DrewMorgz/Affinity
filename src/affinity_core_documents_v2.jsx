@@ -383,11 +383,11 @@ export default function AffinityDMS() {
             <span style={{fontSize:10}}>PDF, Word, Excel, image — max 50MB</span>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-            {[["Entity","select",ENTITIES.slice(1)],["Document name","text"],["Document date","text","DD/MM/YYYY"],["Expiry date (if applicable)","text","DD/MM/YYYY or N/A"],["Version","text","e.g. v1"],["Confidential","select",["No","Yes — restricted access"]]].map(([l,t,opts])=>(
+            {[["Entity","search",ENTITIES.slice(1)],["Document name","text"],["Document date","text","DD/MM/YYYY"],["Expiry date (if applicable)","text","DD/MM/YYYY or N/A"],["Version","text","e.g. v1"],["Confidential","select",["No","Yes — restricted access"]]].map(([l,t,opts])=>(
               <div key={l} style={{display:"flex",flexDirection:"column",gap:3}}>
                 <label style={{fontSize:11,color:"#666"}}>{l}</label>
                 {t==="select"
-                  ?<select style={{fontSize:12,borderRadius:5,border:"0.5px solid #ccc",background:"#fff",padding:"0 8px",height:32}}>{(Array.isArray(opts)?opts:[]).map(o=><option key={o}>{o}</option>)}</select>
+                  ?(t==="search"?<><input list={"dmsf-"+l} placeholder={"Search "+l.toLowerCase()+"…"} style={{fontSize:12,borderRadius:5,border:"0.5px solid #ccc",background:"#fff",padding:"0 8px",height:32,boxSizing:"border-box"}}/><datalist id={"dmsf-"+l}>{(Array.isArray(opts)?opts:[]).map(o=><option key={o} value={o}/>)}</datalist></>:<select style={{fontSize:12,borderRadius:5,border:"0.5px solid #ccc",background:"#fff",padding:"0 8px",height:32}}>{(Array.isArray(opts)?opts:[]).map(o=><option key={o}>{o}</option>)}</select>)
                   :<input type="text" style={{fontSize:12,borderRadius:5,border:"0.5px solid #ccc",padding:"0 8px",height:32,background:"#fff"}} placeholder={typeof opts==="string"?opts:""}/>
                 }
               </div>
@@ -407,11 +407,11 @@ export default function AffinityDMS() {
             ✓ File dropped into <strong>{selFolder.folder} / {selFolder.sub}</strong>. Please complete the metadata below.
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-            {[["Entity","select",ENTITIES.slice(1)],["Document name","text"],["Document date","text","DD/MM/YYYY"],["Expiry date","text","DD/MM/YYYY or N/A"],["Version","text","e.g. v1"],["Notes","text","Optional"]].map(([l,t,opts])=>(
+            {[["Entity","search",ENTITIES.slice(1)],["Document name","text"],["Document date","text","DD/MM/YYYY"],["Expiry date","text","DD/MM/YYYY or N/A"],["Version","text","e.g. v1"],["Notes","text","Optional"]].map(([l,t,opts])=>(
               <div key={l} style={{display:"flex",flexDirection:"column",gap:3}}>
                 <label style={{fontSize:11,color:"#666"}}>{l}</label>
                 {t==="select"
-                  ?<select style={{fontSize:12,borderRadius:5,border:"0.5px solid #ccc",background:"#fff",padding:"0 8px",height:32}}>{(Array.isArray(opts)?opts:[]).map(o=><option key={o}>{o}</option>)}</select>
+                  ?(t==="search"?<><input list={"dmsf-"+l} placeholder={"Search "+l.toLowerCase()+"…"} style={{fontSize:12,borderRadius:5,border:"0.5px solid #ccc",background:"#fff",padding:"0 8px",height:32,boxSizing:"border-box"}}/><datalist id={"dmsf-"+l}>{(Array.isArray(opts)?opts:[]).map(o=><option key={o} value={o}/>)}</datalist></>:<select style={{fontSize:12,borderRadius:5,border:"0.5px solid #ccc",background:"#fff",padding:"0 8px",height:32}}>{(Array.isArray(opts)?opts:[]).map(o=><option key={o}>{o}</option>)}</select>)
                   :<input type="text" style={{fontSize:12,borderRadius:5,border:"0.5px solid #ccc",padding:"0 8px",height:32,background:"#fff"}} placeholder={typeof opts==="string"?opts:""}/>
                 }
               </div>

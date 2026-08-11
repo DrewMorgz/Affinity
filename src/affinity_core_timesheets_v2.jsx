@@ -151,10 +151,8 @@ export default function AffinityTimesheets({ onNav }) {
             {fmtTimer(timerSeconds)}
           </div>
           <div style={{ display:"flex", gap:6, flex:1, flexWrap:"wrap" }}>
-            <select value={timerEntity} onChange={e=>setTimerEntity(e.target.value)} style={{ height:30, padding:"0 8px", border:"0.5px solid #e5e5e5", borderRadius:5, fontSize:11, minWidth:160 }}>
-              <option value="">Select entity…</option>
-              {["Meridian Holdings Ltd","Harrington Family Trust","Pacific Wealth Trust","Caledonian Ventures Ltd","Azure Mediterranean Fdn","North Star Holdings Ltd"].map(e=><option key={e}>{e}</option>)}
-            </select>
+            <input list="ts-timer-entities" value={timerEntity} onChange={e=>setTimerEntity(e.target.value)} placeholder="Search entity…" style={{ height:30, padding:"0 8px", border:"0.5px solid #e5e5e5", borderRadius:5, fontSize:11, minWidth:160 }}/>
+            <datalist id="ts-timer-entities">{["Meridian Holdings Ltd","Harrington Family Trust","Pacific Wealth Trust","Caledonian Ventures Ltd","Azure Mediterranean Fdn","North Star Holdings Ltd"].map(e=><option key={e} value={e}/>)}</datalist>
             <input value={timerMatter} onChange={e=>setTimerMatter(e.target.value)} placeholder="Matter description…" style={{ height:30, padding:"0 10px", border:"0.5px solid #e5e5e5", borderRadius:5, fontSize:11, minWidth:160, outline:"none" }}/>
             <select value={timerType} onChange={e=>setTimerType(e.target.value)} style={{ height:30, padding:"0 8px", border:"0.5px solid #e5e5e5", borderRadius:5, fontSize:11 }}>
               {["Administration","Compliance","Legal","Accounts","Meetings","Client liaison","New Business — non-billable","Client — non-billable"].map(t=><option key={t}>{t}</option>)}
