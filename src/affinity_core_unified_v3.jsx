@@ -181,14 +181,12 @@ const NAV = [
   ]},
   {s:"Core",       items:[
     {id:"entities",     label:"Entity Admin",  icon:"\uD83C\uDFE2",b:null},
-    {id:"statutory",    label:"Statutory",      icon:"\uD83D\uDCCB",b:null},
     {id:"crm",          label:"CRM",           icon:"\uD83E\uDD1D",b:null},
     {id:"documents",    label:"Documents",     icon:"\uD83D\uDCC1",b:2},
     {id:"timesheets",   label:"Timesheets",    icon:"\u23F1",b:1},
   ]},
   {s:"Compliance", items:[
     {id:"compliance",   label:"Compliance",     icon:"\uD83D\uDEE1",b:null},
-    {id:"egaming",      label:"eGaming",        icon:"\uD83C\uDFB2",b:null},
   ]},
   {s:"Onboarding", items:[
     {id:"onboarding",   label:"Onboarding",    icon:"\u2705",b:1},
@@ -472,7 +470,6 @@ const SEARCH_INDEX = [
   {type:"Module",  label:"Tasks",                          sub:"Action items",                    mod:"tasks"},
   {type:"Module",  label:"Notifications",                  sub:"Alerts & activity feed",          mod:"notifications"},
   {type:"Module",  label:"Client portal",                  sub:"Preview client-facing portal",    mod:"client_portal"},
-  {type:"Module",  label:"Feedback",                       sub:"Beta tester feedback",            mod:"feedback"},
   {type:"Module",  label:"Audit log",                      sub:"Activity & compliance trail",     mod:"audit"},
   {type:"Module",  label:"Entity Admin",                   sub:"Manage entity records",           mod:"entities"},
   {type:"Module",  label:"CRM",                            sub:"Pipeline & prospects",            mod:"crm"},
