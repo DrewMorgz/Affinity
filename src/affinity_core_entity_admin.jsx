@@ -1238,7 +1238,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
               </div>
               <div style={{display:"flex",flex:1,overflow:"hidden"}}>
                 <div style={{width:172,minWidth:172,borderRight:"0.5px solid var(--border-tertiary,#e5e5e5)",overflowY:"auto",background:"var(--bg-secondary,#f9f9f9)",flexShrink:0}}>
-                  {["Entity","Regulatory","Filing Obligations","Admin"].map(group=>{
+                  {["Entity","Regulatory","Registers","Filing Obligations","Admin"].map(group=>{
                     const groupTabs=TABS.filter(t=>t.group===group && (!t.gamingOnly || entity?.isGaming));
                     if(groupTabs.length===0) return null;
                     return <div key={group}>

@@ -181,12 +181,16 @@ const NAV = [
   ]},
   {s:"Core",       items:[
     {id:"entities",     label:"Entity Admin",  icon:"\uD83C\uDFE2",b:null},
-    {id:"crm",          label:"CRM",           icon:"\uD83E\uDD1D",b:null},
     {id:"documents",    label:"Documents",     icon:"\uD83D\uDCC1",b:2},
     {id:"timesheets",   label:"Timesheets",    icon:"\u23F1",b:1},
+    {id:"reporting",    label:"Reporting",     icon:"\uD83D\uDCC8",b:null},
+    {id:"procedures",   label:"Procedures",    icon:"\u2699",b:null},
+    {id:"generate",     label:"Generate doc",  icon:"\uD83D\uDCC4",b:null},
+    {id:"client_portal",label:"Client portal", icon:"\uD83D\uDC64",b:null},
   ]},
   {s:"Compliance", items:[
     {id:"compliance",   label:"Compliance",     icon:"\uD83D\uDEE1",b:null},
+    {id:"crm",          label:"CRM",           icon:"\uD83E\uDD1D",b:null},
   ]},
   {s:"Onboarding", items:[
     {id:"onboarding",   label:"Onboarding",    icon:"\u2705",b:1},
@@ -200,16 +204,8 @@ const NAV = [
     {id:"bookkeeping",  label:"Bookkeeping",     icon:"\uD83D\uDCCA",b:null},
     {id:"acc_txn",      label:"Transactions",    icon:"\uD83D\uDCD2",b:null},
     {id:"acc_assets",   label:"Assets & Groups", icon:"\uD83C\uDFE2",b:null},
-    {id:"acc_report",   label:"Reporting",       icon:"\uD83D\uDCC8",b:null},
+    {id:"acc_report",   label:"Financial Reporting", icon:"\uD83D\uDCC8",b:null},
     {id:"acc_admin",    label:"Accounting admin",icon:"\u2699",b:null},
-  ]},
-  {s:"Reporting",   items:[
-    {id:"reporting",    label:"Financial Reporting", icon:"\uD83D\uDCC8",b:null},
-  ]},
-  {s:"Affinity Core", items:[
-    {id:"procedures",   label:"Procedures",    icon:"\u2699",b:null},
-    {id:"generate",     label:"Generate doc",  icon:"\uD83D\uDCC4",b:null},
-    {id:"client_portal",label:"Client portal", icon:"\uD83D\uDC64",b:null},
   ]},
   {s:"People", items:[
     {id:"intranet",     label:"Intranet",      icon:"\uD83C\uDFE0",b:null},
@@ -479,7 +475,7 @@ const SEARCH_INDEX = [
   {type:"Module",  label:"Invoicing",                      sub:"Billing & debtors",               mod:"invoicing"},
   {type:"Module",  label:"Bookkeeping",                    sub:"Ledger & accounts",               mod:"bookkeeping"},
   {type:"Module",  label:"Budgets",                         sub:"Budgets & scenarios",             mod:"budgeting"},
-  {type:"Module",  label:"Financial Reporting",            sub:"MI & financial statements",       mod:"reporting"},
+  {type:"Module",  label:"Reporting",                       sub:"MI & financial statements",       mod:"reporting"},
   {type:"Module",  label:"Procedures",                     sub:"Process library",                 mod:"procedures"},
   {type:"Module",  label:"Generate Document",              sub:"Templates & statutory forms",     mod:"generate"},
   {type:"Module",  label:"Compliance",                     sub:"Compliance register",             mod:"compliance"},
@@ -492,7 +488,7 @@ const SHORTCUTS = [
   {key:"e", label:"Entities",   mod:"entities"},
   {key:"t", label:"Timesheets", mod:"timesheets"},
   {key:"i", label:"Invoicing",  mod:"invoicing"},
-  {key:"r", label:"Financial Reporting", mod:"reporting"},
+  {key:"r", label:"Reporting", mod:"reporting"},
   {key:"s", label:"Search",     mod:null},
 ];
 
