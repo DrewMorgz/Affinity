@@ -23,6 +23,7 @@ const REPORT_CATALOG = [
   { label:"Timesheets",            sub:"Time recording & utilisation",   nav:"timesheets" },
   { label:"CRM pipeline",          sub:"Prospects & proposals",          nav:"crm" },
   { label:"Budgets & scenarios",   sub:"Budget entry",                   nav:"budgeting" },
+  { label:"Staff exits & attrition",sub:"Off-boarding & leaver analysis", nav:"attrition" },
 ];
 const Badge = ({ label, colors }) => (<span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:600, background:colors?.bg||"#eee", color:colors?.color||"#333", whiteSpace:"nowrap" }}>{label}</span>);
 const fmt = (n, s="£") => s + Math.abs(Number(n||0)).toLocaleString(undefined, {minimumFractionDigits:0, maximumFractionDigits:0});

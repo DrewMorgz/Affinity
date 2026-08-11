@@ -25,6 +25,8 @@ const DOCUMENT_LIBRARY = {
     { id:"ob9",  title:"Portal invitation",                                desc:"Invitation email to access the client portal for KYC self-service.",             fields:["Contact name","Entity","Expiry period"] },
     { id:"ob10", title:"New business committee submission",                desc:"Standard committee paper for new business sign-off.",                            fields:["Prospect name","Risk rating","Services","BD lead","Supporting notes"] },
     { id:"ob11", title:"AML/KYC assessment summary",                       desc:"Summary of AML assessment for new business committee.",                          fields:["Entity name","Risk rating","Key risks identified","Mitigants"] },
+    { id:"ob12", title:"Client off-boarding / exit form",                  desc:"Records the exit of a client or entity — reason, approvals and handover (attrition).", fields:["Client / entity","Reason for exit","Effective date","Outstanding matters","Approved by"] },
+    { id:"ob13", title:"Employee off-boarding / leaver form",              desc:"Staff off-boarding record — leaver details, handover and access removal (attrition).", fields:["Employee name","Role / office","Leave date","Reason","Handover to","Access revoked"] },
   ],
   Correspondence: [
     { id:"co1",  title:"General correspondence letter",                    desc:"Standard Affinity letterhead correspondence.",                                   fields:["Addressee","Subject","Body text","Signatory"] },
