@@ -3,6 +3,7 @@ import { isConfigured } from "./affinity_accounting_supabase";
 import { tasksList } from "./affinity_tasks_api";
 import { onboardingCases } from "./affinity_onboarding_api";
 import { feeInvoices } from "./affinity_invoicing_api";
+import { cpdList, cpdAdd } from "./affinity_cpd_api";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 const CY = "#00C4CC";
@@ -204,12 +205,15 @@ function formatAhead(days, d, m) {
   return `${d} ${monthsShort[m-1]}`;
 }
 
-export default function Dashboard({userId, onNav}) {
+export default function Dashboard({userId, onNav, userName}) {
   const [inboxFilter,setInboxFilter] = useState("mine");
   const [taskFilter,setTaskFilter]   = useState("mine");
   const [liveTasks,setLiveTasks]     = useState(null);
   const [liveOnb,setLiveOnb]         = useState(null);
   const [liveDebtors,setLiveDebtors] = useState(null);
+  const [cpd,setCpd]                 = useState([]);
+  const [cpdForm,setCpdForm]         = useState({activity:"",category:"Compliance",hours:"",date:""});
+  const [cpdSaving,setCpdSaving]     = useState(false);
 
   useEffect(()=>{
     if(!isConfigured) return;
@@ -228,10 +232,25 @@ export default function Dashboard({userId, onNav}) {
         if(outstanding.length) setLiveDebtors(outstanding);
       }
     }).catch(()=>{});
+    cpdList().then(({data})=>{ if(ok && data) setCpd(data); }).catch(()=>{});
     return ()=>{ok=false;};
   },[]);
 
   const user = USERS.find(u=>u.id===userId)||USERS[0];
+  const cpdStaff = user.name || userName || "";
+  const myCpd = cpd.filter(c=>!cpdStaff || c.staff===cpdStaff);
+  const myCpdHours = myCpd.reduce((s,c)=>s+(parseFloat(c.hours)||0),0);
+  const logCpd = async () => {
+    if(!cpdForm.activity.trim()) return;
+    setCpdSaving(true);
+    try {
+      await cpdAdd({ staff:cpdStaff, activity:cpdForm.activity, category:cpdForm.category, hours:cpdForm.hours, date:cpdForm.date });
+      const { data } = await cpdList();
+      if(data) setCpd(data);
+      setCpdForm({activity:"",category:"Compliance",hours:"",date:""});
+    } catch(e){ /* surfaced by empty refresh */ }
+    setCpdSaving(false);
+  };
   const isManager = user.isManager || userId===1;
   const allTasks   = liveTasks || ALL_TASKS;
   const onboarding = liveOnb   || ONBOARDING;
@@ -437,6 +456,28 @@ export default function Dashboard({userId, onNav}) {
             </div>
           ))}
         </Card>}
+
+        {/* My CPD log — first write-enabled feature; feeds the Compliance CPD register */}
+        <Card title={<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",width:"100%"}}><span>My CPD log</span><span style={{fontSize:11,color:"#888",fontWeight:400}}>{myCpdHours.toFixed(1)} hrs</span></div>}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:8}}>
+            <input value={cpdForm.activity} onChange={e=>setCpdForm(f=>({...f,activity:e.target.value}))} placeholder="Activity / course" style={{gridColumn:"1 / -1",padding:"7px 9px",border:"0.5px solid #ccc",borderRadius:5,fontSize:12,boxSizing:"border-box"}}/>
+            <select value={cpdForm.category} onChange={e=>setCpdForm(f=>({...f,category:e.target.value}))} style={{padding:"7px 9px",border:"0.5px solid #ccc",borderRadius:5,fontSize:12}}>
+              {["Compliance","Technical","Regulatory","Ethics","Leadership","General"].map(o=><option key={o}>{o}</option>)}
+            </select>
+            <input type="number" value={cpdForm.hours} onChange={e=>setCpdForm(f=>({...f,hours:e.target.value}))} placeholder="Hours" style={{padding:"7px 9px",border:"0.5px solid #ccc",borderRadius:5,fontSize:12,boxSizing:"border-box"}}/>
+            <input type="date" value={cpdForm.date} onChange={e=>setCpdForm(f=>({...f,date:e.target.value}))} style={{padding:"7px 9px",border:"0.5px solid #ccc",borderRadius:5,fontSize:12,boxSizing:"border-box"}}/>
+            <button onClick={logCpd} disabled={cpdSaving||!cpdForm.activity.trim()} style={{padding:"7px 9px",border:"none",borderRadius:5,background:CY,color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",opacity:(cpdSaving||!cpdForm.activity.trim())?0.5:1}}>{cpdSaving?"Saving…":"Log CPD"}</button>
+          </div>
+          {!isConfigured && <div style={{fontSize:10,color:"#B25000",marginBottom:6}}>Backend not connected — entries won't save.</div>}
+          {myCpd.slice(0,5).map(c=>(
+            <div key={c.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:"0.5px solid #e5e5e5",fontSize:12}}>
+              <div><div style={{fontWeight:500}}>{c.activity}</div><span style={{fontSize:10,color:"#888"}}>{c.category} · {c.entry_date}</span></div>
+              <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontWeight:600,color:CY}}>{c.hours}h</span>{c.verified&&<Bx label="Verified" colors={{bg:"#EAF3DE",color:"#27500A"}}/>}</div>
+            </div>
+          ))}
+          {myCpd.length===0 && <div style={{fontSize:11,color:"#aaa",padding:"10px 0",textAlign:"center"}}>No CPD logged yet — add your first above.</div>}
+          <div style={{fontSize:10,color:"#888",marginTop:8}}>Entries feed the CPD register in Compliance.</div>
+        </Card>
 
         {/* Recently accessed */}
         <Card title="Recently accessed">

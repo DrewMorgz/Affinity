@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { isConfigured } from "./affinity_accounting_supabase";
 import { compReviews, compRegObligations, compBreaches, compTraining } from "./affinity_compliance_api";
+import { cpdList } from "./affinity_cpd_api";
 const CY = "#00C4CC";
 const SideBtn = ({ active, onClick, children }) => (
   <div onClick={onClick} style={{ padding:"7px 10px", fontSize:12, borderRadius:6, cursor:"pointer", marginBottom:1, background:active?"#E6F7FB":"transparent", color:active?"#0077A8":"#444", fontWeight:active?600:400 }}>{children}</div>
@@ -117,6 +118,7 @@ export default function AffinityIOMCompliance() {
   const [modal, setModal] = useState(null);
   const [live, setLive] = useState(null);
   const [jur, setJur] = useState("Isle of Man");
+  const [cpdRows, setCpdRows] = useState(null);
 
   useEffect(() => {
     if (!isConfigured) return;
@@ -131,6 +133,7 @@ export default function AffinityIOMCompliance() {
           trg: (tr.data || []).map(t => ({ name:t.name, role:t.role, aml:t.aml, csp:t.csp, refreshDue:t.refresh_due, status:t.status })),
         });
       }).catch(() => {});
+    cpdList().then(({ data }) => { if (ok && data && data.length) setCpdRows(data.map(c => [c.staff, c.activity, c.category, c.hours, c.entry_date, c.verified ? "Verified" : "Unverified"])); }).catch(() => {});
     return () => { ok = false; };
   }, []);
 
@@ -410,7 +413,7 @@ export default function AffinityIOMCompliance() {
           <table style={{ width:"100%", borderCollapse:"collapse" }}>
             <thead><tr>{REGISTERS[view].cols.map((c,i)=><th key={c} style={{ padding:"8px 10px", textAlign:"left", fontSize:10, fontWeight:600, color:"#666", textTransform:"uppercase", letterSpacing:"0.4px", borderBottom:"0.5px solid #e5e5e5" }}>{c}</th>)}</tr></thead>
             <tbody>
-              {REGISTERS[view].rows.map((row,ri)=>(
+              {((view==="cpd"&&cpdRows)?cpdRows:REGISTERS[view].rows).map((row,ri)=>(
                 <tr key={ri} style={{ borderBottom:"0.5px solid #eee" }}>
                   {row.map((cell,ci)=>{
                     const isStatus = ci===row.length-1;

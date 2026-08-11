@@ -606,7 +606,7 @@ export default function AffinityCore(){
     if (mod && !canAccessModule(rbacRole, mod)) return <div style={{padding:28,color:"#5B6B7B",fontSize:14}}>You don’t have access to this module. Contact a System Admin if you need it.</div>;
     if (mod && mod.slice(0,4) === "acc_") return <Accounting module={mod}/>;
     switch(mod){
-      case "dashboard":    return <Dashboard userId={uid} onNav={setMod} officeFilter={officeFilter}/>;
+      case "dashboard":    return <Dashboard userId={uid} onNav={setMod} officeFilter={officeFilter} userName={user?.name||""}/>;
       case "tasks":        return <Tasks/>;
       case "feedback":     return <Feedback userName={user?.name||""} isSuperAdmin={!!(user&&user.role&&user.role.indexOf("Super Admin")>-1)}/>;
       case "audit":        return <AuditLog userName={user?.name||""} isSuperAdmin={!!(user&&user.role&&user.role.indexOf("Super Admin")>-1)}/>;
@@ -630,7 +630,7 @@ export default function AffinityCore(){
       case "system":       return <SystemAdmin onNav={setMod}/>;
       case "generate":     return <GenerateDoc/>;
       case "egaming":      return <EGaming/>;
-      default:             return <Dashboard userId={uid} onNav={setMod}/>;
+      default:             return <Dashboard userId={uid} onNav={setMod} userName={user?.name||""}/>;
     }
   };
 
