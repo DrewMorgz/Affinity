@@ -1,7 +1,29 @@
 import { useState, useEffect } from "react";
-import { getDatasets, isConfigured, bkPnlAll, bkEntities } from "./affinity_ops_api";
+import { getDatasets, isConfigured, bkPnlAll, bkEntities, bkTxnsAll, bkBanksAll } from "./affinity_ops_api";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 const CY = "#00C4CC";
+const NAVY = "#001242";
+const Row = ({ l, v, bold, hl }) => (
+  <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", borderBottom:hl?`1px solid ${NAVY}`:"0.5px solid #eee", fontSize:12, fontWeight:bold?700:400, background:hl?"#F3FBFC":"transparent" }}>
+    <span>{l}</span><span style={{ fontVariantNumeric:"tabular-nums" }}>{v}</span>
+  </div>
+);
+const REPORT_CATALOG = [
+  { label:"Financial statements", sub:"P&L & balance sheet per entity", view:"statements" },
+  { label:"P&L (firm-wide)",       sub:"Profit & loss by entity",        view:"pnl" },
+  { label:"Budget vs actual",      sub:"Variance & forecast",            view:"budget" },
+  { label:"Entity portfolio",      sub:"All entities & attributes",      nav:"entities" },
+  { label:"Compliance registers",  sub:"Breaches, gifts, PEPs, CPD…",    nav:"compliance" },
+  { label:"WIP",                   sub:"Unbilled time by office/client", nav:"acc_wip" },
+  { label:"Aged debt",             sub:"Debtors by ageing band",         nav:"invoicing" },
+  { label:"Assets under management",sub:"AUM & disposals",               nav:"entities" },
+  { label:"Bank balances (FSA)",   sub:"Balances across entities",       nav:"entities" },
+  { label:"Authorised signatories",sub:"Signatory register",            nav:"entities" },
+  { label:"Safe custody & archiving",sub:"Items & movements",           nav:"entities" },
+  { label:"Timesheets",            sub:"Time recording & utilisation",   nav:"timesheets" },
+  { label:"CRM pipeline",          sub:"Prospects & proposals",          nav:"crm" },
+  { label:"Budgets & scenarios",   sub:"Budget entry",                   nav:"budgeting" },
+];
 const Badge = ({ label, colors }) => (<span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:600, background:colors?.bg||"#eee", color:colors?.color||"#333", whiteSpace:"nowrap" }}>{label}</span>);
 const fmt = (n, s="£") => s + Math.abs(Number(n||0)).toLocaleString(undefined, {minimumFractionDigits:0, maximumFractionDigits:0});
 
@@ -52,8 +74,8 @@ const jurPie = [
   { name:"Miami",          value:16,  color:"#BF5C7A" },
 ];
 
-const VIEWS = ["executive","finance","budget","pnl","compliance","entities","operations","kpis"];
-const VLABELS = ["Executive overview","Finance","Budget vs actual","P&L","Compliance","Entity portfolio","Operations","KPIs & exports"];
+const VIEWS = ["executive","statements","library","finance","budget","pnl","compliance","entities","operations","kpis"];
+const VLABELS = ["Executive overview","Financial statements","Report library","Finance","Budget vs actual","P&L","Compliance","Entity portfolio","Operations","KPIs & exports"];
 
 const th = { padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:600, color:"#666", textTransform:"uppercase", letterSpacing:"0.4px", borderBottom:"0.5px solid #e5e5e5", background:"var(--bg-secondary,#f9f9f9)" };
 const td = { padding:"8px 12px", fontSize:11, borderBottom:"0.5px solid #e5e5e5" };
@@ -64,16 +86,23 @@ export default function AffinityReporting({ onNav }) {
   const [ds, setDs] = useState(null);
   const [budDs, setBudDs] = useState(null);
   const [pnlRows, setPnlRows] = useState(null);
+  const [entList, setEntList] = useState([]);
+  const [txnsAll, setTxnsAll] = useState([]);
+  const [banksAll, setBanksAll] = useState([]);
+  const [stmtEntity, setStmtEntity] = useState("");
+  const [prepared, setPrepared] = useState(false);
   useEffect(() => {
     if (!isConfigured) return;
     let ok = true;
     getDatasets("report.").then(({ data }) => { if (ok && data && data.length) { const m = {}; data.forEach(r => { m[r.dkey.split(".")[1]] = r.data; }); setDs(m); } }).catch(() => {});
     getDatasets("budget.").then(({ data }) => { if (ok && data && data.length) { const m = {}; data.forEach(r => { m[r.dkey.split(".")[1]] = r.data; }); setBudDs(m); } }).catch(() => {});
-    Promise.all([bkPnlAll(), bkEntities()]).then(([p, e]) => {
-      if (ok && p.data && e.data) {
-        const emap = {}; e.data.forEach(x => { emap[x.id] = x; });
-        setPnlRows(p.data.map(r => ({ entity: (emap[r.entity_id] || {}).name || ("Entity " + r.entity_id), sym: r.sym || "£", income: Number(r.income), expenses: Number(r.expenses), net: Number(r.net) })));
-      }
+    Promise.all([bkPnlAll(), bkEntities(), bkTxnsAll(), bkBanksAll()]).then(([p, e, t, b]) => {
+      if (!ok) return;
+      const emap = {}; (e.data || []).forEach(x => { emap[x.id] = x; });
+      if (p.data && e.data) setPnlRows(p.data.map(r => ({ entity: (emap[r.entity_id] || {}).name || ("Entity " + r.entity_id), sym: r.sym || "£", income: Number(r.income), expenses: Number(r.expenses), net: Number(r.net) })));
+      if (e.data) setEntList(e.data);
+      if (t.data) setTxnsAll(t.data);
+      if (b.data) setBanksAll(b.data);
     }).catch(() => {});
     return () => { ok = false; };
   }, []);
@@ -220,6 +249,72 @@ export default function AffinityReporting({ onNav }) {
         </>)}
 
         {/* FINANCE */}
+        {view==="statements"&&(()=>{
+          const ent = entList.find(e=>e.name===stmtEntity);
+          const eid = ent?.id;
+          const sym = ent?.sym || "£";
+          const fmtS = (n)=> sym + Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+          const etx = eid ? txnsAll.filter(t=>t.entity_id===eid) : [];
+          const prow = pnl.find(p=>p.entity===stmtEntity);
+          const incomeLines = {}, expenseLines = {};
+          etx.forEach(t=>{ const acc=t.account||t.type||"Other"; const cr=Number(t.cr||0), dr=Number(t.dr||0);
+            if ((t.type==="Income"||t.type==="Receipt") && cr) incomeLines[acc]=(incomeLines[acc]||0)+cr;
+            else if (t.type==="Expense" && dr) expenseLines[acc]=(expenseLines[acc]||0)+dr; });
+          const incTotal = prow? prow.income : Object.values(incomeLines).reduce((s,v)=>s+v,0);
+          const expTotal = prow? prow.expenses : Object.values(expenseLines).reduce((s,v)=>s+v,0);
+          const net = incTotal - expTotal;
+          const cash = eid ? banksAll.filter(b=>b.entity_id===eid).reduce((s,b)=>s+Number(b.balance||0),0) : 0;
+          return (
+            <div style={{ padding:"16px 20px" }}>
+              <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:16, flexWrap:"wrap" }}>
+                <input list="rep-ent-list" value={stmtEntity} onChange={e=>{setStmtEntity(e.target.value); setPrepared(false);}} placeholder="Search entity by name…" style={{ ...nb, minWidth:260, height:34 }} />
+                <datalist id="rep-ent-list">{entList.map(e=><option key={e.id} value={e.name}/>)}</datalist>
+                <button style={nba} disabled={!stmtEntity} onClick={()=>setPrepared(true)}>Prepare financial statements</button>
+                {prepared && <button style={nb} onClick={()=>window.print()}>⭳ PDF / print</button>}
+              </div>
+              {!prepared ? (
+                <div style={{ color:"#999", fontSize:12, padding:"30px 0", textAlign:"center" }}>Select an entity and click <strong>Prepare</strong> to generate its financial statements from the ledger.</div>
+              ) : (
+                <div style={{ maxWidth:620 }}>
+                  <div style={{ fontSize:16, fontWeight:700, color:NAVY }}>{stmtEntity}</div>
+                  <div style={{ fontSize:11, color:"#888", marginBottom:16 }}>Financial statements · prepared {new Date().toLocaleDateString("en-GB")} · unaudited</div>
+                  <div style={{ fontSize:13, fontWeight:700, marginBottom:6, borderBottom:`2px solid ${NAVY}`, paddingBottom:4 }}>Profit &amp; Loss</div>
+                  <div style={{ fontSize:11, fontWeight:600, color:"#888", margin:"8px 0 2px" }}>Income</div>
+                  {Object.keys(incomeLines).length? Object.entries(incomeLines).map(([a,v])=><Row key={a} l={a} v={fmtS(v)} />) : <Row l="Fee income" v={fmtS(incTotal)} />}
+                  <Row l="Total income" v={fmtS(incTotal)} bold />
+                  <div style={{ fontSize:11, fontWeight:600, color:"#888", margin:"12px 0 2px" }}>Expenses</div>
+                  {Object.keys(expenseLines).length? Object.entries(expenseLines).map(([a,v])=><Row key={a} l={a} v={fmtS(v)} />) : <Row l="Operating expenses" v={fmtS(expTotal)} />}
+                  <Row l="Total expenses" v={fmtS(expTotal)} bold />
+                  <Row l="Net profit / (loss)" v={fmtS(net)} bold hl />
+                  <div style={{ fontSize:13, fontWeight:700, margin:"24px 0 6px", borderBottom:`2px solid ${NAVY}`, paddingBottom:4 }}>Balance Sheet</div>
+                  <div style={{ fontSize:11, fontWeight:600, color:"#888", margin:"8px 0 2px" }}>Assets</div>
+                  <Row l="Cash at bank" v={fmtS(cash)} />
+                  <Row l="Total assets" v={fmtS(cash)} bold />
+                  <div style={{ fontSize:11, fontWeight:600, color:"#888", margin:"12px 0 2px" }}>Equity</div>
+                  <Row l="Retained earnings" v={fmtS(net)} />
+                  <Row l="Total equity" v={fmtS(net)} bold />
+                  <div style={{ fontSize:10, color:"#999", marginTop:16 }}>Prepared from the bookkeeping ledger. P&amp;L is complete; the balance sheet currently shows cash and retained earnings — full mapping (debtors, creditors, fixed assets, reserves) is delivered by the statement-mapping engine in the write phase. Figures in {sym}.</div>
+                </div>
+              )}
+            </div>
+          );})()}
+
+        {view==="library"&&(
+          <div style={{ padding:"16px 20px" }}>
+            <div style={{ fontSize:14, fontWeight:600, marginBottom:4 }}>Report library</div>
+            <div style={{ fontSize:11, color:"#888", marginBottom:16 }}>Report on any category of data across the system. Financial reports open here; others jump to their module, where each has export.</div>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))", gap:10 }}>
+              {REPORT_CATALOG.map(cat=>(
+                <div key={cat.label} style={{ border:"0.5px solid #e5e5e5", borderRadius:8, padding:14 }}>
+                  <div style={{ fontSize:12, fontWeight:600, color:NAVY }}>{cat.label}</div>
+                  <div style={{ fontSize:10, color:"#888", margin:"4px 0 10px" }}>{cat.sub}</div>
+                  <button style={nb} onClick={()=>cat.view?setView(cat.view):(cat.nav&&onNav&&onNav(cat.nav))}>{cat.view?"Open report →":"Open module →"}</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {view==="finance"&&(<>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:14 }}>
             {[{l:"Revenue YTD",v:"£487k",c:CY,sub:"vs £421k last year"},{l:"Total WIP",v:"£48,320",c:null,sub:"6-month high"},{l:"Outstanding debt",v:"£44,550",c:"#F59E0B",sub:"£27,720 overdue"},{l:"Collected YTD",v:"£412k",c:"#4CAF7D",sub:"84% recovery rate"}].map(k=>(
