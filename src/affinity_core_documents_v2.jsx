@@ -128,7 +128,7 @@ export default function AffinityDMS() {
               Folders
               {isAdmin&&<button style={{background:"none",border:"none",cursor:"pointer",color:CY,fontSize:11}}>+ New folder</button>}
             </div>
-            {FOLDER_TREE.map(f=>(
+            {FOLDER_TREE.filter(f=>isAdmin||docs.filter(d=>d.folder===f.name&&d.entity===entity).length>0).map(f=>(
               <div key={f.name}>
                 <div onClick={()=>toggleFolder(f.name)} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 12px",cursor:"pointer",background:selFolder.folder===f.name&&!selFolder.sub?"#fff":"transparent",borderBottom:"0.5px solid #e5e5e5",fontSize:12}}>
                   <span style={{fontSize:10,color:"#aaa",width:12,flexShrink:0}}>{openFolders[f.name]?"▼":"►"}</span>
