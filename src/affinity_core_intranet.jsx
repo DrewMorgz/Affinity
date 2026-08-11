@@ -72,6 +72,14 @@ export default function AffinityIntranet() {
   const OFFICESL=(ds&&ds.OFFICES)||OFFICES, NEWSL=(ds&&ds.NEWS)||NEWS, EVENTSL=(ds&&ds.EVENTS)||EVENTS, RESOURCESL=(ds&&ds.RESOURCES)||RESOURCES, ADVENTURE_VALUESL=(ds&&ds.VALUES)||ADVENTURE_VALUES;
   const [page,setPage]     = useState("home");
   const [newsId,setNewsId] = useState(null);
+  const [extraPosts,setExtraPosts] = useState([]);
+  const [removedIds,setRemovedIds] = useState([]);
+  const [compose,setCompose] = useState(false);
+  const [draft,setDraft] = useState({title:"",author:"",preview:""});
+  const news = [...extraPosts, ...NEWSL.filter(n=>!removedIds.includes(n.id))];
+  const addPost = () => { if(!draft.title.trim()) return;
+    setExtraPosts(p=>[{ id:"new-"+Date.now(), title:draft.title, author:draft.author||"Affinity", date:new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"short"}), preview:draft.preview, img:"https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=300&q=80" }, ...p]);
+    setDraft({title:"",author:"",preview:""}); setCompose(false); };
 
   const navItems = ["Home","The Adventure Book","Get to Know Us","Your Resources"];
 
@@ -107,13 +115,22 @@ export default function AffinityIntranet() {
         <div style={{marginBottom:24}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
             <div style={{fontSize:17,fontWeight:700,color:NAVY}}>Our Group News &amp; Updates</div>
-            <button style={{fontSize:12,color:CY,background:"none",border:"none",cursor:"pointer",fontWeight:500}}>See all ↗</button>
+            <button onClick={()=>setCompose(c=>!c)} style={{fontSize:12,color:"#fff",background:CY,border:"none",borderRadius:5,padding:"5px 12px",cursor:"pointer",fontWeight:600}}>{compose?"✕ Cancel":"＋ New post"}</button>
           </div>
+          {compose&&(
+            <div style={{background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:10,padding:14,marginBottom:12}}>
+              <input value={draft.title} onChange={e=>setDraft(d=>({...d,title:e.target.value}))} placeholder="Post title" style={{width:"100%",padding:"8px 10px",border:"0.5px solid #ccc",borderRadius:6,fontSize:13,marginBottom:8,boxSizing:"border-box",fontWeight:600}} />
+              <input value={draft.author} onChange={e=>setDraft(d=>({...d,author:e.target.value}))} placeholder="Author" style={{width:"100%",padding:"8px 10px",border:"0.5px solid #ccc",borderRadius:6,fontSize:12,marginBottom:8,boxSizing:"border-box"}} />
+              <textarea value={draft.preview} onChange={e=>setDraft(d=>({...d,preview:e.target.value}))} placeholder="Write the update…" rows={3} style={{width:"100%",padding:"8px 10px",border:"0.5px solid #ccc",borderRadius:6,fontSize:12,marginBottom:8,boxSizing:"border-box",fontFamily:"inherit",resize:"vertical"}} />
+              <button onClick={addPost} style={{fontSize:12,color:"#fff",background:NAVY,border:"none",borderRadius:5,padding:"7px 16px",cursor:"pointer",fontWeight:600}}>Publish post</button>
+            </div>
+          )}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-            {NEWSL.map(n=>(
-              <div key={n.id} onClick={()=>setNewsId(n.id)} style={{background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:10,overflow:"hidden",cursor:"pointer",display:"flex",gap:0}}>
-                <div style={{width:90,minWidth:90,backgroundImage:`url('${n.img}')`,backgroundSize:"cover",backgroundPosition:"center"}}/>
-                <div style={{padding:"12px 14px",flex:1}}>
+            {news.map(n=>(
+              <div key={n.id} style={{background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:10,overflow:"hidden",display:"flex",gap:0,position:"relative"}}>
+                <button onClick={()=>setRemovedIds(r=>[...r,n.id])} title="Remove post" style={{position:"absolute",top:6,right:6,zIndex:2,width:20,height:20,borderRadius:10,border:"none",background:"rgba(0,0,0,0.35)",color:"#fff",cursor:"pointer",fontSize:11,lineHeight:"20px",padding:0}}>✕</button>
+                <div onClick={()=>typeof n.id==="number"&&setNewsId(n.id)} style={{width:90,minWidth:90,backgroundImage:`url('${n.img}')`,backgroundSize:"cover",backgroundPosition:"center",cursor:"pointer"}}/>
+                <div onClick={()=>typeof n.id==="number"&&setNewsId(n.id)} style={{padding:"12px 14px",flex:1,cursor:"pointer"}}>
                   <div style={{fontSize:12,fontWeight:700,color:NAVY,marginBottom:4,lineHeight:1.4}}>{n.title}</div>
                   <div style={{fontSize:11,color:"#666",lineHeight:1.5,marginBottom:6,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{n.preview}</div>
                   <div style={{fontSize:10,color:"#aaa"}}>{n.author} &middot; {n.date}</div>
