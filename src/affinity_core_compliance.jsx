@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { isConfigured } from "./affinity_accounting_supabase";
 import { compReviews, compRegObligations, compBreaches, compTraining } from "./affinity_compliance_api";
 import { cpdList } from "./affinity_cpd_api";
+import { cregList, cregAdd } from "./affinity_creg_api";
 const CY = "#00C4CC";
 const SideBtn = ({ active, onClick, children }) => (
   <div onClick={onClick} style={{ padding:"7px 10px", fontSize:12, borderRadius:6, cursor:"pointer", marginBottom:1, background:active?"#E6F7FB":"transparent", color:active?"#0077A8":"#444", fontWeight:active?600:400 }}>{children}</div>
@@ -119,6 +120,37 @@ export default function AffinityIOMCompliance() {
   const [live, setLive] = useState(null);
   const [jur, setJur] = useState("Isle of Man");
   const [cpdRows, setCpdRows] = useState(null);
+  const [liveReg, setLiveReg] = useState({});   // register id -> array of live row-arrays
+  const [addForm, setAddForm] = useState({});
+  const [addSaving, setAddSaving] = useState(false);
+
+  // load live entries for the open register (non-CPD registers use the generic creg store)
+  useEffect(() => {
+    if (!isConfigured || !REGISTERS[view] || view === "cpd" || view === "breaches") return;
+    let ok = true;
+    cregList(view).then(({ data }) => {
+      if (!ok || !data) return;
+      const cols = REGISTERS[view].cols;
+      const rows = data.map(e => cols.map(c => (e.data && e.data[c] != null ? e.data[c] : "")));
+      setLiveReg(p => ({ ...p, [view]: rows }));
+    }).catch(() => {});
+    return () => { ok = false; };
+  }, [view]);
+
+  const openAdd = () => { const f = {}; (REGISTERS[view]?.cols || []).forEach(c => { f[c] = ""; }); setAddForm(f); setModal("add"); };
+  const saveAdd = async () => {
+    setAddSaving(true);
+    try {
+      await cregAdd({ register: view, jurisdiction: jur === "All jurisdictions" ? "" : jur, data: addForm, by: "" });
+      const { data } = await cregList(view);
+      if (data) {
+        const cols = REGISTERS[view].cols;
+        setLiveReg(p => ({ ...p, [view]: data.map(e => cols.map(c => (e.data && e.data[c] != null ? e.data[c] : ""))) }));
+      }
+      setModal(null);
+    } catch (e) { /* refresh shows nothing new on failure */ }
+    setAddSaving(false);
+  };
 
   useEffect(() => {
     if (!isConfigured) return;
@@ -408,12 +440,12 @@ export default function AffinityIOMCompliance() {
         <div style={{ padding:"16px 20px" }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
             <div style={{ fontSize:14, fontWeight:600, color:"#001242" }}>{REGISTERS[view].label}{jur!=="All jurisdictions"?` — ${jur}`:""}</div>
-            <button style={{ background:CY, color:"#fff", border:"none", padding:"6px 14px", borderRadius:6, fontSize:12, fontWeight:600, cursor:"pointer" }} onClick={()=>setModal("add")}>＋ Add entry</button>
+            <button style={{ background:CY, color:"#fff", border:"none", padding:"6px 14px", borderRadius:6, fontSize:12, fontWeight:600, cursor:"pointer" }} onClick={openAdd}>＋ Add entry</button>
           </div>
           <table style={{ width:"100%", borderCollapse:"collapse" }}>
             <thead><tr>{REGISTERS[view].cols.map((c,i)=><th key={c} style={{ padding:"8px 10px", textAlign:"left", fontSize:10, fontWeight:600, color:"#666", textTransform:"uppercase", letterSpacing:"0.4px", borderBottom:"0.5px solid #e5e5e5" }}>{c}</th>)}</tr></thead>
             <tbody>
-              {((view==="cpd"&&cpdRows)?cpdRows:REGISTERS[view].rows).map((row,ri)=>(
+              {(view==="cpd"&&cpdRows ? cpdRows : [...(liveReg[view]||[]), ...REGISTERS[view].rows]).map((row,ri)=>(
                 <tr key={ri} style={{ borderBottom:"0.5px solid #eee" }}>
                   {row.map((cell,ci)=>{
                     const isStatus = ci===row.length-1;
@@ -433,7 +465,15 @@ export default function AffinityIOMCompliance() {
       {modal&&(
         <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(13,27,42,0.45)", display:"flex", alignItems:"flex-start", justifyContent:"center", paddingTop:40, zIndex:100 }} onClick={e=>e.target===e.currentTarget&&setModal(null)}>
           <div style={{ background:"var(--bg-primary,#fff)", borderRadius:10, border:"0.5px solid #e5e5e5", padding:22, width:480, maxWidth:"96vw" }}>
-            <div style={{ fontSize:15, fontWeight:700, marginBottom:18 }}>{modal==="breach"?"Log compliance breach / incident":"Record staff training"}</div>
+            <div style={{ fontSize:15, fontWeight:700, marginBottom:18 }}>{modal==="breach"?"Log compliance breach / incident":modal==="training"?"Record staff training":modal==="add"?("Add entry — "+(REGISTERS[view]?.label||"")):""}</div>
+            {modal==="add"&&REGISTERS[view]&&<>
+              {REGISTERS[view].cols.map(c=>(
+                <div style={fg} key={c}><label style={fgl}>{c}</label>
+                  <input style={fgi} value={addForm[c]||""} onChange={e=>setAddForm(f=>({...f,[c]:e.target.value}))} placeholder={c} />
+                </div>
+              ))}
+              {!isConfigured&&<div style={{ fontSize:11, color:"#B25000" }}>Backend not connected — entry won't save.</div>}
+            </>}
             {modal==="breach"&&<>
               <div style={fg}><label style={fgl}>Breach type</label><select style={fgi}><option>Late KYC renewal</option><option>Delayed periodic review</option><option>Missing SAR report</option><option>Tipping-off breach</option><option>Data breach</option><option>Other</option></select></div>
               <div style={fg}><label style={fgl}>Date identified</label><input style={fgi} placeholder="DD/MM/YYYY" /></div>
@@ -455,7 +495,7 @@ export default function AffinityIOMCompliance() {
             </>}
             <div style={{ display:"flex", gap:8, justifyContent:"flex-end", marginTop:16 }}>
               <button style={{ background:"transparent", border:"0.5px solid #ccc", color:"var(--text-primary,#111)", padding:"7px 18px", borderRadius:6, fontSize:12, cursor:"pointer" }} onClick={()=>setModal(null)}>Cancel</button>
-              <button style={{ background:CY, color:"#fff", border:"none", padding:"7px 18px", borderRadius:6, fontSize:12, fontWeight:700, cursor:"pointer" }} onClick={()=>setModal(null)}>Save</button>
+              <button style={{ background:CY, color:"#fff", border:"none", padding:"7px 18px", borderRadius:6, fontSize:12, fontWeight:700, cursor:"pointer", opacity:addSaving?0.5:1 }} onClick={modal==="add"?saveAdd:()=>setModal(null)} disabled={addSaving}>{modal==="add"?(addSaving?"Saving…":"Save entry"):"Save"}</button>
             </div>
           </div>
         </div>
