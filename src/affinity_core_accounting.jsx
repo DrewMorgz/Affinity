@@ -520,6 +520,12 @@ const PANELS = {
           ["90+ days",   { n: f0(8250) },  "18%", "9"],
           ["Total",      { n: f0(44550) }, "100%","60"],
         ]} /></Panel>
+        <Panel title="Financial KPIs"><Table head={["KPI", "Current", "Target", "Status"]} rows={[
+          ["WIP recovery rate",    "84%", "90%",  { pill: ["Near target", AMBER] }],
+          ["Invoice overdue rate", "12%", "<5%",  { pill: ["Off target", NEG] }],
+          ["Collections (YTD)",    "£412k", "£440k", { pill: ["Near target", AMBER] }],
+          ["Average days to pay",  "38",  "30",   { pill: ["Off target", NEG] }],
+        ]} /></Panel>
         <Panel title="WIP &amp; debtors movement"><Table head={["Month", "WIP", "Debtors", "Overdue"]} rows={[
           ["Feb", { n: f0(41200) }, { n: f0(38900) }, { n: f0(19400) }],
           ["Mar", { n: f0(43800) }, { n: f0(40100) }, { n: f0(21100) }],
