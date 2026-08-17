@@ -157,27 +157,17 @@ export default function AffinityReporting({ onNav, role="system_admin" }) {
         {/* EXECUTIVE OVERVIEW */}
         {view==="executive"&&(<>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:10, marginBottom:14 }}>
-            {[{l:"Revenue YTD",v:"£487k",c:CY},{l:"Entities",v:"300",c:null},{l:"WIP balance",v:"£48,320",c:null},{l:"Overdue debt",v:"£27,720",c:"#EF4444"},{l:"Live alerts",v:"10",c:"#F59E0B"}].map(k=>(
+            {[{l:"Entities",v:"300",c:CY},{l:"Reviews due (90d)",v:"18",c:null},{l:"Onboarding in progress",v:"7",c:null},{l:"Overdue filings",v:"3",c:"#EF4444"},{l:"Live alerts",v:"10",c:"#F59E0B"}].map(k=>(
               <div key={k.l} style={sc}><div style={{ fontSize:10, color:"#666", marginBottom:3 }}>{k.l}</div><div style={{ fontSize:20, fontWeight:600, color:k.c||"var(--text-primary,#111)" }}>{k.v}</div></div>
             ))}
           </div>
           <div style={g2}>
             <div style={card}>
-              <div style={cardT}>Revenue by office — {period}</div>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={revenueByOfficeL} margin={{ top:0, right:0, left:-10, bottom:0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
-                  <XAxis dataKey="month" tick={{ fontSize:10 }} />
-                  <YAxis tick={{ fontSize:10 }} tickFormatter={v=>"£"+(v/1000).toFixed(0)+"k"} />
-                  <Tooltip formatter={(v,n)=>["£"+Number(v).toLocaleString(),n]} />
-                  <Legend iconSize={8} wrapperStyle={{ fontSize:10 }} />
-                  <Bar dataKey="IOM"    name="Isle of Man"    stackId="a" fill={CY} />
-                  <Bar dataKey="Malta"  name="Malta"          stackId="a" fill="#7C5CBF" />
-                  <Bar dataKey="Cayman" name="Cayman Islands" stackId="a" fill="#1A7FBF" />
-                  <Bar dataKey="UK"     name="UK"             stackId="a" fill="#4A7C6F" />
-                  <Bar dataKey="Miami"  name="Miami"          stackId="a" fill="#BF5C7A" />
-                </BarChart>
-              </ResponsiveContainer>
+              <div style={cardT}>Revenue, WIP &amp; debt</div>
+              <div style={{ fontSize:11.5, color:"#666", lineHeight:1.7, padding:"8px 0 12px" }}>
+                All accounts reporting — revenue by office, WIP analysis, aged debt, collections — is in <strong>Affinity Accounting → Financial Reporting</strong>, reported off the ledger itself so there is one set of figures rather than two that can disagree.
+              </div>
+              <button onClick={()=>onNav&&onNav("acc_report")} style={nba}>Open Financial Reporting ↗</button>
             </div>
             <div style={card}>
               <div style={cardT}>Entities by jurisdiction</div>
@@ -206,26 +196,14 @@ export default function AffinityReporting({ onNav, role="system_admin" }) {
           </div>
           <div style={g3}>
             <div style={card}>
-              <div style={cardT}>WIP trend</div>
+              <div style={cardT}>Portfolio movement</div>
               <ResponsiveContainer width="100%" height={140}>
-                <LineChart data={wipTrendL} margin={{ top:0, right:5, left:-20, bottom:0 }}>
+                <LineChart data={jurPieL.map((j,i)=>({ name:j.name, value:j.value }))} margin={{ top:0, right:5, left:-20, bottom:0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
-                  <XAxis dataKey="month" tick={{ fontSize:10 }} />
-                  <YAxis tick={{ fontSize:10 }} tickFormatter={v=>"£"+(v/1000).toFixed(0)+"k"} />
-                  <Tooltip formatter={v=>["£"+Number(v).toLocaleString(),"WIP"]} />
-                  <Line type="monotone" dataKey="wip" stroke={CY} strokeWidth={2} dot={{ fill:CY, r:3 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-            <div style={card}>
-              <div style={cardT}>Overdue debt trend</div>
-              <ResponsiveContainer width="100%" height={140}>
-                <LineChart data={debtorTrendL} margin={{ top:0, right:5, left:-20, bottom:0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
-                  <XAxis dataKey="month" tick={{ fontSize:10 }} />
-                  <YAxis tick={{ fontSize:10 }} tickFormatter={v=>"£"+(v/1000).toFixed(0)+"k"} />
-                  <Tooltip formatter={v=>["£"+Number(v).toLocaleString(),"Overdue"]} />
-                  <Line type="monotone" dataKey="overdue" stroke="#EF4444" strokeWidth={2} dot={{ fill:"#EF4444", r:3 }} />
+                  <XAxis dataKey="name" tick={{ fontSize:9 }} />
+                  <YAxis tick={{ fontSize:10 }} />
+                  <Tooltip formatter={v=>[v+" entities","Entities"]} />
+                  <Line type="monotone" dataKey="value" stroke={CY} strokeWidth={2} dot={{ fill:CY, r:3 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -656,8 +634,6 @@ export default function AffinityReporting({ onNav, role="system_admin" }) {
                   {[
                     ["Compliance review completion rate","94%","100%","amber","↑"],
                     ["Team utilisation (billable hours)","75%","75%","green","→"],
-                    ["WIP recovery rate","84%","90%","amber","↑"],
-                    ["Invoice overdue rate","12%","<5%","red","↑"],
                     ["Onboarding completion — on time","60%","80%","red","↓"],
                     ["KYC currency rate","99.3%","100%","amber","→"],
                     ["Timesheet submission rate","89%","100%","amber","↓"],
