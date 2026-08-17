@@ -418,7 +418,7 @@ export default function AffinityCore(){
       case "invoicing":    return <Invoicing onNav={setMod}/>;
       case "bookkeeping":  return <Bookkeeping onNav={setMod}/>;
       case "budgeting":    return <Budgeting/>;
-      case "reporting":    return <Reporting onNav={setMod}/>;
+      case "reporting":    return <Reporting onNav={setMod} role={rbacRole}/>;
       case "procedures":   return <Procedures/>;
       case "chatbot":      return <Chatbot/>;
       case "intranet":     return <Intranet/>;

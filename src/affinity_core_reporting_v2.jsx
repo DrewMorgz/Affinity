@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import ReportBuilder from "./affinity_core_report_builder";
 import { getDatasets, isConfigured, bkPnlAll, bkEntities, bkTxnsAll, bkBanksAll } from "./affinity_ops_api";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 const CY = "#00C4CC";
@@ -75,13 +76,13 @@ const jurPie = [
   { name:"Miami",          value:16,  color:"#BF5C7A" },
 ];
 
-const VIEWS = ["executive","library","compliance","entities","operations","kpis"];
-const VLABELS = ["Executive overview","Report library","Compliance","Entity portfolio","Operations","KPIs & exports"];
+const VIEWS = ["builder","executive","library","compliance","entities","operations","kpis"];
+const VLABELS = ["Report builder","Executive overview","Report library","Compliance","Entity portfolio","Operations","KPIs & exports"];
 
 const th = { padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:600, color:"#666", textTransform:"uppercase", letterSpacing:"0.4px", borderBottom:"0.5px solid #e5e5e5", background:"var(--bg-secondary,#f9f9f9)" };
 const td = { padding:"8px 12px", fontSize:11, borderBottom:"0.5px solid #e5e5e5" };
 
-export default function AffinityReporting({ onNav }) {
+export default function AffinityReporting({ onNav, role="system_admin" }) {
   const [view, setView] = useState("executive");
   const [period, setPeriod] = useState("YTD 2025");
   const [ds, setDs] = useState(null);
@@ -149,7 +150,9 @@ export default function AffinityReporting({ onNav }) {
         <button style={nba}>Export ↗</button>
       </div>
 
-      <div style={{ padding:"16px 20px" }}>
+      {view==="builder" && <ReportBuilder isAdmin={role==="system_admin"} onNav={onNav} />}
+
+      {view!=="builder" && <div style={{ padding:"16px 20px" }}>
 
         {/* EXECUTIVE OVERVIEW */}
         {view==="executive"&&(<>
@@ -673,7 +676,7 @@ export default function AffinityReporting({ onNav }) {
             </div>
           </div>
         )}
-      </div>
+      </div>}
     </div>
   );
 }
