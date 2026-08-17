@@ -164,9 +164,8 @@ export default function AffinityGenerateDocument() {
         {doc.act && <Badge label={doc.act} colors={{ bg:"#f0f0f0", color:"#555" }} />}
       </div>
       <div style={{ display:"flex", flexDirection:"column", gap:5, flexShrink:0 }}>
-        <select value={entity} onChange={e=>setEntity(e.target.value)} style={{ height:26, padding:"0 6px", border:"0.5px solid #ccc", borderRadius:4, fontSize:10, background:"#fff", maxWidth:160 }}>
-          {ENTITIES.map(e=><option key={e}>{e}</option>)}
-        </select>
+        <input list="gd-entity-list" value={entity} onChange={e=>setEntity(e.target.value)} placeholder="Search entity…"
+          style={{ height:26, padding:"0 6px", border:"0.5px solid #ccc", borderRadius:4, fontSize:10, background:"#fff", maxWidth:160, boxSizing:"border-box" }} />
         <div style={{ display:"flex", gap:4 }}>
           <button style={{ ...nb, fontSize:10, padding:"4px 8px" }} onClick={()=>openModal(doc)}>DOCX ↗</button>
           <button style={{ ...nba, fontSize:10, padding:"4px 8px" }} onClick={()=>openModal(doc)}>PDF ↗</button>
@@ -241,9 +240,10 @@ export default function AffinityGenerateDocument() {
       {/* Info banner */}
       <div style={{ background:"#f0f8fb", borderBottom:"0.5px solid #daeef5", padding:"8px 24px", fontSize:11, color:"#0077A8", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
         <span>📄 Documents are generated from live entity data. Select the entity before generating. All generated documents are auto-saved to DMS under the relevant folder.</span>
-        <select style={{ height:26, padding:"0 8px", border:"0.5px solid #ccc", borderRadius:4, fontSize:11, background:"#fff" }} value={entity} onChange={e=>setEntity(e.target.value)}>
-          {ENTITIES.map(e=><option key={e}>{e}</option>)}
-        </select>
+        <input list="gd-entity-list" value={entity} onChange={e=>setEntity(e.target.value)} placeholder="Search entity…"
+          style={{ height:26, padding:"0 8px", border:"0.5px solid #ccc", borderRadius:4, fontSize:11, background:"#fff", minWidth:200, boxSizing:"border-box" }} />
+        {/* shared entity list — referenced by every entity search on this page */}
+        <datalist id="gd-entity-list">{ENTITIES.map(e=><option key={e} value={e}/>)}</datalist>
       </div>
 
       <div style={{ padding:"16px 24px" }}>
@@ -402,9 +402,8 @@ export default function AffinityGenerateDocument() {
 
             <div style={{ marginBottom:14 }}>
               <label style={{ display:"block", fontSize:11, fontWeight:600, color:"#555", marginBottom:4 }}>Entity</label>
-              <select value={entity} onChange={e=>setEntity(e.target.value)} style={{ width:"100%", padding:"8px 10px", border:"1.5px solid #e0e0e0", borderRadius:6, fontSize:12, outline:"none" }}>
-                {ENTITIES.map(e=><option key={e}>{e}</option>)}
-              </select>
+              <input list="gd-entity-list" value={entity} onChange={e=>setEntity(e.target.value)} placeholder="Search entity by name…"
+                style={{ width:"100%", padding:"8px 10px", border:"1.5px solid #e0e0e0", borderRadius:6, fontSize:12, outline:"none", boxSizing:"border-box" }} />
             </div>
 
             {(selDoc.fields||[]).map(f=>(

@@ -598,6 +598,7 @@ export default function Accounting({ module }) {
   const [tab, setTab] = useState(tabs[0][0]);
   const [entities, setEntities] = useState(DEMO_ENTITIES);
   const [entityId, setEntityId] = useState(DEMO_ENTITIES[0].id);
+  const [entSrch, setEntSrch]   = useState(null); // null = show the selected entity's label; string = user is typing
   const [liveKpis, setLiveKpis] = useState(null);
   const [liveCf, setLiveCf] = useState(null);
   const [liveArCredit, setLiveArCredit] = useState(null);
@@ -779,10 +780,18 @@ export default function Accounting({ module }) {
         {live
           ? <span style={{ background: POS + "1A", color: POS, borderRadius: 999, padding: "3px 10px", fontSize: 11.5, fontWeight: 600 }}>Live</span>
           : <span style={{ background: AMBER + "1A", color: AMBER, borderRadius: 999, padding: "3px 10px", fontSize: 11.5, fontWeight: 600 }}>Preview data</span>}
-        <select value={entityId} onChange={(e) => setEntityId(Number(e.target.value))}
-          style={{ marginLeft: "auto", background: "#fff", border: `1px solid ${LINE}`, borderRadius: 8, padding: "8px 10px", fontSize: 13 }}>
-          {entities.map((e) => <option key={e.id} value={e.id}>{e.label}</option>)}
-        </select>
+        <input list="acc-entity-list" placeholder="Search entity…"
+          value={entSrch === null ? ((entities.find((e) => e.id === entityId) || {}).label || "") : entSrch}
+          onChange={(ev) => {
+            const v = ev.target.value;
+            setEntSrch(v);
+            const m = entities.find((e) => e.label === v);
+            if (m) { setEntityId(m.id); setEntSrch(null); }
+          }}
+          onFocus={() => setEntSrch("")}
+          onBlur={() => setEntSrch(null)}
+          style={{ marginLeft: "auto", background: "#fff", border: `1px solid ${LINE}`, borderRadius: 8, padding: "8px 10px", fontSize: 13, minWidth: 220, boxSizing: "border-box" }} />
+        <datalist id="acc-entity-list">{entities.map((e) => <option key={e.id} value={e.label} />)}</datalist>
       </div>
       {tabs.length > 1 && (
         <div style={{ display: "flex", gap: 4, borderBottom: `1px solid ${LINE}`, marginBottom: 18, flexWrap: "wrap" }}>

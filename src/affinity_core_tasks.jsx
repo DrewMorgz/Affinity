@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { isConfigured } from "./affinity_accounting_supabase";
 import { tasksList } from "./affinity_tasks_api";
+import { notificationsList } from "./affinity_ops_api";
+import { NOTIFICATIONS_DATA, TYPE_STYLE, timeAgo } from "./affinity_core_notifications";
 const CY = "#00C4CC";
 const NAVY = "#001242";
 
@@ -48,7 +50,7 @@ const statusC = {
 // Per review: anyone can add/assign, only system manager can delete
 const CURRENT_USER = { name:"Andrew Morgan", role:"Super Admin", isSystemManager:true };
 
-export default function AffinityTasks({ userId, onNav }) {
+export default function AffinityTasks({ userId, onNav, initialView }) {
   const [tasks, setTasks]           = useState(INITIAL_TASKS);
 
   useEffect(()=>{
@@ -69,6 +71,69 @@ export default function AffinityTasks({ userId, onNav }) {
   const [modal, setModal]           = useState(null);
   const [form, setForm]             = useState({});
   const [sel, setSel]               = useState(null);
+
+  // ── Merged activity feed (was the standalone Notifications module) ──
+  const [view, setView]             = useState(initialView==="activity"?"activity":"tasks");   // "tasks" | "activity"
+  const [liveN, setLiveN]           = useState(null);
+  const [readIds, setReadIds]       = useState({});
+  const [feedTab, setFeedTab]       = useState("all");     // "all" | "unread"
+  const [feedType, setFeedType]     = useState("All");
+
+  useEffect(()=>{
+    if(!isConfigured) return;
+    let ok=true;
+    notificationsList().then(r=>{ if(ok && r.data && r.data.length) setLiveN(r.data); }).catch(()=>{});
+    return ()=>{ok=false;};
+  },[]);
+
+  // read state persists locally (same key as the old module, so nothing is "lost" in the merge)
+  useEffect(()=>{
+    try {
+      const raw = localStorage.getItem("affinity-core-notifications-read");
+      if(raw){ const p = JSON.parse(raw); if(p && typeof p==="object") setReadIds(p); }
+    } catch(e){}
+  },[]);
+  useEffect(()=>{
+    try { localStorage.setItem("affinity-core-notifications-read", JSON.stringify(readIds)); } catch(e){}
+  },[readIds]);
+
+  const notifs = liveN || NOTIFICATIONS_DATA;
+  const unreadCount = notifs.filter(n=>!readIds[n.id]).length;
+  const feed = useMemo(()=>{
+    let list = notifs;
+    if(feedTab==="unread") list = list.filter(n=>!readIds[n.id]);
+    if(feedType!=="All")   list = list.filter(n=>n.type===feedType);
+    return list;
+  },[notifs, feedTab, feedType, readIds]);
+
+  const markRead    = (id)=> setReadIds(p=>({...p,[id]:true}));
+  const markAllRead = ()=> setReadIds(notifs.reduce((a,n)=>{a[n.id]=true;return a;},{}));
+
+  // click an item: mark read, then either stay here (task-related) or jump to its module
+  const clickNotif = (n)=>{
+    markRead(n.id);
+    if(n.mod==="tasks"||n.mod==="notifications"){ setView("tasks"); return; }
+    if(onNav) onNav(n.mod);
+  };
+
+  // the point of the merge: turn any notification into a tracked task
+  const notifToTask = (n)=>{
+    markRead(n.id);
+    const catMap = { compliance:"Compliance", filing:"Statutory", approval:"Admin", invoice:"Accounts",
+                     onboarding:"New Business", document:"Admin", sign:"Admin", mention:"Admin",
+                     system:"Admin", task:"Admin", birthday:"Admin" };
+    setForm({
+      title: n.title,
+      category: catMap[n.type] || "Admin",
+      entity: "—",
+      assignee: CURRENT_USER.name,
+      due: "",
+      status: "Open",
+      notes: n.body + "  ·  raised from activity: " + n.who + ", " + timeAgo(n.t) + " ago",
+    });
+    setView("tasks");
+    setModal("add");
+  };
 
   const nb  = { padding:"5px 12px", fontSize:11, borderRadius:5, border:"0.5px solid #e5e5e5", background:"transparent", color:"#666", cursor:"pointer" };
   const nba = { ...nb, background:CY, color:"#fff", border:`0.5px solid ${CY}`, fontWeight:500 };
@@ -123,15 +188,28 @@ export default function AffinityTasks({ userId, onNav }) {
       {/* Header */}
       <div style={{ background:NAVY, padding:"12px 24px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-          
           <span style={{ color:"#8892b0", fontSize:13 }}>Tasks</span>
+          {/* Notifications live here now — one place for anything needing attention */}
+          <div style={{ display:"flex", background:"rgba(255,255,255,0.08)", borderRadius:6, overflow:"hidden" }}>
+            {[["tasks","Tasks",openCount],["activity","Activity",unreadCount]].map(([v,l,n])=>(
+              <button key={v} onClick={()=>setView(v)}
+                style={{ border:"none", cursor:"pointer", fontSize:11, padding:"5px 12px", fontWeight:view===v?600:400,
+                         background:view===v?CY:"transparent", color:view===v?"#fff":"#8892b0", display:"flex", alignItems:"center", gap:5 }}>
+                {l}
+                {n>0 && <span style={{ background:view===v?"rgba(255,255,255,0.25)":"#EF4444", color:"#fff", borderRadius:9, fontSize:9, fontWeight:700, padding:"1px 5px", minWidth:14, textAlign:"center" }}>{n}</span>}
+              </button>
+            ))}
+          </div>
         </div>
-        <button style={{ ...nba, background:"#4CAF7D", borderColor:"#4CAF7D" }} onClick={()=>{ setForm({ category:"Compliance", assignee:"Andy Morgan", status:"Open" }); setModal("add"); }}>
-          ＋ Add task
-        </button>
+        {view==="tasks"
+          ? <button style={{ ...nba, background:"#4CAF7D", borderColor:"#4CAF7D" }} onClick={()=>{ setForm({ category:"Compliance", assignee:"Andy Morgan", status:"Open" }); setModal("add"); }}>
+              ＋ Add task
+            </button>
+          : <button style={{ ...nb, background:"transparent", color:"#8892b0", borderColor:"#33405e" }} onClick={markAllRead}>Mark all read</button>}
       </div>
 
       {/* Summary bar */}
+      {view==="tasks"&&(
       <div style={{ background:"#fff", borderBottom:"0.5px solid #e5e5e5", padding:"10px 24px", display:"flex", gap:20, alignItems:"center" }}>
         <div style={{ display:"flex", gap:16 }}>
           {[
@@ -164,7 +242,10 @@ export default function AffinityTasks({ userId, onNav }) {
         </div>
       </div>
 
+      )}
+
       {/* Task list + detail */}
+      {view==="tasks"&&(
       <div style={{ display:"flex", height:"calc(100vh - 130px)" }}>
 
         {/* List */}
@@ -235,6 +316,62 @@ export default function AffinityTasks({ userId, onNav }) {
           </div>
         )}
       </div>
+      )}
+
+      {/* ── ACTIVITY VIEW — notifications feed, merged into Tasks ── */}
+      {view==="activity"&&(
+        <div style={{ padding:"14px 24px 60px", maxWidth:900, margin:"0 auto" }}>
+
+          <div style={{ background:"#fff", border:"0.5px solid #e5e5e5", borderRadius:10, padding:"10px 14px", marginBottom:14, display:"flex", gap:6, flexWrap:"wrap", alignItems:"center" }}>
+            {[["all","All"],["unread","Unread"]].map(([v,l])=>(
+              <button key={v} onClick={()=>setFeedTab(v)}
+                style={{ padding:"5px 12px", fontSize:11, border:"none", borderRadius:14, cursor:"pointer",
+                         background:feedTab===v?CY:"#f5f5f5", color:feedTab===v?"#fff":"#666", fontWeight:feedTab===v?600:500 }}>{l}</button>
+            ))}
+            <div style={{ width:1, height:18, background:"#e5e5e5", margin:"0 4px" }}/>
+            <select value={feedType} onChange={e=>setFeedType(e.target.value)}
+              style={{ padding:"5px 10px", border:"0.5px solid #ddd", borderRadius:6, fontSize:11, background:"#fff", color:"#333", cursor:"pointer" }}>
+              <option value="All">All types</option>
+              {Object.keys(TYPE_STYLE).map(t=><option key={t} value={t}>{TYPE_STYLE[t].label}</option>)}
+            </select>
+            <span style={{ marginLeft:"auto", fontSize:11, color:"#888" }}>{unreadCount>0?unreadCount+" unread":"All caught up ✓"}</span>
+          </div>
+
+          <div style={{ background:"#fff", border:"0.5px solid #e5e5e5", borderRadius:10 }}>
+            {feed.length===0 ? (
+              <div style={{ padding:"50px 20px", textAlign:"center", color:"#aaa", fontSize:12 }}>
+                {feedTab==="unread" ? "All caught up ✓ — nothing unread." : "Nothing matches."}
+              </div>
+            ) : feed.map((n,i)=>{
+              const st = TYPE_STYLE[n.type] || TYPE_STYLE.system;
+              const unread = !readIds[n.id];
+              return (
+                <div key={n.id} onClick={()=>clickNotif(n)}
+                  style={{ padding:"12px 16px", borderBottom:i<feed.length-1?"0.5px solid #f5f5f5":"none", cursor:"pointer",
+                           display:"flex", gap:12, background:unread?"#f9fcfd":"transparent" }}>
+                  <div style={{ width:36, height:36, borderRadius:8, background:st.bg, color:st.color, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, flexShrink:0, fontWeight:700 }}>{st.icon}</div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:8, flexWrap:"wrap" }}>
+                      <div style={{ fontSize:13, fontWeight:unread?600:500, color:"#222", lineHeight:1.4 }}>{n.title}</div>
+                      <Badge label={st.label} colors={{ bg:st.bg, color:st.color }} />
+                    </div>
+                    <div style={{ fontSize:12, color:"#666", marginTop:3, lineHeight:1.5 }}>{n.body}</div>
+                    <div style={{ fontSize:10, color:"#aaa", marginTop:6 }}>{timeAgo(n.t)} ago · {n.who} · {n.mod}</div>
+                  </div>
+                  <div style={{ display:"flex", flexDirection:"column", gap:5, alignItems:"flex-end" }} onClick={e=>e.stopPropagation()}>
+                    <button style={{ ...nb, fontSize:10, padding:"3px 8px" }} onClick={()=>notifToTask(n)}>＋ Task</button>
+                    {unread && <button style={{ ...nb, fontSize:10, padding:"3px 8px", border:"none", color:CY }} onClick={()=>markRead(n.id)}>Mark read</button>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div style={{ marginTop:14, padding:"10px 14px", background:"#fafbfc", border:"0.5px solid #e5e5e5", borderRadius:8, fontSize:10, color:"#888", lineHeight:1.6 }}>
+            ℹ Notifications now live inside Tasks. Anything here that needs following up can be turned into a tracked task with <strong>＋ Task</strong>. In production these are raised automatically by events across Affinity Core (task assignments, approvals, @mentions, KYC and filing due dates, Zoho signatures). Read state is stored locally until the write layer lands.
+          </div>
+        </div>
+      )}
 
       {/* Add task modal */}
       {modal==="add"&&(

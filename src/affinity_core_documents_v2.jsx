@@ -74,6 +74,7 @@ export default function AffinityDMS() {
   const [modal,setModal]      = useState(null);
   const [dragOver,setDragOver] = useState(false);
   const [isAdmin]             = useState(true); // would come from user role
+  const [showAll,setShowAll]  = useState(false); // folder tree shows only folders in use by default (everyone, incl. admins); toggle to reveal all for first-time filing
 
   const toggleFolder = name => setOpen(p=>({...p,[name]:!p[name]}));
 
@@ -126,9 +127,12 @@ export default function AffinityDMS() {
           <div style={{width:240,minWidth:240,borderRight:"0.5px solid #e5e5e5",overflowY:"auto",background:"#f9f9f9",flexShrink:0}}>
             <div style={{padding:"10px 12px",fontSize:10,fontWeight:600,color:"#aaa",textTransform:"uppercase",letterSpacing:"0.5px",borderBottom:"0.5px solid #e5e5e5",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               Folders
-              {isAdmin&&<button style={{background:"none",border:"none",cursor:"pointer",color:CY,fontSize:11}}>+ New folder</button>}
+              <span style={{display:"flex",alignItems:"center",gap:8}}>
+                <button onClick={()=>setShowAll(s=>!s)} title={showAll?"Showing every folder in the structure":"Showing only folders that hold documents for this entity"} style={{background:"none",border:"none",cursor:"pointer",color:showAll?CY:"#aaa",fontSize:9,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px",padding:0}}>{showAll?"All folders":"In use"}</button>
+                {isAdmin&&<button style={{background:"none",border:"none",cursor:"pointer",color:CY,fontSize:11}}>+ New folder</button>}
+              </span>
             </div>
-            {FOLDER_TREE.filter(f=>isAdmin||docs.filter(d=>d.folder===f.name&&d.entity===entity).length>0).map(f=>(
+            {FOLDER_TREE.filter(f=>showAll||docs.filter(d=>d.folder===f.name&&d.entity===entity).length>0).map(f=>(
               <div key={f.name}>
                 <div onClick={()=>toggleFolder(f.name)} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 12px",cursor:"pointer",background:selFolder.folder===f.name&&!selFolder.sub?"#fff":"transparent",borderBottom:"0.5px solid #e5e5e5",fontSize:12}}>
                   <span style={{fontSize:10,color:"#aaa",width:12,flexShrink:0}}>{openFolders[f.name]?"▼":"►"}</span>
@@ -138,7 +142,7 @@ export default function AffinityDMS() {
                 </div>
                 {openFolders[f.name]&&f.subs.map(sub=>{
                   const count = docs.filter(d=>d.folder===f.name&&d.subfolder===sub&&d.entity===entity).length;
-                  if(!isAdmin&&count===0) return null; // hide empty folders for non-admins
+                  if(!showAll&&count===0) return null; // hide empty subfolders for everyone unless "All folders" is toggled on
                   return (
                     <div key={sub} onClick={()=>setSelF({folder:f.name,sub})} style={{display:"flex",alignItems:"center",gap:6,padding:"5px 12px 5px 32px",cursor:"pointer",background:selFolder.folder===f.name&&selFolder.sub===sub?"#E6F7FB":"transparent",fontSize:11,borderBottom:"0.5px solid #f0f0f0"}}>
                       <span style={{fontSize:12}}>📄</span>
@@ -149,6 +153,9 @@ export default function AffinityDMS() {
                 })}
               </div>
             ))}
+            {!showAll&&FOLDER_TREE.every(f=>docs.filter(d=>d.folder===f.name&&d.entity===entity).length===0)&&(
+              <div style={{padding:"12px",fontSize:10,color:"#aaa",lineHeight:1.6}}>Nothing filed for this entity yet. Switch to <b>All folders</b> above to file the first document.</div>
+            )}
           </div>
 
           {/* Document list */}

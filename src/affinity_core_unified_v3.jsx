@@ -20,7 +20,7 @@ import Statutory    from "./affinity_core_statutory_registers";
 import GenerateDoc  from "./affinity_core_generate_document";
 import Feedback     from "./affinity_core_feedback";
 import AuditLog     from "./affinity_core_audit_log";
-import Notifications, { NotificationsPanel, NOTIFICATIONS_DATA } from "./affinity_core_notifications";
+import { NotificationsPanel, NOTIFICATIONS_DATA } from "./affinity_core_notifications";
 import ClientPortal from "./affinity_core_client_portal";
 import Accounting   from "./affinity_core_accounting";
 import { canAccessModule, deriveRbacRole } from "./affinity_core_rbac";
@@ -177,7 +177,6 @@ const NAV = [
   {s:"Overview",   items:[
     {id:"dashboard",    label:"Dashboard",     icon:"\u229E",b:null},
     {id:"tasks",        label:"Tasks",          icon:"\u2713",b:3},
-    {id:"notifications",label:"Notifications",  icon:"\uD83D\uDD14",b:null},
   ]},
   {s:"Core",       items:[
     {id:"entities",     label:"Entity Admin",  icon:"\uD83C\uDFE2",b:null},
@@ -212,7 +211,6 @@ const NAV = [
     {id:"chatbot",      label:"Assistant",     icon:"\uD83E\uDD16",b:null},
   ]},
   {s:"System",     items:[
-    {id:"audit",        label:"Audit log",     icon:"\uD83D\uDCDC",b:null},
     {id:"system",       label:"System admin",  icon:"\uD83D\uDD27",b:null},
   ]},
 ];
@@ -464,7 +462,7 @@ const SEARCH_INDEX = [
   // ─── Modules ──────────────────────────────────────────────
   {type:"Module",  label:"Dashboard",                      sub:"Overview & tasks",                mod:"dashboard"},
   {type:"Module",  label:"Tasks",                          sub:"Action items",                    mod:"tasks"},
-  {type:"Module",  label:"Notifications",                  sub:"Alerts & activity feed",          mod:"notifications"},
+  {type:"Module",  label:"Notifications",                  sub:"Activity feed — inside Tasks",    mod:"notifications"},
   {type:"Module",  label:"Client portal",                  sub:"Preview client-facing portal",    mod:"client_portal"},
   {type:"Module",  label:"Audit log",                      sub:"Activity & compliance trail",     mod:"audit"},
   {type:"Module",  label:"Entity Admin",                   sub:"Manage entity records",           mod:"entities"},
@@ -607,10 +605,10 @@ export default function AffinityCore(){
     if (mod && mod.slice(0,4) === "acc_") return <Accounting module={mod}/>;
     switch(mod){
       case "dashboard":    return <Dashboard userId={uid} onNav={setMod} officeFilter={officeFilter} userName={user?.name||""}/>;
-      case "tasks":        return <Tasks/>;
+      case "tasks":        return <Tasks onNav={setMod}/>;
       case "feedback":     return <Feedback userName={user?.name||""} isSuperAdmin={!!(user&&user.role&&user.role.indexOf("Super Admin")>-1)}/>;
       case "audit":        return <AuditLog userName={user?.name||""} isSuperAdmin={!!(user&&user.role&&user.role.indexOf("Super Admin")>-1)}/>;
-      case "notifications":return <Notifications onNav={setMod}/>;
+      case "notifications":return <Tasks onNav={setMod} initialView="activity"/>;  // merged into Tasks
       case "client_portal": return <ClientPortal/>;
       case "entities":     return <EntityAdmin officeFilter={officeFilter} onNav={setMod}/>;
       case "compliance":   return <Compliance/>;

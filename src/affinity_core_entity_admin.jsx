@@ -40,6 +40,14 @@ const ENTITIES = [
   { id:12, name:"Bluewater Family Trust",         ref:"AC-2020-031", type:"Trust",      jur:"Cayman Islands", status:"Active",        risk:"Medium",   admin:"Garry Crossan", manager:"Garry Crossan", director:"Andy Morgan", group:"Okafor Family",    principalActivity:"Family trust",    yearEnd:"31/12", currency:"USD", regNo:"T-CY-9921",  incorporated:"19/06/2020" },
   { id:13, name:"Phoenix eGaming Ltd",             ref:"AC-2025-061", type:"Company",    jur:"Isle of Man",    status:"Active",        risk:"High",     admin:"Roxy Sheeley",  manager:"Roxy Sheeley",  director:"Andy Morgan", group:"Phoenix Group",    principalActivity:"eGaming operator", yearEnd:"31/12", currency:"GBP", regNo:"GSC-2025-0441",incorporated:"01/03/2025", isGaming:true },
   { id:14, name:"Meridian Digital Ltd",            ref:"AC-2023-058", type:"Company",    jur:"Isle of Man",    status:"Active",        risk:"Medium",   admin:"Roxy Sheeley",  manager:"Roxy Sheeley",  director:"Andy Morgan", group:"Meridian Group",   principalActivity:"B2B platform supply",yearEnd:"31/12",currency:"GBP",regNo:"GSC-2023-0218",incorporated:"01/06/2023", isGaming:true },
+  // Affinity's own group companies — entityClass:"group". Mirrors db_eadmin/006_group_entities.sql
+  { id:15, name:"Affinity Group Limited",          ref:"AFG-000",     type:"Company",    jur:"Isle of Man",    status:"Active",        risk:"Low",      admin:"Neil Kelly",    manager:"Neil Kelly",    director:"Andy Morgan", group:"Affinity Group",   principalActivity:"Group holding / parent company",        yearEnd:"31/12", currency:"GBP", regNo:"016232V",  incorporated:"28/06/2018", entityClass:"group" },
+  { id:16, name:"Affinity (Isle of Man) Limited",  ref:"AFG-IOM",     type:"Company",    jur:"Isle of Man",    status:"Active",        risk:"Low",      admin:"Roxy Sheeley",  manager:"Roxy Sheeley",  director:"Andy Morgan", group:"Affinity Group",   principalActivity:"Corporate & Trust Service Provider (CSP)",yearEnd:"31/12",currency:"GBP", regNo:"110310C",  incorporated:"01/03/2004", entityClass:"group" },
+  { id:17, name:"Affinity (Malta) Limited",        ref:"AFG-MLT",     type:"Company",    jur:"Malta",          status:"Active",        risk:"Low",      admin:"Joanne Fenech", manager:"Joanne Fenech", director:"Andy Morgan", group:"Affinity Group",   principalActivity:"Corporate services",                    yearEnd:"31/12", currency:"EUR", regNo:"—",        incorporated:"—",          entityClass:"group" },
+  { id:18, name:"Affinity (Cayman) Limited",       ref:"AFG-CYM",     type:"Company",    jur:"Cayman Islands", status:"Active",        risk:"Low",      admin:"Garry Crossan", manager:"Garry Crossan", director:"Andy Morgan", group:"Affinity Group",   principalActivity:"Corporate services",                    yearEnd:"31/12", currency:"USD", regNo:"—",        incorporated:"—",          entityClass:"group" },
+  { id:19, name:"Affinity (UK) Limited",           ref:"AFG-UK",      type:"Company",    jur:"United Kingdom", status:"Active",        risk:"Low",      admin:"Neil Kelly",    manager:"Neil Kelly",    director:"Andy Morgan", group:"Affinity Group",   principalActivity:"Corporate services",                    yearEnd:"31/12", currency:"GBP", regNo:"—",        incorporated:"—",          entityClass:"group" },
+  { id:20, name:"Affinity South Dakota, LLC",      ref:"AFG-SD",      type:"Company",    jur:"Miami",          status:"Active",        risk:"Low",      admin:"Andy Morgan",   manager:"Andy Morgan",   director:"Andy Morgan", group:"Affinity Group",   principalActivity:"Trust services (US)",                   yearEnd:"31/12", currency:"USD", regNo:"—",        incorporated:"—",          entityClass:"group" },
+  { id:21, name:"Affinity South Florida, LLC",     ref:"AFG-FL",      type:"Company",    jur:"Miami",          status:"Active",        risk:"Low",      admin:"Andy Morgan",   manager:"Andy Morgan",   director:"Andy Morgan", group:"Affinity Group",   principalActivity:"Corporate services (US)",               yearEnd:"31/12", currency:"USD", regNo:"—",        incorporated:"—",          entityClass:"group" },
 ];
 
 const ENTITY_DATA = {
@@ -401,7 +409,12 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
   const filtered = useMemo(()=>ents.filter(e=>
     (!search||e.name.toLowerCase().includes(search.toLowerCase())||e.ref.toLowerCase().includes(search.toLowerCase()))&&
     (!activeJurF||e.jur===activeJurF)&&(!typeF||e.type===typeF)&&(!statF||e.status===statF)&&(!classF||(e.entityClass||"client")===classF)
-  ),[search,activeJurF,typeF,statF,jurF,officeFilter,ents]);
+  ),[search,activeJurF,typeF,statF,classF,jurF,officeFilter,ents]);
+
+  // entity-class counts for the Internal/Client scope control
+  const classCounts = useMemo(()=>ents.reduce((a,e)=>{
+    const k=(e.entityClass||"client")==="group"?"group":"client"; a[k]=(a[k]||0)+1; return a;
+  },{client:0,group:0}),[ents]);
 
   const baseEntity = ents.find(e=>e.id===sel);
   const entity = (det && det.profile)
@@ -1197,16 +1210,29 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
               <input
                 list="ea-entity-list"
                 style={s.swI}
-                placeholder="Search for an entity by name or reference…"
+                placeholder={classF==="group"?"Search Affinity's own entities…":classF==="client"?"Search client entities…":"Search for an entity by name or reference…"}
                 value={search}
                 onChange={e=>{
                   const v=e.target.value;
                   setSearch(v);
-                  const m=ents.find(en=>en.name===v||en.ref===v);
+                  const m=filtered.find(en=>en.name===v||en.ref===v)||ents.find(en=>en.name===v||en.ref===v);
                   if(m){ setSel(m.id); setTab("overview"); }
                 }}
               />
-              <datalist id="ea-entity-list">{ents.flatMap(e=>[<option key={"n"+e.id} value={e.name}>{e.ref}</option>,<option key={"r"+e.id} value={e.ref}>{e.name}</option>])}</datalist>
+              <datalist id="ea-entity-list">{filtered.flatMap(e=>{
+                const mark=(e.entityClass||"client")==="group"?" · Internal":"";
+                return [<option key={"n"+e.id} value={e.name}>{e.ref+mark}</option>,<option key={"r"+e.id} value={e.ref}>{e.name+mark}</option>];
+              })}</datalist>
+            </div>
+            {/* Internal (Affinity's own) vs client entities — visible scope control */}
+            <div style={{ display:"flex", border:"0.5px solid var(--border-tertiary,#e5e5e5)", borderRadius:6, overflow:"hidden", flexShrink:0 }}>
+              {[["","All",classCounts.client+classCounts.group],["client","Client",classCounts.client],["group","Internal",classCounts.group]].map(([v,l,n])=>(
+                <button key={l} onClick={()=>setClassF(v)} title={v==="group"?"Affinity's own group companies":v==="client"?"Client entities under administration":"Every entity"}
+                  style={{ border:"none", cursor:"pointer", fontSize:11, padding:"5px 10px", fontWeight:classF===v?600:400,
+                           background:classF===v?"#EAF0FB":"var(--bg-primary,#fff)", color:classF===v?"#274690":"var(--text-secondary,#666)" }}>
+                  {l} <span style={{ fontSize:9, opacity:0.7 }}>{n}</span>
+                </button>
+              ))}
             </div>
             {entity&&<button style={s.btn(false)} onClick={()=>{ setSel(null); setSearch(""); }}>Clear ✕</button>}
             <button style={s.btn(false)} onClick={()=>setReportsOpen(true)}>📊 Reports</button>
@@ -1220,7 +1246,9 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
                     <div style={{ fontSize:16, fontWeight:600, marginBottom:4 }}>{entity.name}</div>
                     <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
                       <Badge label={entity.ref} colors={{ bg:"var(--bg-secondary,#f9f9f9)", color:"var(--text-secondary,#666)" }} />
-                      {entity.entityClass==="group" && <Badge label="Group entity" colors={{ bg:"#EAF0FB", color:"#274690" }} />}
+                      {(entity.entityClass||"client")==="group"
+                        ? <Badge label="Internal — Affinity Group" colors={{ bg:"#EAF0FB", color:"#274690" }} />
+                        : <Badge label="Client entity" colors={{ bg:"#F0F7F0", color:"#2F6B3A" }} />}
                       <Badge label={jurShort[entity.jur]||entity.jur} colors={officeColors[entity.jur]} />
                       <Badge label={entity.type} colors={{ bg:"var(--bg-secondary,#f9f9f9)", color:"var(--text-secondary,#666)" }} />
                       <Badge label={entity.status} colors={statusBadge(entity.status)} />

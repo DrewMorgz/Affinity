@@ -24,7 +24,7 @@ export const NOTIFICATIONS_DATA = [
   {id:16, t:"2026-06-02T15:18:00Z", type:"approval",   title:"Bank account ready to add",         body:"Pacific Wealth Trust · Butterfield Bank",         who:"Colette Grisdale",     mod:"entities"},
 ];
 
-const TYPE_STYLE = {
+export const TYPE_STYLE = {
   task:       {icon:"✓",  bg:"#FDF4DC", color:"#7B4F1D", label:"Task"},
   approval:   {icon:"⚙",  bg:"#FAEEDA", color:"#633806", label:"Approval"},
   mention:    {icon:"@",  bg:"#EEF0FB", color:"#3C3489", label:"Mention"},
@@ -38,7 +38,7 @@ const TYPE_STYLE = {
   system:     {icon:"🔒", bg:"#F1EFE8", color:"#666",    label:"System"},
 };
 
-function timeAgo(iso) {
+export function timeAgo(iso) {
   const diff = Date.now() - new Date(iso).getTime();
   const min = Math.floor(diff / 60000);
   if (min < 1) return "just now";
@@ -132,7 +132,7 @@ export function NotificationsPanel(props) {
       <div style={{padding:"8px 14px",borderTop:"0.5px solid #e5e5e5",background:"#fafbfc"}}>
         <button onClick={function(){ if (onNavigate) onNavigate("notifications"); if (onClose) onClose(); }}
           style={{width:"100%",padding:"6px",background:"none",border:"0.5px solid #e0e0e0",borderRadius:6,fontSize:11,color:NAVY,cursor:"pointer",fontWeight:600}}>
-          See all notifications →
+          See all in Tasks →
         </button>
       </div>
     </div>
