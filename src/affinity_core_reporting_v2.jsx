@@ -231,55 +231,7 @@ export default function AffinityReporting({ onNav, role="system_admin" }) {
         </>)}
 
         {/* FINANCE */}
-        {view==="statements"&&(()=>{
-          const ent = entList.find(e=>e.name===stmtEntity);
-          const eid = ent?.id;
-          const sym = ent?.sym || "£";
-          const fmtS = (n)=> sym + Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
-          const etx = eid ? txnsAll.filter(t=>t.entity_id===eid) : [];
-          const prow = pnl.find(p=>p.entity===stmtEntity);
-          const incomeLines = {}, expenseLines = {};
-          etx.forEach(t=>{ const acc=t.account||t.type||"Other"; const cr=Number(t.cr||0), dr=Number(t.dr||0);
-            if ((t.type==="Income"||t.type==="Receipt") && cr) incomeLines[acc]=(incomeLines[acc]||0)+cr;
-            else if (t.type==="Expense" && dr) expenseLines[acc]=(expenseLines[acc]||0)+dr; });
-          const incTotal = prow? prow.income : Object.values(incomeLines).reduce((s,v)=>s+v,0);
-          const expTotal = prow? prow.expenses : Object.values(expenseLines).reduce((s,v)=>s+v,0);
-          const net = incTotal - expTotal;
-          const cash = eid ? banksAll.filter(b=>b.entity_id===eid).reduce((s,b)=>s+Number(b.balance||0),0) : 0;
-          return (
-            <div style={{ padding:"16px 20px" }}>
-              <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:16, flexWrap:"wrap" }}>
-                <input list="rep-ent-list" value={stmtEntity} onChange={e=>{setStmtEntity(e.target.value); setPrepared(false);}} placeholder="Search entity by name…" style={{ ...nb, minWidth:260, height:34 }} />
-                <datalist id="rep-ent-list">{entList.map(e=><option key={e.id} value={e.name}/>)}</datalist>
-                <button style={nba} disabled={!stmtEntity} onClick={()=>setPrepared(true)}>Prepare financial statements</button>
-                {prepared && <button style={nb} onClick={()=>window.print()}>⭳ PDF / print</button>}
-              </div>
-              {!prepared ? (
-                <div style={{ color:"#999", fontSize:12, padding:"30px 0", textAlign:"center" }}>Select an entity and click <strong>Prepare</strong> to generate its financial statements from the ledger.</div>
-              ) : (
-                <div style={{ maxWidth:620 }}>
-                  <div style={{ fontSize:16, fontWeight:700, color:NAVY }}>{stmtEntity}</div>
-                  <div style={{ fontSize:11, color:"#888", marginBottom:16 }}>Financial statements · prepared {new Date().toLocaleDateString("en-GB")} · unaudited</div>
-                  <div style={{ fontSize:13, fontWeight:700, marginBottom:6, borderBottom:`2px solid ${NAVY}`, paddingBottom:4 }}>Profit &amp; Loss</div>
-                  <div style={{ fontSize:11, fontWeight:600, color:"#888", margin:"8px 0 2px" }}>Income</div>
-                  {Object.keys(incomeLines).length? Object.entries(incomeLines).map(([a,v])=><Row key={a} l={a} v={fmtS(v)} />) : <Row l="Fee income" v={fmtS(incTotal)} />}
-                  <Row l="Total income" v={fmtS(incTotal)} bold />
-                  <div style={{ fontSize:11, fontWeight:600, color:"#888", margin:"12px 0 2px" }}>Expenses</div>
-                  {Object.keys(expenseLines).length? Object.entries(expenseLines).map(([a,v])=><Row key={a} l={a} v={fmtS(v)} />) : <Row l="Operating expenses" v={fmtS(expTotal)} />}
-                  <Row l="Total expenses" v={fmtS(expTotal)} bold />
-                  <Row l="Net profit / (loss)" v={fmtS(net)} bold hl />
-                  <div style={{ fontSize:13, fontWeight:700, margin:"24px 0 6px", borderBottom:`2px solid ${NAVY}`, paddingBottom:4 }}>Balance Sheet</div>
-                  <div style={{ fontSize:11, fontWeight:600, color:"#888", margin:"8px 0 2px" }}>Assets</div>
-                  <Row l="Cash at bank" v={fmtS(cash)} />
-                  <Row l="Total assets" v={fmtS(cash)} bold />
-                  <div style={{ fontSize:11, fontWeight:600, color:"#888", margin:"12px 0 2px" }}>Equity</div>
-                  <Row l="Retained earnings" v={fmtS(net)} />
-                  <Row l="Total equity" v={fmtS(net)} bold />
-                  <div style={{ fontSize:10, color:"#999", marginTop:16 }}>Prepared from the bookkeeping ledger. P&amp;L is complete; the balance sheet currently shows cash and retained earnings — full mapping (debtors, creditors, fixed assets, reserves) is delivered by the statement-mapping engine in the write phase. Figures in {sym}.</div>
-                </div>
-              )}
-            </div>
-          );})()}
+        
 
         {view==="library"&&(
           <div style={{ padding:"16px 20px" }}>
@@ -297,144 +249,13 @@ export default function AffinityReporting({ onNav, role="system_admin" }) {
           </div>
         )}
 
-        {view==="finance"&&(<>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:14 }}>
-            {[{l:"Revenue YTD",v:"£487k",c:CY,sub:"vs £421k last year"},{l:"Total WIP",v:"£48,320",c:null,sub:"6-month high"},{l:"Outstanding debt",v:"£44,550",c:"#F59E0B",sub:"£27,720 overdue"},{l:"Collected YTD",v:"£412k",c:"#4CAF7D",sub:"84% recovery rate"}].map(k=>(
-              <div key={k.l} style={sc}><div style={{ fontSize:10, color:"#666", marginBottom:3 }}>{k.l}</div><div style={{ fontSize:20, fontWeight:600, color:k.c||"var(--text-primary,#111)" }}>{k.v}</div><div style={{ fontSize:10, color:"#aaa", marginTop:2 }}>{k.sub}</div></div>
-            ))}
-          </div>
-          <div style={g2}>
-            <div style={card}>
-              <div style={cardT}>Revenue by office — monthly</div>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={revenueByOfficeL} margin={{ top:0, right:0, left:-10, bottom:0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
-                  <XAxis dataKey="month" tick={{ fontSize:10 }} />
-                  <YAxis tick={{ fontSize:10 }} tickFormatter={v=>"£"+(v/1000).toFixed(0)+"k"} />
-                  <Tooltip formatter={(v,n)=>["£"+Number(v).toLocaleString(),n]} />
-                  <Legend iconSize={8} wrapperStyle={{ fontSize:10 }} />
-                  <Bar dataKey="IOM" name="IOM" fill={CY} />
-                  <Bar dataKey="Malta" name="Malta" fill="#7C5CBF" />
-                  <Bar dataKey="Cayman" name="Cayman" fill="#1A7FBF" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-            <div style={card}>
-              <div style={cardT}>Revenue split by office — YTD</div>
-              <table style={{ width:"100%", borderCollapse:"collapse" }}>
-                <thead><tr>
-                  {["Office","Revenue","% of total","vs LY"].map(h=><th key={h} style={{ ...th, padding:"6px 10px" }}>{h}</th>)}
-                </tr></thead>
-                <tbody>
-                  {[["Isle of Man","£136,500","28%","+8%"],["Cayman Islands","£197,100","40%","+14%"],["Malta","£85,100","17%","+6%"],["United Kingdom","£49,300","10%","+3%"],["Miami","£29,000","6%","+22%"]].map(([o,r,p,v])=>(
-                    <tr key={o} style={{ borderBottom:"0.5px solid #e5e5e5" }}>
-                      <td style={td}>{o}</td>
-                      <td style={{ ...td, fontWeight:600 }}>{r}</td>
-                      <td style={{ ...td, color:"#666" }}>{p}</td>
-                      <td style={{ ...td, color:"#4CAF7D", fontWeight:500 }}>{v}</td>
-                    </tr>
-                  ))}
-                  <tr style={{ background:"var(--bg-secondary,#f9f9f9)" }}>
-                    <td style={{ ...td, fontWeight:600 }}>Group total</td>
-                    <td style={{ ...td, fontWeight:700, color:CY }}>£497,000</td>
-                    <td style={{ ...td, fontWeight:600 }}>100%</td>
-                    <td style={{ ...td, color:"#4CAF7D", fontWeight:600 }}>+10%</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <div style={g2}>
-            <div style={card}>
-              <div style={cardT}>WIP & debtors trend</div>
-              <ResponsiveContainer width="100%" height={160}>
-                <LineChart data={wipTrendL} margin={{ top:0, right:5, left:-10, bottom:0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
-                  <XAxis dataKey="month" tick={{ fontSize:10 }} />
-                  <YAxis tick={{ fontSize:10 }} tickFormatter={v=>"£"+(v/1000).toFixed(0)+"k"} />
-                  <Tooltip formatter={v=>["£"+Number(v).toLocaleString()]} />
-                  <Line type="monotone" dataKey="wip" stroke={CY} strokeWidth={2} name="WIP" dot={{ fill:CY, r:3 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-            <div style={card}>
-              <div style={cardT}>Aged debt summary</div>
-              {[{l:"Current (0-30d)",v:"£18,450",c:"#4CAF7D"},{l:"31-60 days",v:"£12,200",c:"#F59E0B"},{l:"61-90 days",v:"£8,750",c:"#F59E0B"},{l:"90+ days",v:"£5,320",c:"#EF4444"},{l:"Total outstanding",v:"£44,720",c:CY}].map(k=>(
-                <div key={k.l} style={{ display:"flex", justifyContent:"space-between", padding:"6px 0", borderBottom:"0.5px solid #e5e5e5", fontSize:12 }}>
-                  <span style={{ color:"#666" }}>{k.l}</span><span style={{ fontWeight:600, color:k.c }}>{k.v}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </>)}
+        
 
         {/* BUDGET VS ACTUAL */}
-        {view==="budget"&&(<>
-          <div style={card}>
-            <div style={cardT}>Budget vs actual — by line</div>
-            {budgetVariance.length>0?(
-              <table style={{ width:"100%", borderCollapse:"collapse" }}>
-                <thead><tr>
-                  {["Line","Budget","Actual","Variance","%","Status"].map((h,i)=><th key={h} style={{ padding:"7px 10px", textAlign:i===0?"left":"right", fontSize:10, fontWeight:600, color:"#666", textTransform:"uppercase", letterSpacing:"0.4px", borderBottom:"0.5px solid #e5e5e5" }}>{h}</th>)}
-                </tr></thead>
-                <tbody>
-                  {budgetVariance.map((r,i)=>(
-                    <tr key={i} style={{ borderBottom:"0.5px solid #e5e5e5" }}>
-                      <td style={{ padding:"7px 10px", fontSize:12, fontWeight:500 }}>{r.line}</td>
-                      <td style={{ padding:"7px 10px", fontSize:12, textAlign:"right", color:"#666" }}>{fmt(r.budget)}</td>
-                      <td style={{ padding:"7px 10px", fontSize:12, textAlign:"right" }}>{fmt(r.actual)}</td>
-                      <td style={{ padding:"7px 10px", fontSize:12, textAlign:"right", color:r.variance<0?"#EF4444":"#4CAF7D" }}>{r.variance<0?"-":"+"}{fmt(r.variance)}</td>
-                      <td style={{ padding:"7px 10px", fontSize:12, textAlign:"right", color:"#666" }}>{r.pct}</td>
-                      <td style={{ padding:"7px 10px", textAlign:"right" }}><Badge label={r.status} colors={r.status==="Favourable"?{bg:"#EAF3DE",color:"#27500A"}:{bg:"#FCEBEB",color:"#A32D2D"}} /></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ):<div style={{ color:"#666", fontSize:12, padding:"16px 0", textAlign:"center" }}>Budget data loads from the ui_dataset store (run affinity_datasets.sql).</div>}
-          </div>
-          {budgetMonthly.length>0&&<div style={card}>
-            <div style={cardT}>Revenue — budget vs forecast vs actual</div>
-            <ResponsiveContainer width="100%" height={220}>
-              <LineChart data={budgetMonthly} margin={{ top:5, right:10, left:-10, bottom:0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#eee" /><XAxis dataKey="month" tick={{ fontSize:11 }} /><YAxis tick={{ fontSize:11 }} /><Tooltip /><Legend wrapperStyle={{ fontSize:11 }} />
-                <Line type="monotone" dataKey="budget" stroke="#999" strokeWidth={1.5} dot={false} />
-                <Line type="monotone" dataKey="forecast" stroke="#F59E0B" strokeWidth={1.5} dot={false} />
-                <Line type="monotone" dataKey="actual" stroke={CY} strokeWidth={2} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>}
-          <div style={{ fontSize:10, color:"#999", marginTop:4 }}>Budgets and scenarios are entered in the Budgeting section; this is the reporting view of the result.</div>
-        </>)}
+        
 
         {/* P&L (firm-wide, by entity) */}
-        {view==="pnl"&&(<>
-          <div style={g3}>
-            <div style={sc}><div style={{ fontSize:10, color:"#666", marginBottom:3 }}>Total income</div><div style={{ fontSize:18, fontWeight:600, color:CY }}>{fmt(pnl.reduce((s,r)=>s+r.income,0))}</div></div>
-            <div style={sc}><div style={{ fontSize:10, color:"#666", marginBottom:3 }}>Total expenses</div><div style={{ fontSize:18, fontWeight:600 }}>{fmt(pnl.reduce((s,r)=>s+r.expenses,0))}</div></div>
-            <div style={sc}><div style={{ fontSize:10, color:"#666", marginBottom:3 }}>Net position</div><div style={{ fontSize:18, fontWeight:600, color:pnl.reduce((s,r)=>s+r.net,0)>=0?"#4CAF7D":"#EF4444" }}>{fmt(pnl.reduce((s,r)=>s+r.net,0))}</div></div>
-          </div>
-          <div style={card}>
-            <div style={cardT}>Profit &amp; loss by entity</div>
-            {pnl.length>0?(
-              <table style={{ width:"100%", borderCollapse:"collapse" }}>
-                <thead><tr>
-                  {["Entity","Income","Expenses","Net"].map((h,i)=><th key={h} style={{ padding:"7px 10px", textAlign:i===0?"left":"right", fontSize:10, fontWeight:600, color:"#666", textTransform:"uppercase", letterSpacing:"0.4px", borderBottom:"0.5px solid #e5e5e5" }}>{h}</th>)}
-                </tr></thead>
-                <tbody>
-                  {pnl.map((r,i)=>(
-                    <tr key={i} style={{ borderBottom:"0.5px solid #e5e5e5" }}>
-                      <td style={{ padding:"7px 10px", fontSize:12, fontWeight:500 }}>{r.entity}</td>
-                      <td style={{ padding:"7px 10px", fontSize:12, textAlign:"right", color:"#666" }}>{fmt(r.income, r.sym)}</td>
-                      <td style={{ padding:"7px 10px", fontSize:12, textAlign:"right", color:"#666" }}>{fmt(r.expenses, r.sym)}</td>
-                      <td style={{ padding:"7px 10px", fontSize:12, textAlign:"right", fontWeight:600, color:r.net>=0?"#4CAF7D":"#EF4444" }}>{r.net<0?"-":""}{fmt(r.net, r.sym)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ):<div style={{ color:"#666", fontSize:12, padding:"16px 0", textAlign:"center" }}>P&amp;L loads from the bookkeeping ledgers (run affinity_bookkeeping.sql). Note: entities may be in different currencies.</div>}
-          </div>
-          <div style={{ fontSize:10, color:"#999", marginTop:4 }}>Per-entity P&amp;L is drawn from the bookkeeping ledgers. Entities reported in their own functional currency.</div>
-        </>)}
+        
 
         {/* COMPLIANCE */}
         {view==="compliance"&&(<>
@@ -608,9 +429,9 @@ export default function AffinityReporting({ onNav, role="system_admin" }) {
           <div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:14 }}>
               {[
-                { title:"Full management pack",      desc:"Executive summary, P&L by office, compliance status, entity portfolio, operations overview. PDF format.",       period:true },
+                { title:"Full management pack",      desc:"Executive summary, compliance status, entity portfolio, operations overview. Financial statements are attached from Financial Reporting. PDF format.",       period:true },
                 { title:"Compliance board report",   desc:"Overdue reviews, risk distribution, open cases, KYC expiries, regulatory obligations. Ready for board.",      period:true },
-                { title:"Finance report",            desc:"Revenue by office, WIP analysis, aged debt, invoice ledger, collections performance.",                         period:true },
+                { title:"Finance report → Financial Reporting", desc:"Revenue, WIP, aged debt, invoice ledger and collections are produced in Affinity Accounting → Financial Reporting, off the ledger. Opens there.", period:false, nav:"acc_report" },
                 { title:"Entity portfolio report",   desc:"Full entity list with status, risk, administrator, and outstanding obligations. Filterable by jurisdiction.",  period:false },
                 { title:"Utilisation report",        desc:"Billable vs total hours, team performance against target, missing timesheets, PRFTINS analysis.",               period:true },
                 { title:"Regulatory evidence pack",  desc:"Compliance records, review history, screening results, and KYC documentation for a selected entity.",         period:false },
@@ -619,9 +440,13 @@ export default function AffinityReporting({ onNav, role="system_admin" }) {
                   <div style={{ fontSize:12, fontWeight:600, marginBottom:6 }}>{r.title}</div>
                   <div style={{ fontSize:11, color:"#666", lineHeight:1.5, marginBottom:10 }}>{r.desc}</div>
                   <div style={{ display:"flex", gap:6 }}>
-                    {r.period&&<select style={{ ...sel, flex:1, height:28, fontSize:11 }}><option>YTD 2025</option><option>Q2 2025</option><option>FY 2024</option></select>}
-                    <button style={{ ...nb, fontSize:10 }}>Word ↗</button>
-                    <button style={nba}>PDF ↗</button>
+                    {r.nav
+                      ? <button style={nba} onClick={()=>onNav&&onNav(r.nav)}>Open Financial Reporting ↗</button>
+                      : <>
+                          {r.period&&<select style={{ ...sel, flex:1, height:28, fontSize:11 }}><option>YTD 2025</option><option>Q2 2025</option><option>FY 2024</option></select>}
+                          <button style={{ ...nb, fontSize:10 }}>Word ↗</button>
+                          <button style={nba}>PDF ↗</button>
+                        </>}
                   </div>
                 </div>
               ))}
