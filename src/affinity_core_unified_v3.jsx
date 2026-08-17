@@ -47,114 +47,9 @@ const USERS = [
   {id:13,name:"Kate Shaw",firstName:"Kate",lastName:"Shaw",office:"Isle of Man",flag:"🇮🇲",role:"Manager",av:"KS",c:"#A0623E",pass:"affinity13"},
   {id:14,name:"Roxy Sheeley",firstName:"Roxy",lastName:"Sheeley",office:"Isle of Man",flag:"🇮🇲",role:"Managing Director (IOM)",av:"RS",c:"#3C5CBF",pass:"affinity14"},
   {id:15,name:"Gilbert Spiteri Spadaro",firstName:"Gilbert",lastName:"Spiteri Spadaro",office:"Malta",flag:"🇲🇹",role:"Compliance Officer (Malta)",av:"GS",c:"#3A6E4A",pass:"affinity15"},
-  {id:16,name:"Colette Grisdale",firstName:"Gary",lastName:"Harrison",office:"Isle of Man",flag:"🇮🇲",role:"COO",av:"GH",c:"#0D6E8E",pass:"affinity16"},
+  {id:16,name:"Colette Grisdale",firstName:"Colette",lastName:"Grisdale",office:"Isle of Man",flag:"🇮🇲",role:"COO",av:"CG",c:"#0D6E8E",pass:"affinity16"},
 ];
 
-// ── Login screen ─────────────────────────────────────────
-function LoginScreen({ onLogin }) {
-  const [username, setUsername] = useState("");
-  const [pass, setPass]         = useState("");
-  const [error, setError]       = useState("");
-  const [showPass, setShow]     = useState(false);
-  const [selUser, setSelUser]   = useState(null);
-
-  const handleLogin = () => {
-    // Temporary single login
-    if (username.trim().toLowerCase() === "admin" && pass === "madebyAffinity") {
-      onLogin(1); return;
-    }
-    // Per-user login
-    const found = USERS.find(u => u.pass === pass && (
-      username.toLowerCase() === u.name.split(" ")[0].toLowerCase() ||
-      username.toLowerCase() === u.name.toLowerCase()
-    ));
-    if (found) { onLogin(found.id); return; }
-    setError("Incorrect username or password. Try again.");
-  };
-
-  return (
-    <div style={{ minHeight:"100vh", background:NAVY, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'Catamaran',system-ui,sans-serif", padding:20 }}>
-      <div style={{ width:"100%", maxWidth:420 }}>
-        {/* Logo + banner */}
-        <div style={{ background:`linear-gradient(135deg, ${CY} 0%, #00929A 50%, ${NAVY} 100%)`, borderRadius:14, padding:"30px 26px", marginBottom:28, textAlign:"center", boxShadow:"0 8px 32px rgba(0,180,216,0.18)" }}>
-          <div style={{ marginBottom:18, display:"flex", justifyContent:"center" }}>
-            <div style={{ background:"#fff", borderRadius:60, padding:"14px 28px", boxShadow:"0 4px 16px rgba(0,0,0,0.15)", display:"inline-flex", alignItems:"center", justifyContent:"center", minHeight:48, minWidth:140 }}>
-              <img
-                src="https://cdn.prod.website-files.com/680f471059835ea8d579b7e8/680f87c089dc0cf0630d7c8d_Affinity%20grad.svg"
-                alt="Affinity"
-                style={{ height:36, display:"block", maxWidth:200 }}
-                onError={(e) => {
-                  // SVG didn't load — replace with text fallback inside the pill
-                  e.target.style.display = "none";
-                  const fallback = document.createElement("div");
-                  fallback.textContent = "AFFINITY";
-                  fallback.style.cssText = "font-size:22px;font-weight:700;letter-spacing:2px;background:linear-gradient(135deg,#00C4CC,#001242);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:#001242;";
-                  e.target.parentNode.appendChild(fallback);
-                }}
-              />
-            </div>
-          </div>
-          <div style={{ fontSize:48, fontWeight:700, color:"#fff", letterSpacing:"-1px", lineHeight:1, marginTop:8 }}>
-            Affinity <span style={{ fontWeight:200, opacity:0.95, fontStyle:"italic" }}>Core</span>
-          </div>
-          <div style={{ fontSize:11, color:"#fff", marginTop:10, textTransform:"uppercase", letterSpacing:"3px", opacity:0.9 }}>
-            Corporate &middot; Trust &middot; Compliance
-          </div>
-          <div style={{ fontSize:10, color:"#fff", marginTop:6, opacity:0.7 }}>
-            Isle of Man · Malta · Cayman · USA · UK · Cyprus
-          </div>
-        </div>
-
-        <div style={{ background:"rgba(255,255,255,0.05)", borderRadius:16, padding:32, border:"0.5px solid rgba(255,255,255,0.1)" }}>
-          <div style={{ fontSize:18, fontWeight:600, color:"#fff", marginBottom:6 }}>Sign in</div>
-          <div style={{ fontSize:13, color:"rgba(255,255,255,0.4)", marginBottom:28 }}>Enter your first name and password</div>
-
-          {/* Username */}
-          <div style={{ marginBottom:16 }}>
-            <label style={{ display:"block", fontSize:11, fontWeight:600, color:"rgba(255,255,255,0.5)", textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:8 }}>First name</label>
-            <input
-              type="text"
-              value={username}
-              onChange={e => { setUsername(e.target.value); setError(""); }}
-              onKeyDown={e => e.key==="Enter" && handleLogin()}
-              placeholder="Your first name"
-              autoFocus
-              style={{ width:"100%", padding:"12px 14px", background:"rgba(255,255,255,0.07)", border:`1.5px solid ${error?"#EF4444":"rgba(255,255,255,0.15)"}`, borderRadius:8, color:"#fff", fontSize:14, outline:"none", boxSizing:"border-box", fontFamily:"inherit" }}
-            />
-          </div>
-
-          {/* Password */}
-          <div style={{ marginBottom:20 }}>
-            <label style={{ display:"block", fontSize:11, fontWeight:600, color:"rgba(255,255,255,0.5)", textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:8 }}>Password</label>
-            <div style={{ position:"relative" }}>
-              <input
-                type={showPass?"text":"password"}
-                value={pass}
-                onChange={e => { setPass(e.target.value); setError(""); }}
-                onKeyDown={e => e.key==="Enter" && handleLogin()}
-                placeholder="Enter your password"
-                style={{ width:"100%", padding:"12px 44px 12px 14px", background:"rgba(255,255,255,0.07)", border:`1.5px solid ${error?"#EF4444":"rgba(255,255,255,0.15)"}`, borderRadius:8, color:"#fff", fontSize:14, outline:"none", boxSizing:"border-box", fontFamily:"inherit" }}
-              />
-              <button onClick={() => setShow(p=>!p)} style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", color:"rgba(255,255,255,0.4)", fontSize:16 }}>
-                {showPass?"🙈":"👁"}
-              </button>
-            </div>
-            {error && <div style={{ fontSize:12, color:"#EF4444", marginTop:6 }}>{error}</div>}
-          </div>
-
-          <button onClick={handleLogin}
-            style={{ width:"100%", padding:"13px", background:CY, color:"#fff", border:"none", borderRadius:8, fontSize:15, fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>
-            Sign in →
-          </button>
-        </div>
-
-        <div style={{ textAlign:"center", marginTop:24, fontSize:11, color:"rgba(255,255,255,0.2)" }}>
-          Made by Affinity, for Affinity · Internal use only
-        </div>
-      </div>
-    </div>
-  );
-}
 
 const offC = {
   "Isle of Man":    {bg:"#E6F7FB",color:"#0077A8"},
@@ -512,7 +407,7 @@ export default function AffinityCore(){
       case "audit":        return <AuditLog userName={user?.name||""} isSuperAdmin={!!(user&&user.role&&user.role.indexOf("Super Admin")>-1)}/>;
       case "notifications":return <Tasks onNav={setMod} initialView="activity"/>;  // merged into Tasks
       case "client_portal": return <ClientPortal/>;
-      case "entities":     return <EntityAdmin officeFilter={officeFilter} onNav={setMod}/>;
+      case "entities":     return <EntityAdmin officeFilter={officeFilter} onNav={setMod} role={rbacRole}/>;
       case "compliance":   return <Compliance/>;
       case "statutory":    return <Statutory/>;
       case "crm":          return <CRM/>;

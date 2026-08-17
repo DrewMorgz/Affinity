@@ -410,7 +410,7 @@ export default function AffinityBookkeeping({ onNav }) {
                 <div style={{ fontSize:12, fontWeight:600, marginBottom:8 }}>{r}</div>
                 <div style={{ display:"flex", gap:6 }}>
                   <select style={{ ...sel, flex:1, height:28, fontSize:11 }}><option>YTD 2025</option><option>Q2 2025</option><option>FY 2024</option></select>
-                  <select style={{ ...sel, flex:1, height:28, fontSize:11 }}><option>All entities</option>{ents.map(e=><option key={e.id}>{e.name}</option>)}</select>
+                  <><input list="bk-rep-entity" defaultValue="All entities" placeholder="Search entity…" style={{ ...sel, flex:1, height:28, fontSize:11, boxSizing:"border-box" }} /><datalist id="bk-rep-entity"><option value="All entities"/>{ents.map(e=><option key={e.id} value={e.name}/>)}</datalist></>
                   <button style={nba}>Generate ↗</button>
                 </div>
               </div>

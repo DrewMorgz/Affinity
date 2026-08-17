@@ -95,3 +95,47 @@ export function deriveRbacRole(title) {
   if (t.includes("manager")) return "manager";
   return "admin";
 }
+
+// ──────────────────────────────────────────────────────────────────────────
+// ENTITY CLASS ACCESS — internal (Affinity's own group companies) vs client
+//
+// Affinity's own entities (entity_class='group', e.g. Affinity (Isle of Man)
+// Limited) hold the firm's own statutory records, accounts and bank mandates.
+// Most client-facing staff have no business seeing them, and conversely some
+// internal finance staff have no need of the client portfolio. This is a
+// separate axis from module permissions: a Manager may have full edit rights
+// in Entity Admin and still be scoped to client entities only.
+//
+// Same caveat as the rest of this file: UI-layer intent, not a security
+// boundary. Real enforcement is a row-level policy on entity.entity_class
+// keyed off the authenticated identity once Entra/Postgres is wired in.
+// ──────────────────────────────────────────────────────────────────────────
+
+export const ENTITY_CLASSES = ["group", "client"];
+export const ENTITY_CLASS_LABELS = { group: "Internal (Affinity)", client: "Client entities" };
+
+// Default scope per role. Overridable per user via user.entityScopes.
+export const ENTITY_CLASS_ACCESS = {
+  system_admin: ["group", "client"],
+  director:     ["group", "client"],
+  manager:      ["client"],
+  admin:        ["client"],
+};
+
+// Which entity classes may this role/user see?
+export function entityScopesFor(role, userScopes) {
+  if (Array.isArray(userScopes) && userScopes.length) return userScopes;
+  return ENTITY_CLASS_ACCESS[role] || ["client"];
+}
+
+// Guard for a single entity. Entities with no class set are treated as client.
+export function canAccessEntityClass(role, entityClass, userScopes) {
+  const cls = entityClass === "group" ? "group" : "client";
+  return entityScopesFor(role, userScopes).indexOf(cls) > -1;
+}
+
+// Convenience: filter a portfolio down to what this role/user may see.
+export function filterEntitiesByClass(entities, role, userScopes) {
+  return (entities || []).filter((e) =>
+    canAccessEntityClass(role, e && (e.entityClass || e.entity_class), userScopes));
+}

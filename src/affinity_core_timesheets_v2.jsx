@@ -378,7 +378,8 @@ export default function AffinityTimesheets({ onNav }) {
             {[["Entity","select",["Meridian Holdings Ltd","Harrington Family Trust","Pacific Wealth Trust","Caledonian Ventures Ltd","North Star Holdings Ltd"]],["Matter","text","e.g. Annual review preparation"],["Work type","select",["Administration","Compliance","Legal","Accounts","Meetings","Client liaison","New Business — non-billable","Client — non-billable"]]].map(([l,t,opts])=>(
               <div key={l} style={{ marginBottom:12 }}>
                 <label style={{ display:"block",fontSize:11,fontWeight:600,color:"#555",marginBottom:4 }}>{l}</label>
-                {t==="select"?<select defaultValue={l==="Entity"?timerEntity:l==="Work type"?timerType:""} style={{ width:"100%",padding:"8px 10px",border:"1.5px solid #e0e0e0",borderRadius:6,fontSize:12,outline:"none" }}>{(Array.isArray(opts)?opts:[]).map(o=><option key={o}>{o}</option>)}</select>
+                {l==="Entity"?<><input list="ts-timer-entity" defaultValue={timerEntity} placeholder="Search entity…" style={{ width:"100%",padding:"8px 10px",border:"1.5px solid #e0e0e0",borderRadius:6,fontSize:12,outline:"none",boxSizing:"border-box" }} /><datalist id="ts-timer-entity">{(Array.isArray(opts)?opts:[]).map(o=><option key={o} value={o}/>)}</datalist></>
+                :t==="select"?<select defaultValue={l==="Work type"?timerType:""} style={{ width:"100%",padding:"8px 10px",border:"1.5px solid #e0e0e0",borderRadius:6,fontSize:12,outline:"none" }}>{(Array.isArray(opts)?opts:[]).map(o=><option key={o}>{o}</option>)}</select>
                 :<input defaultValue={timerMatter} style={{ width:"100%",padding:"8px 10px",border:"1.5px solid #e0e0e0",borderRadius:6,fontSize:12,outline:"none",boxSizing:"border-box" }} placeholder={typeof opts==="string"?opts:""} />}
               </div>
             ))}
@@ -397,8 +398,9 @@ export default function AffinityTimesheets({ onNav }) {
             {[["Date","text",editEntry.date],["Entity","select"],["Matter","text",editEntry.matter],["Units","number",editEntry.units],["Work type","select"]].map(([l,t,def])=>(
               <div key={l} style={{ marginBottom:12 }}>
                 <label style={{ display:"block",fontSize:11,fontWeight:600,color:"#555",marginBottom:4 }}>{l}</label>
-                {t==="select"?<select defaultValue={l==="Entity"?editEntry.entity:editEntry.type} style={{ width:"100%",padding:"8px 10px",border:"1.5px solid #e0e0e0",borderRadius:6,fontSize:12,outline:"none" }}>
-                  {(l==="Entity"?["Meridian Holdings Ltd","Harrington Family Trust","Pacific Wealth Trust","Caledonian Ventures Ltd","North Star Holdings Ltd"]:["Administration","Compliance","Legal","Accounts","Meetings","Client liaison","New Business — non-billable","Client — non-billable"]).map(o=><option key={o}>{o}</option>)}
+                {l==="Entity"?<><input list="ts-edit-entity" defaultValue={editEntry.entity} placeholder="Search entity…" style={{ width:"100%",padding:"8px 10px",border:"1.5px solid #e0e0e0",borderRadius:6,fontSize:12,outline:"none",boxSizing:"border-box" }} /><datalist id="ts-edit-entity">{["Meridian Holdings Ltd","Harrington Family Trust","Pacific Wealth Trust","Caledonian Ventures Ltd","North Star Holdings Ltd"].map(o=><option key={o} value={o}/>)}</datalist></>
+                :t==="select"?<select defaultValue={editEntry.type} style={{ width:"100%",padding:"8px 10px",border:"1.5px solid #e0e0e0",borderRadius:6,fontSize:12,outline:"none" }}>
+                  {["Administration","Compliance","Legal","Accounts","Meetings","Client liaison","New Business — non-billable","Client — non-billable"].map(o=><option key={o}>{o}</option>)}
                 </select>
                 :<input type={t} defaultValue={def} style={{ width:"100%",padding:"8px 10px",border:"1.5px solid #e0e0e0",borderRadius:6,fontSize:12,outline:"none",boxSizing:"border-box" }} />}
               </div>

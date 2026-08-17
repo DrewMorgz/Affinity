@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { appUsers, isConfigured } from "./affinity_ops_api";
-import { ROLES, ROLE_LABELS, permsFor } from "./affinity_core_rbac";
+import { ROLES, ROLE_LABELS, permsFor, ENTITY_CLASSES, ENTITY_CLASS_LABELS, ENTITY_CLASS_ACCESS } from "./affinity_core_rbac";
 
 const CY = "#00C4CC";
 
@@ -103,8 +103,13 @@ const feeSchedules = [
   { office:"Miami",          type:"Company admin",     fee:"$2,400",  freq:"Per annum",  currency:"USD" },
 ];
 
-const VIEWS = ["users","roles","matrix","offices","fees","audit","config"];
-const VIEW_LABELS = ["Users","Roles & permissions","Permission matrix","Offices","Fee schedules","Audit log","System config"];
+const GROUP_ENTITIES = [
+  "Affinity Group Limited","Affinity (Isle of Man) Limited","Affinity (Malta) Limited",
+  "Affinity (Cayman) Limited","Affinity (UK) Limited","Affinity South Dakota, LLC","Affinity South Florida, LLC",
+];
+
+const VIEWS = ["users","roles","matrix","entity_access","offices","fees","audit","config"];
+const VIEW_LABELS = ["Users","Roles & permissions","Permission matrix","Entity access","Offices","Fee schedules","Audit log","System config"];
 const MATRIX_MODULES = [
   ["Entity Admin","entities"],["CRM","crm"],["Documents","documents"],["Onboarding","onboarding"],["Timesheets","timesheets"],
   ["WIP","acc_wip"],["Invoicing","invoicing"],["Bookkeeping","bookkeeping"],
@@ -173,6 +178,17 @@ export default function AffinityCoreSystemAdmin({ onNav }) {
   useEffect(()=>{ if(!isConfigured) return; let ok=true; appUsers().then(({data})=>{ if(ok&&data&&data.length) setLiveU(data); }).catch(()=>{}); return ()=>{ok=false;}; },[]);
   const users = liveU || usersData;
   const [view, setView] = useState("users");
+  // Entity-class access: which roles may see Affinity's own entities vs client entities
+  const [roleScopes, setRoleScopes] = useState(() => {
+    const init = {};
+    ROLES.forEach(r => { init[r] = (ENTITY_CLASS_ACCESS[r] || ["client"]).slice(); });
+    return init;
+  });
+  const toggleScope = (role, cls) => setRoleScopes(prev => {
+    const cur = prev[role] || [];
+    const next = cur.indexOf(cls) > -1 ? cur.filter(c => c !== cls) : cur.concat([cls]);
+    return { ...prev, [role]: next };
+  });
   const [search, setSearch] = useState("");
   const [officeF, setOfficeF] = useState("");
   const [roleF, setRoleF] = useState("");
@@ -544,6 +560,57 @@ export default function AffinityCoreSystemAdmin({ onNav }) {
       )}
 
       {/* ── PERMISSION MATRIX ── */}
+      {/* ── ENTITY ACCESS — internal vs client ── */}
+      {view === "entity_access" && (
+        <div style={s.pad}>
+          <div style={{ ...s.infoBox, marginBottom:16 }}>
+            ℹ️ Affinity's own group companies (entity_class=<strong>group</strong> — e.g. Affinity (Isle of Man) Limited) hold the firm's own statutory records, accounts and bank mandates. This is a separate axis from module permissions: a role can have full edit rights in Entity Admin and still be scoped to client entities only. Untick a box to remove that class of entity from a role's portfolio, searches and reports.
+          </div>
+
+          <div style={{ fontSize:13, fontWeight:600, marginBottom:8 }}>Access by role</div>
+          <div style={{ overflowX:"auto", marginBottom:22 }}>
+            <table style={{ ...s.ct, tableLayout:"auto" }}>
+              <thead><tr>
+                <th style={{ ...s.th, textAlign:"left" }}>Role</th>
+                {ENTITY_CLASSES.map(c=><th key={c} style={{ ...s.th, textAlign:"center" }}>{ENTITY_CLASS_LABELS[c]}</th>)}
+                <th style={{ ...s.th, textAlign:"left" }}>Effective scope</th>
+              </tr></thead>
+              <tbody>
+                {ROLES.map(r=>{
+                  const sc = roleScopes[r] || [];
+                  return (
+                    <tr key={r} style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)" }}>
+                      <td style={{ ...s.td, fontWeight:500 }}>{ROLE_LABELS[r]}</td>
+                      {ENTITY_CLASSES.map(c=>(
+                        <td key={c} style={{ ...s.td, textAlign:"center" }}>
+                          <input type="checkbox" checked={sc.indexOf(c)>-1} onChange={()=>toggleScope(r,c)}
+                            style={{ width:15, height:15, cursor:"pointer" }} />
+                        </td>
+                      ))}
+                      <td style={{ ...s.td, fontSize:11, color: sc.length?"#27500A":"#A32D2D" }}>
+                        {sc.length===2 ? "All entities" : sc.length===0 ? "No entity access" : ENTITY_CLASS_LABELS[sc[0]]}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <div style={{ fontSize:13, fontWeight:600, marginBottom:8 }}>Affinity group entities ({GROUP_ENTITIES.length})</div>
+          <div style={{ fontSize:11, color:"#666", marginBottom:8, lineHeight:1.6 }}>These are flagged <strong>Internal</strong> throughout the system — in Entity Admin they carry an "Internal — Affinity Group" badge and can be filtered with the Internal / Client scope control.</div>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:20 }}>
+            {GROUP_ENTITIES.map(g=>(
+              <span key={g} style={{ display:"inline-block", padding:"4px 10px", borderRadius:20, fontSize:11, fontWeight:600, background:"#EAF0FB", color:"#274690" }}>{g}</span>
+            ))}
+          </div>
+
+          <div style={{ ...s.infoBox, background:"#FDF4DC", borderColor:"#E5CE9A" }}>
+            ⚠️ Front-end scoping only at this stage. Because anyone can read the browser bundle, these settings express intent rather than protection until the same rule is enforced server-side as a row-level policy on <code>entity.entity_class</code>, keyed off the authenticated identity. That lands with Entra + Postgres.
+          </div>
+        </div>
+      )}
+
       {view === "matrix" && (
         <div style={s.pad}>
           <div style={{ ...s.infoBox, marginBottom:16 }}>ℹ️ Live view of the enforced access rules (affinity_core_rbac.js). V=View · C=Create · E=Edit · D=Delete · A=Approve · X=No access. This is the front-end (UI) layer today; the data backend enforces the same rules once connected.</div>

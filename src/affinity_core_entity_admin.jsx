@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { entityScopesFor } from "./affinity_core_rbac";
 import { isConfigured } from "./affinity_accounting_supabase";
 import { eaEntitiesList, eaProfile, eaOfficers, eaShareholders, eaCharges, eaUbos, eaAddresses, eaMeetings,
   eaBanks, eaAssets, eaDividends, eaSafeItems, eaFileNotes, eaSafeMovements, eaSignatories,
@@ -325,7 +326,7 @@ function SubstanceTab({entity}) {
   </div>;
 }
 
-export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
+export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="system_admin", entityScopes }) {
   const [sel, setSel]       = useState(1);
   const [tab, setTab]       = useState("overview");
   const [search, setSearch] = useState("");
@@ -389,7 +390,11 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav }) {
     return () => { ok = false; };
   }, [sel, liveEnts]);
 
-  const ents = liveEnts || ENTITIES;
+  // Internal-vs-client scoping: a role without "group" access never sees Affinity's
+  // own entities anywhere in this module (portfolio, search, counts, reports).
+  const allEnts = liveEnts || ENTITIES;
+  const scopes  = entityScopesFor(role, entityScopes);
+  const ents    = useMemo(()=>allEnts.filter(e=>scopes.indexOf((e.entityClass||"client")==="group"?"group":"client")>-1),[allEnts,role,entityScopes]);
 
   useEffect(()=>{
     if(!reportsOpen || !isConfigured) return;

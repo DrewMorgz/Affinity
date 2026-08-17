@@ -368,9 +368,7 @@ export default function AffinityDMS() {
                   <div key={t} style={{background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:6,padding:"10px 12px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                     <span style={{fontSize:12}}>{t}</span>
                     <div style={{display:"flex",gap:4}}>
-                      <select style={{height:26,fontSize:10,borderRadius:4,border:"0.5px solid #ccc",background:"#fff",padding:"0 4px"}}>
-                        {ENTITIES.slice(1).map(e=><option key={e}>{e.split(" ").slice(0,2).join(" ")}</option>)}
-                      </select>
+                      <><input list="dms-gen-entity" placeholder="Search entity…" style={{height:26,fontSize:10,borderRadius:4,border:"0.5px solid #ccc",background:"#fff",padding:"0 4px",boxSizing:"border-box",maxWidth:130}} /><datalist id="dms-gen-entity">{ENTITIES.slice(1).map(e=><option key={e} value={e}/>)}</datalist></>
                       <Btn primary sx={{fontSize:10,padding:"3px 8px"}}>Generate ↗</Btn>
                     </div>
                   </div>
