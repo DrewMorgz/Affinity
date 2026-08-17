@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { entityScopesFor } from "./affinity_core_rbac";
+import { REGISTERS as COMPLIANCE_REGISTERS, REGISTER_ORDER } from "./affinity_core_compliance";
 import { isConfigured } from "./affinity_accounting_supabase";
 import { eaEntitiesList, eaProfile, eaOfficers, eaShareholders, eaCharges, eaUbos, eaAddresses, eaMeetings,
   eaBanks, eaAssets, eaDividends, eaSafeItems, eaFileNotes, eaSafeMovements, eaSignatories,
@@ -336,6 +337,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
   const [statF, setStatF]   = useState("");
   const [modal, setModal]   = useState(null);
   const [reportsOpen, setReportsOpen] = useState(false);
+  const [gamingReg, setGamingReg] = useState("");
   const [repTab, setRepTab] = useState("aum");
   const [repRows, setRepRows] = useState([]);
   const [repLoading, setRepLoading] = useState(false);
@@ -1283,7 +1285,51 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
                   {tab==="crs"&&<CRSTab entity={entity}/>}
                   {tab==="substance"&&<SubstanceTab entity={entity}/>}
                   {tab==="structure"&&<div style={{margin:"-20px -24px"}}><EntityChart/></div>}
-                  {tab==="egaming_reg"&&<div style={{margin:"-14px -20px"}}><AffinityEGaming entity={entity}/></div>}
+                  {tab==="egaming_reg"&&<div style={{margin:"-14px -20px"}}>
+                    <AffinityEGaming entity={entity}/>
+                    {/* Gaming compliance log — the same register catalogue as Compliance,
+                        scoped to this entity, so gaming obligations are logged in context. */}
+                    <div style={{ padding:"16px 20px", borderTop:"0.5px solid var(--border-tertiary,#e5e5e5)" }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:4, flexWrap:"wrap" }}>
+                        <div style={{ fontSize:14, fontWeight:600, color:"#001242" }}>Compliance log</div>
+                        <span style={{ fontSize:10.5, color:"#888" }}>{REGISTER_ORDER.length} registers · {entity?.name}</span>
+                        <select value={gamingReg} onChange={e=>setGamingReg(e.target.value)}
+                          style={{ height:29, padding:"0 8px", fontSize:11.5, border:"0.5px solid #ccc", borderRadius:5, background:"#fff", minWidth:220, marginLeft:"auto" }}>
+                          <option value="">All registers</option>
+                          {REGISTER_ORDER.map(r=><option key={r} value={r}>{r==="breaches"?"Breach log":COMPLIANCE_REGISTERS[r].label}</option>)}
+                        </select>
+                      </div>
+                      {!gamingReg ? (
+                        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(210px,1fr))", gap:8, marginTop:10 }}>
+                          {REGISTER_ORDER.map(r=>(
+                            <div key={r} onClick={()=>setGamingReg(r)}
+                              style={{ background:"var(--bg-primary,#fff)", border:"0.5px solid #e5e5e5", borderRadius:8, padding:"10px 12px", cursor:"pointer" }}>
+                              <div style={{ fontSize:11.5, fontWeight:600, color:"#001242" }}>{r==="breaches"?"Breach log":COMPLIANCE_REGISTERS[r].label}</div>
+                              <div style={{ fontSize:10, color:"#aaa", marginTop:3 }}>{(COMPLIANCE_REGISTERS[r].cols||[]).slice(0,3).join(" · ")}</div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div style={{ marginTop:10 }}>
+                          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
+                            <div style={{ fontSize:12.5, fontWeight:600 }}>{gamingReg==="breaches"?"Breach log":COMPLIANCE_REGISTERS[gamingReg].label}</div>
+                            <button onClick={()=>setGamingReg("")} style={{ height:26, padding:"0 9px", fontSize:10.5, borderRadius:5, border:"0.5px solid #e5e5e5", background:"transparent", color:"#666", cursor:"pointer" }}>← All registers</button>
+                          </div>
+                          <table style={{ width:"100%", borderCollapse:"collapse" }}>
+                            <thead><tr>{(COMPLIANCE_REGISTERS[gamingReg].cols||[]).map(c=>(
+                              <th key={c} style={{ padding:"7px 10px", textAlign:"left", fontSize:10, fontWeight:600, color:"#666", textTransform:"uppercase", letterSpacing:"0.4px", borderBottom:"0.5px solid #e5e5e5" }}>{c}</th>
+                            ))}</tr></thead>
+                            <tbody>
+                              <tr><td colSpan={(COMPLIANCE_REGISTERS[gamingReg].cols||[]).length}
+                                style={{ padding:"22px 10px", textAlign:"center", fontSize:11, color:"#999" }}>
+                                No entries logged against {entity?.name} yet. Entries added here appear in the group register in Compliance.
+                              </td></tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  </div>}
                   {tab!=="fatca"&&tab!=="crs"&&tab!=="substance"&&tab!=="structure"&&tab!=="egaming_reg"&&renderTab()}
                 </div>
               </div>

@@ -139,3 +139,35 @@ export function filterEntitiesByClass(entities, role, userScopes) {
   return (entities || []).filter((e) =>
     canAccessEntityClass(role, e && (e.entityClass || e.entity_class), userScopes));
 }
+
+// ──────────────────────────────────────────────────────────────────────────
+// REPORTING SCOPE — deliberately separate from the entity-admin scope above.
+//
+// Per spec: reporting is available to staff at ALL levels across every managed
+// entity plus Affinity's own internal companies. So the default here is both
+// classes for every role — a Manager who cannot open an internal entity in
+// Entity Admin can still report across the whole group. That is intentional,
+// not an oversight: reading aggregate numbers and opening a client file are
+// different privileges.
+//
+// It remains a security setting rather than a hardcode: REPORTING_SCOPE is
+// editable in System Admin > Entity access, and a per-user override wins.
+// ──────────────────────────────────────────────────────────────────────────
+
+export const REPORTING_SCOPE = {
+  system_admin: ["group", "client"],
+  director:     ["group", "client"],
+  manager:      ["group", "client"],
+  admin:        ["group", "client"],
+};
+
+// Can this role/user report at all? (a role can be reduced to [] to remove it)
+export function reportingScopesFor(role, userScopes) {
+  if (Array.isArray(userScopes) && userScopes.length) return userScopes;
+  return REPORTING_SCOPE[role] || [];
+}
+
+export function canReportOnClass(role, entityClass, userScopes) {
+  const cls = entityClass === "group" ? "group" : "client";
+  return reportingScopesFor(role, userScopes).indexOf(cls) > -1;
+}

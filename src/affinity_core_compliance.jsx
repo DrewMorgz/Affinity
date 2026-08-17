@@ -65,7 +65,7 @@ const training = [
 
 // ---- Compliance registers (Entity-Admin-style). Each = columns + demo rows. ----
 const ST = { open:{bg:"#FCEBEB",color:"#A32D2D"}, closed:{bg:"#EAF3DE",color:"#27500A"}, review:{bg:"#FAEEDA",color:"#633806"}, ok:{bg:"#EAF3DE",color:"#27500A"} };
-const REGISTERS = {
+export const REGISTERS = {
   errors:     { label:"Errors & omissions", cols:["Date","Description","Entity","Owner","Remediation","Status"], rows:[
     ["12/06/2025","Incorrect fee note issued","Meridian Holdings Ltd","N. Kelly","Credit note raised, process updated","Closed"],
     ["28/07/2025","Filing submitted one day late","Rosewood Legacy Trust","R. Sheeley","Filed; no penalty; reminder added","Closed"]] },
@@ -112,7 +112,7 @@ const REGISTERS = {
     ["C. Grisdale","AML/CFT annual update","Compliance","4.0","06/2025","Verified"],
     ["R. Sheeley","Trust administration webinar","Technical","2.0","05/2025","Verified"]] },
 };
-const REGISTER_ORDER = ["breaches","errors","deviations","complaints","gifts","conflicts","sanctions","peps","frozen","declined","advertising","outsourcing","cyber","litigation","insurance","keystaff","cpd"];
+export const REGISTER_ORDER = ["breaches","errors","deviations","complaints","gifts","conflicts","sanctions","peps","frozen","declined","advertising","outsourcing","cyber","litigation","insurance","keystaff","cpd"];
 
 export default function AffinityIOMCompliance() {
   const [view, setView] = useState("overview");
@@ -197,8 +197,9 @@ export default function AffinityIOMCompliance() {
         <aside style={{ width:212, flexShrink:0, borderRight:"0.5px solid #e5e5e5", padding:"12px 8px", minHeight:520, background:"var(--bg-secondary,#fafafa)" }}>
           <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.5px", color:"#999", padding:"6px 10px" }}>Framework</div>
           {VIEWS.map((v,i)=><SideBtn key={v} active={view===v} onClick={()=>setView(v)}>{VLABELS[i]}</SideBtn>)}
-          <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.5px", color:"#999", padding:"14px 10px 6px" }}>Registers</div>
-          {REGISTER_ORDER.map(r=><SideBtn key={r} active={view===r} onClick={()=>setView(r)}>{r==="breaches"?"Breach log":REGISTERS[r].label}</SideBtn>)}
+          <SideBtn active={view==="registers"||!!REGISTERS[view]} onClick={()=>setView("registers")}>
+            Registers <span style={{ fontSize:9, opacity:0.6 }}>({REGISTER_ORDER.length})</span>
+          </SideBtn>
         </aside>
         <div style={{ flex:1, minWidth:0 }}>
 
@@ -433,6 +434,54 @@ export default function AffinityIOMCompliance() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Register picker — one dropdown plus an all-registers contents view,
+          so 17 registers don't take over the sidebar. */}
+      {(view==="registers" || REGISTERS[view]) && (
+        <div style={{ padding:"14px 20px 0" }}>
+          <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap", marginBottom:4 }}>
+            <span style={{ fontSize:11, fontWeight:700, color:"#001242" }}>Register</span>
+            <select value={REGISTERS[view]?view:""} onChange={e=>setView(e.target.value||"registers")}
+              style={{ height:30, padding:"0 8px", fontSize:11.5, border:"0.5px solid #ccc", borderRadius:5, background:"#fff", minWidth:230 }}>
+              <option value="">All registers ({REGISTER_ORDER.length})</option>
+              {REGISTER_ORDER.map(r=><option key={r} value={r}>{r==="breaches"?"Breach log":REGISTERS[r].label}</option>)}
+            </select>
+            {REGISTERS[view] && <button onClick={()=>setView("registers")}
+              style={{ height:30, padding:"0 10px", fontSize:11, borderRadius:5, border:"0.5px solid #e5e5e5", background:"transparent", color:"#666", cursor:"pointer" }}>
+              ← All registers
+            </button>}
+            <span style={{ fontSize:10.5, color:"#888", marginLeft:"auto" }}>
+              Scoped to {jur==="All jurisdictions"?"the whole group":jur}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* All-registers contents view */}
+      {view==="registers" && (
+        <div style={{ padding:"10px 20px 16px" }}>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(232px,1fr))", gap:9 }}>
+            {REGISTER_ORDER.map(r=>{
+              const reg = REGISTERS[r];
+              const live = (liveReg[r]||[]).length;
+              const demo = (reg.rows||[]).length;
+              return (
+                <div key={r} onClick={()=>setView(r)}
+                  style={{ background:"var(--bg-primary,#fff)", border:"0.5px solid #e5e5e5", borderRadius:8,
+                           padding:"11px 13px", cursor:"pointer", display:"flex", flexDirection:"column", gap:5 }}>
+                  <div style={{ fontSize:12, fontWeight:600, color:"#001242" }}>{r==="breaches"?"Breach log":reg.label}</div>
+                  <div style={{ display:"flex", alignItems:"baseline", gap:6 }}>
+                    <span style={{ fontSize:17, fontWeight:700, color:(live+demo)?"#00C4CC":"#ccc" }}>{live+demo}</span>
+                    <span style={{ fontSize:10, color:"#999" }}>{(live+demo)===1?"entry":"entries"}</span>
+                    {live>0 && <span style={{ fontSize:9, fontWeight:700, color:"#27500A", background:"#EAF3DE", borderRadius:9, padding:"1px 6px", marginLeft:"auto" }}>{live} live</span>}
+                  </div>
+                  <div style={{ fontSize:10, color:"#aaa" }}>{(reg.cols||[]).slice(0,3).join(" · ")}</div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 

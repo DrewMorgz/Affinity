@@ -20,6 +20,7 @@
 // swap a resolver from preview to live without touching the UI.
 // ─────────────────────────────────────────────────────────────────────────────
 import { useState, useMemo } from "react";
+import { reportingScopesFor } from "./affinity_core_rbac";
 
 const CY   = "#00C4CC";
 const NAVY = "#001242";
@@ -273,21 +274,22 @@ const fmtCell = (v, f) => {
   return String(v);
 };
 
-export default function AffinityReportBuilder({ isAdmin = false, onNav }) {
+export default function AffinityReportBuilder({ isAdmin = false, onNav, role = "admin", reportingScopes }) {
   const [picked, setPicked]   = useState(PRESETS[0].fields);
   const [conds, setConds]     = useState(PRESETS[0].conds);
   const [openSecs, setOpenSecs] = useState({ entity:true, gaming:true, ownership:true });
   const [activePreset, setActivePreset] = useState(PRESETS[0].id);
   const [saved, setSaved]     = useState([]);
   const [name, setName]       = useState(PRESETS[0].name);
-  const [scope, setScope]     = useState("client"); // client | internal | all
+  const allowed = reportingScopesFor(role, reportingScopes);
+  const [scope, setScope]     = useState("all"); // client | internal | all
 
   const results = useMemo(()=>{
-    let rows = ROWS;
+    let rows = ROWS.filter(r=>allowed.indexOf(r.class === "Internal" ? "group" : "client") > -1);
     if (scope === "client")   rows = rows.filter(r=>r.class === "Client");
     if (scope === "internal") rows = rows.filter(r=>r.class === "Internal");
     return rows.filter(r=>conds.every(c=>testCond(r,c)));
-  },[conds, scope]);
+  },[conds, scope, role, reportingScopes]);
 
   const usedSecs = useMemo(()=>{
     const set = [];
@@ -430,9 +432,9 @@ export default function AffinityReportBuilder({ isAdmin = false, onNav }) {
               <div style={{ marginLeft:"auto", display:"flex", gap:6, alignItems:"center" }}>
                 <span style={{ fontSize:10, color:"#888" }}>Portfolio</span>
                 <select value={scope} onChange={e=>setScope(e.target.value)} style={inp}>
-                  <option value="client">Client entities</option>
-                  <option value="internal">Affinity internal</option>
-                  <option value="all">Both</option>
+                  {allowed.indexOf("client")>-1 && <option value="client">Managed entities</option>}
+                  {allowed.indexOf("group")>-1  && <option value="internal">Affinity internal</option>}
+                  {allowed.length>1             && <option value="all">All entities</option>}
                 </select>
                 <button onClick={addCond} style={btn}>＋ Condition</button>
               </div>

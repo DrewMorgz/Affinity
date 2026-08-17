@@ -150,7 +150,7 @@ export default function AffinityReporting({ onNav, role="system_admin" }) {
         <button style={nba}>Export ↗</button>
       </div>
 
-      {view==="builder" && <ReportBuilder isAdmin={role==="system_admin"} onNav={onNav} />}
+      {view==="builder" && <ReportBuilder isAdmin={role==="system_admin"} role={role} onNav={onNav} />}
 
       {view!=="builder" && <div style={{ padding:"16px 20px" }}>
 

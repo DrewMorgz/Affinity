@@ -1,3 +1,4 @@
+import React from "react";
 import { useState, useEffect } from "react";
 import { appUsers, isConfigured } from "./affinity_ops_api";
 import { ROLES, ROLE_LABELS, permsFor, ENTITY_CLASSES, ENTITY_CLASS_LABELS, ENTITY_CLASS_ACCESS } from "./affinity_core_rbac";
@@ -108,8 +109,48 @@ const GROUP_ENTITIES = [
   "Affinity (Cayman) Limited","Affinity (UK) Limited","Affinity South Dakota, LLC","Affinity South Florida, LLC",
 ];
 
-const VIEWS = ["users","roles","matrix","entity_access","offices","fees","audit","config"];
-const VIEW_LABELS = ["Users","Roles & permissions","Permission matrix","Entity access","Offices","Fee schedules","Audit log","System config"];
+const VIEWS = ["users","roles","matrix","entity_access","fields","content","offices","fees","audit","config"];
+const VIEW_LABELS = ["Users","Roles & permissions","Permission matrix","Entity access","Custom fields & lists","Procedures & templates","Offices","Fee schedules","Audit log","System config"];
+
+// Editable dropdown lists used across the system. Super Admin owns these — the
+// alternative is a developer change every time a sector or work type is added.
+const MANAGED_LISTS = [
+  ["Entity type","Entity Admin",["Company","Trust","Foundation","Partnership","LLC","Limited Partnership"]],
+  ["Principal activity","Entity Admin",["Holding company","Investment holding","Property holding","Family trust","eGaming operator","B2B platform supply","Philanthropy","Fund management","Trading"]],
+  ["Admin status","Entity Admin",["Active","Dormant","In liquidation","Struck off","Transferred out"]],
+  ["Risk rating","Compliance",["Low","Medium","High","Very High"]],
+  ["Work type","Timesheets",["Administration","Compliance","Legal","Accounts","Meetings","Client liaison","New Business — non-billable","Client — non-billable"]],
+  ["Sector","CRM / BD",["Financial services","eGaming","Medicinal Cannabis","Crypto & digital assets","Shipping & aviation","Property","Family office"]],
+  ["Pipeline status","CRM / BD",["Enquiry","Proposal sent","Invoice Issued","On Hold","Won","Lost"]],
+  ["Fee type","Invoicing",["Transfer-in","Onboarding compliance","Government fees","DPO (optional)","Time spent","Disbursements"]],
+  ["Document category","Documents",["KYC","Statutory","Accounts","Correspondence","Tax","Banking","Compliance","Gaming"]],
+  ["Gaming regulator","Gaming",["GSC","MGA","Curaçao","Anjouan","Other"]],
+];
+
+const CONTENT_TYPES = [
+  ["Procedures","procedures","Written procedures staff acknowledge. Versioned, with a review date and an acknowledgement trail.",42],
+  ["Workflows","onboarding","Ordered step sequences with owners and sign-off gates — onboarding, off-boarding, entity formation, strike-off.",8],
+  ["Document templates","generate","Letterhead documents and forms generated from live entity data — engagement letters, resolutions, statutory forms.",63],
+  ["Checklists","onboarding","Digital checklists used during onboarding and periodic review (the Zoho replacement).",11],
+  ["Register definitions","compliance","Column definitions behind each compliance register. Adding a register here creates it everywhere.",17],
+];
+// Sub-sections per module, so permissions can be reasoned about at the level
+// staff actually work at (a Manager may edit Entity Admin but not Bank mandates).
+const MATRIX_TREE = [
+  ["Entity Admin","entities",["Overview","Directors & officers","Shareholders","Owners & controllers","Bank mandates","Assets","Statutory registers","Gaming registers","Safe custody","File notes"]],
+  ["Compliance","compliance",["Framework","Risk assessment","Registers","Breach log","CPD","Sanctions screening"]],
+  ["CRM / BD","crm",["Pipeline","Leads","Proposals & fees","Sectors"]],
+  ["Documents","documents",["Folder tree","Upload & classify","Email filing","Generate from template","Deletion"]],
+  ["Onboarding","onboarding",["Enquiry","CDD collection","Risk rating","Sign-off","Letterhead & packs"]],
+  ["Timesheets","timesheets",["My time","Timer","Team view","Approvals"]],
+  ["Internal Accounts","acc_wip",["WIP","Invoicing","Budgets"]],
+  ["Affinity Accounting","acc_txn",["Bookkeeping","Transactions","Assets & groups","Financial reporting","FX rates","Accounting admin"]],
+  ["Reporting","reporting",["Report builder","Report library","Custom SQL","Export"]],
+  ["Procedures","procedures",["Read","Author & publish","Acknowledgements"]],
+  ["People","intranet",["Intranet","Posts","Assistant"]],
+  ["System Admin","system",["Users","Roles","Permission matrix","Entity access","Offices","Fee schedules","Audit log","Custom fields & lists","Config"]],
+];
+
 const MATRIX_MODULES = [
   ["Entity Admin","entities"],["CRM","crm"],["Documents","documents"],["Onboarding","onboarding"],["Timesheets","timesheets"],
   ["WIP","acc_wip"],["Invoicing","invoicing"],["Bookkeeping","bookkeeping"],
@@ -173,11 +214,13 @@ const s = {
 const nb = { padding:"5px 12px", fontSize:12, borderRadius:6, border:"0.5px solid var(--border-tertiary,#e5e5e5)", background:"transparent", color:"var(--text-secondary,#666)", cursor:"pointer" };
 const nbActive = { ...nb, background:CY, color:"#fff", border:`0.5px solid ${CY}`, fontWeight:700 };
 
-export default function AffinityCoreSystemAdmin({ onNav }) {
+export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false }) {
   const [liveU,setLiveU]=useState(null);
   useEffect(()=>{ if(!isConfigured) return; let ok=true; appUsers().then(({data})=>{ if(ok&&data&&data.length) setLiveU(data); }).catch(()=>{}); return ()=>{ok=false;}; },[]);
   const users = liveU || usersData;
   const [view, setView] = useState("users");
+  const [matrixOpen, setMatrixOpen] = useState({ entities:true });
+  const [listModal, setListModal] = useState(null);
   // Entity-class access: which roles may see Affinity's own entities vs client entities
   const [roleScopes, setRoleScopes] = useState(() => {
     const init = {};
@@ -560,6 +603,94 @@ export default function AffinityCoreSystemAdmin({ onNav }) {
       )}
 
       {/* ── PERMISSION MATRIX ── */}
+      {/* ── CUSTOM FIELDS & LISTS — Super Admin ── */}
+      {view === "fields" && (
+        <div style={s.pad}>
+          {!isSuperAdmin ? (
+            <div style={{ ...s.infoBox }}>Custom fields and dropdown lists are restricted to Super Admins.</div>
+          ) : (<>
+            <div style={{ ...s.infoBox, marginBottom:16 }}>
+              ℹ️ Every dropdown in the system reads its options from here, so adding a sector or work type is an admin change rather than a development change. Values already in use can be retired but not deleted — existing records keep their value and the option stops appearing on new entries.
+            </div>
+
+            <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10, flexWrap:"wrap" }}>
+              <div style={{ fontSize:13, fontWeight:600 }}>Dropdown lists</div>
+              <span style={{ fontSize:11, color:"#888" }}>{MANAGED_LISTS.length} lists</span>
+              <button style={{ ...nbActive, marginLeft:"auto" }} onClick={()=>setListModal({ mode:"list" })}>＋ New list</button>
+            </div>
+            <table style={{ ...s.ct, tableLayout:"auto", marginBottom:26 }}>
+              <thead><tr>
+                <th style={{ ...s.th, textAlign:"left" }}>List</th>
+                <th style={{ ...s.th, textAlign:"left" }}>Used in</th>
+                <th style={{ ...s.th, textAlign:"left" }}>Options</th>
+                <th style={{ ...s.th, textAlign:"left", width:"12%" }}></th>
+              </tr></thead>
+              <tbody>
+                {MANAGED_LISTS.map(([name,used,opts])=>(
+                  <tr key={name} style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)" }}>
+                    <td style={{ ...s.td, fontWeight:600 }}>{name}</td>
+                    <td style={{ ...s.td, fontSize:11, color:"#666" }}>{used}</td>
+                    <td style={{ ...s.td }}>
+                      <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
+                        {opts.slice(0,6).map(o=>(
+                          <span key={o} style={{ fontSize:10, background:"var(--bg-secondary,#f4f4f6)", color:"#555", borderRadius:20, padding:"2px 8px" }}>{o}</span>
+                        ))}
+                        {opts.length>6 && <span style={{ fontSize:10, color:"#999", padding:"2px 4px" }}>+{opts.length-6} more</span>}
+                      </div>
+                    </td>
+                    <td style={{ ...s.td }}>
+                      <button style={nb} onClick={()=>setListModal({ mode:"edit", name, opts })}>Edit options</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10, flexWrap:"wrap" }}>
+              <div style={{ fontSize:13, fontWeight:600 }}>Custom fields</div>
+              <button style={{ ...nbActive, marginLeft:"auto" }} onClick={()=>setListModal({ mode:"field" })}>＋ New field</button>
+            </div>
+            <div style={{ fontSize:11.5, color:"#666", lineHeight:1.7, marginBottom:10 }}>
+              Add a field to any record type — entity, person, invoice, register entry — choosing its type (text, number, date, yes/no, dropdown, entity link), whether it is required, and which module tabs show it. Fields appear immediately on the relevant forms and become available as report builder columns.
+            </div>
+            <div style={{ ...s.infoBox, background:"#FDF4DC", borderColor:"#E5CE9A", color:"#7B4F1D" }}>
+              ⚠️ Definitions can be authored here now, but creating a field writes to the schema, so it activates with the write layer on Azure. Until then this screen is the agreed shape of the feature, not a live editor.
+            </div>
+          </>)}
+        </div>
+      )}
+
+      {/* ── PROCEDURES, WORKFLOWS & TEMPLATES — Super Admin ── */}
+      {view === "content" && (
+        <div style={s.pad}>
+          {!isSuperAdmin ? (
+            <div style={{ ...s.infoBox }}>Authoring procedures, workflows and templates is restricted to Super Admins.</div>
+          ) : (<>
+            <div style={{ ...s.infoBox, marginBottom:16 }}>
+              ℹ️ One place to author everything staff follow. Each type is versioned with an owner and a review date; publishing notifies the staff it applies to and records acknowledgements.
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))", gap:10 }}>
+              {CONTENT_TYPES.map(([label,mod,desc,count])=>(
+                <div key={label} style={{ background:"var(--bg-primary,#fff)", border:"0.5px solid var(--border-tertiary,#e5e5e5)", borderRadius:9, padding:"13px 15px", display:"flex", flexDirection:"column", gap:7 }}>
+                  <div style={{ display:"flex", alignItems:"baseline", gap:7 }}>
+                    <span style={{ fontSize:13, fontWeight:600, color:NAVY }}>{label}</span>
+                    <span style={{ fontSize:16, fontWeight:700, color:CY, marginLeft:"auto" }}>{count}</span>
+                  </div>
+                  <div style={{ fontSize:11, color:"#666", lineHeight:1.6, flex:1 }}>{desc}</div>
+                  <div style={{ display:"flex", gap:6 }}>
+                    <button style={nb} onClick={()=>onNav&&onNav(mod)}>Open ↗</button>
+                    <button style={nbActive} onClick={()=>setListModal({ mode:"content", name:label })}>＋ New</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ ...s.infoBox, background:"#FDF4DC", borderColor:"#E5CE9A", color:"#7B4F1D", marginTop:14 }}>
+              ⚠️ Reading and navigating works now. Authoring, versioning and the acknowledgement trail are writes, so they activate with the write layer.
+            </div>
+          </>)}
+        </div>
+      )}
+
       {/* ── ENTITY ACCESS — internal vs client ── */}
       {view === "entity_access" && (
         <div style={s.pad}>
@@ -621,13 +752,41 @@ export default function AffinityCoreSystemAdmin({ onNav }) {
                 {ROLES.map(r=><th key={r} style={{ ...s.th, textAlign:"center" }}>{ROLE_LABELS[r]}</th>)}
               </tr></thead>
               <tbody>
-                {MATRIX_MODULES.map(([label,id])=>(
-                  <tr key={id} style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)" }}>
-                    <td style={{ ...s.td, fontWeight:500 }}>{label}</td>
-                    {ROLES.map(r=>{ const p=permsFor(r,id); const txt=p.length?p.join("+"):"X";
-                      return <td key={r} style={{ ...s.td, textAlign:"center", color:txt==="X"?"#bbb":"var(--text-primary,#333)", fontWeight:txt==="X"?400:600 }}>{txt}</td>; })}
-                  </tr>
-                ))}
+                {MATRIX_TREE.map(([label,id,subs])=>{
+                  const open = !!matrixOpen[id];
+                  return (
+                    <React.Fragment key={id}>
+                      <tr onClick={()=>setMatrixOpen(o=>({...o,[id]:!o[id]}))}
+                        style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)", cursor:"pointer", background:open?"var(--bg-secondary,#f9f9f9)":"transparent" }}>
+                        <td style={{ ...s.td, fontWeight:600 }}>
+                          <span style={{ fontSize:9, color:"#aaa", marginRight:7 }}>{open?"▼":"►"}</span>{label}
+                          <span style={{ fontSize:9.5, color:"#aaa", fontWeight:400, marginLeft:6 }}>{subs.length} sub-sections</span>
+                        </td>
+                        {ROLES.map(r=>{ const p=permsFor(r,id); const txt=p.length?p.join("+"):"X";
+                          return <td key={r} style={{ ...s.td, textAlign:"center", color:txt==="X"?"#bbb":"var(--text-primary,#333)", fontWeight:txt==="X"?400:600 }}>{txt}</td>; })}
+                      </tr>
+                      {open && subs.map(sub=>(
+                        <tr key={id+sub} style={{ borderBottom:"0.5px solid #f5f5f5" }}>
+                          <td style={{ ...s.td, paddingLeft:34, color:"#555", fontSize:11 }}>{sub}</td>
+                          {ROLES.map(r=>{
+                            const base=permsFor(r,id);
+                            // sub-sections inherit the module grant; the hard-coded rules in
+                            // rbac.js narrow the sensitive ones further
+                            const narrowed = (sub==="Deletion"||sub==="Custom SQL"||sub==="Audit log"||sub==="Custom fields & lists")
+                              ? base.filter(()=>r==="system_admin"||r==="director")
+                              : (sub==="Sign-off"||sub==="Approvals")
+                                ? base.filter(x=>r==="system_admin"||r==="director"||x!=="A")
+                                : base;
+                            const txt = narrowed.length?narrowed.join("+"):"X";
+                            const inherited = txt===(base.length?base.join("+"):"X");
+                            return <td key={r} style={{ ...s.td, textAlign:"center", fontSize:10.5,
+                              color:txt==="X"?"#ccc":inherited?"#999":"#A32D2D", fontWeight:inherited?400:700 }}>{txt}</td>;
+                          })}
+                        </tr>
+                      ))}
+                    </React.Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>

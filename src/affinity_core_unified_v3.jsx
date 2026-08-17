@@ -342,6 +342,9 @@ export default function AffinityCore(){
   const [officeOpen,setOfficeOpen]=useState(false);
   const user=USERS.find(u=>u.id===uid)||USERS[0];
   const rbacRole=deriveRbacRole(user.role);
+  // Global entity context — a single entity search available on EVERY page.
+  // Modules receive it as entityFilter and scope themselves to it.
+  const [entityCtx,setEntityCtx]=useState("");
   const navLabel=NAV.flatMap(s=>s.items).find(i=>i.id===mod)?.label||mod;
 
   const searchResults = searchQ.length > 1
@@ -408,10 +411,10 @@ export default function AffinityCore(){
       case "notifications":return <Tasks onNav={setMod} initialView="activity"/>;  // merged into Tasks
       case "client_portal": return <ClientPortal/>;
       case "entities":     return <EntityAdmin officeFilter={officeFilter} onNav={setMod} role={rbacRole}/>;
-      case "compliance":   return <Compliance/>;
-      case "statutory":    return <Statutory/>;
+      case "compliance":   return <Compliance entityCtx={entityCtx}/>;
+      case "statutory":    return <Statutory entityCtx={entityCtx}/>;
       case "crm":          return <CRM/>;
-      case "documents":    return <Documents/>;
+      case "documents":    return <Documents entityCtx={entityCtx}/>;
       case "onboarding":   return <Onboarding onNav={setMod}/>;
       case "attrition":    return <Onboarding initialView="attrition" onNav={setMod}/>;
       case "timesheets":   return <Timesheets officeFilter={officeFilter} onNav={setMod}/>;
@@ -422,9 +425,9 @@ export default function AffinityCore(){
       case "procedures":   return <Procedures/>;
       case "chatbot":      return <Chatbot/>;
       case "intranet":     return <Intranet/>;
-      case "system":       return <SystemAdmin onNav={setMod}/>;
+      case "system":       return <SystemAdmin onNav={setMod} isSuperAdmin={!!(user&&user.role&&user.role.indexOf("Super Admin")>-1)}/>;
       case "generate":     return <GenerateDoc/>;
-      case "egaming":      return <EGaming/>;
+      case "egaming":      return <EGaming entityCtx={entityCtx}/>;
       default:             return <Dashboard userId={uid} onNav={setMod} userName={user?.name||""}/>;
     }
   };
@@ -508,6 +511,23 @@ export default function AffinityCore(){
           <button onClick={e=>{e.stopPropagation();setSearchOpen(true);}} style={{display:"flex",alignItems:"center",gap:8,height:32,padding:"0 12px",borderRadius:6,border:"0.5px solid #e5e5e5",background:dark?"#252540":"#f9f9f9",cursor:"pointer",color:"#999",fontSize:11,whiteSpace:"nowrap"}}>
             🔍 {!mobile&&<span>Search <span style={{color:"#ccc",fontSize:10}}>⌘K</span></span>}
           </button>
+          {/* Global entity search — present on every page */}
+          <div style={{position:"relative",display:"flex",alignItems:"center"}}>
+            <input list="global-entity-list" value={entityCtx} placeholder={mobile?"Entity…":"Search an entity…"}
+              onChange={e=>{
+                const v=e.target.value; setEntityCtx(v);
+                const hit=SEARCH_INDEX.filter(x=>x.type==="Entity").find(x=>x.label===v);
+                if(hit){ setSideOpen(false); }
+              }}
+              style={{height:32,width:mobile?110:190,padding:"0 10px",borderRadius:6,
+                      border:`1px solid ${entityCtx?CY:"#e5e5e5"}`,background:entityCtx?"rgba(0,196,204,0.06)":(dark?"#252540":"#f9f9f9"),
+                      fontSize:11,color:dark?"#e8e8f0":"#333",outline:"none",boxSizing:"border-box"}} />
+            <datalist id="global-entity-list">
+              {SEARCH_INDEX.filter(x=>x.type==="Entity").map(x=><option key={x.label} value={x.label}>{x.sub}</option>)}
+            </datalist>
+            {entityCtx&&<button onClick={()=>setEntityCtx("")} title="Clear entity context"
+              style={{position:"absolute",right:6,background:"none",border:"none",cursor:"pointer",color:"#999",fontSize:12,lineHeight:1,padding:0}}>✕</button>}
+          </div>
           {/* Office filter dropdown — top right */}
           {!mobile&&<div style={{position:"relative"}}>
             <button onClick={e=>{e.stopPropagation();setOfficeOpen(o=>!o);}}
