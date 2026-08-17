@@ -91,6 +91,7 @@ export default function AffinityTimesheets({ onNav }) {
     setTimerEntity(""); setTimerMatter("");
   };
 
+  const [staffSrch, setStaffSrch] = useState(null);
   const staffEntries = useMemo(()=>entries.filter(e=>e.staffId===parseInt(staffF)),[staffF,entries]);
   const staff = STAFF.find(s=>s.id===parseInt(staffF));
   const totalUnits = staffEntries.reduce((s,e)=>s+e.units,0);
@@ -137,9 +138,18 @@ export default function AffinityTimesheets({ onNav }) {
       {/* TIME ENTRY */}
       {view==="entry"&&(<>
         <div style={{ display:"flex", gap:8, padding:"10px 20px", borderBottom:"0.5px solid #e5e5e5", flexWrap:"wrap", alignItems:"center" }}>
-          <select style={sel} value={staffF} onChange={e=>setStaffF(e.target.value)}>
-            {STAFF.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
+          {/* Person search — type a name rather than scrolling 58 staff */}
+          <input list="ts-staff-list" placeholder="Search person…"
+            value={staffSrch===null ? ((STAFF.find(x=>String(x.id)===String(staffF))||{}).name || "") : staffSrch}
+            onChange={e=>{
+              const v=e.target.value; setStaffSrch(v);
+              const m=STAFF.find(x=>x.name===v);
+              if(m){ setStaffF(String(m.id)); setStaffSrch(null); }
+            }}
+            onFocus={()=>setStaffSrch("")}
+            onBlur={()=>setStaffSrch(null)}
+            style={{ ...sel, minWidth:190, boxSizing:"border-box" }} />
+          <datalist id="ts-staff-list">{STAFF.map(x=><option key={x.id} value={x.name}/>)}</datalist>
           <select style={sel}><option>{weekF}</option><option>W/C 07 Jul 2025</option><option>W/C 30 Jun 2025</option></select>
           <button style={{ ...nb, marginLeft:"auto" }} onClick={()=>setModal("entry")}>＋ Manual entry</button>
           <button style={nba}>Submit timesheet ↗</button>

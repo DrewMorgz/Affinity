@@ -36,6 +36,12 @@ const SECTIONS = [
   { id:"compliance", label:"Compliance",     color:"#7B4F1D", bg:"#FDF4DC", source:"creg_entry, risk_review" },
   { id:"documents",  label:"Documents",      color:"#3C3489", bg:"#EEF0FB", source:"document" },
   { id:"billing",    label:"Billing & WIP",  color:"#633806", bg:"#FAEEDA", source:"invoice, wip_entry" },
+  { id:"statutory",  label:"Statutory & Filing", color:"#8A5A00", bg:"#FBF0DC", source:"filing_obligation, annual_return" },
+  { id:"banking",    label:"Banking & Assets", color:"#00697A", bg:"#E2F4F6", source:"entity_bank, entity_asset" },
+  { id:"onboarding", label:"Onboarding",     color:"#4B6A2F", bg:"#EDF4E3", source:"onboarding_case, cdd_item" },
+  { id:"crm",        label:"CRM & Fees",     color:"#8C3B6B", bg:"#F9EAF3", source:"crm_lead, fee_schedule" },
+  { id:"time",       label:"Time & Recovery",color:"#3F5B8C", bg:"#EAEFF8", source:"timesheet_entry" },
+  { id:"people",     label:"Our People",     color:"#5A5A6E", bg:"#F0F0F4", source:"staff, cpd_entry" },
 ];
 const SEC = SECTIONS.reduce((a,s)=>{ a[s.id]=s; return a; },{});
 
@@ -78,8 +84,54 @@ const FIELDS = [
   { sec:"billing",    key:"feeAnnual",   label:"Annual fee",           type:"number" },
   { sec:"billing",    key:"wip",         label:"Unbilled WIP",         type:"number" },
   { sec:"billing",    key:"agedDebt",    label:"Aged debt",            type:"number" },
+  { sec:"billing",    key:"feeCcy",       label:"Fee currency",         type:"enum", options:["GBP","EUR","USD"] },
+  { sec:"billing",    key:"lastInvoiced", label:"Last invoiced",        type:"date" },
+  { sec:"billing",    key:"onHold",       label:"Billing on hold",      type:"bool" },
+
+  { sec:"statutory",  key:"arDue",        label:"Annual return due",    type:"date" },
+  { sec:"statutory",  key:"arFiled",      label:"Annual return filed",  type:"bool" },
+  { sec:"statutory",  key:"accountsDue",  label:"Accounts filing due",  type:"date" },
+  { sec:"statutory",  key:"esrRequired",  label:"Economic substance applies", type:"bool" },
+  { sec:"statutory",  key:"fatcaCrs",     label:"FATCA / CRS status",   type:"enum", options:["Reportable","Non-reportable","Not assessed"] },
+  { sec:"statutory",  key:"regime",       label:"Incorporation regime", type:"enum", options:["Companies Act 1931","Companies Act 2006","Foundations Act 2011","Cayman Companies Act","Malta Companies Act"] },
+  { sec:"statutory",  key:"regulator",    label:"Regulator",            type:"enum", options:["IOMFSA","GSC","MGA","CIMA","None"] },
+  { sec:"statutory",  key:"filingsLate",  label:"Late filings (12m)",   type:"number" },
+
+  { sec:"banking",    key:"banks",        label:"Banks",                type:"list", options:["Barclays","Lloyds","Butterfield","Cayman National","Bank of Valletta","Conister","Capital International"] },
+  { sec:"banking",    key:"accountCount", label:"Bank accounts",        type:"number" },
+  { sec:"banking",    key:"balanceTotal", label:"Total bank balance",   type:"number" },
+  { sec:"banking",    key:"signatories",  label:"Authorised signatories", type:"list" },
+  { sec:"banking",    key:"aum",          label:"Assets under management", type:"number" },
+  { sec:"banking",    key:"assetTypes",   label:"Asset types",          type:"list", options:["Property","Listed securities","Private equity","Yacht","Aircraft","Artwork","Crypto"] },
+  { sec:"banking",    key:"safeCustody",  label:"Items in safe custody", type:"number" },
+
+  { sec:"onboarding", key:"onboardStage", label:"Onboarding stage",     type:"enum", options:["Enquiry","CDD collection","Risk rating","Sign-off","Complete"] },
+  { sec:"onboarding", key:"takeOnDate",   label:"Take-on date",         type:"date" },
+  { sec:"onboarding", key:"introducer",   label:"Introducer",           type:"text" },
+  { sec:"onboarding", key:"sofVerified",  label:"Source of wealth verified", type:"bool" },
+  { sec:"onboarding", key:"verifyMethod", label:"Verification method",  type:"enum", options:["Face to face","Certified copy","Electronic verification","Video call","Regulated intermediary"] },
+  { sec:"onboarding", key:"cddOutstanding", label:"Outstanding CDD items", type:"number" },
+
+  { sec:"crm",        key:"leadSource",   label:"Lead source",          type:"enum", options:["Referral","Introducer","Direct","Event","Existing client","Website"] },
+  { sec:"crm",        key:"sector",       label:"Sector",               type:"enum", options:["Financial services","eGaming","Medicinal Cannabis","Crypto & digital assets","Shipping & aviation","Property","Family office"] },
+  { sec:"crm",        key:"office",       label:"Servicing office",     type:"enum", options:["Isle of Man","Malta","Cayman Islands","United Kingdom","Miami"] },
+  { sec:"crm",        key:"relManager",   label:"Relationship manager", type:"text" },
+  { sec:"crm",        key:"feeReviewDue", label:"Fee review due",       type:"date" },
+
+  { sec:"time",       key:"hoursYtd",     label:"Hours recorded YTD",   type:"number" },
+  { sec:"time",       key:"recoveryPct",  label:"Recovery rate %",      type:"number" },
+  { sec:"time",       key:"writeOff",     label:"Written off",          type:"number" },
+  { sec:"time",       key:"lastActivity", label:"Last time recorded",   type:"date" },
+
+  { sec:"people",     key:"admin2",       label:"Administrator",        type:"text" },
+  { sec:"people",     key:"reviewer",     label:"Compliance reviewer",  type:"text" },
+  { sec:"people",     key:"directorStaff",label:"Affinity director appointed", type:"list" },
 ];
 const FIELD = FIELDS.reduce((a,f)=>{ a[f.key]=f; return a; },{});
+// Fields the preview dataset can answer today. Everything else is catalogued and
+// will resolve when the Azure reporting views are connected — shown as "awaiting
+// data" rather than silently returning blanks, so nobody mistakes a gap for a nil.
+const hasPreview = (key) => ROWS.length > 0 && Object.prototype.hasOwnProperty.call(ROWS[0], key);
 
 // ── Preview portfolio. One row per entity, flattened across domains — the same
 // shape the joined view will return, so the resolver swaps without UI changes.
@@ -380,6 +432,8 @@ export default function AffinityReportBuilder({ isAdmin = false, onNav, role = "
                         <label key={f.key} style={{ display:"flex", alignItems:"center", gap:7, padding:"4px 13px 4px 32px", cursor:"pointer", fontSize:11.5 }}>
                           <input type="checkbox" checked={picked.indexOf(f.key)>-1} onChange={()=>toggleField(f.key)} style={{ width:13, height:13, cursor:"pointer" }} />
                           <span style={{ color:picked.indexOf(f.key)>-1?"#111":"#666" }}>{f.label}</span>
+                          {!hasPreview(f.key) && <span title="Catalogued — resolves when the reporting views are connected"
+                            style={{ marginLeft:"auto", fontSize:8.5, color:"#B08A3E", background:"#FDF4DC", borderRadius:8, padding:"1px 5px", whiteSpace:"nowrap" }}>awaiting data</span>}
                         </label>
                       ))}
                     </div>
@@ -400,6 +454,11 @@ export default function AffinityReportBuilder({ isAdmin = false, onNav, role = "
               {usedSecs.length>1 && (
                 <span style={{ fontSize:10, fontWeight:600, color:"#1F6F54", background:"#E7F4EF", borderRadius:20, padding:"2px 9px" }}>
                   Cross-section · {usedSecs.length} sections joined
+                </span>
+              )}
+              {picked.some(k=>!hasPreview(k)) && (
+                <span style={{ fontSize:10, color:"#7B4F1D", background:"#FDF4DC", borderRadius:20, padding:"2px 9px" }}>
+                  {picked.filter(k=>!hasPreview(k)).length} of {picked.length} awaiting data
                 </span>
               )}
               <button onClick={()=>setPicked([])} style={{ ...btn, marginLeft:"auto", padding:"3px 9px", fontSize:10 }}>Clear</button>
@@ -508,7 +567,10 @@ export default function AffinityReportBuilder({ isAdmin = false, onNav, role = "
                   <tbody>
                     {results.map((r,i)=>(
                       <tr key={i} style={{ background:i%2?"#fcfcfd":"#fff" }}>
-                        {picked.map(k=><td key={k} style={td}>{fmtCell(r[k], FIELD[k])}</td>)}
+                        {picked.map(k=><td key={k} style={td}>
+                          {hasPreview(k) ? fmtCell(r[k], FIELD[k])
+                            : <span style={{ color:"#c9b17e", fontSize:10 }}>awaiting data</span>}
+                        </td>)}
                       </tr>
                     ))}
                   </tbody>

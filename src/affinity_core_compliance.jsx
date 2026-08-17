@@ -446,7 +446,7 @@ export default function AffinityIOMCompliance() {
             <select value={REGISTERS[view]?view:""} onChange={e=>setView(e.target.value||"registers")}
               style={{ height:30, padding:"0 8px", fontSize:11.5, border:"0.5px solid #ccc", borderRadius:5, background:"#fff", minWidth:230 }}>
               <option value="">All registers ({REGISTER_ORDER.length})</option>
-              {REGISTER_ORDER.map(r=><option key={r} value={r}>{r==="breaches"?"Breach log":REGISTERS[r].label}</option>)}
+              {REGISTER_ORDER.map(r=><option key={r} value={r}>{r==="breaches"?"Breach log":(REGISTERS[r]?REGISTERS[r].label:r)}</option>)}
             </select>
             {REGISTERS[view] && <button onClick={()=>setView("registers")}
               style={{ height:30, padding:"0 10px", fontSize:11, borderRadius:5, border:"0.5px solid #e5e5e5", background:"transparent", color:"#666", cursor:"pointer" }}>
@@ -464,7 +464,9 @@ export default function AffinityIOMCompliance() {
         <div style={{ padding:"10px 20px 16px" }}>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(232px,1fr))", gap:9 }}>
             {REGISTER_ORDER.map(r=>{
-              const reg = REGISTERS[r];
+              // "breaches" is rendered by its own view and has no REGISTERS entry —
+              // fall back to a descriptor so the contents grid can still list it.
+              const reg = REGISTERS[r] || { label:"Breach log", cols:["Date","Entity","Description","Severity","Status"], rows:[] };
               const live = (liveReg[r]||[]).length;
               const demo = (reg.rows||[]).length;
               return (

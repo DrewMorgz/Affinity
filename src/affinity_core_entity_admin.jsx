@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { entityScopesFor } from "./affinity_core_rbac";
-import { REGISTERS as COMPLIANCE_REGISTERS, REGISTER_ORDER } from "./affinity_core_compliance";
+import { REGISTERS as RAW_REGISTERS, REGISTER_ORDER } from "./affinity_core_compliance";
+// "breaches" is rendered by its own view in Compliance and has no catalogue entry.
+const COMPLIANCE_REGISTERS = { breaches:{ label:"Breach log", cols:["Date","Entity","Description","Severity","Status"], rows:[] }, ...RAW_REGISTERS };
 import { isConfigured } from "./affinity_accounting_supabase";
 import { eaEntitiesList, eaProfile, eaOfficers, eaShareholders, eaCharges, eaUbos, eaAddresses, eaMeetings,
   eaBanks, eaAssets, eaDividends, eaSafeItems, eaFileNotes, eaSafeMovements, eaSignatories,
