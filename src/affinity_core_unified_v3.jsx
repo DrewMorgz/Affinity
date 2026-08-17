@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import AffinityLoginPage from "./affinity_login_page";
+import Tasks from "./affinity_core_tasks";
 import Dashboard     from "./affinity_core_dashboard";
 import EntityAdmin   from "./affinity_core_entity_admin";
 import CRM          from "./affinity_core_crm";
@@ -215,105 +216,6 @@ const NAV = [
   ]},
 ];
 
-// Tasks module (inline)
-const TASKS_DATA = [
-  {id:1,title:"Harrington Trust — CPR overdue",           entity:"Harrington Family Trust",   assignee:"Roxy Sheeley",  due:"Today",      priority:"Critical",cat:"Compliance",  status:"Open"},
-  {id:2,title:"Apex Growth Fund — sanctions MLRO review", entity:"Apex Growth Fund Ltd",      assignee:"Colette Grisdale", due:"Today",      priority:"Critical",cat:"Compliance",  status:"Open"},
-  {id:3,title:"Emma Harrington — KYC expired",            entity:"Harrington Family Trust",   assignee:"Roxy Sheeley",  due:"Overdue",    priority:"Critical",cat:"KYC",         status:"Open"},
-  {id:4,title:"Q3 retainer invoices — approve batch",     entity:"All entities",              assignee:"Neil Kelly",    due:"15/07/2025", priority:"High",    cat:"Invoicing",   status:"Open"},
-  {id:5,title:"Sarah Cole — missing timesheet",           entity:"—",                         assignee:"Roxy Sheeley",  due:"Today",      priority:"High",    cat:"Timesheets",  status:"Open"},
-  {id:6,title:"North Star — sign off attrition form",     entity:"North Star Holdings Ltd",   assignee:"Andy Morgan",   due:"15/07/2025", priority:"High",    cat:"Onboarding",  status:"Open"},
-  {id:7,title:"Pacific Wealth Trust — EDD outstanding",   entity:"Pacific Wealth Trust",      assignee:"Garry Crossan", due:"18/07/2025", priority:"High",    cat:"Compliance",  status:"In progress"},
-  {id:8,title:"Meridian Holdings — annual return prep",   entity:"Meridian Holdings Ltd",     assignee:"Roxy Sheeley",  due:"12/09/2025", priority:"Medium",  cat:"Statutory",   status:"Open"},
-  {id:9,title:"Stonebridge — director appointment res",   entity:"Stonebridge Capital Ltd",   assignee:"Joanne Fenech", due:"18/07/2025", priority:"Medium",  cat:"Corporate",   status:"In progress"},
-  {id:10,title:"Garry Crossan — enforce MFA",             entity:"—",                         assignee:"Andy Morgan",   due:"14/07/2025", priority:"Medium",  cat:"System",      status:"Open"},
-  {id:11,title:"Azure Mediterranean — Q2 accounts",       entity:"Azure Mediterranean Fdn",   assignee:"Joanne Fenech", due:"30/09/2025", priority:"Low",     cat:"Accounts",    status:"Open"},
-  {id:12,title:"Bluewater Family Trust — CPR due Q3",     entity:"Bluewater Family Trust",    assignee:"Garry Crossan", due:"19/09/2025", priority:"Low",     cat:"Compliance",  status:"Open"},
-];
-
-const pC={Critical:{bg:"#FCEBEB",color:"#A32D2D"},High:{bg:"#FAEEDA",color:"#633806"},Medium:{bg:"#E6F7FB",color:"#0077A8"},Low:{bg:"#F1EFE8",color:"#888"}};
-const sC={Open:{bg:"#E6F7FB",color:"#0077A8"},"In progress":{bg:"#FAEEDA",color:"#633806"},Complete:{bg:"#EAF3DE",color:"#27500A"}};
-const cC={Compliance:{bg:"#FBEAF0",color:"#72243E"},KYC:{bg:"#FCEBEB",color:"#A32D2D"},Invoicing:{bg:"#EAF3DE",color:"#27500A"},Timesheets:{bg:"#E6F7FB",color:"#0077A8"},Onboarding:{bg:"#E6F1FB",color:"#0C447C"},Corporate:{bg:"#EEF0FB",color:"#3C3489"},Statutory:{bg:"#FAEEDA",color:"#633806"},System:{bg:"#F1EFE8",color:"#888"},Accounts:{bg:"#EAF3DE",color:"#27500A"}};
-const Bx = ({label,colors}) => <span style={{display:"inline-block",padding:"2px 8px",borderRadius:20,fontSize:10,fontWeight:600,background:colors?.bg||"#eee",color:colors?.color||"#333",whiteSpace:"nowrap"}}>{label}</span>;
-
-function Tasks(){
-  const [tasks,setTasks]=useState(TASKS_DATA);
-  const [filter,setFilter]=useState("All");
-  const [ass,setAss]=useState("");
-  const [modal,setModal]=useState(false);
-  const [sel,setSel]=useState(null);
-  const filtered=tasks.filter(t=>(filter==="All"||t.status===filter)&&(!ass||t.assignee===ass));
-  const selT=sel?tasks.find(t=>t.id===sel):null;
-  const done=id=>setTasks(p=>p.map(t=>t.id===id?{...t,status:"Complete"}:t));
-  const th={padding:"7px 12px",textAlign:"left",fontSize:10,fontWeight:600,color:"#999",textTransform:"uppercase",letterSpacing:"0.4px",borderBottom:"0.5px solid #e5e5e5",background:"#f9f9f9",whiteSpace:"nowrap"};
-  const td={padding:"9px 12px",fontSize:11,borderBottom:"0.5px solid #e5e5e5",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"};
-  return <div style={{padding:18}}>
-    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:14}}>
-      {[{l:"Total open",v:tasks.filter(t=>t.status!=="Complete").length,c:CY},{l:"In progress",v:tasks.filter(t=>t.status==="In progress").length,c:CY},{l:"Completed",v:tasks.filter(t=>t.status==="Complete").length,c:"#4CAF7D"}].map(k=><div key={k.l} style={{background:"#f9f9f9",borderRadius:6,padding:"10px 14px"}}><div style={{fontSize:10,color:"#666",marginBottom:3}}>{k.l}</div><div style={{fontSize:20,fontWeight:600,color:k.c||"#111"}}>{k.v}</div></div>)}
-    </div>
-    <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap",alignItems:"center"}}>
-      <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
-        {["All","Open","In progress","Complete"].map(f=><button key={f} style={{padding:"4px 10px",fontSize:11,borderRadius:20,border:`0.5px solid ${filter===f?"#ccc":"#e5e5e5"}`,background:filter===f?"#fff":"transparent",color:filter===f?"#111":"#666",cursor:"pointer",fontWeight:filter===f?500:400}} onClick={()=>setFilter(f)}>{f}</button>)}
-      </div>
-      <select style={{height:30,padding:"0 8px",fontSize:11,borderRadius:5,border:"0.5px solid #ccc",background:"#fff",color:"#111",marginLeft:"auto"}} value={ass} onChange={e=>setAss(e.target.value)}>
-        <option value="">All team members</option>
-        {[...new Set(TASKS_DATA.map(t=>t.assignee))].map(a=><option key={a}>{a}</option>)}
-      </select>
-      <button onClick={()=>setModal(true)} style={{padding:"5px 14px",borderRadius:5,border:"none",background:CY,color:"#fff",fontSize:11,cursor:"pointer",fontWeight:500}}>+ New task</button>
-    </div>
-    <div style={{display:"flex"}}>
-      <table style={{flex:1,borderCollapse:"collapse",tableLayout:"fixed"}}>
-        <thead><tr>
-          <th style={{...th,width:"4%"}}></th>
-          <th style={{...th,width:"32%"}}>Task</th>
-          <th style={{...th,width:"20%"}}>Entity</th>
-          <th style={{...th,width:"12%"}}>Assignee</th>
-          <th style={{...th,width:"11%"}}>Due</th>
-          <th style={{...th,width:"11%"}}>Category</th>
-          <th style={{...th,width:"10%"}}>Status</th>
-        </tr></thead>
-        <tbody>
-          {filtered.map(t=><tr key={t.id} onClick={()=>setSel(sel===t.id?null:t.id)} style={{cursor:"pointer",borderBottom:"0.5px solid #e5e5e5",background:sel===t.id?"#f9f9f9":"transparent",opacity:t.status==="Complete"?0.55:1}}>
-            <td style={{...td,textAlign:"center"}}><input type="checkbox" checked={t.status==="Complete"} onChange={()=>done(t.id)} onClick={e=>e.stopPropagation()} style={{cursor:"pointer",width:14,height:14}}/></td>
-            <td style={{...td,fontWeight:t.status==="Complete"?400:500,textDecoration:t.status==="Complete"?"line-through":"none"}}>{t.title}</td>
-            <td style={{...td,color:"#666"}}>{t.entity}</td>
-            <td style={{...td,color:"#666"}}>{t.assignee.split(" ").map((w,i)=>i===0?w:w[0]+".").join(" ")}</td>
-            <td style={{...td,color:t.due==="Overdue"||t.due==="Today"?"#EF4444":"#666",fontWeight:t.due==="Overdue"||t.due==="Today"?600:400}}>{t.due}</td>
-            <td style={td}><Bx label={t.cat} colors={cC[t.cat]||{bg:"#eee",color:"#666"}}/></td>
-            <td style={td}><Bx label={t.status} colors={sC[t.status]}/></td>
-          </tr>)}
-          {filtered.length===0&&<tr><td colSpan={7} style={{...td,textAlign:"center",color:"#aaa",padding:30}}>No tasks match this filter</td></tr>}
-        </tbody>
-      </table>
-      {selT&&<div style={{width:260,minWidth:260,borderLeft:"0.5px solid #e5e5e5",padding:14,overflowY:"auto"}}>
-        <button onClick={()=>setSel(null)} style={{float:"right",background:"none",border:"none",cursor:"pointer",color:"#aaa",fontSize:14}}>✕</button>
-        <div style={{fontSize:13,fontWeight:600,lineHeight:1.4,marginBottom:10}}>{selT.title}</div>
-        {[["Entity",selT.entity],["Assignee",selT.assignee],["Due",selT.due],["Category",selT.cat],["Status",selT.status]].map(([k,v])=><div key={k} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:"0.5px solid #e5e5e5",fontSize:12}}><span style={{color:"#666"}}>{k}</span><span style={{fontWeight:500}}>{v}</span></div>)}
-        <div style={{marginTop:12}}><div style={{fontSize:10,color:"#aaa",marginBottom:6,textTransform:"uppercase",letterSpacing:"0.4px"}}>Notes</div><textarea style={{width:"100%",height:80,fontSize:11,borderRadius:5,border:"0.5px solid #ccc",padding:"6px 8px",resize:"none",background:"#f9f9f9",color:"#111"}} placeholder="Add notes..."/></div>
-        <div style={{display:"flex",gap:6,marginTop:10}}>
-          {selT.status!=="Complete"&&<button onClick={()=>{done(selT.id);setSel(null);}} style={{flex:1,padding:"6px",borderRadius:5,border:"none",background:"#4CAF7D",color:"#fff",fontSize:11,cursor:"pointer",fontWeight:500}}>Mark complete ✓</button>}
-          <button style={{flex:1,padding:"6px",borderRadius:5,border:"0.5px solid #ccc",background:"transparent",color:"#111",fontSize:11,cursor:"pointer"}}>Edit</button>
-        </div>
-      </div>}
-    </div>
-    {modal&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(13,27,42,0.5)",display:"flex",alignItems:"flex-start",justifyContent:"center",paddingTop:40,zIndex:200}} onClick={e=>e.target===e.currentTarget&&setModal(false)}>
-      <div style={{background:"#fff",borderRadius:10,border:"0.5px solid #e5e5e5",padding:22,width:500,maxWidth:"96vw"}}>
-        <div style={{display:"flex",justifyContent:"space-between",marginBottom:14}}><div style={{fontSize:14,fontWeight:600}}>New task</div><button onClick={()=>setModal(false)} style={{background:"none",border:"none",cursor:"pointer",fontSize:18,color:"#aaa"}}>✕</button></div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-          {[["Task title","text","Description of task",true],["Entity","text","Entity name or —"],["Assignee","select","",false,["Andy Morgan","Roxy Sheeley","Garry Crossan","Joanne Fenech","Neil Kelly","Colette Grisdale","Sarah Cole"]],["Due date","text","DD/MM/YYYY"],["Category","select","",false,["Compliance","KYC","Invoicing","Timesheets","Onboarding","Corporate","Statutory","System","Accounts","Other"]],["Status","select","",false,["Open","In progress"]]].map(([l,t,ph,full,opts])=><div key={l} style={{display:"flex",flexDirection:"column",gap:3,gridColumn:full?"1/-1":"auto"}}>
-            <label style={{fontSize:11,color:"#666"}}>{l}</label>
-            {t==="select"?<select style={{fontSize:12,borderRadius:5,border:"0.5px solid #ccc",background:"#fff",padding:"0 8px",height:32,color:"#111"}}>{(opts||[]).map(o=><option key={o}>{o}</option>)}</select>:<input type={t} style={{fontSize:12,borderRadius:5,border:"0.5px solid #ccc",padding:"0 8px",height:32,background:"#fff",color:"#111"}} placeholder={ph}/>}
-          </div>)}
-          <div style={{display:"flex",flexDirection:"column",gap:3,gridColumn:"1/-1"}}><label style={{fontSize:11,color:"#666"}}>Notes</label><textarea style={{fontSize:12,borderRadius:5,border:"0.5px solid #ccc",padding:"6px 8px",height:52,resize:"none",background:"#fff"}} placeholder="Additional context"/></div>
-        </div>
-        <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:12}}>
-          <button onClick={()=>setModal(false)} style={{padding:"5px 14px",borderRadius:5,border:"0.5px solid #ccc",background:"transparent",color:"#111",fontSize:11,cursor:"pointer"}}>Cancel</button>
-          <button onClick={()=>setModal(false)} style={{padding:"5px 14px",borderRadius:5,border:"none",background:CY,color:"#fff",fontSize:11,cursor:"pointer",fontWeight:500}}>Create task</button>
-        </div>
-      </div>
-    </div>}
-  </div>;
-}
 
 function SplashScreen({ onDone }) {
   const [fade, setFade] = useState(false);
