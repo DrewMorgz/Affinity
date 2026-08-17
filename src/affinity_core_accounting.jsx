@@ -497,7 +497,37 @@ const PANELS = {
         <Panel title="Departmental / project profitability"><Table head={["Department", "Contribution"]} rows={[
           ["Corporate Services", { n: f0(18200) }], ["Trust", { n: f0(9400) }], ["Funds", { n: f0(3460) }],
         ]} /></Panel>
-        <Note>P&amp;L &amp; balance sheet by entity · consolidated · departmental / project / cost-centre · cash flow.</Note>
+        {/* Moved here from Core Reporting so all accounts reporting is in one place. */}
+        <Panel title="Revenue by office"><Table head={["Office", "YTD revenue", "% of total", "Prior year", "Movement"]} rows={[
+          ["Isle of Man",     { n: f0(214000) }, "44%", { n: f0(191000) }, { n: f0(23000) }],
+          ["Malta",           { n: f0(96000) },  "20%", { n: f0(84000) },  { n: f0(12000) }],
+          ["Cayman Islands",  { n: f0(88000) },  "18%", { n: f0(79000) },  { n: f0(9000) }],
+          ["United Kingdom",  { n: f0(51000) },  "10%", { n: f0(47000) },  { n: f0(4000) }],
+          ["Miami",           { n: f0(38000) },  "8%",  { n: f0(20000) },  { n: f0(18000) }],
+          ["Total",           { n: f0(487000) }, "100%",{ n: f0(421000) }, { n: f0(66000) }],
+        ]} /></Panel>
+        <Panel title="Revenue — budget vs forecast vs actual"><Table head={["Period", "Budget", "Forecast", "Actual", "Variance"]} rows={[
+          ["Q1",       { n: f0(112000) }, { n: f0(114000) }, { n: f0(118000) }, { n: f0(6000) }],
+          ["Q2",       { n: f0(118000) }, { n: f0(121000) }, { n: f0(124000) }, { n: f0(6000) }],
+          ["Q3",       { n: f0(124000) }, { n: f0(126000) }, { n: f0(122000) }, { n: f0(-2000) }],
+          ["Q4",       { n: f0(130000) }, { n: f0(128000) }, { n: f0(123000) }, { n: f0(-7000) }],
+          ["Full year",{ n: f0(484000) }, { n: f0(489000) }, { n: f0(487000) }, { n: f0(3000) }],
+        ]} /></Panel>
+        <Panel title="Aged debt summary"><Table head={["Ageing band", "Balance", "% of debt", "Invoices"]} rows={[
+          ["Current",    { n: f0(16830) }, "38%", "24"],
+          ["31–60 days", { n: f0(11220) }, "25%", "16"],
+          ["61–90 days", { n: f0(8250) },  "19%", "11"],
+          ["90+ days",   { n: f0(8250) },  "18%", "9"],
+          ["Total",      { n: f0(44550) }, "100%","60"],
+        ]} /></Panel>
+        <Panel title="WIP &amp; debtors movement"><Table head={["Month", "WIP", "Debtors", "Overdue"]} rows={[
+          ["Feb", { n: f0(41200) }, { n: f0(38900) }, { n: f0(19400) }],
+          ["Mar", { n: f0(43800) }, { n: f0(40100) }, { n: f0(21100) }],
+          ["Apr", { n: f0(45100) }, { n: f0(41800) }, { n: f0(23600) }],
+          ["May", { n: f0(46900) }, { n: f0(43200) }, { n: f0(25200) }],
+          ["Jun", { n: f0(48320) }, { n: f0(44550) }, { n: f0(27720) }],
+        ]} /></Panel>
+        <Note>P&amp;L &amp; balance sheet by entity · consolidated · departmental / project / cost-centre · cash flow · revenue by office · budget vs forecast vs actual · aged debt · WIP movement. Revenue, WIP and debt reporting moved here from Core Reporting so there is one set of figures.</Note>
       </>
     );
   },
