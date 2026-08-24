@@ -41,8 +41,26 @@ const officeColors = {
 const jurShort = { "Isle of Man":"IOM","Malta":"MLT","Cayman Islands":"CYM","United Kingdom":"UK","Miami":"MIA" };
 const invStatus = { Draft:{bg:"#FAEEDA",color:"#633806"}, Sent:{bg:"#E6F1FB",color:"#0C447C"}, Paid:{bg:"#EAF3DE",color:"#27500A"}, Overdue:{bg:"#FCEBEB",color:"#A32D2D"}, Partial:{bg:"#FAEEDA",color:"#633806"} };
 
-const VIEWS = ["raise","invoices","client","bookkeeping","aged","retainers","credit"];
-const VLABELS = ["Ad-hoc invoicing","Invoice ledger","By client","Auto-bookkeeping","Aged debt","Retainers","Credit control"];
+const VIEWS = ["raise","invoices","client","bookkeeping","aged","retainers","credit","fees"];
+const VLABELS = ["Ad-hoc invoicing","Invoice ledger","By client","Auto-bookkeeping","Aged debt","Retainers","Credit control","Fee schedules"];
+
+// Fee schedules — moved here from System Admin. Standard rates per office and
+// service type; they drive retainer invoices and the fee quoted on a proposal,
+// so they belong with invoicing rather than with system configuration.
+const FEE_SCHEDULES = [
+  { office:"Isle of Man",    type:"Company admin",     fee:"£2,000",  freq:"Per annum",  currency:"GBP" },
+  { office:"Isle of Man",    type:"Trustee fee",       fee:"£2,400",  freq:"Per annum",  currency:"GBP" },
+  { office:"Isle of Man",    type:"Directorship",      fee:"£1,500",  freq:"Per annum",  currency:"GBP" },
+  { office:"Isle of Man",    type:"Registered office", fee:"£500",    freq:"Per annum",  currency:"GBP" },
+  { office:"Malta",          type:"Company admin",     fee:"€1,800",  freq:"Per annum",  currency:"EUR" },
+  { office:"Malta",          type:"Foundation admin",  fee:"€2,200",  freq:"Per annum",  currency:"EUR" },
+  { office:"Malta",          type:"Directorship",      fee:"€1,200",  freq:"Per annum",  currency:"EUR" },
+  { office:"Cayman Islands", type:"Company admin",     fee:"$3,600",  freq:"Per annum",  currency:"USD" },
+  { office:"Cayman Islands", type:"Trustee fee",       fee:"$4,200",  freq:"Per annum",  currency:"USD" },
+  { office:"United Kingdom", type:"Company admin",     fee:"£1,600",  freq:"Per annum",  currency:"GBP" },
+  { office:"Miami",          type:"Company admin",     fee:"$2,400",  freq:"Per annum",  currency:"USD" },
+  { office:"Miami",          type:"Registered agent",  fee:"$600",    freq:"Per annum",  currency:"USD" },
+];
 
 export default function AffinityInvoicing({ onNav }) {
   const AGED_ROWS = [
@@ -65,6 +83,8 @@ export default function AffinityInvoicing({ onNav }) {
   useEffect(()=>{ if(!isConfigured) return; let ok=true; feeInvoices().then(({data})=>{ if(ok && data && data.length) setLiveInv(data); }).catch(()=>{}); return ()=>{ok=false;}; },[]);
   const invoices = liveInv || INVOICES;
   const [view, setView] = useState("invoices");
+  const [feeQ, setFeeQ] = useState("");
+  const [feeOffice, setFeeOffice] = useState("");
   const [search, setSearch] = useState("");
   const [statF, setStatF] = useState("");
   const [selInv, setSelInv] = useState(null);
@@ -463,6 +483,48 @@ export default function AffinityInvoicing({ onNav }) {
       )}
 
       {/* CREDIT CONTROL */}
+      {view==="fees"&&(
+        <div style={{ padding:"14px 20px 60px" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10, flexWrap:"wrap" }}>
+            <input placeholder="Search fee schedule…" value={feeQ} onChange={e=>setFeeQ(e.target.value)}
+              style={{ height:30, padding:"0 10px", fontSize:11.5, border:"0.5px solid #e5e5e5", borderRadius:6, background:"var(--bg-primary,#fff)", minWidth:220 }} />
+            <select value={feeOffice} onChange={e=>setFeeOffice(e.target.value)}
+              style={{ height:30, padding:"0 8px", fontSize:11.5, border:"0.5px solid #e5e5e5", borderRadius:6, background:"var(--bg-primary,#fff)" }}>
+              <option value="">All offices</option>
+              {["Isle of Man","Malta","Cayman Islands","United Kingdom","Miami"].map(o=><option key={o}>{o}</option>)}
+            </select>
+            <span style={{ fontSize:11, color:"#888", marginLeft:"auto" }}>
+              Standard rates per office and service type — used for retainer invoices and proposal fees.
+            </span>
+          </div>
+          <div style={{ background:"var(--bg-primary,#fff)", border:"0.5px solid #e5e5e5", borderRadius:9, overflow:"hidden" }}>
+            <table style={{ width:"100%", borderCollapse:"collapse" }}>
+              <thead><tr>
+                {["Office","Service type","Standard fee","Frequency","Currency"].map(h=>(
+                  <th key={h} style={{ padding:"8px 14px", textAlign:"left", fontSize:10, fontWeight:600, color:"#666",
+                                       textTransform:"uppercase", letterSpacing:"0.4px", background:"#f9f9f9",
+                                       borderBottom:"0.5px solid #e5e5e5" }}>{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {FEE_SCHEDULES
+                  .filter(f=>(!feeOffice||f.office===feeOffice) &&
+                             (!feeQ.trim()||(f.type+" "+f.office).toLowerCase().includes(feeQ.trim().toLowerCase())))
+                  .map((f,i)=>(
+                  <tr key={i} style={{ borderBottom:"0.5px solid #f0f0f0" }}>
+                    <td style={{ padding:"9px 14px", fontSize:12.5 }}>{f.office}</td>
+                    <td style={{ padding:"9px 14px", fontSize:12.5 }}>{f.type}</td>
+                    <td style={{ padding:"9px 14px", fontSize:12.5, fontWeight:700 }}>{f.fee}</td>
+                    <td style={{ padding:"9px 14px", fontSize:12.5, color:"#666" }}>{f.freq}</td>
+                    <td style={{ padding:"9px 14px", fontSize:12.5 }}>{f.currency}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {view==="credit"&&(
         <div style={{ padding:"16px 20px" }}>
           <div style={{ fontSize:13, fontWeight:500, marginBottom:12 }}>Credit control — overdue invoices</div>

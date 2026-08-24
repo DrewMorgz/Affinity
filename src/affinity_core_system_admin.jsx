@@ -63,13 +63,7 @@ const rolesData = [
   { role:"Read only",       users:1,  desc:"View-only across permitted modules. Cannot create or edit.",            permissions:["Assigned modules — read only"] },
 ];
 
-const officesData = [
-  { office:"Isle of Man", code:"IOM", reg:"Affinity Group Ltd", regNo:"117843C", address:"Second Floor, 14 Athol Street, Douglas, Isle of Man, IM1 1JA", regulator:"Isle of Man FSA", licence:"CSP licence no. XXXXXX", currency:"GBP", md:"Roxy Sheeley", users:3, entities:114, active:true },
-  { office:"Malta",       code:"MLT", reg:"Affinity Malta Ltd", regNo:"C-88221",  address:"Level 3, Spinola Park, St Julian's, Malta",                       regulator:"MFSA",          licence:"Category 4B CSP",          currency:"EUR", md:"Joanne Fenech", users:2, entities:52,  active:true },
-  { office:"Cayman Islands",code:"CYM",reg:"Affinity Cayman Ltd",regNo:"CY-12344",address:"Harbour Place, 103 South Church Street, George Town, Cayman Islands",regulator:"CIMA",        licence:"CIMA CSP licence",          currency:"USD", md:"Garry Crossan",users:2, entities:87,  active:true },
-  { office:"United Kingdom",code:"UK", reg:"Affinity UK Ltd",   regNo:"14421876", address:"1 Canada Square, Canary Wharf, London, E14 5AB",                   regulator:"HMRC / FCA",    licence:"MLR registration",          currency:"GBP", md:"Andy Morgan",  users:1, entities:31,  active:true },
-  { office:"Miami",       code:"MIA", reg:"Affinity Miami LLC", regNo:"FL-2022-881",address:"1221 Brickell Avenue, Suite 900, Miami, FL 33131",               regulator:"FinCEN",        licence:"BSA registration",          currency:"USD", md:"Andy Morgan",  users:1, entities:16,  active:true },
-];
+
 
 const auditLog = [
   { id:1,  ts:"14/07/2025 09:14", user:"Andy Morgan",   action:"User login",                   module:"System",    entity:"—",                      ip:"89.101.xx.xx" },
@@ -89,28 +83,15 @@ const auditLog = [
   { id:15, ts:"12/07/2025 14:20", user:"Neil Kelly",    action:"Credit note raised",           module:"Invoicing", entity:"Thornbury Asset Co Ltd",  ip:"89.101.xx.xx" },
 ];
 
-const feeSchedules = [
-  { office:"Isle of Man",    type:"Company admin",     fee:"£2,000",  freq:"Per annum",  currency:"GBP" },
-  { office:"Isle of Man",    type:"Trustee fee",       fee:"£2,400",  freq:"Per annum",  currency:"GBP" },
-  { office:"Isle of Man",    type:"Directorship",      fee:"£1,500",  freq:"Per annum",  currency:"GBP" },
-  { office:"Isle of Man",    type:"Registered office", fee:"£500",    freq:"Per annum",  currency:"GBP" },
-  { office:"Malta",          type:"Company admin",     fee:"€1,800",  freq:"Per annum",  currency:"EUR" },
-  { office:"Malta",          type:"Foundation admin",  fee:"€2,200",  freq:"Per annum",  currency:"EUR" },
-  { office:"Malta",          type:"Directorship",      fee:"€1,200",  freq:"Per annum",  currency:"EUR" },
-  { office:"Cayman Islands", type:"Company admin",     fee:"$3,600",  freq:"Per annum",  currency:"USD" },
-  { office:"Cayman Islands", type:"Trustee fee",       fee:"$3,000",  freq:"Per annum",  currency:"USD" },
-  { office:"Cayman Islands", type:"Directorship",      fee:"$2,000",  freq:"Per annum",  currency:"USD" },
-  { office:"United Kingdom", type:"Company admin",     fee:"£1,800",  freq:"Per annum",  currency:"GBP" },
-  { office:"Miami",          type:"Company admin",     fee:"$2,400",  freq:"Per annum",  currency:"USD" },
-];
+
 
 const GROUP_ENTITIES = [
   "Affinity Group Limited","Affinity (Isle of Man) Limited","Affinity (Malta) Limited",
   "Affinity (Cayman) Limited","Affinity (UK) Limited","Affinity South Dakota, LLC","Affinity South Florida, LLC",
 ];
 
-const VIEWS = ["users","roles","matrix","fields","content","offices","fees","audit","config"];
-const VIEW_LABELS = ["Users","Roles & permissions","Permission matrix","Custom fields & lists","Procedures & templates","Offices","Fee schedules","Audit log","System config"];
+const VIEWS = ["users","roles","matrix","fields","content","audit","config"];
+const VIEW_LABELS = ["Users","Roles & permissions","Permission matrix","Custom fields & lists","Procedures & templates","Audit log","System config"];
 
 // Editable dropdown lists used across the system. Super Admin owns these — the
 // alternative is a developer change every time a sector or work type is added.
@@ -160,12 +141,12 @@ const MATRIX_TREE = [
   ["Documents","documents",["Folder tree","Upload & classify","Email filing","Generate from template","Deletion"]],
   ["Onboarding","onboarding",["Enquiry","CDD collection","Risk rating","Sign-off","Letterhead & packs"]],
   ["Timesheets","timesheets",["My time","Timer","Team view","Approvals"]],
-  ["Internal Accounts","acc_wip",["WIP","Invoicing","Budgets"]],
+  ["Internal Accounts","acc_wip",["WIP","Invoicing","Fee schedules","Budgets"]],
   ["Affinity Accounting","acc_txn",["Bookkeeping","Transactions","Assets & groups","Financial reporting","FX rates","Accounting admin"]],
   ["Reporting","reporting",["Report builder","Saved reports","Share saved report","Custom SQL","Export"]],
   ["Procedures","procedures",["Read","Author & publish","Acknowledgements"]],
   ["People","intranet",["Intranet","Posts","Assistant"]],
-  ["System Admin","system",["Users","Roles","Permission matrix","Group company access","Offices","Fee schedules","Audit log","Custom fields & lists","Config"]],
+  ["System Admin","system",["Users","Roles","Permission matrix","Group company access","Audit log","Custom fields & lists","Config"]],
 ];
 
 
@@ -421,79 +402,10 @@ export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false })
       )}
 
       {/* ── OFFICES ── */}
-      {view === "offices" && (
-        <div style={s.pad}>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
-            {officesData.map(o=>(
-              <div key={o.office} style={{ ...s.card, borderLeft:`3px solid ${CY}` }}>
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                    <Badge label={o.code} colors={officeColors[o.office]} />
-                    <span style={{ fontSize:14, fontWeight:700 }}>{o.office}</span>
-                  </div>
-                  <Badge label={o.active?"Active":"Inactive"} colors={o.active?{bg:"#EAF3DE",color:"#27500A"}:{bg:"#F1EFE8",color:"#888"}} />
-                </div>
-                {[
-                  ["Legal entity", o.reg],
-                  ["Reg. number", o.regNo],
-                  ["Address", o.address],
-                  ["Regulator", o.regulator],
-                  ["Licence", o.licence],
-                  ["Currency", o.currency],
-                  ["Managing Director", o.md],
-                  ["Users", o.users],
-                  ["Entities administered", o.entities],
-                ].map(([k,v])=>(
-                  <div key={k} style={{ ...s.dRow, fontSize:12 }}>
-                    <span style={s.dKey}>{k}</span>
-                    <span style={{ fontWeight:500, textAlign:"right", maxWidth:160, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{v}</span>
-                  </div>
-                ))}
-                <div style={{ marginTop:10 }}>
-                  <button style={{ ...nb, fontSize:11, padding:"4px 10px" }} onClick={()=>setModal("editOffice")}>Edit office config ↗</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+
 
       {/* ── FEE SCHEDULES ── */}
-      {view === "fees" && (
-        <>
-          <div style={s.toolbar}>
-            <div style={s.sw}><span style={{ color:"#aaa" }}>🔍</span><input style={s.swInput} placeholder="Search fee schedule..." /></div>
-            <select style={s.sel}>
-              <option value="">All offices</option>
-              {["Isle of Man","Malta","Cayman Islands","United Kingdom","Miami"].map(o=><option key={o}>{o}</option>)}
-            </select>
-            <button style={s.addBtn} onClick={()=>setModal("newFee")}>＋ Add fee</button>
-          </div>
-          <div style={s.pad}>
-            <div style={{ ...s.infoBox }}>ℹ️ Fee schedules define standard rates per office and service type. These are used to auto-calculate retainer invoices and WIP recovery rates. Changes require Super Admin or CFO approval.</div>
-            <table style={s.ct}>
-              <thead><tr>
-                <th style={{ ...s.th, width:"24%" }}>Office</th>
-                <th style={{ ...s.th, width:"28%" }}>Service type</th>
-                <th style={{ ...s.th, width:"18%" }}>Standard fee</th>
-                <th style={{ ...s.th, width:"16%" }}>Frequency</th>
-                <th style={{ ...s.th, width:"14%" }}>Currency</th>
-              </tr></thead>
-              <tbody>
-                {feeSchedules.map((f,i)=>(
-                  <tr key={i} style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)", cursor:"pointer" }}>
-                    <td style={s.td}><Badge label={f.office} colors={officeColors[f.office]} /></td>
-                    <td style={s.td}>{f.type}</td>
-                    <td style={{ ...s.td, fontWeight:700 }}>{f.fee}</td>
-                    <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{f.freq}</td>
-                    <td style={s.td}>{f.currency}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
+
 
       {/* ── AUDIT LOG ── */}
       {view === "audit" && (
@@ -924,21 +836,10 @@ export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false })
               <div style={s.mActions}><button style={s.btnC} onClick={()=>setModal(null)}>Cancel</button><button style={s.btnS} onClick={()=>setModal(null)}>Save permissions</button></div>
             </>)}
 
-            {modal==="newFee" && (<>
-              <div style={s.modalTitle}>Add fee schedule entry</div>
-              <div style={s.fgGrid}>
-                <div style={s.fg}><label style={s.fgl}>Office</label><select style={s.fgi}>{officesData.map(o=><option key={o.office}>{o.office}</option>)}</select></div>
-                <div style={s.fg}><label style={s.fgl}>Service type</label><input style={s.fgi} placeholder="e.g. Company admin" /></div>
-                <div style={s.fg}><label style={s.fgl}>Standard fee</label><input style={s.fgi} placeholder="0.00" /></div>
-                <div style={s.fg}><label style={s.fgl}>Currency</label><select style={s.fgi}><option>GBP</option><option>USD</option><option>EUR</option></select></div>
-                <div style={s.fg}><label style={s.fgl}>Frequency</label><select style={s.fgi}><option>Per annum</option><option>Per quarter</option><option>Per month</option><option>Fixed / one-off</option></select></div>
-                <div style={s.fg}><label style={s.fgl}>Effective from</label><input style={s.fgi} placeholder="DD/MM/YYYY" /></div>
-              </div>
-              <div style={s.mActions}><button style={s.btnC} onClick={()=>setModal(null)}>Cancel</button><button style={s.btnS} onClick={()=>setModal(null)}>Save fee</button></div>
-            </>)}
 
-            {(modal==="editUser"||modal==="editOffice"||modal==="sessionConfig"||modal==="ipWhitelist"||modal==="billingConfig") && (<>
-              <div style={s.modalTitle}>{modal==="editUser"?"Edit user":modal==="editOffice"?"Edit office configuration":modal==="sessionConfig"?"Session settings":modal==="ipWhitelist"?"IP whitelist":"Billing configuration"}</div>
+
+            {(modal==="editUser"||modal==="sessionConfig"||modal==="ipWhitelist"||modal==="billingConfig") && (<>
+              <div style={s.modalTitle}>{modal==="editUser"?"Edit user":modal==="__none"?"Edit office configuration":modal==="sessionConfig"?"Session settings":modal==="ipWhitelist"?"IP whitelist":"Billing configuration"}</div>
               <div style={{ fontSize:13, color:"var(--text-secondary,#666)", marginBottom:16 }}>This configuration panel will be fully built in the System Admin module once connected to persistent storage.</div>
               <div style={s.mActions}><button style={s.btnS} onClick={()=>setModal(null)}>Close</button></div>
             </>)}
