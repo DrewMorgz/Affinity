@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import AffinityLoginPage from "./affinity_login_page";
+import Planning from "./affinity_core_planning";
 import Tasks from "./affinity_core_tasks";
 import Dashboard     from "./affinity_core_dashboard";
 import EntityAdmin   from "./affinity_core_entity_admin";
@@ -100,6 +101,7 @@ const NAV = [
     {id:"acc_txn",      label:"Transactions",    icon:"\uD83D\uDCD2",b:null},
     {id:"acc_assets",   label:"Assets & Groups", icon:"\uD83C\uDFE2",b:null},
     {id:"acc_report",   label:"Financial Reporting", icon:"\uD83D\uDCC8",b:null},
+    {id:"planning",   label:"Planning",       icon:"\uD83D\uDCCA",b:null},
     {id:"acc_admin",    label:"Accounting admin",icon:"\u2699",b:null},
   ]},
   {s:"People", items:[
@@ -270,6 +272,7 @@ const SEARCH_INDEX = [
   {type:"Module",  label:"Invoicing",                      sub:"Billing & debtors",               mod:"invoicing"},
   {type:"Module",  label:"Bookkeeping",                    sub:"Ledger & accounts",               mod:"bookkeeping"},
   {type:"Module",  label:"Budgets",                         sub:"Budgets & scenarios",             mod:"budgeting"},
+  {type:"Module",  label:"Planning",                        sub:"Budget input, workflow, scenarios",mod:"planning"},
   {type:"Module",  label:"Reporting",                       sub:"MI & financial statements",       mod:"reporting"},
   {type:"Module",  label:"Procedures",                     sub:"Process library",                 mod:"procedures"},
   {type:"Module",  label:"Generate Document",              sub:"Templates & statutory forms",     mod:"generate"},
@@ -419,6 +422,7 @@ export default function AffinityCore(){
       case "bookkeeping":  return <Bookkeeping onNav={setMod}/>;
       case "budgeting":    return <Budgeting/>;
       case "reporting":    return <Reporting onNav={setMod} role={rbacRole} userName={user?.name||""}/>;
+      case "planning":     return <Planning onNav={setMod} userName={user?.name||""}/>;
       case "procedures":   return <Procedures/>;
       case "chatbot":      return <Chatbot/>;
       case "intranet":     return <Intranet/>;
