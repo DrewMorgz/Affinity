@@ -229,15 +229,12 @@ export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false })
   // Entity-class access: which roles may see Affinity's own entities vs client entities
   // Per-internal-company access by role. Each Affinity company is granted
   // separately so group data stays segregated.
-  const [roleScopes, setRoleScopes] = useState(() => {
+  // Role defaults for internal companies. Read-only here — access is now set per
+  // person in the Individual user rights table below.
+  const [roleScopes] = useState(() => {
     const init = {};
     ROLES.forEach(r => { init[r] = (INTERNAL_ACCESS[r] || []).slice(); });
     return init;
-  });
-  const toggleScope = (role, ref) => setRoleScopes(prev => {
-    const cur = prev[role] || [];
-    const next = cur.indexOf(ref) > -1 ? cur.filter(c => c !== ref) : cur.concat([ref]);
-    return { ...prev, [role]: next };
   });
   const [search, setSearch] = useState("");
   const [officeF, setOfficeF] = useState("");
@@ -774,50 +771,10 @@ export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false })
                     </React.Fragment>
                   );
                 })}
-                {/* Affinity's own companies, granted individually so group data
-                    is segregated from the client portfolio and from each other. */}
-                <tr><td colSpan={ROLES.length+1} style={{ ...s.td, background:"#EAF0FB", fontWeight:700, color:"#274690", fontSize:11 }}>
-                  Affinity Group companies — access granted per company
-                  <span style={{ fontWeight:400, color:"#5a76ab", marginLeft:8 }}>tick to grant · overrides per user below</span>
-                </td></tr>
-                {INTERNAL_ENTITIES.map(ent=>(
-                  <tr key={ent.ref} style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)" }}>
-                    <td style={{ ...s.td }}>
-                      <div style={{ fontWeight:600 }}>{ent.name}</div>
-                      <div style={{ fontSize:10, color:"#999" }}>{ent.ref} · {ent.jur} · {ent.note}</div>
-                    </td>
-                    {ROLES.map(r=>{
-                      const on = (roleScopes[r]||[]).indexOf(ent.ref)>-1;
-                      return (
-                        <td key={r} style={{ ...s.td, textAlign:"center" }}>
-                          <input type="checkbox" checked={on} onChange={()=>toggleScope(r, ent.ref)}
-                            style={{ width:15, height:15, cursor:"pointer" }} />
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-                <tr style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)" }}>
-                  <td style={{ ...s.td }}>
-                    <div style={{ fontWeight:600 }}>Client entities</div>
-                    <div style={{ fontSize:10, color:"#999" }}>Entities we administer for clients</div>
-                  </td>
-                  {ROLES.map(r=><td key={r} style={{ ...s.td, textAlign:"center", fontWeight:700, color:"#1F6F54" }}>V</td>)}
-                </tr>
-                <tr>
-                  <td style={{ ...s.td, fontSize:11, color:"#666" }}>Internal companies granted</td>
-                  {ROLES.map(r=>{
-                    const n=(roleScopes[r]||[]).length;
-                    return <td key={r} style={{ ...s.td, textAlign:"center", fontSize:11, fontWeight:600,
-                      color:n===0?"#A32D2D":n===INTERNAL_ENTITIES.length?"#1F6F54":"#7B4F1D" }}>
-                      {n===0?"none":n===INTERNAL_ENTITIES.length?"all "+n:n+" of "+INTERNAL_ENTITIES.length}
-                    </td>;
-                  })}
-                </tr>
               </tbody>
             </table>
             <div style={{ fontSize:11, color:"#666", marginTop:9, lineHeight:1.7 }}>
-              Client entities are available to every role. Affinity's own companies are granted individually — a Malta administrator can be given Affinity (Malta) Limited without seeing Affinity Group Limited's consolidated position. Reporting follows the same grants, so segregation cannot be sidestepped by running a report. Individual exceptions are set per user below.
+              Client entities are available to every role. Access to Affinity's own group companies is set per person in the table below, so a Malta administrator can be given Affinity (Malta) Limited without seeing Affinity Group Limited's consolidated position. Reporting follows the same grants, so segregation cannot be sidestepped by running a report.
             </div>
 
           <div style={{ fontSize:13, fontWeight:600, marginTop:22, marginBottom:3 }}>Individual user rights — Affinity Group companies</div>
