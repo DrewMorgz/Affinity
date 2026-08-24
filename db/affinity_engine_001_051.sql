@@ -1,30 +1,22 @@
 -- =====================================================================
--- AFFINITY CORE — ACCOUNTING ENGINE
+-- AFFINITY CORE — ACCOUNTING ENGINE (safe to re-run)
 --
--- 49 migration files in numeric order. Adjusted so it completes on a database
--- that already holds some of these objects — which is what stopped it before:
+-- 49 migration files in numeric order, adjusted so the script completes on a
+-- database that already holds some of this schema or seed data:
 --   66 CREATE TABLE   -> CREATE TABLE IF NOT EXISTS
 --   15 ADD COLUMN     -> ADD COLUMN IF NOT EXISTS
---   2 trigger(s)     -> dropped before being recreated
+--   2 trigger(s)     -> dropped before recreation
 --   9 function names -> every overload dropped first (pre-flight below)
+--   67 seed INSERT(s) -> ON CONFLICT DO NOTHING
+--
+-- Statements were split with a parser that respects quoted strings, dollar
+-- quoted function bodies and comments, so INSERTs inside function bodies are
+-- untouched and RETURNING / posting logic behaves exactly as written.
 --
 -- Run this, then 052_planning_grants.sql.
---
--- Tested on PostgreSQL 16 against a database already holding part of this
--- schema: completes, creates 126 tables, seeds the chart of accounts, and
--- leaves all 15 functions the application calls executable.
---
--- Designed for a clean run, not repeated runs: the seed data inserts are not
--- all conflict-guarded, so running it a second time will report duplicate key
--- on seed rows. That is harmless — the schema is already built — but if you
--- want a truly clean rebuild, reset the schema first.
 -- =====================================================================
 
 -- ── PRE-FLIGHT ───────────────────────────────────────────────────────
--- Nine functions are defined in more than one migration file, and some change
--- return type or arguments between definitions — which CREATE OR REPLACE
--- cannot do. Drop every overload first, looked up in the catalogue rather
--- than guessed at.
 DO $preflight$
 DECLARE r record;
 BEGIN
@@ -794,59 +786,104 @@ END $$;
 -- ============================================================
 
 INSERT INTO coa_template (id, code, name) OVERRIDING SYSTEM VALUE
-SELECT 1,'COMPANY','Company CoA' WHERE NOT EXISTS (SELECT 1 FROM coa_template WHERE code='COMPANY');
+SELECT 1,'COMPANY','Company CoA' WHERE NOT EXISTS (SELECT 1 FROM coa_template WHERE code='COMPANY')
+ON CONFLICT DO NOTHING;
 SELECT setval(pg_get_serial_sequence('coa_template','id'), GREATEST((SELECT max(id) FROM coa_template),1));
 
 INSERT INTO currency(code,name,minor_units) VALUES ('EUR','Euro',2) ON CONFLICT DO NOTHING;
 INSERT INTO currency(code,name,minor_units) VALUES ('GBP','Pound Sterling',2) ON CONFLICT DO NOTHING;
 INSERT INTO currency(code,name,minor_units) VALUES ('USD','USD',2) ON CONFLICT DO NOTHING;
-INSERT INTO vat_code(code,name,rate) SELECT 'STD','Standard 20%',0.2000 WHERE NOT EXISTS (SELECT 1 FROM vat_code WHERE code='STD');
-INSERT INTO vat_code(code,name,rate) SELECT 'ZERO','Zero',0.0000 WHERE NOT EXISTS (SELECT 1 FROM vat_code WHERE code='ZERO');
+INSERT INTO vat_code(code,name,rate) SELECT 'STD','Standard 20%',0.2000 WHERE NOT EXISTS (SELECT 1 FROM vat_code WHERE code='STD')
+ON CONFLICT DO NOTHING;
+INSERT INTO vat_code(code,name,rate) SELECT 'ZERO','Zero',0.0000 WHERE NOT EXISTS (SELECT 1 FROM vat_code WHERE code='ZERO')
+ON CONFLICT DO NOTHING;
 INSERT INTO location(code,name) VALUES ('CYM','Cayman Islands') ON CONFLICT DO NOTHING;
 INSERT INTO location(code,name) VALUES ('IOM','Isle of Man') ON CONFLICT DO NOTHING;
 INSERT INTO location(code,name) VALUES ('MALTA','Malta') ON CONFLICT DO NOTHING;
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'1000','Bank','asset','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='1000');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'1010','Bank — EUR','asset','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='1010');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'1020','Bank — recon test','asset','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='1020');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'1100','Trade Debtors (SLC)','asset','D','t',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='1100');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'1150','Disbursements','asset','D','t',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='1150');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'1200','VAT Input','asset','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='1200');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'1300','Intercompany receivable','asset','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='1300');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'1310','Intercompany loan receivable','asset','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='1310');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'1400','Prepayments','asset','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='1400');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'1500','Fixed assets — cost','asset','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='1500');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'1510','Accumulated depreciation','asset','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='1510');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'1900','Client bank account','asset','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='1900');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'1910','Client bank — designated','asset','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='1910');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'2100','Purchase Ledger Control','liability','C','t',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='2100');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'2200','VAT Output','liability','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='2200');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'2210','VAT payable to authority','liability','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='2210');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'2220','Withholding tax payable','liability','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='2220');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'2300','Deferred Income','liability','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='2300');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'2400','Employee reimbursements payable','liability','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='2400');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'2500','Intercompany payable','liability','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='2500');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'2510','Intercompany loan payable','liability','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='2510');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'2900','Client money held','liability','C','t',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='2900');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'3100','Trust capital','equity','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='3100');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'3200','Retained earnings','equity','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='3200');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'4000','Sales','income','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='4000');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'4100','Disbursement recharge income','income','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='4100');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'4200','Intercompany income','income','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='4200');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'4300','Trust income','income','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='4300');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'4400','Intercompany interest income','income','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='4400');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'6000','Administrative expenses','expense','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='6000');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'6100','Depreciation expense','expense','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='6100');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'6150','Impairment of fixed assets','expense','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='6150');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'6200','Staff travel & expenses','expense','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='6200');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'6300','Bank charges','expense','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='6300');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'6400','Intercompany expense','expense','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='6400');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'6410','Intercompany interest expense','expense','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='6410');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'6500','Client money funding cost','expense','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='6500');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'7100','FX gain/(loss) — unrealised','income','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='7100');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'7200','FX gain/(loss) — realised','income','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='7200');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'7300','Gain/(loss) on disposal','income','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='7300');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'8100','Distributions — income','equity','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='8100');
-INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'8200','Distributions — capital','equity','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='8200');
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'1000','Bank','asset','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='1000')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'1010','Bank — EUR','asset','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='1010')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'1020','Bank — recon test','asset','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='1020')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'1100','Trade Debtors (SLC)','asset','D','t',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='1100')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'1150','Disbursements','asset','D','t',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='1150')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'1200','VAT Input','asset','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='1200')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'1300','Intercompany receivable','asset','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='1300')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'1310','Intercompany loan receivable','asset','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='1310')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'1400','Prepayments','asset','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='1400')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'1500','Fixed assets — cost','asset','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='1500')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'1510','Accumulated depreciation','asset','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='1510')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'1900','Client bank account','asset','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='1900')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'1910','Client bank — designated','asset','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='1910')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'2100','Purchase Ledger Control','liability','C','t',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='2100')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'2200','VAT Output','liability','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='2200')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'2210','VAT payable to authority','liability','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='2210')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'2220','Withholding tax payable','liability','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='2220')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'2300','Deferred Income','liability','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='2300')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'2400','Employee reimbursements payable','liability','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='2400')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'2500','Intercompany payable','liability','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='2500')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'2510','Intercompany loan payable','liability','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='2510')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'2900','Client money held','liability','C','t',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='2900')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'3100','Trust capital','equity','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='3100')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'3200','Retained earnings','equity','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='3200')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'4000','Sales','income','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='4000')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'4100','Disbursement recharge income','income','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='4100')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'4200','Intercompany income','income','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='4200')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'4300','Trust income','income','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='4300')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'4400','Intercompany interest income','income','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='4400')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'6000','Administrative expenses','expense','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='6000')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'6100','Depreciation expense','expense','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='6100')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'6150','Impairment of fixed assets','expense','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='6150')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'6200','Staff travel & expenses','expense','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='6200')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'6300','Bank charges','expense','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='6300')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'6400','Intercompany expense','expense','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='6400')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'6410','Intercompany interest expense','expense','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='6410')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'6500','Client money funding cost','expense','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='6500')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'7100','FX gain/(loss) — unrealised','income','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='7100')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'7200','FX gain/(loss) — realised','income','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='7200')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'7300','Gain/(loss) on disposal','income','C','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='7300')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'8100','Distributions — income','equity','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='8100')
+ON CONFLICT DO NOTHING;
+INSERT INTO account(coa_template_id,code,name,account_type,normal_balance,is_control,fs_line) SELECT 1,'8200','Distributions — capital','equity','D','f',NULL WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='8200')
+ON CONFLICT DO NOTHING;
 INSERT INTO ledger_config(coa_template_id,role,account_id) SELECT 1,'ACCRUALS',id FROM account WHERE coa_template_id=1 AND code='2400' ON CONFLICT DO NOTHING;
 INSERT INTO ledger_config(coa_template_id,role,account_id) SELECT 1,'BANK',id FROM account WHERE coa_template_id=1 AND code='1000' ON CONFLICT DO NOTHING;
 INSERT INTO ledger_config(coa_template_id,role,account_id) SELECT 1,'CM_CONTROL',id FROM account WHERE coa_template_id=1 AND code='2900' ON CONFLICT DO NOTHING;
@@ -3134,14 +3171,17 @@ ALTER TABLE entity ADD COLUMN IF NOT EXISTS is_trust boolean NOT NULL DEFAULT fa
 -- register the FUND dimension + its two values (idempotent)
 INSERT INTO dimension_type(code,name)
 SELECT 'FUND','Trust fund (income/capital)'
-WHERE NOT EXISTS (SELECT 1 FROM dimension_type WHERE code='FUND');
+WHERE NOT EXISTS (SELECT 1 FROM dimension_type WHERE code='FUND')
+ON CONFLICT DO NOTHING;
 
 INSERT INTO dimension_value(dimension_type_id,code,name)
 SELECT dt.id,'INC','Income' FROM dimension_type dt WHERE dt.code='FUND'
-  AND NOT EXISTS (SELECT 1 FROM dimension_value dv WHERE dv.dimension_type_id=dt.id AND dv.code='INC');
+  AND NOT EXISTS (SELECT 1 FROM dimension_value dv WHERE dv.dimension_type_id=dt.id AND dv.code='INC')
+ON CONFLICT DO NOTHING;
 INSERT INTO dimension_value(dimension_type_id,code,name)
 SELECT dt.id,'CAP','Capital' FROM dimension_type dt WHERE dt.code='FUND'
-  AND NOT EXISTS (SELECT 1 FROM dimension_value dv WHERE dv.dimension_type_id=dt.id AND dv.code='CAP');
+  AND NOT EXISTS (SELECT 1 FROM dimension_value dv WHERE dv.dimension_type_id=dt.id AND dv.code='CAP')
+ON CONFLICT DO NOTHING;
 
 CREATE OR REPLACE FUNCTION fund_value(p_code text)
 RETURNS bigint LANGUAGE sql STABLE AS $$
@@ -3340,7 +3380,8 @@ INSERT INTO fs_framework(code,name) VALUES
  ('FRS102_1A','FRS 102 Section 1A (UK/IOM)'),
  ('IFRS','IFRS'),
  ('GAPSME','Malta GAPSME'),
- ('TRUST','Trust fiduciary accounts');
+ ('TRUST','Trust fiduciary accounts')
+ON CONFLICT DO NOTHING;
 
 -- ---------------------------------------------------------------- FRS 102 1A
 INSERT INTO fs_caption(framework_code,statement,code,caption,sort_order,is_subtotal,note_no) VALUES
@@ -3360,7 +3401,8 @@ INSERT INTO fs_caption(framework_code,statement,code,caption,sort_order,is_subto
  ('FRS102_1A','PL','OP_PROFIT','Operating profit',1150,true,NULL),
  ('FRS102_1A','PL','INTEREST','Interest payable and similar charges',1200,false,NULL),
  ('FRS102_1A','PL','TAX','Tax on profit',1300,false,NULL),
- ('FRS102_1A','PL','PROFIT','Profit/(loss) for the financial year',1400,true,NULL);
+ ('FRS102_1A','PL','PROFIT','Profit/(loss) for the financial year',1400,true,NULL)
+ON CONFLICT DO NOTHING;
 
 SELECT map_accounts('FRS102_1A','TANGIBLE', ARRAY['1500','1510']);                 -- FA cost / accum dep (if present)
 SELECT map_accounts('FRS102_1A','DEBTORS',  ARRAY['1100','1200','1300']);          -- trade debtors, VAT input, IC receivable
@@ -3383,7 +3425,8 @@ INSERT INTO fs_caption(framework_code,statement,code,caption,sort_order,is_subto
  ('IFRS','PL','OPEX','Operating expenses',1100,false,NULL),
  ('IFRS','PL','FIN_COST','Finance costs',1200,false,NULL),
  ('IFRS','PL','TAX','Income tax expense',1300,false,NULL),
- ('IFRS','PL','PROFIT','Profit for the year',1400,true,NULL);
+ ('IFRS','PL','PROFIT','Profit for the year',1400,true,NULL)
+ON CONFLICT DO NOTHING;
 
 SELECT map_accounts('IFRS','PPE',      ARRAY['1500','1510']);
 SELECT map_accounts('IFRS','TRADE_REC',ARRAY['1100','1200','1300']);
@@ -3403,7 +3446,8 @@ INSERT INTO fs_caption(framework_code,statement,code,caption,sort_order,is_subto
  ('GAPSME','PL','REVENUE','Revenue',1000,false,NULL),
  ('GAPSME','PL','OTHER_INC','Other income',1050,false,NULL),
  ('GAPSME','PL','ADMIN','Administrative expenses',1100,false,NULL),
- ('GAPSME','PL','PROFIT','Profit for the year',1400,true,NULL);
+ ('GAPSME','PL','PROFIT','Profit for the year',1400,true,NULL)
+ON CONFLICT DO NOTHING;
 
 SELECT map_accounts('GAPSME','FIXED',    ARRAY['1500','1510']);
 SELECT map_accounts('GAPSME','CURRENT',  ARRAY['1100','1200','1300']);
@@ -3422,7 +3466,8 @@ INSERT INTO fs_caption(framework_code,statement,code,caption,sort_order,is_subto
  ('TRUST','IC','CAP_EXPENSE','Expenses chargeable to capital',210,false,NULL),
  ('TRUST','IC','CAP_DISTRIB','Capital distributions',220,false,NULL),
  ('TRUST','AL','TRUST_CASH','Cash at bank',300,false,NULL),
- ('TRUST','AL','TRUST_INVEST','Investments',310,false,NULL);
+ ('TRUST','AL','TRUST_INVEST','Investments',310,false,NULL)
+ON CONFLICT DO NOTHING;
 
 SELECT map_accounts('TRUST','INC_ARISING',ARRAY['4300']);
 SELECT map_accounts('TRUST','INC_DISTRIB',ARRAY['8100']);
@@ -3709,7 +3754,8 @@ INSERT INTO fs_note_template(framework_code,note_no,title,body,sort_order) VALUE
 ('GAPSME',1,'Accounting policies',
  'The financial statements of {entity_name} have been prepared in accordance with {framework_name} (General Accounting Principles for Small and Medium-Sized Entities) issued under the Maltese Companies Act.',1),
 ('TRUST',1,'Basis of preparation',
- 'These fiduciary accounts of {entity_name} present the income and capital of the trust separately, in accordance with the trust deed. Expenses are apportioned between income and capital as required by the deed, and distributions are recorded against the relevant fund.',1);
+ 'These fiduciary accounts of {entity_name} present the income and capital of the trust separately, in accordance with the trust deed. Expenses are apportioned between income and capital as required by the deed, and distributions are recorded against the relevant fund.',1)
+ON CONFLICT DO NOTHING;
 
 -- ─── 026_adjustments_workflow.sql ───
 -- =====================================================================
@@ -3915,7 +3961,8 @@ INSERT INTO dimension_type(code,name)
 SELECT v.code, v.name FROM (VALUES
   ('DEPT','Department'), ('PROJECT','Project'), ('COST_CENTRE','Cost centre')
 ) v(code,name)
-WHERE NOT EXISTS (SELECT 1 FROM dimension_type dt WHERE dt.code = v.code);
+WHERE NOT EXISTS (SELECT 1 FROM dimension_type dt WHERE dt.code = v.code)
+ON CONFLICT DO NOTHING;
 
 -- seed starter values per type (idempotent)
 INSERT INTO dimension_value(dimension_type_id, code, name)
@@ -3933,7 +3980,8 @@ JOIN (VALUES
 ) v(type_code,code,name) ON v.type_code = dt.code
 WHERE NOT EXISTS (
   SELECT 1 FROM dimension_value dv WHERE dv.dimension_type_id = dt.id AND dv.code = v.code
-);
+)
+ON CONFLICT DO NOTHING;
 
 -- resolve a dimension value id by type + code (mirrors fund_value)
 CREATE OR REPLACE FUNCTION dim_value(p_type_code text, p_value_code text)
@@ -4700,7 +4748,8 @@ END $$;
 -- WHT payable control account + role
 INSERT INTO account(coa_template_id,code,name,account_type,normal_balance)
 SELECT 1,'2220','Withholding tax payable','liability','C'
-WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='2220');
+WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='2220')
+ON CONFLICT DO NOTHING;
 
 INSERT INTO ledger_config(coa_template_id,role,account_id)
 SELECT 1,'WHT_PAYABLE', a.id FROM account a WHERE a.coa_template_id=1 AND a.code='2220'
@@ -4869,7 +4918,8 @@ ALTER TABLE fixed_asset ADD COLUMN IF NOT EXISTS impairment numeric(20,2) NOT NU
 -- impairment expense account + role
 INSERT INTO account(coa_template_id,code,name,account_type,normal_balance)
 SELECT 1,'6150','Impairment of fixed assets','expense','D'
-WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='6150');
+WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='6150')
+ON CONFLICT DO NOTHING;
 INSERT INTO ledger_config(coa_template_id,role,account_id)
 SELECT 1,'FA_IMPAIRMENT', a.id FROM account a WHERE a.coa_template_id=1 AND a.code='6150'
 ON CONFLICT DO NOTHING;
@@ -4979,16 +5029,20 @@ ALTER TABLE fixed_asset ADD CONSTRAINT fixed_asset_status_check
 -- loan + interest accounts and roles
 INSERT INTO account(coa_template_id,code,name,account_type,normal_balance)
 SELECT 1,'1310','Intercompany loan receivable','asset','D'
-WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='1310');
+WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='1310')
+ON CONFLICT DO NOTHING;
 INSERT INTO account(coa_template_id,code,name,account_type,normal_balance)
 SELECT 1,'2510','Intercompany loan payable','liability','C'
-WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='2510');
+WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='2510')
+ON CONFLICT DO NOTHING;
 INSERT INTO account(coa_template_id,code,name,account_type,normal_balance)
 SELECT 1,'4400','Intercompany interest income','income','C'
-WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='4400');
+WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='4400')
+ON CONFLICT DO NOTHING;
 INSERT INTO account(coa_template_id,code,name,account_type,normal_balance)
 SELECT 1,'6410','Intercompany interest expense','expense','D'
-WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='6410');
+WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='6410')
+ON CONFLICT DO NOTHING;
 
 INSERT INTO ledger_config(coa_template_id,role,account_id)
 SELECT 1,'IC_LOAN_RECEIVABLE',id FROM account WHERE coa_template_id=1 AND code='1310' ON CONFLICT DO NOTHING;
@@ -5161,11 +5215,14 @@ GROUP BY l.id, l.lender_entity, l.borrower_entity, l.ccy, l.interest_rate, l.sta
 
 -- supporting accounts + roles
 INSERT INTO account(coa_template_id,code,name,account_type,normal_balance)
-SELECT 1,'1400','Prepayments','asset','D' WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='1400');
+SELECT 1,'1400','Prepayments','asset','D' WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='1400')
+ON CONFLICT DO NOTHING;
 INSERT INTO account(coa_template_id,code,name,account_type,normal_balance)
-SELECT 1,'2400','Accruals','liability','C' WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='2400');
+SELECT 1,'2400','Accruals','liability','C' WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='2400')
+ON CONFLICT DO NOTHING;
 INSERT INTO account(coa_template_id,code,name,account_type,normal_balance)
-SELECT 1,'3200','Retained earnings','equity','C' WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='3200');
+SELECT 1,'3200','Retained earnings','equity','C' WHERE NOT EXISTS (SELECT 1 FROM account WHERE coa_template_id=1 AND code='3200')
+ON CONFLICT DO NOTHING;
 INSERT INTO ledger_config(coa_template_id,role,account_id) SELECT 1,'PREPAYMENTS',id FROM account WHERE coa_template_id=1 AND code='1400' ON CONFLICT DO NOTHING;
 INSERT INTO ledger_config(coa_template_id,role,account_id) SELECT 1,'ACCRUALS',id FROM account WHERE coa_template_id=1 AND code='2400' ON CONFLICT DO NOTHING;
 INSERT INTO ledger_config(coa_template_id,role,account_id) SELECT 1,'RETAINED_EARNINGS',id FROM account WHERE coa_template_id=1 AND code='3200' ON CONFLICT DO NOTHING;
@@ -5954,7 +6011,8 @@ $$;
 
 -- second chart of accounts (a distinct trust-company chart)
 INSERT INTO coa_template(code,name) SELECT 'TRUSTCOA','Trust company CoA'
-WHERE NOT EXISTS (SELECT 1 FROM coa_template WHERE code='TRUSTCOA');
+WHERE NOT EXISTS (SELECT 1 FROM coa_template WHERE code='TRUSTCOA')
+ON CONFLICT DO NOTHING;
 
 -- its own accounts (note: same codes as the company chart but a different template + ids)
 INSERT INTO account(coa_template_id,code,name,account_type,normal_balance)
@@ -5967,7 +6025,8 @@ FROM coa_template t,
          ('4300','Trust income','income','C'),
          ('6000','Trust administration expense','expense','D')) x(code,name,atype,nb)
 WHERE t.code='TRUSTCOA'
-  AND NOT EXISTS (SELECT 1 FROM account a WHERE a.coa_template_id=t.id AND a.code=x.code);
+  AND NOT EXISTS (SELECT 1 FROM account a WHERE a.coa_template_id=t.id AND a.code=x.code)
+ON CONFLICT DO NOTHING;
 
 -- role config for the second chart (enough to post)
 INSERT INTO ledger_config(coa_template_id,role,account_id)
