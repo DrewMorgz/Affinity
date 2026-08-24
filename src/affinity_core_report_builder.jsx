@@ -44,6 +44,14 @@ const SECTIONS = [
   { id:"crm",        label:"CRM & Fees",     color:"#8C3B6B", bg:"#F9EAF3", source:"crm_lead, fee_schedule" },
   { id:"time",       label:"Time & Recovery",color:"#3F5B8C", bg:"#EAEFF8", source:"timesheet_entry" },
   { id:"people",     label:"Our People",     color:"#5A5A6E", bg:"#F0F0F4", source:"staff, cpd_entry" },
+  { id:"meetings",   label:"Meetings & Minutes", color:"#2F6B7A", bg:"#E4F1F4", source:"entity_meeting" },
+  { id:"shares",     label:"Shares & Capital",   color:"#6B4C9A", bg:"#EFE9F7", source:"share_class, allotment, transfer" },
+  { id:"charges",    label:"Charges & Security", color:"#8A4A2F", bg:"#F8EBE4", source:"entity_charge" },
+  { id:"custody",    label:"Assets & Safe Custody", color:"#4A6B2F", bg:"#EDF4E4", source:"entity_asset, safe_custody" },
+  { id:"dividends",  label:"Dividends",      color:"#1F5E8C", bg:"#E5EFF7", source:"entity_dividend" },
+  { id:"tax",        label:"Tax & Substance", color:"#7A4B00", bg:"#FBF0E0", source:"fatca_crs, substance_test" },
+  { id:"procedures", label:"Procedures & Tasks", color:"#5C5C7A", bg:"#EEEEF5", source:"procedure_run, task" },
+  { id:"archive",    label:"Archive & Retention", color:"#6E6E6E", bg:"#F2F2F2", source:"archive_box, retention" },
 ];
 const SEC = SECTIONS.reduce((a,s)=>{ a[s.id]=s; return a; },{});
 
@@ -128,6 +136,103 @@ const FIELDS = [
   { sec:"people",     key:"admin2",       label:"Administrator",        type:"text" },
   { sec:"people",     key:"reviewer",     label:"Compliance reviewer",  type:"text" },
   { sec:"people",     key:"directorStaff",label:"Affinity director appointed", type:"list" },
+  { sec:"people",     key:"cpdHours",     label:"CPD hours (staff)",    type:"number" },
+  { sec:"people",     key:"office",       label:"Servicing office",     type:"enum", options:["Isle of Man","Malta","Cayman Islands","United Kingdom","Miami"] },
+
+  // ── Officers & Directors — the register itself, not just a count
+  { sec:"officers",   key:"officerRole",  label:"Officer role",         type:"enum", options:["Director","Alternate director","Secretary","Trustee","Protector","Enforcer","Council member","Nominee","Reporting Officer"] },
+  { sec:"officers",   key:"officerNat",   label:"Officer nationality",  type:"list" },
+  { sec:"officers",   key:"officerDob",   label:"Officer date of birth",type:"date" },
+  { sec:"officers",   key:"appointed",    label:"Date appointed",       type:"date" },
+  { sec:"officers",   key:"resigned",     label:"Date resigned",        type:"date" },
+  { sec:"officers",   key:"officerTin",   label:"Officer TIN held",     type:"bool" },
+  { sec:"officers",   key:"officerRes",   label:"Officer tax residence",type:"list" },
+  { sec:"officers",   key:"vacancies",    label:"Board vacancies",      type:"number" },
+
+  // ── Ownership — deeper than a UBO list
+  { sec:"ownership",  key:"shareholders", label:"Shareholders",         type:"list" },
+  { sec:"ownership",  key:"nomineeHeld",  label:"Nominee shareholding", type:"bool" },
+  { sec:"ownership",  key:"uboTin",       label:"UBO TIN held",         type:"bool" },
+  { sec:"ownership",  key:"controlNature",label:"Nature of control",    type:"enum", options:["Ownership >25%","Voting rights","Right to appoint directors","Significant influence","Settlor","Beneficiary","Protector"] },
+  { sec:"ownership",  key:"uboVerified",  label:"UBO verified",         type:"bool" },
+
+  // ── Meetings & minutes
+  { sec:"meetings",   key:"lastMeeting",  label:"Last board meeting",   type:"date" },
+  { sec:"meetings",   key:"meetingType",  label:"Meeting type",         type:"enum", options:["Board meeting","AGM","EGM","Face to face","Video call","Telephone"] },
+  { sec:"meetings",   key:"meetingsYtd",  label:"Meetings held YTD",    type:"number" },
+  { sec:"meetings",   key:"minutesFiled", label:"Minutes filed",        type:"bool" },
+  { sec:"meetings",   key:"ubosMet",      label:"UBOs met face to face",type:"bool" },
+  { sec:"meetings",   key:"agmDue",       label:"AGM due",              type:"date" },
+
+  // ── Shares & capital
+  { sec:"shares",     key:"shareClasses", label:"Share classes",        type:"list", options:["Ordinary","Ordinary A","Ordinary B","Preference","Redeemable preference","Non-voting","Management","Founder"] },
+  { sec:"shares",     key:"issuedShares", label:"Shares in issue",      type:"number" },
+  { sec:"shares",     key:"authorised",   label:"Authorised capital",   type:"number" },
+  { sec:"shares",     key:"paidUp",       label:"Paid up capital",      type:"number" },
+  { sec:"shares",     key:"allotmentsYtd",label:"Allotments (12m)",     type:"number" },
+  { sec:"shares",     key:"transfersYtd", label:"Transfers (12m)",      type:"number" },
+  { sec:"shares",     key:"certsIssued",  label:"Certificates issued",  type:"bool" },
+
+  // ── Charges & security
+  { sec:"charges",    key:"chargeCount",  label:"Registered charges",   type:"number" },
+  { sec:"charges",    key:"chargeType",   label:"Charge type",          type:"enum", options:["Fixed charge","Floating charge","Debenture","Mortgage","Pledge","Assignment"] },
+  { sec:"charges",    key:"chargeHolder", label:"Charge holder",        type:"list" },
+  { sec:"charges",    key:"chargeCreated",label:"Charge created",       type:"date" },
+  { sec:"charges",    key:"chargeStatus", label:"Charge status",        type:"enum", options:["Outstanding","Partly discharged","Fully discharged","Satisfied"] },
+
+  // ── Assets & safe custody
+  { sec:"custody",    key:"custodyItems", label:"Items in safe custody",type:"number" },
+  { sec:"custody",    key:"custodyType",  label:"Custody item type",    type:"enum", options:["Share certificate","Title deed","Will","Bearer instrument","Contract","Seal","Other"] },
+  { sec:"custody",    key:"custodyLoc",   label:"Custody location",     type:"enum", options:["IOM safe","Malta safe","Cayman safe","UK safe","External vault"] },
+  { sec:"custody",    key:"assetValue",   label:"Asset value",          type:"number" },
+  { sec:"custody",    key:"insured",      label:"Assets insured",       type:"bool" },
+  { sec:"custody",    key:"lastAudited",  label:"Custody last audited", type:"date" },
+
+  // ── Dividends
+  { sec:"dividends",  key:"divDeclared",  label:"Dividend declared",    type:"number" },
+  { sec:"dividends",  key:"divPaid",      label:"Dividend paid",        type:"number" },
+  { sec:"dividends",  key:"divDate",      label:"Dividend date",        type:"date" },
+  { sec:"dividends",  key:"divPerShare",  label:"Dividend per share",   type:"number" },
+  { sec:"dividends",  key:"interim",      label:"Interim dividend",     type:"bool" },
+
+  // ── Tax & substance
+  { sec:"tax",        key:"fatcaStatus",  label:"FATCA classification", type:"enum", options:["Reporting FI","Non-reporting FI","Active NFFE","Passive NFFE","Not assessed"] },
+  { sec:"tax",        key:"crsReportable",label:"CRS reportable",       type:"bool" },
+  { sec:"tax",        key:"crsJurisdictions", label:"CRS jurisdictions",type:"list" },
+  { sec:"tax",        key:"substanceTest", label:"Substance test result",type:"enum", options:["Pass","Fail","Not applicable","Under review"] },
+  { sec:"tax",        key:"cigaCount",    label:"Core income generating activities", type:"number" },
+  { sec:"tax",        key:"taxResidence", label:"Tax residence",        type:"list" },
+  { sec:"tax",        key:"vatRegistered",label:"VAT registered",       type:"bool" },
+
+  // ── Procedures & tasks
+  { sec:"procedures", key:"openTasks",    label:"Open tasks",           type:"number" },
+  { sec:"procedures", key:"overdueTasks", label:"Overdue tasks",        type:"number" },
+  { sec:"procedures", key:"procRunning",  label:"Procedures in progress",type:"list" },
+  { sec:"procedures", key:"lastReviewed", label:"Last file review",     type:"date" },
+
+  // ── Archive & retention
+  { sec:"archive",    key:"archived",     label:"Archived",             type:"bool" },
+  { sec:"archive",    key:"archiveDate",  label:"Date archived",        type:"date" },
+  { sec:"archive",    key:"archiveLoc",   label:"Archive location",     type:"text" },
+  { sec:"archive",    key:"retentionEnd", label:"Retention expires",    type:"date" },
+  { sec:"archive",    key:"destroyDue",   label:"Due for destruction",  type:"bool" },
+
+  // ── Documents (deeper)
+  { sec:"documents",  key:"docFolders",   label:"Folders in use",       type:"list" },
+  { sec:"documents",  key:"docExpiring",  label:"Documents expiring 90d",type:"number" },
+  { sec:"documents",  key:"lastFiled",    label:"Last document filed",  type:"date" },
+  { sec:"documents",  key:"unclassified", label:"Unclassified documents",type:"number" },
+
+  // ── Statutory (deeper)
+  { sec:"statutory",  key:"formsPending", label:"Statutory forms pending",type:"number" },
+  { sec:"statutory",  key:"lastFiling",   label:"Last filing date",     type:"date" },
+  { sec:"statutory",  key:"registersGenerated", label:"Registers generated", type:"date" },
+
+  // ── Gaming (deeper)
+  { sec:"gaming",     key:"licenceSubtype",label:"Licence subtype",     type:"enum", options:["B2C — Casino","B2C — Sports betting","B2C — Poker","B2B — Platform supply","B2B — Software supply"] },
+  { sec:"gaming",     key:"licenceIssued", label:"Licence issued",      type:"date" },
+  { sec:"gaming",     key:"licenceExpiry", label:"Licence expiry",      type:"date" },
+  { sec:"gaming",     key:"keyOfficials",  label:"Key officials",       type:"list" },
 ];
 const FIELD = FIELDS.reduce((a,f)=>{ a[f.key]=f; return a; },{});
 // Fields the preview dataset can answer today. Everything else is catalogued and
@@ -344,7 +449,9 @@ export default function AffinityReportBuilder({ isAdmin = false, onNav, role = "
   const allowed = internalOK.length ? ["client","group"] : ["client"];
   const [scope, setScope]     = useState("all"); // client | internal | all
   const [shareSaved, setShareSaved] = useState(false);
-  const [entityFilter, setEntityFilter] = useState(""); // narrow the whole report to one entity
+  const [entityFilter, setEntityFilter] = useState("");
+  const [tab, setTab]         = useState("build");   // build | saved
+  const [savedQ, setSavedQ]   = useState(""); // narrow the whole report to one entity
 
   const refreshSaved = ()=> savedReportList(userName)
     .then(r=>{ setSaved(r.data||[]); setSavedLocal(!!r.local); })
@@ -424,7 +531,16 @@ export default function AffinityReportBuilder({ isAdmin = false, onNav, role = "
       {/* Header */}
       <div style={{ background:"#fff", borderBottom:"0.5px solid #e5e5e5", padding:"14px 22px" }}>
         <div style={{ display:"flex", alignItems:"baseline", gap:10, flexWrap:"wrap" }}>
-          <h2 style={{ margin:0, fontSize:19, fontWeight:600, color:NAVY }}>Report builder</h2>
+          <h2 style={{ margin:0, fontSize:19, fontWeight:600, color:NAVY }}>Reporting</h2>
+          <div style={{ display:"flex", border:"0.5px solid #e5e5e5", borderRadius:6, overflow:"hidden" }}>
+            {[["build","Report builder",null],["saved","Saved reports",saved.length]].map(([v,l,n])=>(
+              <button key={v} onClick={()=>setTab(v)}
+                style={{ border:"none", cursor:"pointer", fontSize:11.5, padding:"6px 13px", fontWeight:tab===v?600:400,
+                         background:tab===v?CY:"#fff", color:tab===v?"#fff":"#666", display:"flex", alignItems:"center", gap:6 }}>
+                {l}{n>0 && <span style={{ fontSize:9, fontWeight:700, background:tab===v?"rgba(255,255,255,0.25)":"#eee", color:tab===v?"#fff":"#666", borderRadius:9, padding:"1px 6px" }}>{n}</span>}
+              </button>
+            ))}
+          </div>
           <span style={{ fontSize:11.5, color:"#888" }}>Pick fields from any section of the system. The entity is the spine, so sections combine.</span>
         </div>
         {/* Entity search — same component as Entity Admin. Leave empty to report
@@ -435,8 +551,8 @@ export default function AffinityReportBuilder({ isAdmin = false, onNav, role = "
         </div>
       </div>
 
-      {/* Saved reports — the primary way in. Build once, name it, re-run it. */}
-      <div style={{ padding:"12px 22px 0" }}>
+      {/* Recently saved — full list lives on the Saved reports tab */}
+      {tab==="build" && <div style={{ padding:"12px 22px 0" }}>
         <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:7, flexWrap:"wrap" }}>
           <div style={{ fontSize:10, fontWeight:600, color:"#aaa", textTransform:"uppercase", letterSpacing:"0.5px" }}>Saved reports</div>
           <span style={{ fontSize:10.5, color:"#aaa" }}>{saved.length} saved{savedLocal?" · this device only":""}</span>
@@ -476,9 +592,9 @@ export default function AffinityReportBuilder({ isAdmin = false, onNav, role = "
             ))}
           </div>
         </details>
-      </div>
+      </div>}
 
-      <div style={{ display:"flex", gap:14, padding:"14px 22px 70px", alignItems:"flex-start", flexWrap:"wrap" }}>
+      {tab==="build" && <div style={{ display:"flex", gap:14, padding:"14px 22px 70px", alignItems:"flex-start", flexWrap:"wrap" }}>
 
         {/* ── STEP 1 — fields, grouped by system section ── */}
         <div style={{ width:270, minWidth:250, flexShrink:0, background:"#fff", border:"0.5px solid #e5e5e5", borderRadius:9, overflow:"hidden" }}>
@@ -695,7 +811,60 @@ export default function AffinityReportBuilder({ isAdmin = false, onNav, role = "
             ⚠️ Builder shell. The field catalogue, join model, conditions, grouping and CSV export are complete and final — rows currently resolve against a preview portfolio of {ROWS.length} entities. Each section header shows the table it will read from. Swapping to live data is one resolver change in <code>DOMAINS</code>, and needs the Azure reporting views plus Entra identity so row-level scoping (internal vs client) is enforced server-side rather than in the browser.
           </div>
         </div>
-      </div>
+      </div>}
+
+      {/* ── SAVED REPORTS TAB — the full list, kept off the builder ── */}
+      {tab==="saved" && (
+        <div style={{ padding:"14px 22px 70px", maxWidth:1100 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:9, marginBottom:11, flexWrap:"wrap" }}>
+            <input value={savedQ} onChange={e=>setSavedQ(e.target.value)} placeholder="Search saved reports…"
+              style={{ ...inp, height:32, minWidth:260 }} />
+            <span style={{ fontSize:11, color:"#888" }}>{saved.length} saved{savedLocal?" · this device only":""}</span>
+            <button style={{ ...btnP, marginLeft:"auto" }} onClick={()=>setTab("build")}>＋ New report</button>
+          </div>
+
+          {saved.length===0 ? (
+            <div style={{ background:"#fff", border:"0.5px solid #e5e5e5", borderRadius:9, padding:"46px 20px", textAlign:"center", color:"#999", fontSize:12 }}>
+              No saved reports yet. Build one on the Report builder tab, name it and save it — for example a report of UK-resident clients saved as “UK client report”, ready to re-run whenever you need it.
+            </div>
+          ) : (
+            <div style={{ background:"#fff", border:"0.5px solid #e5e5e5", borderRadius:9, overflow:"hidden" }}>
+              <table style={{ width:"100%", borderCollapse:"collapse" }}>
+                <thead><tr>
+                  {["Report","Columns","Conditions","Portfolio","Visibility","Runs","Last run",""].map(h=>(
+                    <th key={h} style={{ ...th, background:"#f9f9f9", color:"#666" }}>{h}</th>
+                  ))}
+                </tr></thead>
+                <tbody>
+                  {saved.filter(r=>!savedQ.trim()||r.name.toLowerCase().includes(savedQ.trim().toLowerCase())).map((r,i)=>{
+                    const d = r.definition || {};
+                    return (
+                      <tr key={r.id} style={{ background:i%2?"#fcfcfd":"#fff" }}>
+                        <td style={{ ...td, fontWeight:600 }}>{r.name}</td>
+                        <td style={td}>{(d.fields||[]).length}</td>
+                        <td style={td}>{(d.conds||[]).length||"—"}</td>
+                        <td style={td}>{d.scope==="client"?"Managed":d.scope==="internal"?"Affinity internal":"All entities"}</td>
+                        <td style={td}>{r.shared
+                          ? <span style={{ fontSize:9.5, fontWeight:700, color:"#1F6F54", background:"#E7F4EF", borderRadius:9, padding:"2px 7px" }}>Team</span>
+                          : <span style={{ color:"#999" }}>Private</span>}</td>
+                        <td style={td}>{r.run_count||0}</td>
+                        <td style={{ ...td, color:"#888" }}>{r.last_run_at ? String(r.last_run_at).slice(0,10).split("-").reverse().join("/") : "never"}</td>
+                        <td style={{ ...td, whiteSpace:"nowrap" }}>
+                          <button style={{ ...btnP, padding:"3px 10px", fontSize:10 }} onClick={()=>{ runSaved(r); setTab("build"); }}>Run ↗</button>
+                          <button style={{ ...btn, padding:"3px 9px", fontSize:10, marginLeft:5, borderColor:"#f0c9c9", color:"#A32D2D" }} onClick={()=>removeSaved(r)}>Delete</button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <div style={{ fontSize:10.5, color:"#888", marginTop:10, lineHeight:1.6 }}>
+            A saved report stores its definition, not a snapshot — running it again evaluates against current data. {savedLocal && "Saved to this browser until db_ops/008_saved_reports.sql is run in the database."}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
