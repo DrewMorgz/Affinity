@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+const ENTITY_NAMES = ["Meridian Holdings Ltd","Harrington Family Trust","Pacific Wealth Trust","Caledonian Ventures Ltd","North Star Holdings Ltd","Azure Mediterranean Foundation","Apex Growth Fund Ltd","Stonebridge Capital Ltd","Thornbury Asset Co Ltd","Bluewater Family Trust","Phoenix eGaming Ltd","Meridian Digital Ltd","Suncoast Ventures LLC"];
 import { isConfigured } from "./affinity_accounting_supabase";
 import { feeInvoices } from "./affinity_invoicing_api";
 const CY = "#00C4CC";
@@ -497,7 +498,9 @@ export default function AffinityInvoicing({ onNav }) {
               ].map(([l,t,ph,full,opts])=>(
                 <div key={l} style={{ display:"flex", flexDirection:"column", gap:3, gridColumn:full?"1/-1":"auto" }}>
                   <label style={{ fontSize:11, color:"#666" }}>{l}</label>
-                  {t==="select"
+                  {(l==="Entity"||l==="Client")
+                    ?<><input list="inv-ent" placeholder={"Search "+l.toLowerCase()+"…"} style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", background:"var(--bg-primary,#fff)", padding:"0 8px", height:32, outline:"none" , boxSizing:"border-box" }} /><datalist id="inv-ent">{ENTITY_NAMES.map(o=><option key={o} value={o}/>)}</datalist></>
+                    :t==="select"
                     ?<select style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", background:"var(--bg-primary,#fff)", padding:"0 8px", height:32, outline:"none" }}>{(opts||[]).map(o=><option key={o}>{o}</option>)}</select>
                     :<input type={t} style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)" }} placeholder={ph} />
                   }
