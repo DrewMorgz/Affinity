@@ -10,7 +10,7 @@ const Btn = ({primary,children,onClick,sx={}}) => <button onClick={onClick} styl
 const Md = ({title,onClose,children}) => <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(13,27,42,0.5)",display:"flex",alignItems:"flex-start",justifyContent:"center",paddingTop:40,zIndex:200}} onClick={e=>e.target===e.currentTarget&&onClose()}><div style={{background:"#fff",borderRadius:10,border:"0.5px solid #e5e5e5",padding:22,width:520,maxWidth:"96vw",maxHeight:"88vh",overflowY:"auto"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><div style={{fontSize:14,fontWeight:600}}>{title}</div><button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:18,color:"#aaa"}}>✕</button></div>{children}</div></div>;
 
 // Full folder structure per brief
-const FOLDER_TREE = [
+export const FOLDER_TREE = [
   {name:"Accounts",subs:["AEOI","Budgets/Funding Requests","Captains Cash","Financial Statements","Management Accounts","Payroll","Player Reconciliations","Substance","Year End"]},
   {name:"Aircraft/Yacht", subs:["Aircraft/Yacht Documents","Charter","Construction","Crew","Import & Export","Purchase","Radio/EPIRB","Registration","Sale"]},
   {name:"Bank",           subs:["Application Forms/Mandate","Payments","Source of Funds","Statements"]},

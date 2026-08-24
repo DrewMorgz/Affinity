@@ -2,6 +2,7 @@ import React from "react";
 import { useState, useEffect } from "react";
 import { appUsers, isConfigured } from "./affinity_ops_api";
 import { ROLES, ROLE_LABELS, permsFor, INTERNAL_ENTITIES, INTERNAL_ACCESS } from "./affinity_core_rbac";
+import { FOLDER_TREE } from "./affinity_core_documents_v2";
 
 const CY = "#00C4CC";
 
@@ -90,8 +91,8 @@ const GROUP_ENTITIES = [
   "Affinity (Cayman) Limited","Affinity (UK) Limited","Affinity South Dakota, LLC","Affinity South Florida, LLC",
 ];
 
-const VIEWS = ["users","roles","matrix","fields","content","audit","config"];
-const VIEW_LABELS = ["Users","Roles & permissions","Permission matrix","Custom fields & lists","Procedures & templates","Audit log","System config"];
+const VIEWS = ["users","roles","matrix","docperms","fields","content","audit","config"];
+const VIEW_LABELS = ["Users","Roles & permissions","Permission matrix","Document permissions","Custom fields & lists","Procedures & templates","Audit log","System config"];
 
 // Editable dropdown lists used across the system. Super Admin owns these — the
 // alternative is a developer change every time a sector or work type is added.
@@ -138,7 +139,7 @@ const MATRIX_TREE = [
   ["Entity Admin","entities",["Overview","Directors & officers","Shareholders","Owners & controllers","Bank mandates","Assets","Statutory registers","Gaming registers","Safe custody","File notes"]],
   ["Compliance","compliance",["Framework","Risk assessment","Registers","Breach log","CPD","Sanctions screening"]],
   ["CRM / BD","crm",["Pipeline","Leads","Proposals & fees","Sectors"]],
-  ["Documents","documents",["Folder tree","Upload & classify","Email filing","Generate from template","Deletion"]],
+  ["Documents","documents",["Folder permissions — see Document permissions tab","Upload & classify","Email filing","Generate from template","Deletion"]],
   ["Onboarding","onboarding",["Enquiry","CDD collection","Risk rating","Sign-off","Letterhead & packs"]],
   ["Timesheets","timesheets",["My time","Timer","Team view","Approvals"]],
   ["Internal Accounts","acc_wip",["WIP","Invoicing","Fee schedules","Budgets"]],
@@ -220,6 +221,9 @@ export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false })
   const users = liveU || usersData;
   const [view, setView] = useState("users");
   const [matrixOpen, setMatrixOpen] = useState({ entities:true });
+  const [folderOpen, setFolderOpen] = useState({});
+  const [folderQ, setFolderQ] = useState("");
+  const [docPerms, setDocPerms] = useState({});   // "Folder/Sub" -> { role: ["V","C","E","D"] }
   const [listModal, setListModal] = useState(null);
   const [userScopes, setUserScopes] = useState({});
   // Entity-class access: which roles may see Affinity's own entities vs client entities
@@ -537,6 +541,103 @@ export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false })
       )}
 
       {/* ── PERMISSION MATRIX ── */}
+      {/* ── DOCUMENT PERMISSIONS — its own section: 18 folders, 88 subfolders ── */}
+      {view === "docperms" && (
+        <div style={s.pad}>
+          <div style={{ ...s.infoBox, marginBottom:14 }}>
+            ℹ️ Folder-level permissions for the document library. A subfolder inherits its parent unless set explicitly — an overridden row is marked. <strong>V</strong> view, <strong>C</strong> add, <strong>E</strong> edit, <strong>D</strong> delete. Deletion is deliberately restricted: Documents already limits it to Super Admin and Director elsewhere in the system.
+          </div>
+
+          <div style={{ display:"flex", alignItems:"center", gap:9, marginBottom:11, flexWrap:"wrap" }}>
+            <input value={folderQ} onChange={e=>setFolderQ(e.target.value)} placeholder="Search folders…"
+              style={{ height:30, padding:"0 10px", fontSize:11.5, border:`0.5px solid var(--border-tertiary,#e5e5e5)`, borderRadius:6, background:"var(--bg-primary,#fff)", minWidth:230 }} />
+            <span style={{ fontSize:11, color:"#888" }}>
+              {FOLDER_TREE.length} folders · {FOLDER_TREE.reduce((a,f)=>a+(f.subs||[]).length,0)} subfolders
+            </span>
+            <button style={nb} onClick={()=>setFolderOpen(FOLDER_TREE.reduce((a,f)=>{a[f.name]=true;return a;},{}))}>Expand all</button>
+            <button style={nb} onClick={()=>setFolderOpen({})}>Collapse all</button>
+          </div>
+
+          <div style={{ overflowX:"auto" }}>
+            <table style={{ ...s.ct, tableLayout:"auto" }}>
+              <thead><tr>
+                <th style={{ ...s.th, textAlign:"left", minWidth:250 }}>Folder</th>
+                {ROLES.map(r=><th key={r} style={{ ...s.th, textAlign:"center" }}>{ROLE_LABELS[r]}</th>)}
+              </tr></thead>
+              <tbody>
+                {FOLDER_TREE.filter(f=>{
+                  if(!folderQ.trim()) return true;
+                  const q=folderQ.trim().toLowerCase();
+                  return f.name.toLowerCase().includes(q) || (f.subs||[]).some(x=>x.toLowerCase().includes(q));
+                }).map(f=>{
+                  const open = !!folderOpen[f.name] || !!folderQ.trim();
+                  const subs = (f.subs||[]).filter(x=>!folderQ.trim() || x.toLowerCase().includes(folderQ.trim().toLowerCase()) || f.name.toLowerCase().includes(folderQ.trim().toLowerCase()));
+                  return (
+                    <React.Fragment key={f.name}>
+                      <tr onClick={()=>setFolderOpen(p=>({...p,[f.name]:!p[f.name]}))}
+                        style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)", cursor:"pointer", background:open?"var(--bg-secondary,#f9f9f9)":"transparent" }}>
+                        <td style={{ ...s.td, fontWeight:600 }}>
+                          <span style={{ fontSize:9, color:"#aaa", marginRight:7 }}>{open?"▼":"►"}</span>
+                          {f.name}
+                          <span style={{ fontSize:9.5, color:"#aaa", fontWeight:400, marginLeft:6 }}>{(f.subs||[]).length} subfolders</span>
+                        </td>
+                        {ROLES.map(r=>{
+                          const base=permsFor(r,"documents");
+                          const eff = f.name==="Delete Documents" ? base.filter(x=>r==="system_admin"||r==="director") : base;
+                          return <td key={r} style={{ ...s.td, textAlign:"center", fontWeight:600, fontSize:11,
+                            color: eff.length?"var(--text-primary,#333)":"#ccc" }}>{eff.length?eff.join("+"):"X"}</td>;
+                        })}
+                      </tr>
+                      {open && subs.map(sub=>{
+                        const key=f.name+"/"+sub;
+                        const override=docPerms[key];
+                        return (
+                          <tr key={key} style={{ borderBottom:"0.5px solid #f5f5f5" }}>
+                            <td style={{ ...s.td, paddingLeft:34, fontSize:11.5, color:"#555" }}>
+                              {sub}
+                              {override && <span style={{ marginLeft:7, fontSize:8.5, fontWeight:700, color:"#7B4F1D", background:"#FDF4DC", borderRadius:8, padding:"1px 6px" }}>OVERRIDE</span>}
+                            </td>
+                            {ROLES.map(r=>{
+                              const base=permsFor(r,"documents");
+                              const parentEff = f.name==="Delete Documents" ? base.filter(x=>r==="system_admin"||r==="director") : base;
+                              const eff = (override && override[r]) ? override[r] : parentEff;
+                              return (
+                                <td key={r} style={{ ...s.td, textAlign:"center" }}>
+                                  <div style={{ display:"flex", gap:3, justifyContent:"center" }}>
+                                    {["V","C","E","D"].map(a=>{
+                                      const on=eff.indexOf(a)>-1;
+                                      return (
+                                        <button key={a} title={({V:"View",C:"Add",E:"Edit",D:"Delete"})[a]+" — "+sub}
+                                          onClick={()=>setDocPerms(prev=>{
+                                            const cur=(prev[key]&&prev[key][r]) ? prev[key][r].slice() : parentEff.slice();
+                                            const next=cur.indexOf(a)>-1?cur.filter(x=>x!==a):cur.concat([a]);
+                                            return {...prev,[key]:{...(prev[key]||{}),[r]:next}};
+                                          })}
+                                          style={{ width:18, height:18, fontSize:9, fontWeight:700, cursor:"pointer", borderRadius:3,
+                                                   border:`0.5px solid ${on?"#274690":"var(--border-tertiary,#e5e5e5)"}`,
+                                                   background:on?"#EAF0FB":"var(--bg-primary,#fff)", color:on?"#274690":"#ccc" }}>{a}</button>
+                                      );
+                                    })}
+                                  </div>
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
+                    </React.Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <div style={{ ...s.infoBox, background:"#FDF4DC", borderColor:"#E5CE9A", color:"#7B4F1D", marginTop:14 }}>
+            ⚠️ Front-end only at this stage. Folder permissions become enforceable when documents move to Azure storage with access checked server-side against the Entra identity — until then this defines the model rather than protecting the files.
+          </div>
+        </div>
+      )}
+
       {/* ── CUSTOM FIELDS & LISTS — Super Admin ── */}
       {view === "fields" && (
         <div style={s.pad}>
