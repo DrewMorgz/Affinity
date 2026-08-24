@@ -21,8 +21,18 @@ import { listEntities, getKpiDashboard, getCashFlow, getCreditStatus, getCollect
   customer_credit_status, build_audit_pack, get_accounts_set_json …).
 */
 
-const NAVY = "#001242", CY = "#00C4CC", INK = "#0B1B2B", MUT = "#5B6B7B",
-      LINE = "#E6EAF0", CARD = "#fff", POS = "#1F9D6B", NEG = "#C2453E", AMBER = "#B8860B";
+// Core design tokens — same values the rest of the system uses, incl. the CSS
+// variables that make dark mode work. This module previously carried its own
+// palette, radii and borders, which is why it read as a separate product.
+const NAVY = "#001242", CY = "#00C4CC";
+const INK  = "var(--text-primary,#111)";
+const MUT  = "var(--text-secondary,#666)";
+const LINE = "var(--border-tertiary,#e5e5e5)";
+const CARD = "var(--bg-primary,#fff)";
+const PAGE = "var(--bg-secondary,#f8f9fc)";
+const SUBTLE = "var(--bg-secondary,#f9f9f9)";
+const POS = "#4CAF7D", NEG = "#EF4444", AMBER = "#F59E0B";
+const FONT = "'Catamaran',system-ui,sans-serif";
 
 const f0 = (n) => n == null ? "—" : new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 0 }).format(n);
 const f2 = (n) => n == null ? "—" : new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(n);
@@ -36,8 +46,8 @@ const TITLES = {
 };
 
 // ---- style atoms ----
-const th = { textAlign: "right", padding: "10px 14px", color: MUT, fontWeight: 600, fontSize: 11.5, background: "#FBFCFD", borderBottom: `1px solid ${LINE}` };
-const td = { padding: "10px 14px", borderBottom: `1px solid ${LINE}` };
+const th = { textAlign: "right", padding: "8px 14px", color: MUT, fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.4px", background: SUBTLE, borderBottom: `0.5px solid ${LINE}` };
+const td = { padding: "9px 14px", fontSize: 12.5, borderBottom: `0.5px solid ${LINE}` };
 const tbl = { width: "100%", borderCollapse: "collapse", fontSize: 13.5, minWidth: 420 };
 
 function Pill({ text, color }) {
@@ -62,16 +72,16 @@ function Table({ head, rows }) {
 }
 function Panel({ title, children }) {
   return (
-    <div style={{ background: CARD, border: `1px solid ${LINE}`, borderRadius: 12, overflow: "hidden", marginBottom: 18 }}>
-      <div style={{ padding: "13px 16px", borderBottom: `1px solid ${LINE}`, fontWeight: 600, color: NAVY, fontSize: 14, background: "#FBFCFD" }}>{title}</div>
+    <div style={{ background: CARD, border: `0.5px solid ${LINE}`, borderRadius: 9, overflow: "hidden", marginBottom: 16 }}>
+      <div style={{ padding: "11px 15px", borderBottom: `0.5px solid ${LINE}`, fontWeight: 600, color: NAVY, fontSize: 13, background: SUBTLE }}>{title}</div>
       {children}
     </div>
   );
 }
-function Note({ children }) { return <p style={{ color: MUT, fontSize: 12.5, marginTop: 10 }}>{children}</p>; }
+function Note({ children }) { return <p style={{ color: MUT, fontSize: 11.5, marginTop: 10, lineHeight: 1.7 }}>{children}</p>; }
 function Mini({ title, rows }) {
   return (
-    <div style={{ background: CARD, border: `1px solid ${LINE}`, borderRadius: 12, padding: 16 }}>
+    <div style={{ background: CARD, border: `0.5px solid ${LINE}`, borderRadius: 9, padding: 14 }}>
       <div style={{ fontSize: 12, color: MUT, marginBottom: 10 }}>{title}</div>
       {rows.map(([l, v], i) => (
         <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", fontSize: 14 }}>
@@ -189,7 +199,7 @@ const PANELS = {
       <>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(165px,1fr))", gap: 12 }}>
           {k.map(([l, v, a], i) => (
-            <div key={i} style={{ background: a ? NAVY : CARD, border: `1px solid ${a ? NAVY : LINE}`, borderRadius: 12, padding: "15px 16px" }}>
+            <div key={i} style={{ background: a ? NAVY : CARD, border: `1px solid ${a ? NAVY : LINE}`, borderRadius: 9, padding: "15px 16px" }}>
               <div style={{ fontSize: 11.5, color: a ? "#9FB0C4" : MUT, marginBottom: 6 }}>{l}</div>
               <div style={{ fontSize: 23, fontWeight: 700, letterSpacing: -0.5, color: a ? CY : INK }}>{v}</div>
             </div>
@@ -217,7 +227,7 @@ const PANELS = {
         ];
     return (
       <>
-        <div style={{ background: "#FBFCFD", border: `1px solid ${LINE}`, borderRadius: 10, padding: "10px 14px", fontSize: 12.5, color: MUT, marginBottom: 16 }}>
+        <div style={{ background: SUBTLE, border: `0.5px solid ${LINE}`, borderRadius: 8, padding: "10px 14px", fontSize: 12.5, color: MUT, marginBottom: 16 }}>
           📌 <strong style={{ color: NAVY }}>How posting works.</strong> Routine transactions — invoices, bills, payments and receipts, bank items — are entered on their own forms in <strong>Accounts Receivable</strong>, <strong>Accounts Payable</strong> and <strong>Banking</strong>, and each posts its double-entry to the ledger automatically. <strong>Manual journals are for adjustments only</strong> (accruals, prepayments, depreciation, reclassifications, corrections) — the same separation QuickBooks and other ledgers use. You don't post a payment as a raw journal. <em>(Transaction forms activate with the write layer; the double-entry engine underneath already supports this.)</em>
         </div>
         <Panel title="Trial balance"><Table head={["Account", "Debit", "Credit"]} rows={tb} /></Panel>
@@ -392,7 +402,7 @@ const PANELS = {
     const hasP = fx && fx.positions && fx.positions.length;
     return (
       <>
-        <div style={{ background: "#FBFCFD", border: `1px solid ${LINE}`, borderRadius: 10, padding: "10px 14px", fontSize: 12.5, color: MUT, marginBottom: 16 }}>
+        <div style={{ background: SUBTLE, border: `0.5px solid ${LINE}`, borderRadius: 8, padding: "10px 14px", fontSize: 12.5, color: MUT, marginBottom: 16 }}>
           ⚙️ <strong style={{ color: NAVY }}>Accounting admin — FX rates (SAP-style model).</strong> One central, date-effective rate table keyed by <strong>rate type + currency pair + valid-from date</strong>. Rate types serve different purposes — <strong>Standard</strong> for posting, <strong>Period-end</strong> for revaluation &amp; balance-sheet translation, <strong>Budget</strong> for planning — so each process pulls the right rate on the document date, and a client can sit on its own rate set. Rates are fed two ways: <strong>manual entry</strong> here, and an <strong>automated daily feed from the European Central Bank (ECB)</strong> — deriving cross-rates — with the option to move to Refinitiv (SAP's commercial feed) later without changing the model. <em>(Entry &amp; feed activate with the write layer.)</em>
         </div>
         <Panel title="FX rate table (rate type · pair · valid from)"><Table head={["Rate type", "Pair", "Rate", "Valid from"]} rows={rates} /></Panel>
@@ -469,9 +479,9 @@ const PANELS = {
         ];
     return (
       <>
-        <div style={{ display: "inline-flex", border: `1px solid ${LINE}`, borderRadius: 8, overflow: "hidden", marginBottom: 14 }}>
+        <div style={{ display: "inline-flex", border: `0.5px solid ${LINE}`, borderRadius: 8, overflow: "hidden", marginBottom: 14 }}>
           {["FRS 102 1A", "IFRS", "GAPSME", "Trust"].map((t, i) => (
-            <span key={t} style={{ padding: "7px 13px", fontSize: 13, background: i === 0 ? NAVY : "#fff", color: i === 0 ? "#fff" : MUT, fontWeight: i === 0 ? 600 : 400 }}>{t}</span>
+            <span key={t} style={{ padding: "7px 13px", fontSize: 13, background: i === 0 ? NAVY : CARD, color: i === 0 ? "#fff" : MUT, fontWeight: i === 0 ? 600 : 400 }}>{t}</span>
           ))}
         </div>
         <Panel title="Statement of financial position"><Table head={bs ? ["", "2026"] : ["", "2026", "2025"]} rows={sfp} /></Panel>
@@ -561,7 +571,7 @@ const PANELS = {
     return (
       <>
         <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
-          <input placeholder="Search documents…" style={{ flex: 1, padding: "9px 12px", border: `1px solid ${LINE}`, borderRadius: 8, fontSize: 13 }} />
+          <input placeholder="Search documents…" style={{ flex: 1, padding: "9px 12px", border: `0.5px solid ${LINE}`, borderRadius: 8, fontSize: 13 }} />
           <button style={{ background: CY, color: "#04313a", border: "none", borderRadius: 8, padding: "8px 13px", fontWeight: 600, cursor: "pointer" }}>Search</button>
         </div>
         <Panel title="Repository (17 categories)"><Table head={["Document", "Category", "Retention until"]} rows={[
@@ -809,16 +819,17 @@ export default function Accounting({ module }) {
   const render = PANELS[tab] || PANELS.acc_ov;
 
   return (
-    <div style={{ padding: "18px 22px 80px", background: "#F4F6F9", minHeight: "100vh", color: INK }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 14 }}>
-        <h2 style={{ margin: 0, fontSize: 20, color: NAVY, fontWeight: 600 }}>{GROUP_TITLE[group]}</h2>
+    <div style={{ fontFamily: FONT, background: PAGE, minHeight: "100vh", color: INK }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "12px 22px", background: CARD, borderBottom: `0.5px solid ${LINE}` }}>
+        <h2 style={{ margin: 0, fontSize: 18, color: NAVY, fontWeight: 500 }}>{GROUP_TITLE[group]}</h2>
         {live
           ? <span style={{ background: POS + "1A", color: POS, borderRadius: 999, padding: "3px 10px", fontSize: 11.5, fontWeight: 600 }}>Live</span>
           : <span style={{ background: AMBER + "1A", color: AMBER, borderRadius: 999, padding: "3px 10px", fontSize: 11.5, fontWeight: 600 }}>Preview data</span>}
       </div>
 
       {/* Entity search — same component as Entity Admin, on every accounting tab */}
-      <div style={{ marginBottom: 16, maxWidth: 460 }}>
+      <div style={{ padding: "10px 22px", background: CARD, borderBottom: `0.5px solid ${LINE}` }}>
+        <div style={{ maxWidth: 460 }}>
         <EntitySearch compact
           value={entSrch === null ? ((entities.find((e) => e.id === entityId) || {}).label || "") : entSrch}
           onChange={(v) => {
@@ -828,20 +839,23 @@ export default function Accounting({ module }) {
             if (m) { setEntityId(m.id); setEntSrch(null); }
             if (!v) setEntSrch("");
           }}
-          entities={entities.map((e) => ({ name: e.label, ref: "", jur: "" }))}
-        />
+            entities={entities.map((e) => ({ name: e.label, ref: "", jur: "" }))}
+          />
+        </div>
       </div>
       {tabs.length > 1 && (
-        <div style={{ display: "flex", gap: 4, borderBottom: `1px solid ${LINE}`, marginBottom: 18, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 4, borderBottom: `0.5px solid ${LINE}`, marginBottom: 16, padding: "0 22px", background: CARD, flexWrap: "wrap" }}>
           {tabs.map(([tid, tlabel]) => (
             <button key={tid} onClick={() => setTab(tid)}
-              style={{ border: "none", background: "none", cursor: "pointer", padding: "9px 12px", fontSize: 13.5,
-                fontWeight: tab === tid ? 700 : 500, color: tab === tid ? NAVY : MUT,
+              style={{ border: "none", background: "none", cursor: "pointer", padding: "9px 12px", fontSize: 12.5,
+                fontWeight: tab === tid ? 600 : 400, color: tab === tid ? NAVY : MUT,
                 borderBottom: tab === tid ? `2px solid ${CY}` : "2px solid transparent" }}>{tlabel}</button>
           ))}
         </div>
       )}
+      <div style={{ padding: "16px 22px 80px" }}>
       {tab === "acc_ov" ? render(liveKpis) : tab === "acc_cf" ? render(liveCf) : tab === "acc_ar" ? render({ credit: liveArCredit, collections: liveArCol }) : tab === "acc_ap" ? render(liveAp) : tab === "acc_fa" ? render(liveFa) : tab === "acc_ic" ? render(liveIc) : tab === "acc_gl" ? render(liveGl) : tab === "acc_bud" ? render(liveBud) : tab === "acc_mgmt" ? render(liveMgmt) : (tab === "acc_fs" || tab === "acc_aud") ? render(livePack) : tab === "acc_ctl" ? render(liveCtl) : tab === "acc_bank" ? render(liveBank) : tab === "acc_fx" ? render(liveFx) : tab === "acc_tax" ? render(liveTax) : tab === "acc_con" ? render(liveCon) : tab === "wip" ? render(null, { wipQ, setWipQ }) : render()}
+      </div>
     </div>
   );
 }
