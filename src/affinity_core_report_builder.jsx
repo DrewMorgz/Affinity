@@ -19,8 +19,9 @@
 // reads from once Azure/Entra is in place, and DOMAINS is the single place to
 // swap a resolver from preview to live without touching the UI.
 // ─────────────────────────────────────────────────────────────────────────────
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { reportingScopesFor } from "./affinity_core_rbac";
+import { savedReportList, savedReportSave, savedReportTouch, savedReportDelete } from "./affinity_saved_reports_api";
 
 const CY   = "#00C4CC";
 const NAVY = "#001242";
@@ -326,15 +327,24 @@ const fmtCell = (v, f) => {
   return String(v);
 };
 
-export default function AffinityReportBuilder({ isAdmin = false, onNav, role = "admin", reportingScopes }) {
+export default function AffinityReportBuilder({ isAdmin = false, onNav, role = "admin", reportingScopes, userName = "" }) {
   const [picked, setPicked]   = useState(PRESETS[0].fields);
   const [conds, setConds]     = useState(PRESETS[0].conds);
   const [openSecs, setOpenSecs] = useState({ entity:true, gaming:true, ownership:true });
   const [activePreset, setActivePreset] = useState(PRESETS[0].id);
   const [saved, setSaved]     = useState([]);
+  const [savedLocal, setSavedLocal] = useState(false);
+  const [activeSaved, setActiveSaved] = useState(null);
+  const [busy, setBusy]       = useState(false);
   const [name, setName]       = useState(PRESETS[0].name);
   const allowed = reportingScopesFor(role, reportingScopes);
   const [scope, setScope]     = useState("all"); // client | internal | all
+  const [shareSaved, setShareSaved] = useState(false);
+
+  const refreshSaved = ()=> savedReportList(userName)
+    .then(r=>{ setSaved(r.data||[]); setSavedLocal(!!r.local); })
+    .catch(()=>{});
+  useEffect(()=>{ refreshSaved(); /* eslint-disable-next-line */ },[]);
 
   const results = useMemo(()=>{
     let rows = ROWS.filter(r=>allowed.indexOf(r.class === "Internal" ? "group" : "client") > -1);
@@ -356,9 +366,34 @@ export default function AffinityReportBuilder({ isAdmin = false, onNav, role = "
 
   const loadPreset = (p)=>{ setPicked(p.fields); setConds(p.conds); setActivePreset(p.id); setName(p.name); };
 
-  const saveReport = ()=>{
-    if(!name.trim()) return;
-    setSaved(s=>[{ id:Date.now(), name:name.trim(), fields:picked, conds, scope, rows:results.length }].concat(s));
+  const saveReport = async ()=>{
+    if(!name.trim() || !picked.length) return;
+    setBusy(true);
+    try {
+      const r = await savedReportSave(name.trim(), { fields:picked, conds, scope }, userName, shareSaved);
+      if(r && r.data) setActiveSaved(r.data.id);
+      await refreshSaved();
+    } finally { setBusy(false); }
+  };
+
+  // Re-running a saved report re-evaluates it against current data — it is a
+  // definition, not a snapshot, so the answer is always today's.
+  const runSaved = async (row)=>{
+    const d = row.definition || {};
+    setPicked(d.fields||[]);
+    setConds(d.conds||[]);
+    setScope(d.scope||"all");
+    setName(row.name);
+    setActiveSaved(row.id);
+    setActivePreset(null);
+    await savedReportTouch(row.id);
+    refreshSaved();
+  };
+
+  const removeSaved = async (row)=>{
+    await savedReportDelete(row.id);
+    if(activeSaved===row.id) setActiveSaved(null);
+    refreshSaved();
   };
 
   const exportCsv = ()=>{
@@ -388,18 +423,47 @@ export default function AffinityReportBuilder({ isAdmin = false, onNav, role = "
         </div>
       </div>
 
-      {/* Starter reports */}
+      {/* Saved reports — the primary way in. Build once, name it, re-run it. */}
       <div style={{ padding:"12px 22px 0" }}>
-        <div style={{ fontSize:10, fontWeight:600, color:"#aaa", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:7 }}>Start from a question</div>
-        <div style={{ display:"flex", gap:7, flexWrap:"wrap" }}>
-          {PRESETS.map(p=>(
-            <button key={p.id} onClick={()=>loadPreset(p)} title={p.note}
-              style={{ ...btn, background:activePreset===p.id?"#EAF0FB":"#fff", borderColor:activePreset===p.id?"#274690":"#e5e5e5",
-                       color:activePreset===p.id?"#274690":"#555", fontWeight:activePreset===p.id?600:400, textAlign:"left", maxWidth:270 }}>
-              {p.name}
-            </button>
-          ))}
+        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:7, flexWrap:"wrap" }}>
+          <div style={{ fontSize:10, fontWeight:600, color:"#aaa", textTransform:"uppercase", letterSpacing:"0.5px" }}>Saved reports</div>
+          <span style={{ fontSize:10.5, color:"#aaa" }}>{saved.length} saved{savedLocal?" · this device only":""}</span>
+          {saved.length>0 && <span style={{ fontSize:10.5, color:"#888" }}>— re-runs against current data, never a stale copy</span>}
         </div>
+        {saved.length===0 ? (
+          <div style={{ fontSize:11.5, color:"#999", padding:"6px 0 2px" }}>
+            None yet. Build a report below, name it and save it — it will appear here to run again whenever you need it.
+          </div>
+        ) : (
+          <div style={{ display:"flex", gap:7, flexWrap:"wrap" }}>
+            {saved.map(r=>(
+              <div key={r.id} style={{ display:"inline-flex", alignItems:"center", gap:7, border:`0.5px solid ${activeSaved===r.id?CY:"#e5e5e5"}`,
+                                       background:activeSaved===r.id?"rgba(0,196,204,0.07)":"#fff", borderRadius:7, padding:"5px 9px" }}>
+                <button onClick={()=>runSaved(r)} title={(r.definition&&r.definition.fields?r.definition.fields.length:0)+" columns · "+(r.definition&&r.definition.conds?r.definition.conds.length:0)+" conditions"}
+                  style={{ border:"none", background:"none", cursor:"pointer", fontSize:11.5, fontWeight:600,
+                           color:activeSaved===r.id?"#00838a":"#333", padding:0, textAlign:"left" }}>
+                  {r.name}
+                </button>
+                {r.shared && <span style={{ fontSize:8.5, fontWeight:700, color:"#1F6F54", background:"#E7F4EF", borderRadius:8, padding:"1px 5px" }}>SHARED</span>}
+                {r.run_count>0 && <span style={{ fontSize:9, color:"#aaa" }}>{r.run_count}×</span>}
+                <button onClick={()=>removeSaved(r)} title="Delete saved report"
+                  style={{ border:"none", background:"none", cursor:"pointer", color:"#bbb", fontSize:11, padding:0, lineHeight:1 }}>✕</button>
+              </div>
+            ))}
+          </div>
+        )}
+        <details style={{ marginTop:9 }}>
+          <summary style={{ fontSize:10.5, color:"#888", cursor:"pointer" }}>Examples to start from</summary>
+          <div style={{ display:"flex", gap:7, flexWrap:"wrap", marginTop:7 }}>
+            {PRESETS.map(p=>(
+              <button key={p.id} onClick={()=>loadPreset(p)} title={p.note}
+                style={{ ...btn, background:activePreset===p.id?"#EAF0FB":"#fff", borderColor:activePreset===p.id?"#274690":"#e5e5e5",
+                         color:activePreset===p.id?"#274690":"#555", textAlign:"left", maxWidth:270 }}>
+                {p.name}
+              </button>
+            ))}
+          </div>
+        </details>
       </div>
 
       <div style={{ display:"flex", gap:14, padding:"14px 22px 70px", alignItems:"flex-start", flexWrap:"wrap" }}>
@@ -541,7 +605,14 @@ export default function AffinityReportBuilder({ isAdmin = false, onNav, role = "
               <span style={{ fontSize:11, color:"#666" }}>{results.length} {results.length===1?"entity":"entities"}</span>
               <input value={name} onChange={e=>setName(e.target.value)} placeholder="Name this report"
                 style={{ ...inp, marginLeft:"auto", minWidth:210, height:28 }} />
-              <button onClick={saveReport} style={btn} disabled={!picked.length}>Save report</button>
+              <label style={{ display:"flex", alignItems:"center", gap:4, fontSize:10.5, color:"#666", cursor:"pointer" }}
+                title="Shared reports are visible to the whole team">
+                <input type="checkbox" checked={shareSaved} onChange={()=>setShareSaved(v=>!v)} style={{ width:13, height:13, cursor:"pointer" }} />
+                Share
+              </label>
+              <button onClick={saveReport} style={btn} disabled={!picked.length||busy||!name.trim()}>
+                {busy?"Saving…":saved.some(r=>r.name===name.trim())?"Update saved report":"Save report"}
+              </button>
               <button onClick={exportCsv} style={btnP} disabled={!picked.length}>Export CSV</button>
             </div>
 
@@ -578,24 +649,6 @@ export default function AffinityReportBuilder({ isAdmin = false, onNav, role = "
               </div>
             )}
           </div>
-
-          {/* Saved reports */}
-          {saved.length>0 && (
-            <div style={{ background:"#fff", border:"0.5px solid #e5e5e5", borderRadius:9, padding:"11px 13px" }}>
-              <div style={{ fontSize:11, fontWeight:700, color:NAVY, marginBottom:8 }}>Saved this session</div>
-              {saved.map(s=>(
-                <div key={s.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 0", borderBottom:"0.5px solid #f5f5f5", fontSize:11.5 }}>
-                  <span style={{ fontWeight:600 }}>{s.name}</span>
-                  <span style={{ color:"#aaa", fontSize:10 }}>{s.fields.length} columns · {s.conds.length} conditions · {s.rows} rows</span>
-                  <button onClick={()=>{ setPicked(s.fields); setConds(s.conds); setScope(s.scope); setName(s.name); }}
-                    style={{ ...btn, marginLeft:"auto", padding:"3px 9px", fontSize:10 }}>Load</button>
-                </div>
-              ))}
-              <div style={{ fontSize:10, color:"#999", marginTop:8, lineHeight:1.6 }}>
-                Saved reports are held for this session only. Persisting them per user, and sharing them with a team, needs the write layer.
-              </div>
-            </div>
-          )}
 
           {/* Admin-only */}
           {isAdmin ? (
