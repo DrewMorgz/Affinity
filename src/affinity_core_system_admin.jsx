@@ -162,7 +162,7 @@ const MATRIX_TREE = [
   ["Timesheets","timesheets",["My time","Timer","Team view","Approvals"]],
   ["Internal Accounts","acc_wip",["WIP","Invoicing","Budgets"]],
   ["Affinity Accounting","acc_txn",["Bookkeeping","Transactions","Assets & groups","Financial reporting","FX rates","Accounting admin"]],
-  ["Reporting","reporting",["Report builder","Report library","Custom SQL","Export"]],
+  ["Reporting","reporting",["Report builder","Saved reports","Share saved report","Custom SQL","Export"]],
   ["Procedures","procedures",["Read","Author & publish","Acknowledgements"]],
   ["People","intranet",["Intranet","Posts","Assistant"]],
   ["System Admin","system",["Users","Roles","Permission matrix","Entity access","Offices","Fee schedules","Audit log","Custom fields & lists","Config"]],
