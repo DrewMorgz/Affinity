@@ -22,6 +22,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { reportingInternalRefs } from "./affinity_core_rbac";
 import { savedReportList, savedReportSave, savedReportTouch, savedReportDelete } from "./affinity_saved_reports_api";
+import EntitySearch from "./affinity_entity_search";
 
 const CY   = "#00C4CC";
 const NAVY = "#001242";
@@ -343,6 +344,7 @@ export default function AffinityReportBuilder({ isAdmin = false, onNav, role = "
   const allowed = internalOK.length ? ["client","group"] : ["client"];
   const [scope, setScope]     = useState("all"); // client | internal | all
   const [shareSaved, setShareSaved] = useState(false);
+  const [entityFilter, setEntityFilter] = useState(""); // narrow the whole report to one entity
 
   const refreshSaved = ()=> savedReportList(userName)
     .then(r=>{ setSaved(r.data||[]); setSavedLocal(!!r.local); })
@@ -353,8 +355,9 @@ export default function AffinityReportBuilder({ isAdmin = false, onNav, role = "
     let rows = ROWS.filter(r=>allowed.indexOf(r.class === "Internal" ? "group" : "client") > -1);
     if (scope === "client")   rows = rows.filter(r=>r.class === "Client");
     if (scope === "internal") rows = rows.filter(r=>r.class === "Internal");
+    if (entityFilter.trim())  rows = rows.filter(r=>r.name === entityFilter.trim());
     return rows.filter(r=>conds.every(c=>testCond(r,c)));
-  },[conds, scope, role, reportingScopes]);
+  },[conds, scope, role, reportingScopes, entityFilter]);
 
   const usedSecs = useMemo(()=>{
     const set = [];
@@ -423,6 +426,12 @@ export default function AffinityReportBuilder({ isAdmin = false, onNav, role = "
         <div style={{ display:"flex", alignItems:"baseline", gap:10, flexWrap:"wrap" }}>
           <h2 style={{ margin:0, fontSize:19, fontWeight:600, color:NAVY }}>Report builder</h2>
           <span style={{ fontSize:11.5, color:"#888" }}>Pick fields from any section of the system. The entity is the spine, so sections combine.</span>
+        </div>
+        {/* Entity search — same component as Entity Admin. Leave empty to report
+            across the whole portfolio; enter an entity to narrow every result. */}
+        <div style={{ marginTop:10, maxWidth:460 }}>
+          <EntitySearch value={entityFilter} onChange={setEntityFilter} compact
+            placeholder="Search for an entity by name or reference… (optional)" />
         </div>
       </div>
 
@@ -606,6 +615,11 @@ export default function AffinityReportBuilder({ isAdmin = false, onNav, role = "
             <div style={{ display:"flex", alignItems:"center", gap:9, padding:"11px 13px", borderBottom:"0.5px solid #e5e5e5", flexWrap:"wrap" }}>
               <span style={{ fontSize:11, fontWeight:700, color:NAVY }}>3 · Results</span>
               <span style={{ fontSize:11, color:"#666" }}>{results.length} {results.length===1?"entity":"entities"}</span>
+              {entityFilter.trim() && (
+                <span style={{ fontSize:10, fontWeight:600, color:"#00838a", background:"rgba(0,196,204,0.1)", borderRadius:20, padding:"2px 9px" }}>
+                  narrowed to {entityFilter.trim()}
+                </span>
+              )}
               <input value={name} onChange={e=>setName(e.target.value)} placeholder="Name this report"
                 style={{ ...inp, marginLeft:"auto", minWidth:210, height:28 }} />
               <label style={{ display:"flex", alignItems:"center", gap:4, fontSize:10.5, color:"#666", cursor:"pointer" }}

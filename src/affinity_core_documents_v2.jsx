@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import EntitySearch from "./affinity_entity_search";
 import { isConfigured } from "./affinity_accounting_supabase";
 import { documentList } from "./affinity_documents_api";
 
@@ -111,13 +112,12 @@ export default function AffinityDMS() {
       {/* Toolbar */}
       <div style={{padding:"8px 16px",borderBottom:"0.5px solid #e5e5e5",display:"flex",gap:6,alignItems:"center",flexShrink:0,flexWrap:"wrap"}}>
         {tabs.map((t,i)=><button key={i} style={{padding:"4px 12px",fontSize:11,borderRadius:20,border:`0.5px solid ${tab===i?"#ccc":"#e5e5e5"}`,background:tab===i?"#fff":"transparent",color:tab===i?"#111":"#666",cursor:"pointer",fontWeight:tab===i?500:400,whiteSpace:"nowrap"}} onClick={()=>setTab(i)}>{t}{i===2&&docs.filter(d=>d.status==="Under review"||d.status==="Draft").length>0&&<span style={{marginLeft:4,background:"#EF4444",color:"#fff",borderRadius:10,padding:"1px 5px",fontSize:9,fontWeight:700}}>{docs.filter(d=>d.status==="Under review"||d.status==="Draft").length}</span>}</button>)}
-        <div style={{position:"relative",marginLeft:"auto"}}>
-          <input list="dms-entities" value={entity} onChange={e=>setEntity(e.target.value)}
-            placeholder="Search entity…"
-            style={{height:28,padding:"0 10px",fontSize:11,borderRadius:5,border:"0.5px solid #ccc",background:"#fff",color:"#111",minWidth:200,outline:"none"}}/>
-          <datalist id="dms-entities">{ENTITIES.map(e=><option key={e} value={e}/>)}</datalist>
-        </div>
-        <Btn primary onClick={()=>setModal("upload")}>↑ Upload</Btn>
+        <Btn primary onClick={()=>setModal("upload")} style={{marginLeft:"auto"}}>↑ Upload</Btn>
+      </div>
+
+      {/* Entity search — same component as Entity Admin */}
+      <div style={{ padding:"10px 16px", borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)", background:"var(--bg-primary,#fff)", flexShrink:0 }}>
+        <EntitySearch value={entity} onChange={setEntity} compact />
       </div>
 
       {/* DMS TAB — folder tree + documents */}
