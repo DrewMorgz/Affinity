@@ -101,4 +101,4 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
   WHERE e.entity_class='client'
   ORDER BY e.company_code;
 $$;
-GRANT EXECUTE ON FUNCTION ea_entities_list() TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION ea_entities_list() TO authenticated;

@@ -66,7 +66,7 @@ RETURNS TABLE(proc text, title text, entity text, date text, dur text, by text, 
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
   SELECT proc, title, entity_label, to_char(done_date,'DD/MM/YYYY'), dur, done_by, result FROM procedure_history ORDER BY done_date DESC;
 $$;
-GRANT EXECUTE ON FUNCTION ts_entries(), notifications_list(), audit_events(), procedures_list(), procedure_runs(), procedure_hist() TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION ts_entries(), notifications_list(), audit_events(), procedures_list(), procedure_runs(), procedure_hist() TO authenticated;
 
 DO $$
 DECLARE d date := current_date; n timestamptz := now();

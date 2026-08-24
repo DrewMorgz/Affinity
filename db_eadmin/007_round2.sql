@@ -52,7 +52,7 @@ RETURNS SETOF entity_safe_movement LANGUAGE sql STABLE SECURITY DEFINER SET sear
 CREATE OR REPLACE FUNCTION ea_signatories(p_entity bigint)
 RETURNS SETOF entity_signatory LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
   SELECT * FROM entity_signatory WHERE entity_id=p_entity ORDER BY to_date NULLS FIRST, name; $$;
-GRANT EXECUTE ON FUNCTION ea_safe_movements(bigint), ea_signatories(bigint) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION ea_safe_movements(bigint), ea_signatories(bigint) TO authenticated;
 
 -- ---- CROSS-ENTITY REPORT FUNCTIONS (read-only) ----
 -- Assets under management
@@ -103,7 +103,7 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
   LEFT JOIN entity_bank b ON b.id=sg.bank_id
   ORDER BY e.name, sg.name;
 $$;
-GRANT EXECUTE ON FUNCTION rep_aum(), rep_bank_balances(), rep_safe_custody(text), rep_signatories() TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION rep_aum(), rep_bank_balances(), rep_safe_custody(text), rep_signatories() TO authenticated;
 
 -- ---- light seed so the new fields/reports show data immediately ----
 DO $$

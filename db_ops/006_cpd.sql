@@ -21,7 +21,7 @@ RETURNS cpd_entry LANGUAGE sql VOLATILE SECURITY DEFINER SET search_path=public 
   VALUES (NULLIF(p_staff,''), p_activity, COALESCE(NULLIF(p_category,''),'General'), p_hours, COALESCE(p_date, current_date))
   RETURNING *;
 $$;
-GRANT EXECUTE ON FUNCTION cpd_add(text,text,text,numeric,date) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION cpd_add(text,text,text,numeric,date) TO authenticated;
 
 -- READ: full CPD register
 CREATE OR REPLACE FUNCTION cpd_list()
@@ -31,7 +31,7 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
          to_char(entry_date,'DD/MM/YYYY'), COALESCE(verified,false)
   FROM cpd_entry ORDER BY entry_date DESC, id DESC;
 $$;
-GRANT EXECUTE ON FUNCTION cpd_list() TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION cpd_list() TO authenticated;
 
 -- light seed (only if empty)
 INSERT INTO cpd_entry(staff_name, activity, category, hours, entry_date, verified)

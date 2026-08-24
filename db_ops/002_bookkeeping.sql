@@ -36,7 +36,7 @@ CREATE FUNCTION bk_banks_all()
 RETURNS TABLE(entity_id int, name text, bank text, currency text, balance numeric, "asAt" text)
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
   SELECT entity_id, name, bank, currency, balance, to_char(as_at,'DD/MM/YYYY') FROM bk_bank ORDER BY entity_id, id; $$;
-GRANT EXECUTE ON FUNCTION bk_entities(), bk_txns_all(), bk_pnl_all(), bk_banks_all() TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION bk_entities(), bk_txns_all(), bk_pnl_all(), bk_banks_all() TO authenticated;
 
 DO $$
 DECLARE d date := current_date;

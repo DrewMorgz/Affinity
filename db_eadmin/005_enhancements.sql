@@ -24,7 +24,7 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
     COALESCE(p.admin_status,'Active'), p.risk_rating, p.next_review_date, p.incorporation_regime
   FROM entity e LEFT JOIN entity_profile p ON p.entity_id=e.id WHERE e.id=p_entity;
 $$;
-GRANT EXECUTE ON FUNCTION ea_profile(bigint) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION ea_profile(bigint) TO authenticated;
 
 -- Seed incorporation regime (IOM companies carry the Act; non-IOM / non-company left NULL for staff to set)
 UPDATE entity_profile p SET incorporation_regime = CASE

@@ -9,6 +9,14 @@ BEGIN
   SELECT id INTO v2 FROM entity WHERE company_code='A00002';
   SELECT id INTO v3 FROM entity WHERE company_code='A00003';
 
+  -- These three codes predate the current client seed, which uses AC-YYYY-NNN
+  -- references (see 003_seed_clients.sql). Nothing creates A00001-A00003 any
+  -- more, so skip rather than fail with a not-null violation on entity_id.
+  IF v1 IS NULL OR v2 IS NULL OR v3 IS NULL THEN
+    RAISE NOTICE 'Skipping 002_seed: entities A00001-A00003 not present (superseded by 003_seed_clients).';
+    RETURN;
+  END IF;
+
   INSERT INTO entity_profile(entity_id,reg_no,jurisdiction,entity_type,incorporation_date,year_end,tax_status,fatca_class,crs_class,giin,business_activity,admin_status,risk_rating,next_review_date) VALUES
    (v1,'012345C','Isle of Man','Company','2018-03-12','31 December','IOM tax resident','Reporting FI — Investment Entity','Investment Entity','—','Investment holding','Active','Low','2026-03-01'),
    (v2,'C 98765','Malta','Company','2019-07-05','31 December','Malta tax resident','Reporting FI','Investment Entity','—','Fund administration','Active','Medium','2026-04-15'),

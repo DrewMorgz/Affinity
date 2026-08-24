@@ -21,7 +21,7 @@ RETURNS creg_entry LANGUAGE sql VOLATILE SECURITY DEFINER SET search_path=public
   VALUES (p_register, NULLIF(p_jurisdiction,''), COALESCE(p_data,'{}'::jsonb), NULLIF(p_by,''))
   RETURNING *;
 $$;
-GRANT EXECUTE ON FUNCTION creg_add(text,text,jsonb,text) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION creg_add(text,text,jsonb,text) TO authenticated;
 
 -- READ: entries for one register (newest first)
 CREATE OR REPLACE FUNCTION creg_list(p_register text)
@@ -30,4 +30,4 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
   SELECT id, register, jurisdiction, data, created_at
   FROM creg_entry WHERE register = p_register ORDER BY id DESC;
 $$;
-GRANT EXECUTE ON FUNCTION creg_list(text) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION creg_list(text) TO authenticated;

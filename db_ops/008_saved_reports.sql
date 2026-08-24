@@ -39,7 +39,7 @@ BEGIN
 
   RETURN r;
 END $$;
-GRANT EXECUTE ON FUNCTION saved_report_upsert(text,jsonb,text,boolean) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION saved_report_upsert(text,jsonb,text,boolean) TO authenticated;
 
 -- READ: a user's own reports plus anything shared with the team
 CREATE OR REPLACE FUNCTION saved_report_list(p_owner text)
@@ -51,17 +51,17 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
    WHERE owner IS NOT DISTINCT FROM p_owner OR shared = true
    ORDER BY updated_at DESC;
 $$;
-GRANT EXECUTE ON FUNCTION saved_report_list(text) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION saved_report_list(text) TO authenticated;
 
 -- Record a run, so the list can show what actually gets used
 CREATE OR REPLACE FUNCTION saved_report_touch(p_id bigint)
 RETURNS void LANGUAGE sql VOLATILE SECURITY DEFINER SET search_path=public AS $$
   UPDATE saved_report SET run_count = run_count + 1, last_run_at = now() WHERE id = p_id;
 $$;
-GRANT EXECUTE ON FUNCTION saved_report_touch(bigint) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION saved_report_touch(bigint) TO authenticated;
 
 CREATE OR REPLACE FUNCTION saved_report_delete(p_id bigint)
 RETURNS void LANGUAGE sql VOLATILE SECURITY DEFINER SET search_path=public AS $$
   DELETE FROM saved_report WHERE id = p_id;
 $$;
-GRANT EXECUTE ON FUNCTION saved_report_delete(bigint) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION saved_report_delete(bigint) TO authenticated;

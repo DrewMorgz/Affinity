@@ -9,7 +9,7 @@ CREATE FUNCTION get_datasets(p_prefix text)
 RETURNS TABLE(dkey text, data jsonb)
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
   SELECT dkey, data FROM ui_dataset WHERE dkey LIKE p_prefix || '%' ORDER BY dkey; $$;
-GRANT EXECUTE ON FUNCTION get_datasets(text) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION get_datasets(text) TO authenticated;
 
 INSERT INTO ui_dataset(dkey,data) VALUES
 ('budget.budgets','[

@@ -12,7 +12,7 @@ CREATE FUNCTION app_users()
 RETURNS TABLE(id int, name text, email text, role text, office text, flag text, status text, "lastLogin" text, mfa boolean, modules text[])
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $fn$
   SELECT su.id,su.name,su.email,su.role,su.office,su.flag,su.status,su.last_login,su.mfa,su.modules FROM sys_user su ORDER BY su.id; $fn$;
-GRANT EXECUTE ON FUNCTION app_users() TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION app_users() TO authenticated;
 
 DO $do$ BEGIN
 IF NOT EXISTS(SELECT 1 FROM sys_user) THEN

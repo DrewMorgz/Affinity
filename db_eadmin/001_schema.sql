@@ -122,4 +122,4 @@ RETURNS SETOF entity_service LANGUAGE sql STABLE SECURITY DEFINER SET search_pat
 
 GRANT EXECUTE ON FUNCTION ea_profile(bigint), ea_officers(bigint), ea_shareholders(bigint),
   ea_charges(bigint), ea_ubos(bigint), ea_addresses(bigint), ea_meetings(bigint),
-  ea_file_notes(bigint), ea_services(bigint) TO anon, authenticated;
+  ea_file_notes(bigint), ea_services(bigint) TO authenticated;

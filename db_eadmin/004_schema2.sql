@@ -40,7 +40,7 @@ CREATE OR REPLACE FUNCTION ea_safe_items(p_entity bigint)
 RETURNS SETOF entity_safe_item LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
   SELECT * FROM entity_safe_item WHERE entity_id=p_entity ORDER BY deposited_date DESC; $$;
 
-GRANT EXECUTE ON FUNCTION ea_banks(bigint), ea_assets(bigint), ea_dividends(bigint), ea_safe_items(bigint) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION ea_banks(bigint), ea_assets(bigint), ea_dividends(bigint), ea_safe_items(bigint) TO authenticated;
 
 -- seed for the detailed entities
 DO $$

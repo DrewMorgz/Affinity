@@ -82,7 +82,7 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
   WHERE e.entity_class IN ('client','group')
   ORDER BY (e.entity_class='group') DESC, e.company_code;
 $$;
-GRANT EXECUTE ON FUNCTION ea_entities_list() TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION ea_entities_list() TO authenticated;
 
 -- 4) expose the new master-record fields on ea_profile (regulated/own entities)
 DROP FUNCTION IF EXISTS ea_profile(bigint);
@@ -98,4 +98,4 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
     p.regulator, p.licence_no, p.mlro, p.registered_office
   FROM entity e LEFT JOIN entity_profile p ON p.entity_id=e.id WHERE e.id=p_entity;
 $$;
-GRANT EXECUTE ON FUNCTION ea_profile(bigint) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION ea_profile(bigint) TO authenticated;
