@@ -48,14 +48,15 @@ GRANT EXECUTE ON FUNCTION consolidated_summary(bigint, date)           TO authen
 -- The engine reports on a budget once you know its id; the UI needs to offer
 -- the choice first.
 CREATE OR REPLACE FUNCTION planning_budget_list()
-RETURNS TABLE(id bigint, name text, entity_name text, period_start date,
-              period_end date, status text, currency text)
+RETURNS TABLE(id bigint, name text, entity_name text, fiscal_year integer,
+              status text, currency text, scenario text, version integer)
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
-  SELECT b.id, b.name, e.name, b.period_start, b.period_end,
-         COALESCE(b.status,'draft'), COALESCE(e.functional_currency,'GBP')
+  SELECT b.id, b.name, e.name, b.fiscal_year,
+         COALESCE(b.status,'draft'), COALESCE(b.ccy, e.functional_ccy, 'GBP'),
+         COALESCE(b.scenario,'base'), COALESCE(b.version,1)
     FROM budget b
     LEFT JOIN entity e ON e.id = b.entity_id
-   ORDER BY b.period_start DESC, b.name;
+   ORDER BY b.fiscal_year DESC, b.name;
 $$;
 GRANT EXECUTE ON FUNCTION planning_budget_list() TO authenticated;
 
@@ -105,7 +106,7 @@ RETURNS TABLE(group_id bigint, group_name text, entity_id bigint, entity_name te
               company_code text, currency text, ownership numeric)
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
   SELECT g.id, g.name, e.id, e.name, e.company_code,
-         COALESCE(e.functional_currency,'GBP'), COALESCE(m.ownership_pct,100)
+         COALESCE(e.functional_ccy,'GBP'), COALESCE(m.ownership_pct,100)
     FROM consol_group g
     JOIN consol_group_member m ON m.group_id = g.id
     JOIN entity e ON e.id = m.entity_id
