@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { signInWithMicrosoft, isAuthConfigured } from "./affinity_auth";
 
 const CY = "#00C4CC";
 const NAVY = "#001242";
@@ -27,25 +28,9 @@ const VALUES = [
   { icon: "🏆", title: "Award winning",         desc: "Recognised by Citywealth and industry peers for excellence in wealth management services." },
 ];
 
-// First-name + password → user ID lookup (mirrors USERS in unified shell)
-const LOGIN_MAP = {
-  "andrew":     { pass: "madebyAffinity", id: 1 },  // super admin
-  "michael":    { pass: "affinity2",  id: 2 },
-  "joanne":     { pass: "affinity3",  id: 3 },
-  "krista":     { pass: "affinity4",  id: 4 },
-  "alexandra":  { pass: "madebyAffinity", id: 5 },  // super admin
-  "debbie":     { pass: "affinity6",  id: 6 },
-  "natalie":    { pass: "affinity7",  id: 7 },
-  "neil":       { pass: "affinity8",  id: 8 },
-  "elena":      { pass: "affinity9",  id: 9 },
-  "shanya":     { pass: "affinity10", id: 10 },
-  "mattei":     { pass: "affinity11", id: 11 },
-  "colin":      { pass: "affinity12", id: 12 },
-  "kate":       { pass: "affinity13", id: 13 },
-  "roxy":       { pass: "affinity14", id: 14 },
-  "gilbert":    { pass: "affinity15", id: 15 },
-  "gary":       { pass: "affinity16", id: 16 },
-};
+// Credentials are no longer held in the front end. Staff sign in with their
+// Microsoft 365 account through Entra; see affinity_auth.js.
+// The previous LOGIN_MAP put 17 staff passwords into the public bundle.
 
 export default function AffinityLoginPage({ onLogin }) {
   const [showSplash, setShowSplash] = useState(true);
@@ -60,24 +45,17 @@ export default function AffinityLoginPage({ onLogin }) {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleLogin = () => {
-    if (!username || !password) { setError("Please enter your first name and password"); return; }
-    setLoading(true);
-    setTimeout(() => {
-      const key = username.trim().toLowerCase();
-      // Admin shortcut
-      if (key === "admin" && password === "madebyAffinity") {
-        onLogin(1); return;
-      }
-      // Per-user first-name login
-      const entry = LOGIN_MAP[key];
-      if (entry && entry.pass === password) {
-        onLogin(entry.id); return;
-      }
-      setError("Incorrect first name or password");
-      setLoading(false);
-    }, 800);
+  const handleLogin = async () => {
+    setError(""); setLoading(true);
+    const { error } = await signInWithMicrosoft();
+    if (error) { setError(error.message); setLoading(false); }
+    // On success the browser leaves for Microsoft and returns signed in.
   };
+
+  // Demo access while Entra is being set up. Grants the read-only preview only —
+  // the database stays locked, so no client data is reachable this way.
+  const handlePreview = () => { onLogin(1); };
+
 
   // ── SPLASH SCREEN (block-letter Affinity wordmark, pure CSS) ──
   if (showSplash) return (
@@ -200,38 +178,43 @@ export default function AffinityLoginPage({ onLogin }) {
                   <img src="https://cdn.prod.website-files.com/680f471059835ea8d579b7e8/680f87c089dc0cf0630d7c8d_Affinity%20grad.svg" alt="Affinity" style={{ height:42, display:"block" }} />
                   <span style={{ fontSize:38, fontWeight:300, color:NAVY, letterSpacing:"-1px", lineHeight:1 }}>Core</span>
                 </div>
-                <p style={{ fontSize: 13, color: "#888", margin:0 }}>Enter your first name and password</p>
+                <p style={{ fontSize: 13, color: "#888", margin:0 }}>Sign in with your Affinity Microsoft account</p>
               </div>
 
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 8 }}>First name</label>
-                <input className="login-input" type="text" value={username} onChange={e => { setUsername(e.target.value); setError(""); }}
-                  onKeyDown={e => e.key === "Enter" && handleLogin()}
-                  placeholder="Your first name" autoFocus
-                  style={{ width: "100%", padding: "12px 14px", border: `1.5px solid ${error ? "#EF4444" : "#e0e0e0"}`, borderRadius: 10, fontSize: 14, fontFamily: "inherit", background: "#fafafa", color: NAVY, transition: "all 0.2s" }}
-                />
-              </div>
-
-              <div style={{ marginBottom: error ? 8 : 24 }}>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 8 }}>Password</label>
-                <div style={{ position: "relative" }}>
-                  <input className="login-input" type={showPass ? "text" : "password"} value={password} onChange={e => { setPassword(e.target.value); setError(""); }}
-                    onKeyDown={e => e.key === "Enter" && handleLogin()}
-                    placeholder="Enter your password"
-                    style={{ width: "100%", padding: "12px 44px 12px 14px", border: `1.5px solid ${error ? "#EF4444" : "#e0e0e0"}`, borderRadius: 10, fontSize: 14, fontFamily: "inherit", background: "#fafafa", color: NAVY, transition: "all 0.2s" }}
-                  />
-                  <button onClick={() => setShowPass(p => !p)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#aaa" }}>
-                    {showPass ? "🙈" : "👁"}
-                  </button>
-                </div>
-              </div>
-
-              {error && <div style={{ fontSize: 12, color: "#EF4444", marginBottom: 16, display: "flex", alignItems: "center", gap: 6 }}><span>⚠️</span>{error}</div>}
-
+              {/* Microsoft Entra sign-in. Staff use the account they already
+                  have for Outlook and Teams — no separate password here. */}
               <button className="sign-in-btn" onClick={handleLogin} disabled={loading}
-                style={{ width: "100%", padding: "14px", background: loading ? "#aaa" : CY, color: "#fff", border: "none", borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: loading ? "default" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                {loading ? <><span style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite", display: "inline-block" }} /> Signing in…</> : "Sign in →"}
+                style={{ width: "100%", padding: "14px", background: loading ? "#aaa" : "#2F2F2F", color: "#fff",
+                         border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: loading ? "default" : "pointer",
+                         display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+                <svg width="17" height="17" viewBox="0 0 23 23" aria-hidden="true">
+                  <rect x="1"  y="1"  width="10" height="10" fill="#F25022"/>
+                  <rect x="12" y="1"  width="10" height="10" fill="#7FBA00"/>
+                  <rect x="1"  y="12" width="10" height="10" fill="#00A4EF"/>
+                  <rect x="12" y="12" width="10" height="10" fill="#FFB900"/>
+                </svg>
+                {loading ? "Redirecting to Microsoft…" : "Sign in with Microsoft"}
               </button>
+
+              {error && (
+                <div style={{ fontSize: 12, color: "#EF4444", marginTop: 12, lineHeight: 1.6 }}>{error}</div>
+              )}
+
+              {!isAuthConfigured() && (
+                <div style={{ marginTop: 14, padding: "11px 13px", background: "#FDF4DC", border: "0.5px solid #E5CE9A",
+                              borderRadius: 8, fontSize: 11, color: "#7B4F1D", lineHeight: 1.65 }}>
+                  Microsoft sign-in is not switched on yet. IT need to register the application in Entra and enable the Azure provider in Supabase.
+                </div>
+              )}
+
+              <button onClick={handlePreview}
+                style={{ width: "100%", marginTop: 12, padding: "11px", background: "transparent", color: "#666",
+                         border: "1px solid #e0e0e0", borderRadius: 8, fontSize: 12.5, cursor: "pointer" }}>
+                Continue to preview (demonstration data)
+              </button>
+              <div style={{ fontSize: 10.5, color: "#999", marginTop: 8, textAlign: "center", lineHeight: 1.6 }}>
+                Preview shows sample data only. Client records stay locked until you sign in.
+              </div>
 
               <div style={{ marginTop: 20, padding: "12px 14px", background: "#f8f9fc", borderRadius: 8, fontSize: 11, color: "#888", lineHeight: 1.6 }}>
                 🔒 This platform is for authorised Affinity staff only. All activity is logged.

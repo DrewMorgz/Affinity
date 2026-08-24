@@ -33,22 +33,22 @@ const AFFINITY_LOGO = "https://cdn.prod.website-files.com/680f471059835ea8d579b7
 const CY = "#00C4CC";
 
 const USERS = [
-  {id:1,name:"Andrew Morgan",firstName:"Andrew",lastName:"Morgan",office:"USA",flag:"🇺🇸",role:"CEO — Super Admin",av:"AM",c:"#00C4CC",pass:"affinity1"},
-  {id:2,name:"Michael Barlow",firstName:"Michael",lastName:"Barlow",office:"Isle of Man",flag:"🇮🇲",role:"Compliance Manager (IOM)",av:"MB",c:"#7C5CBF",pass:"affinity2"},
-  {id:3,name:"Joanne Fenech",firstName:"Joanne",lastName:"Fenech",office:"Malta",flag:"🇲🇹",role:"Managing Director (IOM)",av:"JF",c:"#4A7C6F",pass:"affinity3"},
-  {id:4,name:"Krista Fenech",firstName:"Krista",lastName:"Fenech",office:"Malta",flag:"🇲🇹",role:"Client Administrator",av:"KF",c:"#5C8E3C",pass:"affinity4"},
-  {id:5,name:"Alexandra Gardner",firstName:"Alexandra",lastName:"Gardner",office:"USA",flag:"🇺🇸",role:"COO — Super Admin",av:"AG",c:"#BF5C7A",pass:"affinity5"},
-  {id:6,name:"Debbie Gooding",firstName:"Debbie",lastName:"Gooding",office:"Isle of Man",flag:"🇮🇲",role:"Manager",av:"DG",c:"#1A7FBF",pass:"affinity6"},
-  {id:7,name:"Natalie Johnson",firstName:"Natalie",lastName:"Johnson",office:"USA",flag:"🇺🇸",role:"Assistant Compliance Administrator",av:"NJ",c:"#2E7A8A",pass:"affinity7"},
-  {id:8,name:"Neil Kelly",firstName:"Neil",lastName:"Kelly",office:"USA",flag:"🇺🇸",role:"CFO",av:"NK",c:"#BF7A5C",pass:"affinity8"},
-  {id:9,name:"Elena Pace",firstName:"Elena",lastName:"Pace",office:"Isle of Man",flag:"🇮🇲",role:"Manager",av:"EP",c:"#7B4F1D",pass:"affinity9"},
-  {id:10,name:"Shanya Pickett",firstName:"Shanya",lastName:"Pickett",office:"Isle of Man",flag:"🇮🇲",role:"Assistant Manager",av:"SP",c:"#5C7A8E",pass:"affinity10"},
-  {id:11,name:"Mattei Pisani",firstName:"Mattei",lastName:"Pisani",office:"Isle of Man",flag:"🇮🇲",role:"Director (Malta)",av:"MP",c:"#8A4A6E",pass:"affinity11"},
-  {id:12,name:"Colin Quayle",firstName:"Colin",lastName:"Quayle",office:"Isle of Man",flag:"🇮🇲",role:"Director and Company Secretary (IOM)",av:"CQ",c:"#4A8E7C",pass:"affinity12"},
-  {id:13,name:"Kate Shaw",firstName:"Kate",lastName:"Shaw",office:"Isle of Man",flag:"🇮🇲",role:"Manager",av:"KS",c:"#A0623E",pass:"affinity13"},
-  {id:14,name:"Roxy Sheeley",firstName:"Roxy",lastName:"Sheeley",office:"Isle of Man",flag:"🇮🇲",role:"Managing Director (IOM)",av:"RS",c:"#3C5CBF",pass:"affinity14"},
-  {id:15,name:"Gilbert Spiteri Spadaro",firstName:"Gilbert",lastName:"Spiteri Spadaro",office:"Malta",flag:"🇲🇹",role:"Compliance Officer (Malta)",av:"GS",c:"#3A6E4A",pass:"affinity15"},
-  {id:16,name:"Colette Grisdale",firstName:"Colette",lastName:"Grisdale",office:"Isle of Man",flag:"🇮🇲",role:"COO",av:"CG",c:"#0D6E8E",pass:"affinity16"},
+  {id:1,name:"Andrew Morgan",firstName:"Andrew",lastName:"Morgan",office:"USA",flag:"🇺🇸",role:"CEO — Super Admin",av:"AM",c:"#00C4CC"},
+  {id:2,name:"Michael Barlow",firstName:"Michael",lastName:"Barlow",office:"Isle of Man",flag:"🇮🇲",role:"Compliance Manager (IOM)",av:"MB",c:"#7C5CBF"},
+  {id:3,name:"Joanne Fenech",firstName:"Joanne",lastName:"Fenech",office:"Malta",flag:"🇲🇹",role:"Managing Director (IOM)",av:"JF",c:"#4A7C6F"},
+  {id:4,name:"Krista Fenech",firstName:"Krista",lastName:"Fenech",office:"Malta",flag:"🇲🇹",role:"Client Administrator",av:"KF",c:"#5C8E3C"},
+  {id:5,name:"Alexandra Gardner",firstName:"Alexandra",lastName:"Gardner",office:"USA",flag:"🇺🇸",role:"COO — Super Admin",av:"AG",c:"#BF5C7A"},
+  {id:6,name:"Debbie Gooding",firstName:"Debbie",lastName:"Gooding",office:"Isle of Man",flag:"🇮🇲",role:"Manager",av:"DG",c:"#1A7FBF"},
+  {id:7,name:"Natalie Johnson",firstName:"Natalie",lastName:"Johnson",office:"USA",flag:"🇺🇸",role:"Assistant Compliance Administrator",av:"NJ",c:"#2E7A8A"},
+  {id:8,name:"Neil Kelly",firstName:"Neil",lastName:"Kelly",office:"USA",flag:"🇺🇸",role:"CFO",av:"NK",c:"#BF7A5C"},
+  {id:9,name:"Elena Pace",firstName:"Elena",lastName:"Pace",office:"Isle of Man",flag:"🇮🇲",role:"Manager",av:"EP",c:"#7B4F1D"},
+  {id:10,name:"Shanya Pickett",firstName:"Shanya",lastName:"Pickett",office:"Isle of Man",flag:"🇮🇲",role:"Assistant Manager",av:"SP",c:"#5C7A8E"},
+  {id:11,name:"Mattei Pisani",firstName:"Mattei",lastName:"Pisani",office:"Isle of Man",flag:"🇮🇲",role:"Director (Malta)",av:"MP",c:"#8A4A6E"},
+  {id:12,name:"Colin Quayle",firstName:"Colin",lastName:"Quayle",office:"Isle of Man",flag:"🇮🇲",role:"Director and Company Secretary (IOM)",av:"CQ",c:"#4A8E7C"},
+  {id:13,name:"Kate Shaw",firstName:"Kate",lastName:"Shaw",office:"Isle of Man",flag:"🇮🇲",role:"Manager",av:"KS",c:"#A0623E"},
+  {id:14,name:"Roxy Sheeley",firstName:"Roxy",lastName:"Sheeley",office:"Isle of Man",flag:"🇮🇲",role:"Managing Director (IOM)",av:"RS",c:"#3C5CBF"},
+  {id:15,name:"Gilbert Spiteri Spadaro",firstName:"Gilbert",lastName:"Spiteri Spadaro",office:"Malta",flag:"🇲🇹",role:"Compliance Officer (Malta)",av:"GS",c:"#3A6E4A"},
+  {id:16,name:"Colette Grisdale",firstName:"Colette",lastName:"Grisdale",office:"Isle of Man",flag:"🇮🇲",role:"COO",av:"CG",c:"#0D6E8E"},
 ];
 
 
