@@ -125,7 +125,7 @@ export default function AffinityInvoicing({ onNav }) {
         <div style={{ fontSize:18, fontWeight:500, color:CY }}>Affinity <span style={{ color:"var(--text-primary,#111)", fontWeight:300 }}>Core</span><small style={{ fontSize:11, color:"#999", fontWeight:300, marginLeft:8 }}>Invoicing</small></div>
         <div style={{ display:"flex", gap:5 }}>
           {["Entities","Compliance","Timesheets","Reporting"].map(n=><button key={n} style={nb} onClick={()=>onNav&&onNav({Entities:"entities",Compliance:"compliance",Timesheets:"timesheets",Invoicing:"invoicing",Reporting:"reporting",Documents:"documents",Bookkeeping:"bookkeeping"}[n])}>{n}</button>)}
-          <button style={nba}>Invoicing</button>
+          <button style={nba} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Invoicing</button>
         </div>
       </div>
       {/* Entity search — same component on every page showing client data */}
@@ -188,12 +188,12 @@ export default function AffinityInvoicing({ onNav }) {
                     <td style={{padding:"8px 10px"}}><input defaultValue={item.units} type="number" style={{width:50,border:"none",fontSize:12,outline:"none",background:"transparent",textAlign:"center"}}/></td>
                     <td style={{padding:"8px 10px"}}><input defaultValue={"£"+item.rate.toLocaleString()} style={{width:80,border:"none",fontSize:12,outline:"none",background:"transparent"}}/></td>
                     <td style={{padding:"8px 10px",fontWeight:600}}>{"£"+item.amount.toLocaleString()}</td>
-                    <td style={{padding:"8px 10px"}}><button style={{background:"none",border:"none",color:"#EF4444",cursor:"pointer",fontSize:14}}>×</button></td>
+                    <td style={{padding:"8px 10px"}}><button disabled title="Removing an invoice line needs the write layer" style={{background:"none",border:"none",color:"#EF4444",cursor:"pointer",fontSize:14}}>×</button></td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <button style={{padding:"6px 14px",borderRadius:5,border:"0.5px solid #00C4CC",background:"transparent",color:"#00C4CC",fontSize:11,cursor:"pointer"}}>＋ Add line item</button>
+            <button style={{padding:"6px 14px",borderRadius:5,border:"0.5px solid #00C4CC",background:"transparent",color:"#00C4CC",fontSize:11,cursor:"pointer"}} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">＋ Add line item</button>
 
             <div style={{marginTop:16,display:"flex",justifyContent:"flex-end"}}>
               <div style={{minWidth:220}}>
@@ -212,9 +212,9 @@ export default function AffinityInvoicing({ onNav }) {
           </div>
 
           <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
-            <button style={{padding:"9px 20px",borderRadius:6,border:"0.5px solid #e5e5e5",background:"transparent",fontSize:13,cursor:"pointer",color:"#666"}}>Save draft</button>
-            <button style={{padding:"9px 20px",borderRadius:6,border:"0.5px solid #00C4CC",background:"transparent",fontSize:13,cursor:"pointer",color:"#00C4CC",fontWeight:600}}>Preview PDF ↗</button>
-            <button style={{padding:"9px 20px",borderRadius:6,border:"none",background:"#00C4CC",color:"#fff",fontSize:13,cursor:"pointer",fontWeight:600}}>Issue invoice ↗</button>
+            <button style={{padding:"9px 20px",borderRadius:6,border:"0.5px solid #e5e5e5",background:"transparent",fontSize:13,cursor:"pointer",color:"#666"}} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Save draft</button>
+            <button style={{padding:"9px 20px",borderRadius:6,border:"0.5px solid #00C4CC",background:"transparent",fontSize:13,cursor:"pointer",color:"#00C4CC",fontWeight:600}} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Preview PDF ↗</button>
+            <button style={{padding:"9px 20px",borderRadius:6,border:"none",background:"#00C4CC",color:"#fff",fontSize:13,cursor:"pointer",fontWeight:600}} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Issue invoice ↗</button>
           </div>
         </div>
       )}
@@ -317,8 +317,8 @@ export default function AffinityInvoicing({ onNav }) {
                 )}
               </div>
               <div style={{ display:"flex", gap:6, marginTop:12 }}>
-                <button style={nb}>PDF ↗</button>
-                <button style={nba}>Send ↗</button>
+                <button style={nb} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">PDF ↗</button>
+                <button style={nba} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Send ↗</button>
               </div>
             </div>
           )}
@@ -433,7 +433,7 @@ export default function AffinityInvoicing({ onNav }) {
                   <td style={{ ...td, textAlign:"right", color:r.c61?"#F59E0B":"#aaa" }}>{r.c61?fmt(r.c61):"—"}</td>
                   <td style={{ ...td, textAlign:"right", color:r.c90?"#EF4444":"#aaa" }}>{r.c90?fmt(r.c90):"—"}</td>
                   <td style={{ ...td, textAlign:"right", fontWeight:600 }}>{fmt(r.c0+r.c31+r.c61+r.c90)}</td>
-                  <td style={td}>{(r.c61||r.c90)>0?<button style={{ ...nb, fontSize:10, color:"#EF4444", borderColor:"#EF4444" }}>Chase ↗</button>:<span style={{ color:"#aaa", fontSize:11 }}>Sent</span>}</td>
+                  <td style={td}>{(r.c61||r.c90)>0?<button style={{ ...nb, fontSize:10, color:"#EF4444", borderColor:"#EF4444" }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Chase ↗</button>:<span style={{ color:"#aaa", fontSize:11 }}>Sent</span>}</td>
                 </tr>
               ))}
             </tbody>
@@ -542,8 +542,8 @@ export default function AffinityInvoicing({ onNav }) {
                   <div style={{ fontWeight:600, fontSize:14, color:days>60?"#EF4444":"#F59E0B" }}>{fmt(i.balance)}</div>
                   <div style={{ fontSize:11, color:days>60?"#EF4444":"#F59E0B", marginTop:2 }}>{days} days overdue</div>
                   <div style={{ display:"flex", gap:6, marginTop:8, justifyContent:"flex-end" }}>
-                    <button style={{ ...nb, fontSize:10 }}>Send reminder</button>
-                    {days>60&&<button style={{ fontSize:10, padding:"4px 10px", borderRadius:5, border:"0.5px solid #EF4444", color:"#EF4444", background:"transparent", cursor:"pointer" }}>Escalate</button>}
+                    <button style={{ ...nb, fontSize:10 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Send reminder</button>
+                    {days>60&&<button style={{ fontSize:10, padding:"4px 10px", borderRadius:5, border:"0.5px solid #EF4444", color:"#EF4444", background:"transparent", cursor:"pointer" }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Escalate</button>}
                   </div>
                 </div>
               </div>

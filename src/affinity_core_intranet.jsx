@@ -144,7 +144,7 @@ export default function AffinityIntranet() {
         <div style={{marginBottom:24}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
             <div style={{fontSize:17,fontWeight:700,color:NAVY}}>Our Group Events</div>
-            <button style={{fontSize:12,color:CY,background:"none",border:"none",cursor:"pointer",fontWeight:500}}>+ Add event</button>
+            <button style={{fontSize:12,color:CY,background:"none",border:"none",cursor:"pointer",fontWeight:500}} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">+ Add event</button>
           </div>
           <div style={{display:"flex",gap:10,overflowX:"auto",paddingBottom:6}}>
             {EVENTSL.map(e=>(
@@ -229,7 +229,7 @@ export default function AffinityIntranet() {
             <div style={{flex:1}}>
               <div style={{fontSize:12,fontWeight:600,color:NAVY,marginBottom:3}}>{r.name}</div>
               <div style={{fontSize:11,color:"#666",lineHeight:1.5}}>{r.desc}</div>
-              <button style={{marginTop:6,fontSize:11,color:CY,background:"none",border:"none",cursor:"pointer",padding:0}}>Open ↗</button>
+              <button style={{marginTop:6,fontSize:11,color:CY,background:"none",border:"none",cursor:"pointer",padding:0}} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Open ↗</button>
             </div>
           </div>
         ))}

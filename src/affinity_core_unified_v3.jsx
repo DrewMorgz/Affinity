@@ -175,6 +175,11 @@ function SplashScreen({ onDone }) {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Catamaran:wght@300;400;500;600;700&display=swap');
         * { font-family: 'Catamaran', system-ui, sans-serif !important; }
+        /* Any action that cannot work yet is marked here rather than left
+           looking clickable. Applied by adding the disabled attribute; the
+           title explains why, so nobody reports it as broken. */
+        button:disabled { opacity: 0.45 !important; cursor: not-allowed !important; }
+        button:disabled:hover { filter: none !important; }
         @keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
         @media print {
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }

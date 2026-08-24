@@ -121,7 +121,7 @@ export default function AffinityStatutory() {
         </div>
         <div style={{ display:"flex", gap:5 }}>
           {["Entity Admin","Compliance","Documents"].map(n => <button key={n} style={{ ...nb, color:"#8892b0", borderColor:"#334" }}>{n}</button>)}
-          <button style={nba}>Statutory</button>
+          <button style={nba} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Statutory</button>
         </div>
       </div>
       {/* Entity search — same component on every page showing client data */}
@@ -165,7 +165,7 @@ export default function AffinityStatutory() {
                   </div>
                   <div style={{ display:"flex", gap:6, alignItems:"center" }}>
                     <Badge label={item.jur} colors={jurC[item.jur]||{bg:"#eee",color:"#666"}} />
-                    <button style={{ ...nb, fontSize:10, borderColor:"#EF4444", color:"#EF4444" }}>File now ↗</button>
+                    <button style={{ ...nb, fontSize:10, borderColor:"#EF4444", color:"#EF4444" }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">File now ↗</button>
                   </div>
                 </div>
               ))}
@@ -199,7 +199,7 @@ export default function AffinityStatutory() {
                 </select>
               </div>
               <div style={{ display:"flex", gap:6 }}>
-                <button style={{ ...nb, fontSize:10 }}>Export to Excel ↗</button>
+                <button style={{ ...nb, fontSize:10 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Export to Excel ↗</button>
                 <button style={nba} onClick={()=>setModal("newReturn")}>＋ Log filing</button>
               </div>
             </div>
@@ -219,7 +219,7 @@ export default function AffinityStatutory() {
                     <td style={{ ...td, color:"#666" }}>{r.admin}</td>
                     <td style={{ ...td, color:"#aaa" }}>{r.fee}</td>
                     <td style={td}><Badge label={r.status} colors={statusC[r.status]||{bg:"#eee",color:"#666"}} /></td>
-                    <td style={td}>{r.status==="Overdue"?<button style={{ ...nb, fontSize:10, borderColor:"#EF4444", color:"#EF4444" }}>File ↗</button>:<button style={{ ...nb, fontSize:10 }}>Prepare ↗</button>}</td>
+                    <td style={td}>{r.status==="Overdue"?<button style={{ ...nb, fontSize:10, borderColor:"#EF4444", color:"#EF4444" }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">File ↗</button>:<button style={{ ...nb, fontSize:10 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Prepare ↗</button>}</td>
                   </tr>
                 ))}
               </tbody>
@@ -250,7 +250,7 @@ export default function AffinityStatutory() {
                     <td style={td}><Badge label={b.status} colors={statusC[b.status]||{bg:"#eee",color:"#666"}} /></td>
                     <td style={{ ...td, color:"#666", fontSize:10 }}>{b.system}</td>
                     <td style={{ ...td, color:b.status==="Overdue"?"#EF4444":"#666", fontWeight:b.status==="Overdue"?600:400 }}>{b.nextReview}</td>
-                    <td style={td}>{b.status==="Overdue"?<button style={{ ...nb, fontSize:10, borderColor:"#EF4444", color:"#EF4444" }}>Submit ↗</button>:<button style={{ ...nb, fontSize:10 }}>Update ↗</button>}</td>
+                    <td style={td}>{b.status==="Overdue"?<button style={{ ...nb, fontSize:10, borderColor:"#EF4444", color:"#EF4444" }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Submit ↗</button>:<button style={{ ...nb, fontSize:10 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Update ↗</button>}</td>
                   </tr>
                 ))}
               </tbody>
@@ -280,7 +280,7 @@ export default function AffinityStatutory() {
                     <td style={{ ...td, color:c.filed==="Not yet"?"#F59E0B":"#666", fontWeight:c.filed==="Not yet"?600:400 }}>{c.dueDate}</td>
                     <td style={td}><Badge label={c.filed} colors={statusC[c.filed]||{bg:"#eee",color:"#666"}} /></td>
                     <td style={{ ...td, color:"#666" }}>{c.admin}</td>
-                    <td style={td}>{c.filed==="Not yet"?<button style={nba}>Prepare form ↗</button>:<button style={{ ...nb, fontSize:10 }}>View ↗</button>}</td>
+                    <td style={td}>{c.filed==="Not yet"?<button style={nba} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Prepare form ↗</button>:<button style={{ ...nb, fontSize:10 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">View ↗</button>}</td>
                   </tr>
                 ))}
               </tbody>
@@ -308,7 +308,7 @@ export default function AffinityStatutory() {
                     <td style={{ ...td, color:"#666", fontSize:10 }}>{c.requestedBy}</td>
                     <td style={{ ...td, color:"#666", fontSize:10 }}>{c.purpose}</td>
                     <td style={td}><Badge label={c.status} colors={statusC[c.status]||{bg:"#eee",color:"#666"}} /></td>
-                    <td style={td}>{c.status==="Pending"?<button style={nba}>Chase registry</button>:<button style={{ ...nb, fontSize:10 }}>View in DMS ↗</button>}</td>
+                    <td style={td}>{c.status==="Pending"?<button style={nba} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Chase registry</button>:<button style={{ ...nb, fontSize:10 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">View in DMS ↗</button>}</td>
                   </tr>
                 ))}
               </tbody>
@@ -341,8 +341,8 @@ export default function AffinityStatutory() {
                   ))}
                 </div>
                 <div style={{ display:"flex", gap:6 }}>
-                  <button style={nb}>View checklist ↗</button>
-                  <button style={nba}>Advance stage</button>
+                  <button style={nb} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">View checklist ↗</button>
+                  <button style={nba} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Advance stage</button>
                 </div>
               </div>
             ))}

@@ -86,7 +86,7 @@ export default function AffinityProcedures() {
           <span style={{ color:"#fff", fontWeight:700, fontSize:17 }}>Affinity <span style={{ fontWeight:300 }}>Core</span></span>
           <span style={{ color:"#8892b0", fontSize:13 }}>Procedures</span>
         </div>
-        <button style={nba}>＋ Start procedure</button>
+        <button style={nba} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">＋ Start procedure</button>
       </div>
 
       <div style={{ background:"#fff", borderBottom:"0.5px solid #e5e5e5", padding:"0 24px", display:"flex", gap:2 }}>
@@ -181,7 +181,7 @@ export default function AffinityProcedures() {
                       {p.activeRuns>0 ? <span style={{ background:CY, color:"#fff", borderRadius:10, padding:"1px 6px", fontSize:10, fontWeight:700 }}>{p.activeRuns}</span> : <span style={{ color:"#ddd" }}>—</span>}
                     </td>
                     <td style={td}>
-                      <button style={{ ...nba, fontSize:10, padding:"3px 10px" }}>Start ↗</button>
+                      <button style={{ ...nba, fontSize:10, padding:"3px 10px" }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Start ↗</button>
                     </td>
                   </tr>
                 ))}
@@ -203,7 +203,7 @@ export default function AffinityProcedures() {
                   </div>
                   <div style={{ display:"flex", gap:8, alignItems:"center" }}>
                     <span style={{ fontSize:11, color:"#aaa" }}>{r.assignee}</span>
-                    <button style={{ ...nba, fontSize:10 }}>Open ↗</button>
+                    <button style={{ ...nba, fontSize:10 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Open ↗</button>
                   </div>
                 </div>
                 <div style={{ display:"flex", alignItems:"center", gap:10 }}>

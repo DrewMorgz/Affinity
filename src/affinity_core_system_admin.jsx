@@ -287,7 +287,7 @@ export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false })
         <div style={s.logo}>System Admin</div>
         <div style={{ display:"flex", gap:5 }}>
           {["Entities","Compliance","Documents","Invoicing","Reporting"].map(n=><button key={n} style={nb} onClick={()=>onNav&&onNav({Entities:"entities",Compliance:"compliance",Timesheets:"timesheets",Invoicing:"invoicing",Reporting:"reporting",Documents:"documents",Bookkeeping:"bookkeeping"}[n])}>{n}</button>)}
-          <button style={nbActive}>System</button>
+          <button style={nbActive} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">System</button>
         </div>
       </div>
 
@@ -368,8 +368,8 @@ export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false })
               </div>
               <div style={s.actRow}>
                 <button style={s.actBtn(false)} onClick={()=>setModal("editUser")}>Edit ↗</button>
-                {!selUser.mfa && <button style={{ ...s.actBtn(false), color:"#F59E0B", borderColor:"#F59E0B" }}>Enforce MFA ↗</button>}
-                <button style={{ ...s.actBtn(false), color:"#EF4444", borderColor:"#EF4444" }}>Suspend ↗</button>
+                {!selUser.mfa && <button style={{ ...s.actBtn(false), color:"#F59E0B", borderColor:"#F59E0B" }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Enforce MFA ↗</button>}
+                <button style={{ ...s.actBtn(false), color:"#EF4444", borderColor:"#EF4444" }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Suspend ↗</button>
               </div>
             </div>
           )}

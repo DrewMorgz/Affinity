@@ -102,7 +102,7 @@ export default function AffinityJurisdictionCompliance() {
         </div>
         <div style={{ display:"flex", gap:5 }}>
           {["Entity Admin","Compliance","Statutory"].map(n=><button key={n} style={{ ...nb, color:"#8892b0", borderColor:"#334" }}>{n}</button>)}
-          <button style={nba}>Jurisdiction</button>
+          <button style={nba} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Jurisdiction</button>
         </div>
       </div>
 
@@ -149,7 +149,7 @@ export default function AffinityJurisdictionCompliance() {
                 {data.obligations.filter(o=>o.status==="Overdue").map(o=>(
                   <div key={o.id} style={{ fontSize:11, color:"#A32D2D", display:"flex", justifyContent:"space-between", alignItems:"center", padding:"3px 0" }}>
                     <span>{o.title} · Due: {o.due} · Owner: {o.owner}</span>
-                    <button style={{ ...nb, fontSize:10, borderColor:"#EF4444", color:"#EF4444" }}>Action ↗</button>
+                    <button style={{ ...nb, fontSize:10, borderColor:"#EF4444", color:"#EF4444" }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Action ↗</button>
                   </div>
                 ))}
               </div>
@@ -209,7 +209,7 @@ export default function AffinityJurisdictionCompliance() {
                     <td style={{ ...td, color:o.status==="Overdue"?"#EF4444":"#666", fontWeight:o.status==="Overdue"?600:400 }}>{o.due}</td>
                     <td style={{ ...td, color:"#666" }}>{o.owner}</td>
                     <td style={td}><Badge label={o.status} colors={statusC[o.status]||{bg:"#eee",color:"#666"}} /></td>
-                    <td style={td}>{o.status==="Overdue"?<button style={{ ...nb, fontSize:10, borderColor:"#EF4444", color:"#EF4444" }}>File ↗</button>:<button style={{ ...nb, fontSize:10 }}>View ↗</button>}</td>
+                    <td style={td}>{o.status==="Overdue"?<button style={{ ...nb, fontSize:10, borderColor:"#EF4444", color:"#EF4444" }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">File ↗</button>:<button style={{ ...nb, fontSize:10 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">View ↗</button>}</td>
                   </tr>
                 ))}
               </tbody>
@@ -236,7 +236,7 @@ export default function AffinityJurisdictionCompliance() {
                     <td style={td}><Badge label={e.risk} colors={{ Low:{bg:"#EAF3DE",color:"#27500A"}, Medium:{bg:"#FAEEDA",color:"#633806"}, High:{bg:"#FCEBEB",color:"#A32D2D"}, "Very High":{bg:"#F7C1C1",color:"#501313"} }[e.risk]||{bg:"#eee",color:"#666"}} /></td>
                     <td style={{ ...td, color:"#666" }}>{e.administrator}</td>
                     <td style={td}>{e.issues>0?<Badge label={e.issues+" open"} colors={{ bg:"#FCEBEB", color:"#A32D2D" }} />:<span style={{ color:"#4CAF7D", fontSize:11 }}>✓ None</span>}</td>
-                    <td style={td}><button style={{ ...nb, fontSize:10 }}>Open in Entity Admin ↗</button></td>
+                    <td style={td}><button style={{ ...nb, fontSize:10 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Open in Entity Admin ↗</button></td>
                   </tr>
                 ))}
               </tbody>
@@ -299,7 +299,7 @@ export default function AffinityJurisdictionCompliance() {
                 <div key={i} style={{ display:"flex", gap:12, padding:"9px 0", borderBottom:"0.5px solid #f5f5f5", alignItems:"center" }}>
                   <span style={{ width:24, height:24, borderRadius:"50%", background:"#E6F7FB", color:CY, fontSize:11, fontWeight:700, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>{i+1}</span>
                   <span style={{ fontSize:12, fontWeight:500 }}>{l}</span>
-                  <button style={{ ...nb, fontSize:10, marginLeft:"auto", flexShrink:0 }}>View ↗</button>
+                  <button style={{ ...nb, fontSize:10, marginLeft:"auto", flexShrink:0 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">View ↗</button>
                 </div>
               ))}
             </div>

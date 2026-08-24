@@ -227,8 +227,8 @@ function FATCATab({entity}) {
           <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"0.5px solid #e5e5e5",fontSize:12}}><span style={{color:"#666"}}>{k}</span><span style={{fontWeight:500,textAlign:"right",maxWidth:220}}>{v}</span></div>
         ))}
         <div style={{marginTop:12,display:"flex",gap:6}}>
-          <button style={{flex:1,padding:"6px",borderRadius:5,border:"0.5px solid #ccc",background:"transparent",fontSize:11,cursor:"pointer"}}>View return ↗</button>
-          <button style={{flex:1,padding:"6px",borderRadius:5,border:"none",background:"#00C4CC",color:"#fff",fontSize:11,cursor:"pointer"}}>File return ↗</button>
+          <button style={{flex:1,padding:"6px",borderRadius:5,border:"0.5px solid #ccc",background:"transparent",fontSize:11,cursor:"pointer"}} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">View return ↗</button>
+          <button style={{flex:1,padding:"6px",borderRadius:5,border:"none",background:"#00C4CC",color:"#fff",fontSize:11,cursor:"pointer"}} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">File return ↗</button>
         </div>
       </div>
     </div>}
@@ -245,7 +245,7 @@ function CRSTab({entity}) {
   return <div>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
       <div><div style={{fontSize:14,fontWeight:600}}>CRS — Common Reporting Standard</div><div style={{fontSize:11,color:"#666",marginTop:2}}>OECD automatic exchange of financial information</div></div>
-      {isApplicable&&<button style={{padding:"5px 14px",borderRadius:5,border:"none",background:"#00C4CC",color:"#fff",fontSize:11,cursor:"pointer"}}>+ Add/edit CRS data</button>}
+      {isApplicable&&<button style={{padding:"5px 14px",borderRadius:5,border:"none",background:"#00C4CC",color:"#fff",fontSize:11,cursor:"pointer"}} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">+ Add/edit CRS data</button>}
     </div>
     {!isApplicable?<div style={{background:"#f9f9f9",borderRadius:8,padding:20,textAlign:"center",color:"#aaa",fontSize:12}}>CRS reporting does not apply to entities in {entity?.jur}.</div>:
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
@@ -284,7 +284,7 @@ function SubstanceTab({entity}) {
   return <div>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
       <div><div style={{fontSize:14,fontWeight:600}}>Substance requirements</div><div style={{fontSize:11,color:"#666",marginTop:2}}>Economic substance test — {entity?.jur}</div></div>
-      {isApplicable&&<button style={{padding:"5px 14px",borderRadius:5,border:"none",background:"#00C4CC",color:"#fff",fontSize:11,cursor:"pointer"}}>+ Update substance data</button>}
+      {isApplicable&&<button style={{padding:"5px 14px",borderRadius:5,border:"none",background:"#00C4CC",color:"#fff",fontSize:11,cursor:"pointer"}} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">+ Update substance data</button>}
     </div>
     {!isApplicable?<div style={{background:"#f9f9f9",borderRadius:8,padding:20,textAlign:"center",color:"#aaa",fontSize:12}}>
       {entity?.type==="Trust"||entity?.type==="Foundation"?"Substance requirements do not apply to "+entity?.type.toLowerCase()+"s.":"Substance requirements do not apply to entities in "+entity?.jur+"."}
@@ -657,7 +657,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
                   <div style={{ fontSize:13, fontWeight:500 }}>{a.address}</div>
                   <div style={{ fontSize:11, color:"var(--text-secondary,#666)", marginTop:4 }}>From {a.from}{a.to?` to ${a.to}`:""}</div>
                 </div>
-                <button style={s.btn(false)}>Edit</button>
+                <button style={s.btn(false)} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Edit</button>
               </div>
             </div>
           ))):<div style={{ color:"var(--text-secondary,#666)", fontSize:12, padding:"20px 0", textAlign:"center" }}>No addresses recorded.</div>}
@@ -850,9 +850,9 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
                 <div key={k} style={s.dRow}><span style={s.dKey}>{k}</span><span style={{ ...s.dVal, maxWidth:300, whiteSpace:"normal", textAlign:"right" }}>{v}</span></div>
               ))}
               <div style={{ display:"flex", gap:6, marginTop:8 }}>
-                <button style={{ ...s.btn(false), fontSize:10 }}>Generate minutes ↗</button>
-                <button style={{ ...s.btn(false), fontSize:10 }}>Generate resolution ↗</button>
-                <button style={{ ...s.btn(true), fontSize:10 }}>View documents ↗</button>
+                <button style={{ ...s.btn(false), fontSize:10 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Generate minutes ↗</button>
+                <button style={{ ...s.btn(false), fontSize:10 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Generate resolution ↗</button>
+                <button style={{ ...s.btn(true), fontSize:10 }} onClick={()=>onNav&&onNav("documents")}>View documents ↗</button>
               </div>
             </div>
           ))):<div style={{ color:"var(--text-secondary,#666)", fontSize:12, padding:"20px 0", textAlign:"center" }}>No meetings recorded.</div>}
@@ -969,7 +969,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
                     ⚠️ {entity.risk==="Very High"?"Sanctions match open — MLRO review required":"EDD documentation outstanding — review overdue"}
                   </div>
                   <div style={{ fontSize:11, color:"var(--text-secondary,#666)", marginBottom:6 }}>Open cases: {entity.risk==="Very High"?2:1}</div>
-                  <button style={s.btn(true)}>View in compliance module ↗</button>
+                  <button style={s.btn(true)} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">View in compliance module ↗</button>
                 </div>
               ):<div style={{ fontSize:12, color:"#4CAF7D" }}>✓ No open compliance cases</div>}
             </div>
@@ -997,9 +997,9 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
             <div key={r} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 0", borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)" }}>
               <span style={{ fontSize:12 }}>{r}</span>
               <div style={{ display:"flex", gap:6 }}>
-                <button style={{ ...s.btn(false), fontSize:10 }}>Word ↗</button>
-                <button style={{ ...s.btn(false), fontSize:10 }}>Excel ↗</button>
-                <button style={{ ...s.btn(true), fontSize:10 }}>PDF ↗</button>
+                <button style={{ ...s.btn(false), fontSize:10 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Word ↗</button>
+                <button style={{ ...s.btn(false), fontSize:10 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Excel ↗</button>
+                <button style={{ ...s.btn(true), fontSize:10 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">PDF ↗</button>
               </div>
             </div>
           ))}
@@ -1007,9 +1007,9 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
             <div style={{ fontSize:12, fontWeight:600, marginBottom:8 }}>Structure chart</div>
             <div style={{ fontSize:11, color:"var(--text-secondary,#666)", marginBottom:10 }}>Generate a structure chart showing ownership, control, and relationships for {entity.name}.</div>
             <div style={{ display:"flex", gap:6 }}>
-              <button style={{ ...s.btn(false), fontSize:10 }}>Word ↗</button>
-              <button style={{ ...s.btn(false), fontSize:10 }}>Excel ↗</button>
-              <button style={{ ...s.btn(true), fontSize:10 }}>PDF ↗</button>
+              <button style={{ ...s.btn(false), fontSize:10 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Word ↗</button>
+              <button style={{ ...s.btn(false), fontSize:10 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Excel ↗</button>
+              <button style={{ ...s.btn(true), fontSize:10 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">PDF ↗</button>
             </div>
           </div>
         </div>
@@ -1024,7 +1024,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
                 <div style={{ fontSize:13, fontWeight:600, marginBottom:2 }}>eGaming & GSC licence</div>
                 <div style={{ fontSize:11, color:"var(--text-secondary,#666)" }}>Gambling Supervision Commission — Isle of Man</div>
               </div>
-              <button style={{ padding:"5px 14px", borderRadius:5, border:"none", background:"#00C4CC", color:"#fff", fontSize:11, cursor:"pointer" }}>Update licence data</button>
+              <button style={{ padding:"5px 14px", borderRadius:5, border:"none", background:"#00C4CC", color:"#fff", fontSize:11, cursor:"pointer" }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Update licence data</button>
             </div>
 
             {/* Licence summary */}

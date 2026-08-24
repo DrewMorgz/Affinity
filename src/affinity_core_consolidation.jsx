@@ -370,7 +370,7 @@ export default function AffinityConsolidation({ onNav }) {
                     </td>
                     <td style={{ ...td, fontSize:11, color: r.status==="Failed"?NEG:MUT }}>{r.note || "—"}</td>
                     <td style={td}>
-                      {r.status==="Posted" && <button style={{ ...btn, padding:"3px 9px", fontSize:10 }}>Roll back</button>}
+                      {r.status==="Posted" && <button style={{ ...btn, padding:"3px 9px", fontSize:10 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Roll back</button>}
                     </td>
                   </tr>
                 ))}

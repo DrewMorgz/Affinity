@@ -102,7 +102,7 @@ export default function AffinityEGaming({ entity, onNav }) {
         </div>
         <div style={{ display:"flex", gap:5 }}>
           {["Entity Admin","Compliance","Statutory"].map(n=><button key={n} style={{ ...nb, color:"#8892b0", borderColor:"#334" }}>{n}</button>)}
-          <button style={nba}>eGaming</button>
+          <button style={nba} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">eGaming</button>
           <button style={{ ...nba, background:"#4CAF7D", borderColor:"#4CAF7D" }} onClick={()=>setModal("newLic")}>＋ New licence</button>
         </div>
       </div>
@@ -152,7 +152,7 @@ export default function AffinityEGaming({ entity, onNav }) {
                 {rtns.filter(r=>r.status==="Overdue").map(r=>(
                   <div key={r.id} style={{ fontSize:11, color:"#A32D2D", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                     <span>{r.entity} — {r.ref} — due {r.due}</span>
-                    <button style={{ ...nba, background:"#EF4444", borderColor:"#EF4444", fontSize:10 }}>Take action ↗</button>
+                    <button style={{ ...nba, background:"#EF4444", borderColor:"#EF4444", fontSize:10 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Take action ↗</button>
                   </div>
                 ))}
               </div>
@@ -222,7 +222,7 @@ export default function AffinityEGaming({ entity, onNav }) {
                     </div>
                     <div style={{ display:"flex", gap:6 }}>
                       <button style={nb} onClick={()=>onNav&&onNav("documents")}>Documents ↗</button>
-                      <button style={nba}>Update record</button>
+                      <button style={nba} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Update record</button>
                     </div>
                   </div>
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:16 }}>
@@ -292,7 +292,7 @@ export default function AffinityEGaming({ entity, onNav }) {
                 )}
                 <div style={{ display:"flex", gap:6 }}>
                   <button style={nb} onClick={()=>{ setSel(l.id); setView("licences"); }}>View checklist ↗</button>
-                  <button style={nba}>Update status</button>
+                  <button style={nba} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Update status</button>
                 </div>
               </div>
             ))}
@@ -322,8 +322,8 @@ export default function AffinityEGaming({ entity, onNav }) {
                   </div>
                 ))}
                 <div style={{ display:"flex", gap:6, marginTop:12 }}>
-                  <button style={nb}>Generate return document ↗</button>
-                  {r.status==="Overdue"?<button style={{ ...nba, background:"#EF4444", borderColor:"#EF4444" }}>File now — urgent</button>:<button style={nba}>Prepare filing</button>}
+                  <button style={nb} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Generate return document ↗</button>
+                  {r.status==="Overdue"?<button style={{ ...nba, background:"#EF4444", borderColor:"#EF4444" }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">File now — urgent</button>:<button style={nba} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Prepare filing</button>}
                 </div>
               </div>
             ))}
@@ -349,7 +349,7 @@ export default function AffinityEGaming({ entity, onNav }) {
                     <td style={td}><Badge label={c.type} colors={{ "Licence breach":{bg:"#FCEBEB",color:"#A32D2D"}, "Player complaint":{bg:"#FAEEDA",color:"#633806"}, "AML/KYC review":{bg:"#EAF3DE",color:"#27500A"}, "GSC query response":{bg:"#E6F7FB",color:"#0077A8"} }[c.type]||{bg:"#eee",color:"#666"}} /></td>
                     <td style={td}><Badge label={c.status} colors={statusC[c.status]||{bg:"#eee",color:"#666"}} /></td>
                     <td style={{ ...td, maxWidth:300, whiteSpace:"normal", fontSize:10, color:"#444", lineHeight:1.4 }}>{c.detail}</td>
-                    <td style={td}>{c.status==="Open"?<button style={{ ...nba, fontSize:10 }}>Resolve ↗</button>:<button style={{ ...nb, fontSize:10 }}>View ↗</button>}</td>
+                    <td style={td}>{c.status==="Open"?<button style={{ ...nba, fontSize:10 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Resolve ↗</button>:<button style={{ ...nb, fontSize:10 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">View ↗</button>}</td>
                   </tr>
                 ))}
               </tbody>

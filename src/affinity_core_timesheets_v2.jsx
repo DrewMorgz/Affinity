@@ -129,7 +129,7 @@ export default function AffinityTimesheets({ onNav }) {
         <div style={{ fontSize:18, fontWeight:500, color:"#001242" }}>Timesheets</div>
         <div style={{ display:"flex", gap:5 }}>
           {["Entities","Compliance","Invoicing","Reporting"].map(n=><button key={n} style={nb} onClick={()=>onNav&&onNav({Entities:"entities",Compliance:"compliance",Timesheets:"timesheets",Invoicing:"invoicing",Reporting:"reporting",Documents:"documents",Bookkeeping:"bookkeeping"}[n])}>{n}</button>)}
-          <button style={nba}>Timesheets</button>
+          <button style={nba} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Timesheets</button>
         </div>
       </div>
       {/* Entity search — same component on every page showing client data */}
@@ -160,7 +160,7 @@ export default function AffinityTimesheets({ onNav }) {
           <datalist id="ts-staff-list">{STAFF.map(x=><option key={x.id} value={x.name}/>)}</datalist>
           <select style={sel}><option>{weekF}</option><option>W/C 07 Jul 2025</option><option>W/C 30 Jun 2025</option></select>
           <button style={{ ...nb, marginLeft:"auto" }} onClick={()=>setModal("entry")}>＋ Manual entry</button>
-          <button style={nba}>Submit timesheet ↗</button>
+          <button style={nba} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Submit timesheet ↗</button>
         </div>
 
         {/* Live timer bar */}
@@ -270,7 +270,7 @@ export default function AffinityTimesheets({ onNav }) {
                   <td style={{ ...td, textAlign:"right", color:"#666" }}>{w.hours.toFixed(1)}</td>
                   <td style={{ ...td, textAlign:"right", fontWeight:600, color:CY }}>{fmt(w.value)}</td>
                   <td style={{ ...td, textAlign:"center" }}>{w.entries}</td>
-                  <td style={td}><button style={{ ...nb, fontSize:10, padding:"2px 8px" }}>Bill ↗</button></td>
+                  <td style={td}><button style={{ ...nb, fontSize:10, padding:"2px 8px" }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Bill ↗</button></td>
                 </tr>
               ))}
             </tbody>
@@ -322,8 +322,8 @@ export default function AffinityTimesheets({ onNav }) {
                 <div style={{ fontSize:11, color:"#A32D2D", marginTop:2 }}>No timesheet submitted for W/C 14 Jul 2025 · {s.office}</div>
               </div>
               <div style={{ display:"flex", gap:8 }}>
-                <button style={{ ...nb, fontSize:11 }}>Send reminder</button>
-                <button style={{ color:"#EF4444", border:"0.5px solid #EF4444", padding:"5px 12px", borderRadius:5, background:"transparent", fontSize:11, cursor:"pointer" }}>Escalate ↗</button>
+                <button style={{ ...nb, fontSize:11 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Send reminder</button>
+                <button style={{ color:"#EF4444", border:"0.5px solid #EF4444", padding:"5px 12px", borderRadius:5, background:"transparent", fontSize:11, cursor:"pointer" }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Escalate ↗</button>
               </div>
             </div>
           ))):(<div style={{ fontSize:12, color:"#4CAF7D", padding:"20px 0", textAlign:"center" }}>✓ All timesheets submitted for this week</div>)}
@@ -345,8 +345,8 @@ export default function AffinityTimesheets({ onNav }) {
                 </div>
                 <div style={{ display:"flex", gap:6, flexShrink:0, marginLeft:12 }}>
                   <span style={{ fontSize:12, fontWeight:600, color:e.billable?CY:"#aaa", marginRight:8 }}>{e.billable?fmt(e.value):"Non-billable"}</span>
-                  <button style={{ ...nb, fontSize:10 }}>Return</button>
-                  <button style={nba}>Approve ✓</button>
+                  <button style={{ ...nb, fontSize:10 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Return</button>
+                  <button style={nba} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Approve ✓</button>
                 </div>
               </div>
             );
@@ -374,7 +374,7 @@ export default function AffinityTimesheets({ onNav }) {
                   <select style={{ height:28, padding:"0 6px", fontSize:11, borderRadius:5, border:"0.5px solid #ccc", background:"var(--bg-primary,#fff)", cursor:"pointer" }}>
                     <option>This week</option><option>This month</option><option>YTD</option><option>Custom</option>
                   </select>
-                  <button style={nba}>Generate ↗</button>
+                  <button style={nba} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Generate ↗</button>
                 </div>
               </div>
             ))}

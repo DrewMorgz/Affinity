@@ -122,7 +122,7 @@ export default function AffinityBookkeeping({ onNav }) {
         <div style={{ fontSize:18, fontWeight:500, color:"#001242" }}>Bookkeeping</div>
         <div style={{ display:"flex", gap:5 }}>
           {["Entities","Timesheets","Invoicing","Reporting"].map(n=><button key={n} style={nb} onClick={()=>onNav&&onNav({Entities:"entities",Compliance:"compliance",Timesheets:"timesheets",Invoicing:"invoicing",Reporting:"reporting",Documents:"documents",Bookkeeping:"bookkeeping"}[n])}>{n}</button>)}
-          <button style={nba}>Bookkeeping</button>
+          <button style={nba} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Bookkeeping</button>
         </div>
       </div>
       {/* Entity search — same component on every page showing client data */}
@@ -253,7 +253,7 @@ export default function AffinityBookkeeping({ onNav }) {
         </div>
         <div style={{ padding:"8px 20px", display:"flex", justifyContent:"flex-end", gap:8 }}>
           <button style={nb} onClick={()=>setModal("journal")}>＋ Post journal</button>
-          <button style={nba}>Export ledger ↗</button>
+          <button style={nba} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Export ledger ↗</button>
         </div>
       </>)}
 
@@ -335,8 +335,8 @@ export default function AffinityBookkeeping({ onNav }) {
                     </div>
                   ))}
                   <div style={{ display:"flex", gap:6, marginTop:10 }}>
-                    <button style={{ ...nb, fontSize:10 }}>Reconcile ↗</button>
-                    <button style={{ ...nb, fontSize:10 }}>Statement ↗</button>
+                    <button style={{ ...nb, fontSize:10 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Reconcile ↗</button>
+                    <button style={{ ...nb, fontSize:10 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Statement ↗</button>
                   </div>
                 </div>
               ))}
@@ -416,7 +416,7 @@ export default function AffinityBookkeeping({ onNav }) {
                 <div style={{ display:"flex", gap:6 }}>
                   <select style={{ ...sel, flex:1, height:28, fontSize:11 }}><option>YTD 2025</option><option>Q2 2025</option><option>FY 2024</option></select>
                   <><input list="bk-rep-entity" defaultValue="All entities" placeholder="Search entity…" style={{ ...sel, flex:1, height:28, fontSize:11, boxSizing:"border-box" }} /><datalist id="bk-rep-entity"><option value="All entities"/>{ents.map(e=><option key={e.id} value={e.name}/>)}</datalist></>
-                  <button style={nba}>Generate ↗</button>
+                  <button style={nba} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Generate ↗</button>
                 </div>
               </div>
             ))}
