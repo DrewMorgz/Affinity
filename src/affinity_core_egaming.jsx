@@ -62,7 +62,7 @@ const VLBLS = ["Overview","Licence register","Applications","Returns","Complianc
 const th = { padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:600, color:"#666", textTransform:"uppercase", letterSpacing:"0.4px", borderBottom:"0.5px solid #e5e5e5", background:"#f9f9f9", whiteSpace:"nowrap" };
 const td = { padding:"9px 12px", fontSize:11, borderBottom:"0.5px solid #e5e5e5", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" };
 
-export default function AffinityEGaming({ entity }) {
+export default function AffinityEGaming({ entity, onNav }) {
   const [entitySearch, setEntitySearch] = useState("");
   const [view, setView]   = useState("overview");
   const [sel, setSel]     = useState(null);
@@ -221,7 +221,7 @@ export default function AffinityEGaming({ entity }) {
                       </div>
                     </div>
                     <div style={{ display:"flex", gap:6 }}>
-                      <button style={nb}>Documents in DMS ↗</button>
+                      <button style={nb} onClick={()=>onNav&&onNav("documents")}>Documents ↗</button>
                       <button style={nba}>Update record</button>
                     </div>
                   </div>

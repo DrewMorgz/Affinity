@@ -502,7 +502,7 @@ export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false })
             <div style={s.sw}><span style={{ color:"#aaa" }}>🔍</span><input style={s.swInput} placeholder="Search audit log..." value={auditSearch} onChange={e=>setAuditSearch(e.target.value)} /></div>
             <select style={s.sel}>
               <option value="">All modules</option>
-              {["System","Entities","Compliance","DMS","Onboarding","Timesheets","Invoicing","Reporting"].map(m=><option key={m}>{m}</option>)}
+              {["System","Entities","Compliance","Documents","Onboarding","Timesheets","Invoicing","Reporting"].map(m=><option key={m}>{m}</option>)}
             </select>
             <select style={s.sel}>
               <option>Last 7 days</option>
@@ -915,7 +915,7 @@ export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false })
               <div style={{ ...s.infoBox }}>⚠️ Role permission changes affect all users with this role. Changes are logged in the audit trail.</div>
               <div style={s.fg}><label style={s.fgl}>Role</label><select style={s.fgi}>{Object.keys(roleColors).map(r=><option key={r}>{r}</option>)}</select></div>
               <div style={s.fg}><label style={s.fgl}>Module access</label>
-                {["Entities","Compliance","DMS","Onboarding","Timesheets","Invoicing","Reporting","System Admin"].map(m=>(
+                {["Entities","Compliance","Documents","Onboarding","Timesheets","Invoicing","Reporting","System Admin"].map(m=>(
                   <div key={m} style={{ display:"flex", alignItems:"center", gap:8, padding:"4px 0", fontSize:13 }}>
                     <input type="checkbox" defaultChecked style={{ accentColor:CY }} /> {m}
                   </div>

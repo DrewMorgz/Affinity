@@ -120,7 +120,7 @@ export default function AffinityStatutory() {
           <span style={{ color:"#8892b0", fontSize:13 }}>Statutory, Company Secretarial & Regulatory Registers</span>
         </div>
         <div style={{ display:"flex", gap:5 }}>
-          {["Entity Admin","Compliance","DMS"].map(n => <button key={n} style={{ ...nb, color:"#8892b0", borderColor:"#334" }}>{n}</button>)}
+          {["Entity Admin","Compliance","Documents"].map(n => <button key={n} style={{ ...nb, color:"#8892b0", borderColor:"#334" }}>{n}</button>)}
           <button style={nba}>Statutory</button>
         </div>
       </div>

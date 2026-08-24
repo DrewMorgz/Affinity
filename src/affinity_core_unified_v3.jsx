@@ -424,7 +424,7 @@ export default function AffinityCore(){
       case "intranet":     return <Intranet/>;
       case "system":       return <SystemAdmin onNav={setMod} isSuperAdmin={!!(user&&user.role&&user.role.indexOf("Super Admin")>-1)}/>;
       case "generate":     return <GenerateDoc/>;
-      case "egaming":      return <EGaming/>;
+      case "egaming":      return <EGaming onNav={setMod}/>;
       default:             return <Dashboard userId={uid} onNav={setMod} userName={user?.name||""}/>;
     }
   };

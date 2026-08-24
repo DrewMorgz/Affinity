@@ -551,7 +551,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
               {[["Date of M&A","12/03/2018"],["Last amended","N/A"],["Custom clauses","Restriction on transfer of shares"],["Filed with","IOM Companies Registry"],["Copy in DMS","Yes — Certificate + M&A"]].map(([k,v])=>(
                 <div key={k} style={s.dRow}><span style={s.dKey}>{k}</span><span style={s.dVal}>{v}</span></div>
               ))}
-              <button style={{ ...s.btn(false), marginTop:8, fontSize:10 }}>View M&A in DMS ↗</button>
+              <button style={{ ...s.btn(false), marginTop:8, fontSize:10 }} onClick={()=>onNav&&onNav("documents")}>View M&amp;A in Documents ↗</button>
             </div>
           </div>
         </div>
@@ -1248,9 +1248,12 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
                     </div>
                   </div>
                   <div style={{ display:"flex", gap:6 }}>
-                    <button style={s.btn(false)}>Edit entity ↗</button>
-                    <button style={s.btn(false)}>DMS ↗</button>
-                    <button style={s.btn(true)}>Generate register ↗</button>
+                    <button style={{ ...s.btn(false), opacity:0.5, cursor:"not-allowed" }} disabled
+                      title="Editing entity records needs the write layer (Azure + Entra)">Edit entity</button>
+                    <button style={s.btn(false)} onClick={()=>onNav&&onNav("documents")}
+                      title={"Open "+(entity?entity.name:"this entity")+" in Documents"}>Documents ↗</button>
+                    <button style={s.btn(true)} onClick={()=>onNav&&onNav("generate")}
+                      title="Generate a statutory register document">Generate register ↗</button>
                   </div>
                 </div>
               </div>
@@ -1271,7 +1274,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
                   {tab==="substance"&&<SubstanceTab entity={entity}/>}
                   {tab==="structure"&&<div style={{margin:"-20px -24px"}}><EntityChart/></div>}
                   {tab==="egaming_reg"&&<div style={{margin:"-14px -20px"}}>
-                    <AffinityEGaming entity={entity}/>
+                    <AffinityEGaming entity={entity} onNav={onNav}/>
                     {/* Gaming compliance log — the same register catalogue as Compliance,
                         scoped to this entity, so gaming obligations are logged in context. */}
                     <div style={{ padding:"16px 20px", borderTop:"0.5px solid var(--border-tertiary,#e5e5e5)" }}>
