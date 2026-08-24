@@ -21,7 +21,8 @@
 // Core design language throughout: Midnight Navy, Affinity Cyan, Catamaran,
 // hairline borders, tabular figures right-aligned, no card per row.
 // ─────────────────────────────────────────────────────────────────────────────
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { groupList, mappingList, mappingSet, runList, runRecord } from "./affinity_planning_api";
 
 const NAVY = "#001242", CY = "#00C4CC";
 const INK  = "var(--text-primary,#111)";
@@ -136,6 +137,29 @@ export default function AffinityConsolidation({ onNav }) {
   const [log, setLog]       = useState([]);
   const [running, setRunning] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [live, setLive] = useState(false);
+  const [groupId, setGroupId] = useState(null);
+
+  // Live group members and run register when the database is available.
+  useEffect(() => {
+    let ok = true;
+    groupList().then((r) => {
+      if (!ok || !r.live || !r.data || !r.data.length) return;
+      setGroupId(r.data[0].group_id);
+      setLive(true);
+      return runList(r.data[0].group_id);
+    }).then((rr) => {
+      if (!ok || !rr || !rr.live || !rr.data || !rr.data.length) return;
+      setRuns(rr.data.map((x) => ({
+        id: x.run_ref, period: x.period,
+        started: x.started_at ? new Date(x.started_at).toLocaleString("en-GB") : "—",
+        finished: x.finished_at ? new Date(x.finished_at).toLocaleString("en-GB") : "—",
+        by: x.initiated_by, rules: x.rules_version || "—",
+        status: x.status, entities: x.member_count, note: x.note || "",
+      })));
+    }).catch(() => {});
+    return () => { ok = false; };
+  }, []);
   const [importStep, setImportStep] = useState(1);
 
   const unmapped = maps.filter((m) => m.status === "Unmapped");
@@ -173,6 +197,11 @@ export default function AffinityConsolidation({ onNav }) {
     steps.forEach((line, i) => setTimeout(() => setLog((l) => [...l, line]), 260 * (i + 1)));
     setTimeout(() => {
       setRunning(false);
+      if (live) {
+        runRecord({ ref:id, groupId, period, rules:"v4 (Mar 2026)",
+          status: canRun ? "Complete" : "Failed", members: MEMBERS.length,
+          note: canRun ? "" : "Blocked at validation", log: null });
+      }
       setRuns((r) => [{ id, period, started:new Date().toLocaleString("en-GB",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}),
         finished:"—", by:"Andrew Morgan", rules:"v4 (Mar 2026)",
         status: canRun ? "Complete" : "Failed", entities:MEMBERS.length,
@@ -210,7 +239,10 @@ export default function AffinityConsolidation({ onNav }) {
             </button>
           ))}
         </div>
-        <span style={{ fontSize:10.5, color:"#B08A3E", background:"#FDF4DC", borderRadius:20, padding:"3px 10px" }}>Preview data</span>
+        <span style={{ fontSize:10.5, borderRadius:20, padding:"3px 10px",
+          color: live?"#1F6F54":"#B08A3E", background: live?"#E7F4EF":"#FDF4DC" }}>
+          {live ? "Live data" : "Preview data"}
+        </span>
       </div>
 
       <div style={{ display:"flex", alignItems:"center", gap:8, padding:"9px 22px", background:CARD, borderBottom:`0.5px solid ${LINE}`, flexWrap:"wrap" }}>
@@ -386,6 +418,7 @@ export default function AffinityConsolidation({ onNav }) {
                           const found=GROUP_ACCOUNTS.find((x)=>x[0]===g);
                           setMaps((rows)=>rows.map((r)=>r.local===m.local&&r.entity===m.entity
                             ? { ...r, group:g, groupName:found?found[1]:"", status:g?"Mapped":"Unmapped" } : r));
+                          if (live && m.id) mappingSet(m.id, g);
                         }}
                         style={{ height:28, padding:"0 8px", fontSize:11.5, borderRadius:5, minWidth:260, color:INK, background:CARD,
                                  border:`0.5px solid ${m.status==="Unmapped"?"#e0a0a0":LINE}` }}>

@@ -22,6 +22,7 @@
 // db/001-051 is run; every write below maps to an RPC that already exists.
 // ─────────────────────────────────────────────────────────────────────────────
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import { budgetList, budgetGrid, setBudgetCell, submitBudget, approveBudget, pivotToGrid } from "./affinity_planning_api";
 
 const NAVY = "#001242", CY = "#00C4CC";
 const INK  = "var(--text-primary,#111)";
@@ -155,6 +156,25 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
     { at:"14/11/2025 09:20", who:"Neil Kelly", what:"Budget created from FY25 actuals" },
   ]);
   const gridRef = useRef(null);
+  const [live, setLive]       = useState(false);   // true once real budget lines are loaded
+  const [budgetId, setBudgetId] = useState(null);
+  const [loadErr, setLoadErr] = useState(null);
+
+  // Load the real budget when the database is there; otherwise stay on preview
+  // figures and say so, rather than passing preview numbers off as live.
+  useEffect(() => {
+    let ok = true;
+    budgetList().then(async (r) => {
+      if (!ok || !r.live || !r.data || !r.data.length) return;
+      const b = r.data[0];
+      setBudgetId(b.id);
+      const g = await budgetGrid(b.id);
+      if (!ok || !g.live || !g.data) return;
+      const pivot = pivotToGrid(g.data);
+      if (Object.keys(pivot).length) { setValues(pivot); setLive(true); }
+    }).catch((e) => ok && setLoadErr(String(e && e.message)));
+    return () => { ok = false; };
+  }, []);
 
   const ent = ENTITIES.find((e) => e.ref === entity) || ENTITIES[0];
   const locked = state === "Locked" || state === "Approved";
@@ -205,9 +225,16 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
     const cleaned = String(raw).replace(/[^0-9.\-]/g, "");
     if (cleaned === "") { setEditing(null); return; }
     pushUndo();
-    setValues((v) => ({ ...v, [code + ":" + i]: Math.round(Number(cleaned)) }));
+    const amount = Math.round(Number(cleaned));
+    setValues((v) => ({ ...v, [code + ":" + i]: amount }));
     setDirty(true);
     setEditing(null);
+    if (live && budgetId) {
+      const period = "2026-" + String(i + 1).padStart(2, "0");
+      setBudgetCell(budgetId, code, period, amount).then((r) => {
+        if (r.error) setLoadErr("Could not save " + code + " " + period + ": " + (r.error.message || r.error));
+      });
+    }
   };
 
   const undo = () => {
@@ -285,6 +312,10 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
   };
 
   const transition = (to, note) => {
+    if (live && budgetId) {
+      if (to === "Submitted") submitBudget(budgetId, userName || "unknown");
+      if (to === "Approved")  approveBudget(budgetId, userName || "unknown");
+    }
     setState(to);
     setHistory((h) => [...h, {
       at: new Date().toLocaleString("en-GB", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" }),
@@ -319,7 +350,11 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
                        background:view===v?CY:CARD, color:view===v?"#fff":MUT }}>{l}</button>
           ))}
         </div>
-        <span style={{ fontSize:10.5, color:"#B08A3E", background:"#FDF4DC", borderRadius:20, padding:"3px 10px" }}>Preview data</span>
+        <span style={{ fontSize:10.5, borderRadius:20, padding:"3px 10px",
+          color: live?"#1F6F54":"#B08A3E", background: live?"#E7F4EF":"#FDF4DC" }}>
+          {live ? "Live data" : "Preview data"}
+        </span>
+        {loadErr && <span style={{ fontSize:10.5, color:NEG }} title={loadErr}>save issue</span>}
       </div>
 
       {/* Persistent filter bar */}
