@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import EntitySearch from "./affinity_entity_search";
 import { isConfigured } from "./affinity_accounting_supabase";
 import { crmProspects } from "./affinity_crm_api";
 const CY = "#00C4CC";
@@ -120,6 +121,7 @@ function Modal({ title, onClose, children }) {
 }
 
 export default function AffinityCRM() {
+  const [entitySearch, setEntitySearch] = useState("");
   const [view,setView]   = useState("pipeline");
   const [sel,setSel]     = useState(null);
   const [modal,setModal] = useState(null);
@@ -324,6 +326,11 @@ Isle of Man · Malta · Cayman Islands · Cyprus · USA · United Kingdom`
         </div>
         <button style={{ ...nba, background:"#4CAF7D", borderColor:"#4CAF7D" }} onClick={()=>{ setForm({stage:"Initial Call",type:"Company",office:"Isle of Man",source:"Referral",risk:"Medium"}); setModal("add"); }}>＋ Add prospect</button>
       </div>
+      {/* Entity search — same component as Entity Admin */}
+      <div style={{ padding:"10px 20px", borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)", background:"var(--bg-primary,#fff)" }}>
+        <EntitySearch value={entitySearch} onChange={setEntitySearch} compact />
+      </div>
+
 
       <div style={{ background:"#fff", borderBottom:"0.5px solid #e5e5e5", padding:"0 24px", display:"flex", gap:2 }}>
         {VIEWS.map((v,i)=><button key={v} onClick={()=>setView(v)} style={{ padding:"10px 14px", fontSize:12, border:"none", borderBottom:`2px solid ${view===v?CY:"transparent"}`, background:"transparent", color:view===v?CY:"#666", cursor:"pointer", fontWeight:view===v?600:400 }}>{VLBLS[i]}</button>)}

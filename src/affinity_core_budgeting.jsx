@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import EntitySearch from "./affinity_entity_search";
 import { getDatasets, isConfigured } from "./affinity_ops_api";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
@@ -66,6 +67,7 @@ const POS = [
 ];
 
 export default function AffinityBudgeting() {
+  const [entitySearch, setEntitySearch] = useState("");
   const [ds,setDs]=useState(null);
   useEffect(()=>{ if(!isConfigured) return; let ok=true; getDatasets("budget.").then(({data})=>{ if(ok&&data&&data.length){ const m={}; data.forEach(r=>{ m[r.dkey.split(".")[1]]=r.data; }); setDs(m); } }).catch(()=>{}); return ()=>{ok=false;}; },[]);
   const BUDGETSL = (ds&&ds["budgets"])||BUDGETS;
@@ -97,6 +99,11 @@ export default function AffinityBudgeting() {
           <Btn primary onClick={()=>setModal("newBudget")}>+ New reforecast</Btn>
         </div>
       </div>
+      {/* Entity search — same component as Entity Admin */}
+      <div style={{ padding:"10px 20px", borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)", background:"var(--bg-primary,#fff)" }}>
+        <EntitySearch value={entitySearch} onChange={setEntitySearch} compact />
+      </div>
+
 
       {/* Budget selector */}
       <div style={{display:"flex",gap:0,padding:"0 20px",borderBottom:"0.5px solid #e5e5e5",overflowX:"auto"}}>

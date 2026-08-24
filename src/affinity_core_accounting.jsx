@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import EntitySearch from "./affinity_entity_search";
 import { isConfigured } from "./affinity_accounting_supabase";
 import { listEntities, getKpiDashboard, getCashFlow, getCreditStatus, getCollections,
   apVendors, apAging, apPurchaseOrders, getFixedAssets, getIcLoans,
@@ -816,18 +817,20 @@ export default function Accounting({ module }) {
         {live
           ? <span style={{ background: POS + "1A", color: POS, borderRadius: 999, padding: "3px 10px", fontSize: 11.5, fontWeight: 600 }}>Live</span>
           : <span style={{ background: AMBER + "1A", color: AMBER, borderRadius: 999, padding: "3px 10px", fontSize: 11.5, fontWeight: 600 }}>Preview data</span>}
-        <input list="acc-entity-list" placeholder="Search entity…"
+      </div>
+
+      {/* Entity search — same component as Entity Admin, on every accounting tab */}
+      <div style={{ marginBottom: 16, maxWidth: 460 }}>
+        <EntitySearch compact
           value={entSrch === null ? ((entities.find((e) => e.id === entityId) || {}).label || "") : entSrch}
-          onChange={(ev) => {
-            const v = ev.target.value;
+          onChange={(v) => {
             setEntSrch(v);
             const m = entities.find((e) => e.label === v);
             if (m) { setEntityId(m.id); setEntSrch(null); }
+            if (!v) setEntSrch("");
           }}
-          onFocus={() => setEntSrch("")}
-          onBlur={() => setEntSrch(null)}
-          style={{ marginLeft: "auto", background: "#fff", border: `1px solid ${LINE}`, borderRadius: 8, padding: "8px 10px", fontSize: 13, minWidth: 220, boxSizing: "border-box" }} />
-        <datalist id="acc-entity-list">{entities.map((e) => <option key={e.id} value={e.label} />)}</datalist>
+          entities={entities.map((e) => ({ name: e.label, ref: "", jur: "" }))}
+        />
       </div>
       {tabs.length > 1 && (
         <div style={{ display: "flex", gap: 4, borderBottom: `1px solid ${LINE}`, marginBottom: 18, flexWrap: "wrap" }}>
