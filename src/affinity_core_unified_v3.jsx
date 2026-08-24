@@ -10,7 +10,6 @@ import Onboarding    from "./affinity_core_onboarding_v2";
 import Timesheets    from "./affinity_core_timesheets_v2";
 import Invoicing     from "./affinity_core_invoicing_v2";
 import Bookkeeping   from "./affinity_core_bookkeeping_v2";
-import Budgeting     from "./affinity_core_budgeting";
 import Reporting     from "./affinity_core_reporting_v2";
 import Procedures    from "./affinity_core_procedures_v2";
 import SystemAdmin   from "./affinity_core_system_admin";
@@ -94,7 +93,6 @@ const NAV = [
   {s:"Internal Accounts", items:[
     {id:"acc_wip",   label:"WIP",            icon:"\u23F3",b:null},
     {id:"invoicing", label:"Invoicing",      icon:"\uD83D\uDCB7",b:null},
-    {id:"budgeting", label:"Budgets",        icon:"\uD83D\uDCB0",b:null},
   ]},
   {s:"Affinity Accounting", items:[
     {id:"bookkeeping",  label:"Bookkeeping",     icon:"\uD83D\uDCCA",b:null},
@@ -271,7 +269,7 @@ const SEARCH_INDEX = [
   {type:"Module",  label:"Timesheets",                     sub:"Time recording",                  mod:"timesheets"},
   {type:"Module",  label:"Invoicing",                      sub:"Billing & debtors",               mod:"invoicing"},
   {type:"Module",  label:"Bookkeeping",                    sub:"Ledger & accounts",               mod:"bookkeeping"},
-  {type:"Module",  label:"Budgets",                         sub:"Budgets & scenarios",             mod:"budgeting"},
+  {type:"Module",  label:"Budgets",                         sub:"Now in Planning",                 mod:"planning"},
   {type:"Module",  label:"Planning",                        sub:"Budget input, workflow, scenarios",mod:"planning"},
   {type:"Module",  label:"Reporting",                       sub:"MI & financial statements",       mod:"reporting"},
   {type:"Module",  label:"Procedures",                     sub:"Process library",                 mod:"procedures"},
@@ -420,7 +418,7 @@ export default function AffinityCore(){
       case "timesheets":   return <Timesheets officeFilter={officeFilter} onNav={setMod}/>;
       case "invoicing":    return <Invoicing onNav={setMod}/>;
       case "bookkeeping":  return <Bookkeeping onNav={setMod}/>;
-      case "budgeting":    return <Budgeting/>;
+      case "budgeting":    return <Planning onNav={setMod} userName={user?.name||""}/>;  // Budgets retired into Planning
       case "reporting":    return <Reporting onNav={setMod} role={rbacRole} userName={user?.name||""}/>;
       case "planning":     return <Planning onNav={setMod} userName={user?.name||""}/>;
       case "procedures":   return <Procedures/>;

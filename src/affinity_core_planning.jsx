@@ -100,6 +100,36 @@ function seedValues() {
 
 const nf = (n) => n == null || n === "" ? "" : Number(n).toLocaleString("en-GB", { maximumFractionDigits: 0 });
 
+// ── Carried over from the Budgets module this replaces, so nothing is lost.
+const VARIANCE = [
+  { line:"Retainer income",   budget:980000, actual:497000, variance:12000,  pct:"+2.5%",  status:"Favourable" },
+  { line:"Ad hoc income",     budget:420000, actual:198000, variance:-8000,  pct:"-3.8%",  status:"Adverse"    },
+  { line:"Specialist income", budget:700000, actual:372000, variance:18000,  pct:"+5.1%",  status:"Favourable" },
+  { line:"Staff costs",       budget:860000, actual:428000, variance:6000,   pct:"+1.4%",  status:"Adverse"    },
+  { line:"Office & premises", budget:180000, actual:88000,  variance:-4000,  pct:"-4.3%",  status:"Favourable" },
+  { line:"IT & software",     budget:95000,  actual:52000,  variance:2000,   pct:"+4.0%",  status:"Adverse"    },
+  { line:"Professional fees", budget:120000, actual:58000,  variance:-8000,  pct:"-12.1%", status:"Favourable" },
+  { line:"Travel & expenses", budget:65000,  actual:28000,  variance:4000,   pct:"+16.7%", status:"Adverse"    },
+];
+
+const SERVICELINES = [
+  { line:"Company administration", budget:680000, forecast:710000, actual:348000, margin:38 },
+  { line:"Trust administration",   budget:520000, forecast:545000, actual:268000, margin:42 },
+  { line:"Compliance services",    budget:310000, forecast:325000, actual:162000, margin:45 },
+  { line:"Accounting & finance",   budget:280000, forecast:290000, actual:141000, margin:35 },
+  { line:"Specialist — Yachting",  budget:180000, forecast:195000, actual:94000,  margin:52 },
+  { line:"Specialist — Sports",    budget:130000, forecast:138000, actual:68000,  margin:48 },
+];
+
+const MONTHLY = [
+  { month:"Apr", budget:160000, forecast:165000, actual:158000 },
+  { month:"May", budget:163000, forecast:168000, actual:171000 },
+  { month:"Jun", budget:165000, forecast:172000, actual:168000 },
+  { month:"Jul", budget:168000, forecast:175000, actual:null },
+  { month:"Aug", budget:162000, forecast:170000, actual:null },
+  { month:"Sep", budget:170000, forecast:178000, actual:null },
+];
+
 const SCENARIOS_SEED = [
   { id:1, name:"FY26 Budget",            base:null,  status:"Approved",    owner:"Neil Kelly",  created:"2025-11-14", locked:true,  delta:0 },
   { id:2, name:"FY26 Forecast — Q1 roll",base:"FY26 Budget", status:"In progress", owner:"Neil Kelly", created:"2026-04-02", locked:false, delta:2.4 },
@@ -283,7 +313,7 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
       <div style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 22px", background:CARD, borderBottom:`0.5px solid ${LINE}`, flexWrap:"wrap" }}>
         <h2 style={{ margin:0, fontSize:18, fontWeight:500, color:NAVY }}>Planning</h2>
         <div style={{ display:"flex", border:`0.5px solid ${LINE}`, borderRadius:6, overflow:"hidden" }}>
-          {[["input","Budget input"],["workflow","Workflow"],["scenarios","Scenarios"]].map(([v,l])=>(
+          {[["input","Budget input"],["workflow","Workflow"],["scenarios","Scenarios"],["variance","Variance & analysis"]].map(([v,l])=>(
             <button key={v} onClick={()=>setView(v)}
               style={{ border:"none", cursor:"pointer", fontSize:11.5, padding:"6px 13px", fontWeight:view===v?600:400,
                        background:view===v?CY:CARD, color:view===v?"#fff":MUT }}>{l}</button>
@@ -650,6 +680,122 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
                   <td colSpan={3} style={{ background:SUBTLE }} />
                   <td style={{ padding:"10px 14px", fontSize:13, fontWeight:700, background:SUBTLE, color:NEG, fontVariantNumeric:"tabular-nums" }}>−£239,000</td>
                 </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════ VARIANCE & ANALYSIS ══════════════ */}
+      {view === "variance" && (
+        <div style={{ padding:"16px 22px 60px" }}>
+
+          {/* Key metrics, carried over from Budgets */}
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(170px,1fr))", gap:10, marginBottom:18 }}>
+            {[
+              ["Budget — full year", "£2,100,000", NAVY],
+              ["Forecast — full year", "£2,203,000", CY],
+              ["Actual YTD", "£1,081,000", NAVY],
+              ["Variance YTD", "+£22,000", POS],
+              ["Net margin", "28.4%", NAVY],
+            ].map(([l,v,c])=>(
+              <div key={l} style={{ background:CARD, border:`0.5px solid ${LINE}`, borderRadius:9, padding:"12px 14px" }}>
+                <div style={{ fontSize:10.5, color:MUT, marginBottom:5 }}>{l}</div>
+                <div style={{ fontSize:19, fontWeight:700, color:c, fontVariantNumeric:"tabular-nums" }}>{v}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ fontSize:12.5, fontWeight:600, color:NAVY, marginBottom:8 }}>Variance analysis — YTD</div>
+          <div style={{ background:CARD, border:`0.5px solid ${LINE}`, borderRadius:9, overflow:"hidden", marginBottom:20 }}>
+            <table style={{ width:"100%", borderCollapse:"collapse" }}>
+              <thead><tr>
+                {["Line","Budget","Actual YTD","Variance","%","Status",""].map((h)=>(
+                  <th key={h} style={{ padding:"8px 14px", textAlign:"left", fontSize:10, fontWeight:600, color:MUT,
+                                       textTransform:"uppercase", letterSpacing:"0.4px", background:SUBTLE, borderBottom:`0.5px solid ${LINE}` }}>{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {VARIANCE.map((v,i)=>(
+                  <tr key={i} style={{ borderBottom:`0.5px solid ${LINE}` }}>
+                    <td style={{ padding:"9px 14px", fontSize:12.5 }}>{v.line}</td>
+                    <td style={{ padding:"9px 14px", fontSize:12.5, fontVariantNumeric:"tabular-nums" }}>£{nf(v.budget)}</td>
+                    <td style={{ padding:"9px 14px", fontSize:12.5, fontVariantNumeric:"tabular-nums" }}>£{nf(v.actual)}</td>
+                    <td style={{ padding:"9px 14px", fontSize:12.5, fontWeight:700, fontVariantNumeric:"tabular-nums",
+                                 color: v.variance>0?POS:NEG }}>{v.variance>0?"+":"−"}£{nf(Math.abs(v.variance))}</td>
+                    <td style={{ padding:"9px 14px", fontSize:12, color:MUT }}>{v.pct}</td>
+                    <td style={{ padding:"9px 14px" }}>
+                      <span style={{ fontSize:10, fontWeight:700, borderRadius:20, padding:"2px 9px",
+                                     background: v.status==="Favourable"?"#E7F4EF":"#FCEBEB",
+                                     color: v.status==="Favourable"?"#1F6F54":"#A32D2D" }}>{v.status}</span>
+                    </td>
+                    <td style={{ padding:"9px 14px" }}>
+                      <button style={{ ...btn, padding:"3px 9px", fontSize:10 }}
+                        onClick={()=>{ setView("input"); setDrawer("comments"); }}
+                        title="Attach an explanation to this variance">＋ Explain</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div style={{ fontSize:12.5, fontWeight:600, color:NAVY, marginBottom:8 }}>Revenue by service line — budget vs forecast vs actual</div>
+          <div style={{ background:CARD, border:`0.5px solid ${LINE}`, borderRadius:9, overflow:"hidden", marginBottom:20 }}>
+            <table style={{ width:"100%", borderCollapse:"collapse" }}>
+              <thead><tr>
+                {["Service line","Budget","Forecast","Actual YTD","Margin %","Forecast vs budget"].map((h)=>(
+                  <th key={h} style={{ padding:"8px 14px", textAlign:"left", fontSize:10, fontWeight:600, color:MUT,
+                                       textTransform:"uppercase", letterSpacing:"0.4px", background:SUBTLE, borderBottom:`0.5px solid ${LINE}` }}>{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {SERVICELINES.map((r,i)=>{
+                  const d = r.forecast - r.budget;
+                  return (
+                    <tr key={i} style={{ borderBottom:`0.5px solid ${LINE}` }}>
+                      <td style={{ padding:"9px 14px", fontSize:12.5 }}>{r.line}</td>
+                      <td style={{ padding:"9px 14px", fontSize:12.5, fontVariantNumeric:"tabular-nums" }}>£{nf(r.budget)}</td>
+                      <td style={{ padding:"9px 14px", fontSize:12.5, fontVariantNumeric:"tabular-nums" }}>£{nf(r.forecast)}</td>
+                      <td style={{ padding:"9px 14px", fontSize:12.5, fontVariantNumeric:"tabular-nums", color:MUT }}>£{nf(r.actual)}</td>
+                      <td style={{ padding:"9px 14px", fontSize:12.5, fontWeight:600 }}>{r.margin}%</td>
+                      <td style={{ padding:"9px 14px", fontSize:12.5, fontWeight:700, fontVariantNumeric:"tabular-nums", color: d>=0?POS:NEG }}>
+                        {d>=0?"+":"−"}£{nf(Math.abs(d))}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <div style={{ fontSize:12.5, fontWeight:600, color:NAVY, marginBottom:8 }}>Monthly revenue — budget vs forecast vs actual</div>
+          <div style={{ background:CARD, border:`0.5px solid ${LINE}`, borderRadius:9, overflow:"hidden" }}>
+            <table style={{ width:"100%", borderCollapse:"collapse" }}>
+              <thead><tr>
+                {["Month","Budget","Forecast","Actual","Actual vs budget"].map((h)=>(
+                  <th key={h} style={{ padding:"8px 14px", textAlign:"left", fontSize:10, fontWeight:600, color:MUT,
+                                       textTransform:"uppercase", letterSpacing:"0.4px", background:SUBTLE, borderBottom:`0.5px solid ${LINE}` }}>{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {MONTHLY.map((m,i)=>{
+                  const d = m.actual == null ? null : m.actual - m.budget;
+                  return (
+                    <tr key={i} style={{ borderBottom:`0.5px solid ${LINE}` }}>
+                      <td style={{ padding:"9px 14px", fontSize:12.5 }}>{m.month}</td>
+                      <td style={{ padding:"9px 14px", fontSize:12.5, fontVariantNumeric:"tabular-nums" }}>£{nf(m.budget)}</td>
+                      <td style={{ padding:"9px 14px", fontSize:12.5, fontVariantNumeric:"tabular-nums" }}>£{nf(m.forecast)}</td>
+                      <td style={{ padding:"9px 14px", fontSize:12.5, fontVariantNumeric:"tabular-nums", color: m.actual==null?"#bbb":INK }}>
+                        {m.actual==null ? "not yet posted" : "£"+nf(m.actual)}
+                      </td>
+                      <td style={{ padding:"9px 14px", fontSize:12.5, fontWeight:700, fontVariantNumeric:"tabular-nums",
+                                   color: d==null?"#bbb":d>=0?POS:NEG }}>
+                        {d==null ? "—" : (d>=0?"+":"−")+"£"+nf(Math.abs(d))}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
