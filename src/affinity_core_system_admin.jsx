@@ -165,7 +165,7 @@ const MATRIX_TREE = [
   ["Reporting","reporting",["Report builder","Saved reports","Share saved report","Custom SQL","Export"]],
   ["Procedures","procedures",["Read","Author & publish","Acknowledgements"]],
   ["People","intranet",["Intranet","Posts","Assistant"]],
-  ["System Admin","system",["Users","Roles","Permission matrix","Entity access","Offices","Fee schedules","Audit log","Custom fields & lists","Config"]],
+  ["System Admin","system",["Users","Roles","Permission matrix","Group company access","Offices","Fee schedules","Audit log","Custom fields & lists","Config"]],
 ];
 
 
