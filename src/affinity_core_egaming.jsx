@@ -364,7 +364,7 @@ export default function AffinityEGaming({ entity }) {
             {[["Entity","select",["Phoenix eGaming Ltd","Meridian Digital Ltd","Neptune Interactive Ltd","Apex Gaming Solutions Ltd"]],["Licence type","select",["B2C — Casino","B2C — Sports betting","B2C — Poker","B2B — Platform supply","B2B — Software supply"]],["Reference / GSC number","text"],["Notes","text"]].map(([l,t,opts])=>(
               <div key={l} style={{ marginBottom:12 }}>
                 <label style={{ display:"block", fontSize:11, fontWeight:600, color:"#555", marginBottom:4 }}>{l}</label>
-                {t==="select"?<select style={{ width:"100%", padding:"8px 10px", border:"1.5px solid #e0e0e0", borderRadius:6, fontSize:12, outline:"none" }}>{(opts||[]).map(o=><option key={o}>{o}</option>)}</select>
+                {(l==="Entity"||l==="Client"||l==="Entity name"||l==="Client name"||l==="Linked entity")?<><input list="eg-ent-1" placeholder="Search entity…" style={{ width:"100%", padding:"8px 10px", border:"1.5px solid #e0e0e0", borderRadius:6, fontSize:12, outline:"none" , boxSizing:"border-box" }} /><datalist id="eg-ent-1">{(opts||[]).map(o=><option key={o} value={o}/>)}</datalist></>:t==="select"?<select style={{ width:"100%", padding:"8px 10px", border:"1.5px solid #e0e0e0", borderRadius:6, fontSize:12, outline:"none" }}>{(opts||[]).map(o=><option key={o}>{o}</option>)}</select>
                 :<input style={{ width:"100%", padding:"8px 10px", border:"1.5px solid #e0e0e0", borderRadius:6, fontSize:12, outline:"none", boxSizing:"border-box" }} />}
               </div>
             ))}

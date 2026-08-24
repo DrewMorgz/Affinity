@@ -442,7 +442,7 @@ export default function AffinityBookkeeping({ onNav }) {
                 {[["Entity","select",ents.map(e=>e.name)],["Journal reference","text","JNL-2025-"],["Date","text","DD/MM/YYYY"],["Description","text","Narrative"],["Debit account","text","e.g. Debtors"],["Debit amount","number","0.00"],["Credit account","text","e.g. Income"],["Credit amount","number","0.00"],["Currency","select",["GBP","USD","EUR"]]].map(([l,t,opts])=>(
                   <div key={l} style={{ display:"flex", flexDirection:"column", gap:3 }}>
                     <label style={{ fontSize:11, color:"#666" }}>{l}</label>
-                    {t==="select"?<select style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)" }}>{(Array.isArray(opts)?opts:[]).map(o=><option key={o}>{o}</option>)}</select>
+                    {(l==="Entity"||l==="Client"||l==="Entity name"||l==="Client name"||l==="Linked entity")?<><input list="bk-ent-1" placeholder="Search entity…" style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)" , boxSizing:"border-box" }} /><datalist id="bk-ent-1">{(Array.isArray(opts)?opts:[]).map(o=><option key={o} value={o}/>)}</datalist></>:t==="select"?<select style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)" }}>{(Array.isArray(opts)?opts:[]).map(o=><option key={o}>{o}</option>)}</select>
                     :<input type={t} style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)" }} placeholder={typeof opts==="string"?opts:""} />}
                   </div>
                 ))}
@@ -453,7 +453,7 @@ export default function AffinityBookkeeping({ onNav }) {
                 {[["Bank name","text"],["Account name","text"],["Currency","select",["GBP","USD","EUR"]],["Opening balance","number"],["Balance date","text"]].map(([l,t,opts])=>(
                   <div key={l} style={{ display:"flex", flexDirection:"column", gap:3 }}>
                     <label style={{ fontSize:11, color:"#666" }}>{l}</label>
-                    {t==="select"?<select style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)" }}>{(Array.isArray(opts)?opts:[]).map(o=><option key={o}>{o}</option>)}</select>
+                    {(l==="Entity"||l==="Client"||l==="Entity name"||l==="Client name"||l==="Linked entity")?<><input list="bk-ent-2" placeholder="Search entity…" style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)" , boxSizing:"border-box" }} /><datalist id="bk-ent-2">{(Array.isArray(opts)?opts:[]).map(o=><option key={o} value={o}/>)}</datalist></>:t==="select"?<select style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)" }}>{(Array.isArray(opts)?opts:[]).map(o=><option key={o}>{o}</option>)}</select>
                     :<input type={t} style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)" }} />}
                   </div>
                 ))}
