@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { entityScopesFor } from "./affinity_core_rbac";
+import { filterEntitiesByAccess } from "./affinity_core_rbac";
 import { REGISTERS as RAW_REGISTERS, REGISTER_ORDER } from "./affinity_core_compliance";
 // "breaches" is rendered by its own view in Compliance and has no catalogue entry.
 const COMPLIANCE_REGISTERS = { breaches:{ label:"Breach log", cols:["Date","Entity","Description","Severity","Status"], rows:[] }, ...RAW_REGISTERS };
@@ -329,7 +329,7 @@ function SubstanceTab({entity}) {
   </div>;
 }
 
-export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="system_admin", entityScopes }) {
+export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="system_admin", internalRefs }) {
   const [sel, setSel]       = useState(1);
   const [tab, setTab]       = useState("overview");
   const [search, setSearch] = useState("");
@@ -397,8 +397,8 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
   // Internal-vs-client scoping: a role without "group" access never sees Affinity's
   // own entities anywhere in this module (portfolio, search, counts, reports).
   const allEnts = liveEnts || ENTITIES;
-  const scopes  = entityScopesFor(role, entityScopes);
-  const ents    = useMemo(()=>allEnts.filter(e=>scopes.indexOf((e.entityClass||"client")==="group"?"group":"client")>-1),[allEnts,role,entityScopes]);
+  // Affinity's own companies are checked one by one, not as a single switch.
+  const ents    = useMemo(()=>filterEntitiesByAccess(allEnts, role, internalRefs),[allEnts,role,internalRefs]);
 
   useEffect(()=>{
     if(!reportsOpen || !isConfigured) return;

@@ -97,77 +97,68 @@ export function deriveRbacRole(title) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-// ENTITY CLASS ACCESS — internal (Affinity's own group companies) vs client
+// INTERNAL COMPANY ACCESS — Affinity's own group companies
 //
-// Affinity's own entities (entity_class='group', e.g. Affinity (Isle of Man)
-// Limited) hold the firm's own statutory records, accounts and bank mandates.
-// Most client-facing staff have no business seeing them, and conversely some
-// internal finance staff have no need of the client portfolio. This is a
-// separate axis from module permissions: a Manager may have full edit rights
-// in Entity Admin and still be scoped to client entities only.
+// Affinity's group companies hold the firm's own statutory records, accounts,
+// bank mandates and payroll. They are segregated from the client portfolio and
+// from each other: access is granted per company, not as a single "internal"
+// switch. A Malta administrator may need Affinity (Malta) Limited without
+// seeing Affinity Group Limited's consolidated position.
 //
-// Same caveat as the rest of this file: UI-layer intent, not a security
-// boundary. Real enforcement is a row-level policy on entity.entity_class
-// keyed off the authenticated identity once Entra/Postgres is wired in.
+// Granted by role, then overridden per user where an individual needs more or
+// less than their role implies. A user's override replaces the role default.
+//
+// UI-layer intent only until Entra + row-level security enforce it server-side.
 // ──────────────────────────────────────────────────────────────────────────
 
-export const ENTITY_CLASSES = ["group", "client"];
-export const ENTITY_CLASS_LABELS = { group: "Internal (Affinity)", client: "Client entities" };
+export const INTERNAL_ENTITIES = [
+  { ref:"AFG-000", name:"Affinity Group Limited",         jur:"Isle of Man",    note:"Group holding / consolidated position" },
+  { ref:"AFG-IOM", name:"Affinity (Isle of Man) Limited", jur:"Isle of Man",    note:"Licensed CSP" },
+  { ref:"AFG-MLT", name:"Affinity (Malta) Limited",       jur:"Malta",          note:"Corporate services" },
+  { ref:"AFG-CYM", name:"Affinity (Cayman) Limited",      jur:"Cayman Islands", note:"Corporate services" },
+  { ref:"AFG-UK",  name:"Affinity (UK) Limited",          jur:"United Kingdom", note:"Corporate services" },
+  { ref:"AFG-SD",  name:"Affinity South Dakota, LLC",     jur:"United States",  note:"US trust services" },
+  { ref:"AFG-FL",  name:"Affinity South Florida, LLC",    jur:"United States",  note:"US corporate services" },
+];
+export const INTERNAL_REFS = INTERNAL_ENTITIES.map((e) => e.ref);
 
-// Default scope per role. Overridable per user via user.entityScopes.
-export const ENTITY_CLASS_ACCESS = {
-  system_admin: ["group", "client"],
-  director:     ["group", "client"],
-  manager:      ["client"],
-  admin:        ["client"],
+// Role defaults. Deliberately restrictive: only Super Admin sees everything by
+// default. Everyone else is granted specific companies by an administrator.
+export const INTERNAL_ACCESS = {
+  system_admin: INTERNAL_ENTITIES.map((e) => e.ref),
+  director:     ["AFG-000", "AFG-IOM"],
+  manager:      [],
+  admin:        [],
 };
 
-// Which entity classes may this role/user see?
-export function entityScopesFor(role, userScopes) {
-  if (Array.isArray(userScopes) && userScopes.length) return userScopes;
-  return ENTITY_CLASS_ACCESS[role] || ["client"];
+// Which internal companies may this role/user see? userRefs (if present) wins.
+export function internalRefsFor(role, userRefs) {
+  if (Array.isArray(userRefs)) return userRefs;
+  return INTERNAL_ACCESS[role] || [];
 }
 
-// Guard for a single entity. Entities with no class set are treated as client.
-export function canAccessEntityClass(role, entityClass, userScopes) {
-  const cls = entityClass === "group" ? "group" : "client";
-  return entityScopesFor(role, userScopes).indexOf(cls) > -1;
+export function canAccessInternalEntity(role, ref, userRefs) {
+  return internalRefsFor(role, userRefs).indexOf(ref) > -1;
 }
 
-// Convenience: filter a portfolio down to what this role/user may see.
-export function filterEntitiesByClass(entities, role, userScopes) {
-  return (entities || []).filter((e) =>
-    canAccessEntityClass(role, e && (e.entityClass || e.entity_class), userScopes));
+// Filter a portfolio: client entities always pass, internal ones are checked
+// individually. An entity with no class set is treated as a client entity.
+export function filterEntitiesByAccess(entities, role, userRefs) {
+  const allowed = internalRefsFor(role, userRefs);
+  return (entities || []).filter((e) => {
+    if (!e) return false;
+    const cls = e.entityClass || e.entity_class;
+    if (cls !== "group") return true;
+    return allowed.indexOf(e.ref) > -1;
+  });
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-// REPORTING SCOPE — deliberately separate from the entity-admin scope above.
-//
-// Per spec: reporting is available to staff at ALL levels across every managed
-// entity plus Affinity's own internal companies. So the default here is both
-// classes for every role — a Manager who cannot open an internal entity in
-// Entity Admin can still report across the whole group. That is intentional,
-// not an oversight: reading aggregate numbers and opening a client file are
-// different privileges.
-//
-// It remains a security setting rather than a hardcode: REPORTING_SCOPE is
-// editable in System Admin > Entity access, and a per-user override wins.
+// REPORTING SCOPE
+// Reporting on the client portfolio is open to staff at all levels. Reporting
+// that includes Affinity's own companies follows the same per-company grants
+// above, so segregation cannot be sidestepped by running a report.
 // ──────────────────────────────────────────────────────────────────────────
-
-export const REPORTING_SCOPE = {
-  system_admin: ["group", "client"],
-  director:     ["group", "client"],
-  manager:      ["group", "client"],
-  admin:        ["group", "client"],
-};
-
-// Can this role/user report at all? (a role can be reduced to [] to remove it)
-export function reportingScopesFor(role, userScopes) {
-  if (Array.isArray(userScopes) && userScopes.length) return userScopes;
-  return REPORTING_SCOPE[role] || [];
-}
-
-export function canReportOnClass(role, entityClass, userScopes) {
-  const cls = entityClass === "group" ? "group" : "client";
-  return reportingScopesFor(role, userScopes).indexOf(cls) > -1;
+export function reportingInternalRefs(role, userRefs) {
+  return internalRefsFor(role, userRefs);
 }

@@ -1,7 +1,7 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import { appUsers, isConfigured } from "./affinity_ops_api";
-import { ROLES, ROLE_LABELS, permsFor, ENTITY_CLASSES, ENTITY_CLASS_LABELS, ENTITY_CLASS_ACCESS } from "./affinity_core_rbac";
+import { ROLES, ROLE_LABELS, permsFor, INTERNAL_ENTITIES, INTERNAL_ACCESS } from "./affinity_core_rbac";
 
 const CY = "#00C4CC";
 
@@ -109,8 +109,8 @@ const GROUP_ENTITIES = [
   "Affinity (Cayman) Limited","Affinity (UK) Limited","Affinity South Dakota, LLC","Affinity South Florida, LLC",
 ];
 
-const VIEWS = ["users","roles","matrix","entity_access","fields","content","offices","fees","audit","config"];
-const VIEW_LABELS = ["Users","Roles & permissions","Permission matrix","Entity access","Custom fields & lists","Procedures & templates","Offices","Fee schedules","Audit log","System config"];
+const VIEWS = ["users","roles","matrix","fields","content","offices","fees","audit","config"];
+const VIEW_LABELS = ["Users","Roles & permissions","Permission matrix","Custom fields & lists","Procedures & templates","Offices","Fee schedules","Audit log","System config"];
 
 // Editable dropdown lists used across the system. Super Admin owns these — the
 // alternative is a developer change every time a sector or work type is added.
@@ -168,12 +168,6 @@ const MATRIX_TREE = [
   ["System Admin","system",["Users","Roles","Permission matrix","Entity access","Offices","Fee schedules","Audit log","Custom fields & lists","Config"]],
 ];
 
-// Entity-class access shown as matrix rows, because that is where you expect to
-// find "who can see what". V = can view that class of entity.
-const ENTITY_CLASS_ROWS = [
-  ["Client entities",            "client", "Entities we administer for clients"],
-  ["Internal — Affinity Group",  "group",  "Our own 7 group companies"],
-];
 
 const MATRIX_MODULES = [
   ["Entity Admin","entities"],["CRM","crm"],["Documents","documents"],["Onboarding","onboarding"],["Timesheets","timesheets"],
@@ -248,14 +242,16 @@ export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false })
   const [listModal, setListModal] = useState(null);
   const [userScopes, setUserScopes] = useState({});
   // Entity-class access: which roles may see Affinity's own entities vs client entities
+  // Per-internal-company access by role. Each Affinity company is granted
+  // separately so group data stays segregated.
   const [roleScopes, setRoleScopes] = useState(() => {
     const init = {};
-    ROLES.forEach(r => { init[r] = (ENTITY_CLASS_ACCESS[r] || ["client"]).slice(); });
+    ROLES.forEach(r => { init[r] = (INTERNAL_ACCESS[r] || []).slice(); });
     return init;
   });
-  const toggleScope = (role, cls) => setRoleScopes(prev => {
+  const toggleScope = (role, ref) => setRoleScopes(prev => {
     const cur = prev[role] || [];
-    const next = cur.indexOf(cls) > -1 ? cur.filter(c => c !== cls) : cur.concat([cls]);
+    const next = cur.indexOf(ref) > -1 ? cur.filter(c => c !== ref) : cur.concat([ref]);
     return { ...prev, [role]: next };
   });
   const [search, setSearch] = useState("");
@@ -718,104 +714,7 @@ export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false })
       )}
 
       {/* ── ENTITY ACCESS — internal vs client ── */}
-      {view === "entity_access" && (
-        <div style={s.pad}>
-          <div style={{ ...s.infoBox, marginBottom:16 }}>
-            ℹ️ <strong>What this screen does:</strong> module permissions decide which screens a role can open. This decides which <em>entities</em> they see once inside. The two are separate — a Manager can have full edit rights in Entity Admin and still never see Affinity's own group companies.
-            <div style={{ marginTop:7 }}>Each row is a role. Tick a column to let that role see that class of entity in portfolios, searches, documents and reports. Reporting is deliberately wider — see the note under the grid.</div>
-          </div>
 
-          <div style={{ fontSize:13, fontWeight:600, marginBottom:3 }}>Which entities can each role see?</div>
-          <div style={{ fontSize:11, color:"#666", marginBottom:9 }}>Applies to Entity Admin, Documents, Compliance and search. Changes take effect for every user holding that role.</div>
-          <div style={{ overflowX:"auto", marginBottom:22 }}>
-            <table style={{ ...s.ct, tableLayout:"auto" }}>
-              <thead><tr>
-                <th style={{ ...s.th, textAlign:"left" }}>Role</th>
-                {ENTITY_CLASSES.map(c=><th key={c} style={{ ...s.th, textAlign:"center" }}>{ENTITY_CLASS_LABELS[c]}</th>)}
-                <th style={{ ...s.th, textAlign:"left" }}>Effective scope</th>
-              </tr></thead>
-              <tbody>
-                {ROLES.map(r=>{
-                  const sc = roleScopes[r] || [];
-                  return (
-                    <tr key={r} style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)" }}>
-                      <td style={{ ...s.td, fontWeight:500 }}>{ROLE_LABELS[r]}</td>
-                      {ENTITY_CLASSES.map(c=>(
-                        <td key={c} style={{ ...s.td, textAlign:"center" }}>
-                          <input type="checkbox" checked={sc.indexOf(c)>-1} onChange={()=>toggleScope(r,c)}
-                            style={{ width:15, height:15, cursor:"pointer" }} />
-                        </td>
-                      ))}
-                      <td style={{ ...s.td, fontSize:11, color: sc.length?"#27500A":"#A32D2D" }}>
-                        {sc.length===2 ? "All entities" : sc.length===0 ? "No entity access" : ENTITY_CLASS_LABELS[sc[0]]}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          <div style={{ fontSize:13, fontWeight:600, marginBottom:3 }}>Per-user overrides</div>
-          <div style={{ fontSize:11, color:"#666", marginBottom:9 }}>An override beats the role default. Use sparingly — e.g. a finance administrator who needs the internal companies without being made a Director.</div>
-          <table style={{ ...s.ct, tableLayout:"auto", marginBottom:24 }}>
-            <thead><tr>
-              <th style={{ ...s.th, textAlign:"left" }}>User</th>
-              <th style={{ ...s.th, textAlign:"left" }}>Role</th>
-              <th style={{ ...s.th, textAlign:"left" }}>From role</th>
-              {ENTITY_CLASSES.map(c=><th key={c} style={{ ...s.th, textAlign:"center" }}>{ENTITY_CLASS_LABELS[c]}</th>)}
-              <th style={{ ...s.th, textAlign:"left" }}>Effective</th>
-            </tr></thead>
-            <tbody>
-              {usersData.slice(0,10).map(u=>{
-                const r = u.role.indexOf("Super Admin")>-1 ? "system_admin"
-                        : u.role.indexOf("Director")>-1 || u.role.indexOf("Managing")>-1 ? "director"
-                        : u.role.indexOf("Manager")>-1 ? "manager" : "admin";
-                const ov = userScopes[u.id];
-                const eff = ov && ov.length ? ov : (roleScopes[r]||[]);
-                return (
-                  <tr key={u.id} style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)" }}>
-                    <td style={{ ...s.td, fontWeight:500 }}>{u.name} <span style={{ fontSize:10, color:"#aaa" }}>{u.flag}</span></td>
-                    <td style={{ ...s.td, fontSize:11, color:"#666" }}>{u.role}</td>
-                    <td style={{ ...s.td, fontSize:10, color:"#999" }}>{ROLE_LABELS[r]}</td>
-                    {ENTITY_CLASSES.map(c=>(
-                      <td key={c} style={{ ...s.td, textAlign:"center" }}>
-                        <input type="checkbox" checked={eff.indexOf(c)>-1}
-                          onChange={()=>setUserScopes(prev=>{
-                            const cur = (prev[u.id] && prev[u.id].length ? prev[u.id] : (roleScopes[r]||[])).slice();
-                            const next = cur.indexOf(c)>-1 ? cur.filter(x=>x!==c) : cur.concat([c]);
-                            return { ...prev, [u.id]: next };
-                          })}
-                          style={{ width:15, height:15, cursor:"pointer" }} />
-                      </td>
-                    ))}
-                    <td style={{ ...s.td, fontSize:10.5 }}>
-                      {ov && ov.length
-                        ? <span style={{ color:"#7B4F1D", fontWeight:600, background:"#FDF4DC", borderRadius:9, padding:"2px 8px" }}>Override</span>
-                        : <span style={{ color:"#999" }}>Role default</span>}
-                      <span style={{ marginLeft:6, color: eff.length?"#27500A":"#A32D2D" }}>
-                        {eff.length===2?"All entities":eff.length===0?"None":ENTITY_CLASS_LABELS[eff[0]]}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-
-          <div style={{ fontSize:13, fontWeight:600, marginBottom:8 }}>Affinity group entities ({GROUP_ENTITIES.length})</div>
-          <div style={{ fontSize:11, color:"#666", marginBottom:8, lineHeight:1.6 }}>These are flagged <strong>Internal</strong> throughout the system — in Entity Admin they carry an "Internal — Affinity Group" badge and can be filtered with the Internal / Client scope control.</div>
-          <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:20 }}>
-            {GROUP_ENTITIES.map(g=>(
-              <span key={g} style={{ display:"inline-block", padding:"4px 10px", borderRadius:20, fontSize:11, fontWeight:600, background:"#EAF0FB", color:"#274690" }}>{g}</span>
-            ))}
-          </div>
-
-          <div style={{ ...s.infoBox, background:"#FDF4DC", borderColor:"#E5CE9A" }}>
-            ⚠️ Front-end scoping only at this stage. Because anyone can read the browser bundle, these settings express intent rather than protection until the same rule is enforced server-side as a row-level policy on <code>entity.entity_class</code>, keyed off the authenticated identity. That lands with Entra + Postgres.
-          </div>
-        </div>
-      )}
 
       {view === "matrix" && (
         <div style={s.pad}>
@@ -862,35 +761,97 @@ export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false })
                     </React.Fragment>
                   );
                 })}
-                {/* Entity access, surfaced here because this is where you look for
-                    "who can see what". Editable on the Entity access tab. */}
+                {/* Affinity's own companies, granted individually so group data
+                    is segregated from the client portfolio and from each other. */}
                 <tr><td colSpan={ROLES.length+1} style={{ ...s.td, background:"#EAF0FB", fontWeight:700, color:"#274690", fontSize:11 }}>
-                  Entity access — which entities a role sees inside those modules
+                  Affinity Group companies — access granted per company
+                  <span style={{ fontWeight:400, color:"#5a76ab", marginLeft:8 }}>tick to grant · overrides per user below</span>
                 </td></tr>
-                {ENTITY_CLASS_ROWS.map(([label,cls,sub])=>(
-                  <tr key={cls} style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)" }}>
+                {INTERNAL_ENTITIES.map(ent=>(
+                  <tr key={ent.ref} style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)" }}>
                     <td style={{ ...s.td }}>
-                      <div style={{ fontWeight:600 }}>{label}</div>
-                      <div style={{ fontSize:10, color:"#999" }}>{sub}</div>
+                      <div style={{ fontWeight:600 }}>{ent.name}</div>
+                      <div style={{ fontSize:10, color:"#999" }}>{ent.ref} · {ent.jur} · {ent.note}</div>
                     </td>
                     {ROLES.map(r=>{
-                      const on = (roleScopes[r]||[]).indexOf(cls)>-1;
-                      return <td key={r} style={{ ...s.td, textAlign:"center", fontWeight:on?700:400, color:on?"#274690":"#ccc" }}>{on?"V":"X"}</td>;
+                      const on = (roleScopes[r]||[]).indexOf(ent.ref)>-1;
+                      return (
+                        <td key={r} style={{ ...s.td, textAlign:"center" }}>
+                          <input type="checkbox" checked={on} onChange={()=>toggleScope(r, ent.ref)}
+                            style={{ width:15, height:15, cursor:"pointer" }} />
+                        </td>
+                      );
                     })}
                   </tr>
                 ))}
-                <tr>
+                <tr style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)" }}>
                   <td style={{ ...s.td }}>
-                    <div style={{ fontWeight:600 }}>Reporting — both classes</div>
-                    <div style={{ fontSize:10, color:"#999" }}>All staff report across managed + internal</div>
+                    <div style={{ fontWeight:600 }}>Client entities</div>
+                    <div style={{ fontSize:10, color:"#999" }}>Entities we administer for clients</div>
                   </td>
                   {ROLES.map(r=><td key={r} style={{ ...s.td, textAlign:"center", fontWeight:700, color:"#1F6F54" }}>V</td>)}
+                </tr>
+                <tr>
+                  <td style={{ ...s.td, fontSize:11, color:"#666" }}>Internal companies granted</td>
+                  {ROLES.map(r=>{
+                    const n=(roleScopes[r]||[]).length;
+                    return <td key={r} style={{ ...s.td, textAlign:"center", fontSize:11, fontWeight:600,
+                      color:n===0?"#A32D2D":n===INTERNAL_ENTITIES.length?"#1F6F54":"#7B4F1D" }}>
+                      {n===0?"none":n===INTERNAL_ENTITIES.length?"all "+n:n+" of "+INTERNAL_ENTITIES.length}
+                    </td>;
+                  })}
                 </tr>
               </tbody>
             </table>
             <div style={{ fontSize:11, color:"#666", marginTop:9, lineHeight:1.7 }}>
-              Entity access rows are read-only here — edit them on the <strong>Entity access</strong> tab. Note the last row: reporting is intentionally wider than entity access, so a Manager who cannot open an internal entity file can still report across the whole group.
+              Client entities are available to every role. Affinity's own companies are granted individually — a Malta administrator can be given Affinity (Malta) Limited without seeing Affinity Group Limited's consolidated position. Reporting follows the same grants, so segregation cannot be sidestepped by running a report. Individual exceptions are set per user below.
             </div>
+
+          <div style={{ fontSize:13, fontWeight:600, marginTop:22, marginBottom:3 }}>Individual user rights — Affinity Group companies</div>
+          <div style={{ fontSize:11, color:"#666", marginBottom:9 }}>An override replaces the role default for that person. Use it for the finance administrator who needs the group accounts, or the manager who should not see them.</div>
+          <div style={{ overflowX:"auto" }}>
+            <table style={{ ...s.ct, tableLayout:"auto" }}>
+              <thead><tr>
+                <th style={{ ...s.th, textAlign:"left" }}>User</th>
+                <th style={{ ...s.th, textAlign:"left" }}>Role</th>
+                {INTERNAL_ENTITIES.map(e=>(
+                  <th key={e.ref} style={{ ...s.th, textAlign:"center", fontSize:9 }} title={e.name}>{e.ref.replace("AFG-","")}</th>
+                ))}
+                <th style={{ ...s.th, textAlign:"left" }}>Source</th>
+              </tr></thead>
+              <tbody>
+                {usersData.slice(0,12).map(u=>{
+                  const r = u.role.indexOf("Super Admin")>-1 ? "system_admin"
+                          : (u.role.indexOf("Director")>-1||u.role.indexOf("Managing")>-1) ? "director"
+                          : u.role.indexOf("Manager")>-1 ? "manager" : "admin";
+                  const ov  = userScopes[u.id];
+                  const eff = Array.isArray(ov) ? ov : (roleScopes[r]||[]);
+                  return (
+                    <tr key={u.id} style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)" }}>
+                      <td style={{ ...s.td, fontWeight:500, whiteSpace:"nowrap" }}>{u.name}</td>
+                      <td style={{ ...s.td, fontSize:10.5, color:"#666", whiteSpace:"nowrap" }}>{ROLE_LABELS[r]}</td>
+                      {INTERNAL_ENTITIES.map(e=>(
+                        <td key={e.ref} style={{ ...s.td, textAlign:"center" }}>
+                          <input type="checkbox" checked={eff.indexOf(e.ref)>-1}
+                            onChange={()=>setUserScopes(prev=>{
+                              const cur = Array.isArray(prev[u.id]) ? prev[u.id].slice() : (roleScopes[r]||[]).slice();
+                              const next = cur.indexOf(e.ref)>-1 ? cur.filter(x=>x!==e.ref) : cur.concat([e.ref]);
+                              return { ...prev, [u.id]: next };
+                            })}
+                            style={{ width:14, height:14, cursor:"pointer" }} />
+                        </td>
+                      ))}
+                      <td style={{ ...s.td, fontSize:10 }}>
+                        {Array.isArray(ov)
+                          ? <span style={{ color:"#7B4F1D", fontWeight:600, background:"#FDF4DC", borderRadius:9, padding:"2px 8px" }}>Override · {ov.length}</span>
+                          : <span style={{ color:"#999" }}>Role default · {eff.length}</span>}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
           </div>
         </div>
       )}

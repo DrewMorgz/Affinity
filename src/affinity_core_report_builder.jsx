@@ -20,7 +20,7 @@
 // swap a resolver from preview to live without touching the UI.
 // ─────────────────────────────────────────────────────────────────────────────
 import { useState, useMemo, useEffect } from "react";
-import { reportingScopesFor } from "./affinity_core_rbac";
+import { reportingInternalRefs } from "./affinity_core_rbac";
 import { savedReportList, savedReportSave, savedReportTouch, savedReportDelete } from "./affinity_saved_reports_api";
 
 const CY   = "#00C4CC";
@@ -337,7 +337,10 @@ export default function AffinityReportBuilder({ isAdmin = false, onNav, role = "
   const [activeSaved, setActiveSaved] = useState(null);
   const [busy, setBusy]       = useState(false);
   const [name, setName]       = useState(PRESETS[0].name);
-  const allowed = reportingScopesFor(role, reportingScopes);
+  // Client portfolio is open to all staff; Affinity's own companies follow the
+  // per-company grants, so a report cannot sidestep segregation.
+  const internalOK = reportingInternalRefs(role, reportingScopes);
+  const allowed = internalOK.length ? ["client","group"] : ["client"];
   const [scope, setScope]     = useState("all"); // client | internal | all
   const [shareSaved, setShareSaved] = useState(false);
 
