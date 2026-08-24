@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import AffinityLoginPage from "./affinity_login_page";
 import Planning from "./affinity_core_planning";
+import Consolidation from "./affinity_core_consolidation";
 import Tasks from "./affinity_core_tasks";
 import Dashboard     from "./affinity_core_dashboard";
 import EntityAdmin   from "./affinity_core_entity_admin";
@@ -100,6 +101,7 @@ const NAV = [
     {id:"acc_assets",   label:"Assets & Groups", icon:"\uD83C\uDFE2",b:null},
     {id:"acc_report",   label:"Financial Reporting", icon:"\uD83D\uDCC8",b:null},
     {id:"planning",   label:"Planning",       icon:"\uD83D\uDCCA",b:null},
+    {id:"consol",     label:"Consolidation",  icon:"\uD83C\uDFE2",b:null},
     {id:"acc_admin",    label:"Accounting admin",icon:"\u2699",b:null},
   ]},
   {s:"People", items:[
@@ -271,6 +273,7 @@ const SEARCH_INDEX = [
   {type:"Module",  label:"Bookkeeping",                    sub:"Ledger & accounts",               mod:"bookkeeping"},
   {type:"Module",  label:"Budgets",                         sub:"Now in Planning",                 mod:"planning"},
   {type:"Module",  label:"Planning",                        sub:"Budget input, workflow, scenarios",mod:"planning"},
+  {type:"Module",  label:"Consolidation",                   sub:"Group results, intercompany, runs",mod:"consol"},
   {type:"Module",  label:"Reporting",                       sub:"MI & financial statements",       mod:"reporting"},
   {type:"Module",  label:"Procedures",                     sub:"Process library",                 mod:"procedures"},
   {type:"Module",  label:"Generate Document",              sub:"Templates & statutory forms",     mod:"generate"},
@@ -421,6 +424,7 @@ export default function AffinityCore(){
       case "budgeting":    return <Planning onNav={setMod} userName={user?.name||""}/>;  // Budgets retired into Planning
       case "reporting":    return <Reporting onNav={setMod} role={rbacRole} userName={user?.name||""}/>;
       case "planning":     return <Planning onNav={setMod} userName={user?.name||""}/>;
+      case "consol":       return <Consolidation onNav={setMod}/>;
       case "procedures":   return <Procedures/>;
       case "chatbot":      return <Chatbot/>;
       case "intranet":     return <Intranet/>;
