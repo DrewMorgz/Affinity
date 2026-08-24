@@ -1202,12 +1202,6 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
       {/* Header */}
       <div style={s.hdr}>
         <div style={s.logo}>Entity Admin</div>
-        <div style={{ display:"flex", gap:5 }}>
-          {[["Compliance","compliance"],["Documents","documents"],["Timesheets","timesheets"],["Invoicing","invoicing"],["Reporting","reporting"]].map(([n,m])=>(
-            <button key={n} style={{ ...nb, fontSize:11 }} onClick={()=>onNav&&onNav(m)}>{n}</button>
-          ))}
-          <button style={nba} onClick={()=>onNav&&onNav("entities")}>Entity Admin</button>
-        </div>
       </div>
 
       <div style={s.body}>
@@ -1219,7 +1213,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
               <input
                 list="ea-entity-list"
                 style={s.swI}
-                placeholder={classF==="group"?"Search Affinity's own entities…":classF==="client"?"Search client entities…":"Search for an entity by name or reference…"}
+                placeholder="Search for an entity by name or reference…"
                 value={search}
                 onChange={e=>{
                   const v=e.target.value;
@@ -1233,18 +1227,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
                 return [<option key={"n"+e.id} value={e.name}>{e.ref+mark}</option>,<option key={"r"+e.id} value={e.ref}>{e.name+mark}</option>];
               })}</datalist>
             </div>
-            {/* Internal (Affinity's own) vs client entities — visible scope control */}
-            <div style={{ display:"flex", border:"0.5px solid var(--border-tertiary,#e5e5e5)", borderRadius:6, overflow:"hidden", flexShrink:0 }}>
-              {[["","All",classCounts.client+classCounts.group],["client","Client",classCounts.client],["group","Internal",classCounts.group]].map(([v,l,n])=>(
-                <button key={l} onClick={()=>setClassF(v)} title={v==="group"?"Affinity's own group companies":v==="client"?"Client entities under administration":"Every entity"}
-                  style={{ border:"none", cursor:"pointer", fontSize:11, padding:"5px 10px", fontWeight:classF===v?600:400,
-                           background:classF===v?"#EAF0FB":"var(--bg-primary,#fff)", color:classF===v?"#274690":"var(--text-secondary,#666)" }}>
-                  {l} <span style={{ fontSize:9, opacity:0.7 }}>{n}</span>
-                </button>
-              ))}
-            </div>
             {entity&&<button style={s.btn(false)} onClick={()=>{ setSel(null); setSearch(""); }}>Clear ✕</button>}
-            <button style={s.btn(false)} onClick={()=>setReportsOpen(true)}>📊 Reports</button>
             <button style={s.btn(true)} onClick={()=>setModal("newEntity")}>＋ New entity</button>
           </div>
           {entity?(

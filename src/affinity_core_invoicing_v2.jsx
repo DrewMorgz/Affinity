@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import EntitySearch from "./affinity_entity_search";
 const ENTITY_NAMES = ["Meridian Holdings Ltd","Harrington Family Trust","Pacific Wealth Trust","Caledonian Ventures Ltd","North Star Holdings Ltd","Azure Mediterranean Foundation","Apex Growth Fund Ltd","Stonebridge Capital Ltd","Thornbury Asset Co Ltd","Bluewater Family Trust","Phoenix eGaming Ltd","Meridian Digital Ltd","Suncoast Ventures LLC"];
 import { isConfigured } from "./affinity_accounting_supabase";
 import { feeInvoices } from "./affinity_invoicing_api";
@@ -59,6 +60,7 @@ export default function AffinityInvoicing({ onNav }) {
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "affinity-aged-debt.csv"; a.click();
   };
   const exportAgedPdf = () => window.print();
+  const [entitySearch, setEntitySearch] = useState("");
   const [liveInv,setLiveInv] = useState(null);
   useEffect(()=>{ if(!isConfigured) return; let ok=true; feeInvoices().then(({data})=>{ if(ok && data && data.length) setLiveInv(data); }).catch(()=>{}); return ()=>{ok=false;}; },[]);
   const invoices = liveInv || INVOICES;
@@ -106,6 +108,11 @@ export default function AffinityInvoicing({ onNav }) {
           <button style={nba}>Invoicing</button>
         </div>
       </div>
+      {/* Entity search — same component on every page showing client data */}
+      <div style={{ padding:"10px 20px", borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)", background:"var(--bg-primary,#fff)" }}>
+        <EntitySearch value={entitySearch} onChange={setEntitySearch} compact />
+      </div>
+
 
       <div style={{ display:"flex", gap:4, padding:"8px 20px", borderBottom:"0.5px solid #e5e5e5", background:"var(--bg-secondary,#f9f9f9)", flexWrap:"wrap" }}>
         {VIEWS.map((v,i)=><button key={v} style={{ padding:"4px 12px", fontSize:11, borderRadius:20, border:`0.5px solid ${view===v?"#ccc":"#e5e5e5"}`, background:view===v?"var(--bg-primary,#fff)":"transparent", color:view===v?"var(--text-primary,#111)":"#666", cursor:"pointer", fontWeight:view===v?500:400 }} onClick={()=>{ setView(v); setSelInv(null); }}>{VLABELS[i]}</button>)}

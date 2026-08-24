@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import EntitySearch from "./affinity_entity_search";
 import { isConfigured } from "./affinity_accounting_supabase";
 import { onboardingCases, attritionCases } from "./affinity_onboarding_api";
 const CY = "#00C4CC";
@@ -50,6 +51,7 @@ const VIEWS = ["pipeline","active","transfer","attrition","portal"];
 const VLABELS = ["Overview","Active onboardings","Transfer-in","Attrition","Client portal"];
 
 export default function AffinityOnboarding({ initialView , onNav }) {
+  const [entitySearch, setEntitySearch] = useState("");
   const [view, setView]   = useState(initialView || "pipeline");
   const [live, setLive]   = useState(null);
   const STAGES8 = ["New business snapshot","Approval-in-principle","Portal invitation sent","KYC collection","Compliance review","LOE & fee setup","Entity setup","Final sign-off"];
@@ -94,6 +96,11 @@ export default function AffinityOnboarding({ initialView , onNav }) {
           <button style={nba}>Onboarding</button>
         </div>
       </div>
+      {/* Entity search — same component on every page showing client data */}
+      <div style={{ padding:"10px 20px", borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)", background:"var(--bg-primary,#fff)" }}>
+        <EntitySearch value={entitySearch} onChange={setEntitySearch} compact />
+      </div>
+
       <div style={{ display:"flex", gap:4, padding:"8px 20px", borderBottom:"0.5px solid #e5e5e5", background:"var(--bg-secondary,#f9f9f9)", flexWrap:"wrap" }}>
         {visibleViews.map((v,i)=><button key={v} style={{ padding:"4px 12px", fontSize:11, borderRadius:20, border:`0.5px solid ${view===v?"#ccc":"#e5e5e5"}`, background:view===v?"var(--bg-primary,#fff)":"transparent", color:view===v?"var(--text-primary,#111)":"#666", cursor:"pointer", fontWeight:view===v?500:400 }} onClick={()=>{ setView(v); setSel(null); }}>{visibleLabels[i]}</button>)}
       </div>

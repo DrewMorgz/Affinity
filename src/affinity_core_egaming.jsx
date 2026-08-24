@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import EntitySearch from "./affinity_entity_search";
 import { isConfigured } from "./affinity_accounting_supabase";
 import { egLicences, egLog } from "./affinity_egaming_api";
 const CY = "#00C4CC";
@@ -62,6 +63,7 @@ const th = { padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:600, 
 const td = { padding:"9px 12px", fontSize:11, borderBottom:"0.5px solid #e5e5e5", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" };
 
 export default function AffinityEGaming({ entity }) {
+  const [entitySearch, setEntitySearch] = useState("");
   const [view, setView]   = useState("overview");
   const [sel, setSel]     = useState(null);
   const [modal, setModal] = useState(null);
@@ -104,6 +106,11 @@ export default function AffinityEGaming({ entity }) {
           <button style={{ ...nba, background:"#4CAF7D", borderColor:"#4CAF7D" }} onClick={()=>setModal("newLic")}>＋ New licence</button>
         </div>
       </div>
+      {/* Entity search — same component on every page showing client data */}
+      <div style={{ padding:"10px 20px", borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)", background:"var(--bg-primary,#fff)" }}>
+        <EntitySearch value={entitySearch} onChange={setEntitySearch} compact />
+      </div>
+
 
       <div style={{ background:"#fff", borderBottom:"0.5px solid #e5e5e5", padding:"0 24px", display:"flex", gap:2 }}>
         {VIEWS.map((v,i)=>(

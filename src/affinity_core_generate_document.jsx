@@ -1,4 +1,5 @@
 import { useState } from "react";
+import EntitySearch from "./affinity_entity_search";
 const CY = "#00C4CC";
 const NAVY = "#001242";
 
@@ -145,6 +146,7 @@ const RECENT = [
 ];
 
 export default function AffinityGenerateDocument() {
+  const [entitySearch, setEntitySearch] = useState("");
   const [view,    setView]    = useState("onboarding");
   const [entity,  setEntity]  = useState(ENTITIES[0]);
   const [usState, setUsState] = useState("Delaware");
@@ -226,6 +228,11 @@ export default function AffinityGenerateDocument() {
           <button style={nba}>Generate</button>
         </div>
       </div>
+      {/* Entity search — same component on every page showing client data */}
+      <div style={{ padding:"10px 20px", borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)", background:"var(--bg-primary,#fff)" }}>
+        <EntitySearch value={entitySearch} onChange={setEntitySearch} compact />
+      </div>
+
 
       {/* Nav */}
       <div style={{ background:"#fff", borderBottom:"0.5px solid #e5e5e5", padding:"0 24px", display:"flex", gap:0, overflowX:"auto" }}>

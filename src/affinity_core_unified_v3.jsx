@@ -504,32 +504,6 @@ export default function AffinityCore(){
               onNavigate={(id)=>{setMod(id);setSideOpen(false);}}
               onClose={()=>setNotifOpen(false)} />}
           </div>
-          {/* Search bar / button */}
-          <button onClick={e=>{e.stopPropagation();setSearchOpen(true);}} style={{display:"flex",alignItems:"center",gap:8,height:32,padding:"0 12px",borderRadius:6,border:"0.5px solid #e5e5e5",background:dark?"#252540":"#f9f9f9",cursor:"pointer",color:"#999",fontSize:11,whiteSpace:"nowrap"}}>
-            🔍 {!mobile&&<span>Search <span style={{color:"#ccc",fontSize:10}}>⌘K</span></span>}
-          </button>
-          {/* Office filter dropdown — top right */}
-          {!mobile&&<div style={{position:"relative"}}>
-            <button onClick={e=>{e.stopPropagation();setOfficeOpen(o=>!o);}}
-              style={{display:"flex",alignItems:"center",gap:6,height:32,padding:"0 10px",borderRadius:6,border:`1px solid ${officeFilter==="All"?"#e5e5e5":(officeColors[officeFilter]?.color||CY)}`,background:officeFilter==="All"?"#fff":(officeColors[officeFilter]?.bg||"rgba(0,180,216,0.1)"),fontSize:11,fontWeight:600,color:officeFilter==="All"?"#666":(officeColors[officeFilter]?.color||CY),cursor:"pointer",whiteSpace:"nowrap"}}>
-              <span style={{fontSize:13}}>{({"Isle of Man":"🇮🇲","Malta":"🇲🇹","Cayman Islands":"🇰🇾","United Kingdom":"🇬🇧","Miami":"🇺🇸","Cyprus":"🇨🇾","All":"🌍"})[officeFilter]}</span>
-              <span>{officeFilter==="All"?"All offices":officeFilter}</span>
-              <span style={{opacity:0.5,fontSize:9,marginLeft:2}}>▼</span>
-            </button>
-            {officeOpen&&<div style={{position:"absolute",top:38,right:0,minWidth:200,background:"#fff",border:"0.5px solid #e5e5e5",borderRadius:8,zIndex:100,overflow:"hidden",padding:"4px 0",boxShadow:"0 4px 16px rgba(0,0,0,0.08)"}} onClick={e=>e.stopPropagation()}>
-              {["All","Isle of Man","Malta","Cayman Islands","United Kingdom","Miami","Cyprus"].map(o=>{
-                const flags={"Isle of Man":"🇮🇲","Malta":"🇲🇹","Cayman Islands":"🇰🇾","United Kingdom":"🇬🇧","Miami":"🇺🇸","Cyprus":"🇨🇾","All":"🌍"};
-                const oc=officeColors[o];
-                const active=officeFilter===o;
-                return <div key={o} onClick={()=>{setOfficeFilter(o);setOfficeOpen(false);}}
-                  style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",cursor:"pointer",background:active?"#f5f5f5":"transparent",fontSize:12,fontWeight:active?600:400,color:active?(oc?.color||CY):"#333"}}>
-                  <span style={{fontSize:14}}>{flags[o]}</span>
-                  <span>{o==="All"?"All offices":o}</span>
-                  {active&&<span style={{marginLeft:"auto",color:oc?.color||CY,fontWeight:700}}>✓</span>}
-                </div>;
-              })}
-            </div>}
-          </div>}
           {/* Shortcuts help */}
           {!mobile&&<button onClick={e=>{e.stopPropagation();setShortcutsOpen(p=>!p);}} title="Keyboard shortcuts" style={{width:32,height:32,borderRadius:6,border:"0.5px solid #e5e5e5",background:"transparent",cursor:"pointer",fontSize:13,color:"#999",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:600}}>?</button>}
           <span style={{display:mobile?"none":"inline",fontSize:11,color:"#999"}}>14 Jul 2025</span>
@@ -538,13 +512,7 @@ export default function AffinityCore(){
           <div style={{width:30,height:30,borderRadius:"50%",background:user.c,color:"#fff",fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{user.av}</div>
         </div>
       </div>
-      {officeFilter!=="All"&&<div style={{padding:"6px 16px",background:offC2.bg,borderBottom:`1px solid ${offC2.color}22`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
-        <div style={{display:"flex",alignItems:"center",gap:8,fontSize:11,color:offC2.color,fontWeight:500}}>
-          <span>{{"Isle of Man":"🇮🇲","Malta":"🇲🇹","Cayman Islands":"🇰🇾","United Kingdom":"🇬🇧","Miami":"🇺🇸","Cyprus":"🇨🇾"}[officeFilter]}</span>
-          <span>Showing data for <strong>{officeFilter}</strong> only</span>
-        </div>
-        <button onClick={()=>setOfficeFilter("All")} style={{fontSize:10,color:offC2.color,background:"transparent",border:`0.5px solid ${offC2.color}66`,borderRadius:4,padding:"2px 8px",cursor:"pointer"}}>Clear ×</button>
-      </div>}
+
       <div style={{flex:1,overflowY:"auto",background:"#fff"}}><ErrorBoundary key={mod}>{content()}</ErrorBoundary></div>
     </div>
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import EntitySearch from "./affinity_entity_search";
 import { isConfigured } from "./affinity_accounting_supabase";
 import { compReviews, compRegObligations, compBreaches, compTraining } from "./affinity_compliance_api";
 import { cpdList } from "./affinity_cpd_api";
@@ -115,6 +116,7 @@ export const REGISTERS = {
 export const REGISTER_ORDER = ["breaches","errors","deviations","complaints","gifts","conflicts","sanctions","peps","frozen","declined","advertising","outsourcing","cyber","litigation","insurance","keystaff","cpd"];
 
 export default function AffinityIOMCompliance() {
+  const [entitySearch, setEntitySearch] = useState("");
   const [view, setView] = useState("overview");
   const [modal, setModal] = useState(null);
   const [live, setLive] = useState(null);
@@ -193,6 +195,11 @@ export default function AffinityIOMCompliance() {
           {ctx && <Badge label="CSP Licence Active" colors={{ bg:"#EAF3DE", color:"#27500A" }} />}
         </div>
       </div>
+      {/* Entity search — same component on every page showing client data */}
+      <div style={{ padding:"10px 20px", borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)", background:"var(--bg-primary,#fff)" }}>
+        <EntitySearch value={entitySearch} onChange={setEntitySearch} compact />
+      </div>
+
       <div style={{ display:"flex", alignItems:"flex-start" }}>
         <aside style={{ width:212, flexShrink:0, borderRight:"0.5px solid #e5e5e5", padding:"12px 8px", minHeight:520, background:"var(--bg-secondary,#fafafa)" }}>
           <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.5px", color:"#999", padding:"6px 10px" }}>Framework</div>

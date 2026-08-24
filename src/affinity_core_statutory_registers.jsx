@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import EntitySearch from "./affinity_entity_search";
 import { isConfigured } from "./affinity_accounting_supabase";
 import { statAnnualReturns, statBoRegisters, statCogs, statOfficerChanges, statDissolutions } from "./affinity_statutory_api";
 const CY = "#00C4CC";
@@ -71,6 +72,7 @@ const th = { padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:600, 
 const td = { padding:"9px 12px", fontSize:11, borderBottom:"0.5px solid #e5e5e5", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" };
 
 export default function AffinityStatutory() {
+  const [entitySearch, setEntitySearch] = useState("");
   const [view, setView]   = useState("calendar");
   const [modal, setModal] = useState(null);
   const [jurF, setJurF]   = useState("");
@@ -122,6 +124,11 @@ export default function AffinityStatutory() {
           <button style={nba}>Statutory</button>
         </div>
       </div>
+      {/* Entity search — same component on every page showing client data */}
+      <div style={{ padding:"10px 20px", borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)", background:"var(--bg-primary,#fff)" }}>
+        <EntitySearch value={entitySearch} onChange={setEntitySearch} compact />
+      </div>
+
 
       {/* Nav */}
       <div style={{ background:"#fff", borderBottom:"0.5px solid #e5e5e5", padding:"0 24px", display:"flex", gap:2 }}>
