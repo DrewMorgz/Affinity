@@ -104,10 +104,9 @@ const wipOfficeTotal = (o) => Object.keys(WIP_TREE[o].clients).reduce((s, c) => 
 function WipLink({ onClick, children }) {
   return <button onClick={onClick} style={{ background: "none", border: "none", color: CY, cursor: "pointer", fontSize: 13, padding: 0, fontWeight: 600, textAlign: "left" }}>{children}</button>;
 }
-function WipDrilldown() {
+function WipDrilldown({ q = "", setQ = () => {} }) {
   const [office, setOffice] = useState(null);
   const [client, setClient] = useState(null);
-  const [q, setQ] = useState("");
   const offices = Object.keys(WIP_TREE);
   const grand = offices.reduce((s, o) => s + wipOfficeTotal(o), 0);
   // flat client index for type-search across all offices
@@ -124,10 +123,7 @@ function WipDrilldown() {
   if (!office) {
     return (<>
       {crumb}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#fff", border: "0.5px solid #ccc", borderRadius: 6, padding: "0 10px", marginBottom: 14, maxWidth: 420 }}>
-        <span style={{ color: "#aaa" }}>🔍</span>
-        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search WIP by client / entity…" style={{ border: "none", outline: "none", fontSize: 12, height: 34, width: "100%", background: "transparent" }} />
-      </div>
+      {/* Search comes from the shared entity search above — no second box here */}
       {q.trim() ? (
         <Panel title={`Search — ${matches.length} match${matches.length===1?"":"es"}`}>
           <Table head={["Client / matter", "Office", "WIP value", ""]} rows={matches.map(m => [
@@ -601,8 +597,9 @@ const PANELS = {
       </>
     );
   },
-  wip() {
-    return <WipDrilldown />;
+  wip(pack, ctx) {
+    const c = ctx || {};
+    return <WipDrilldown q={c.wipQ || ""} setQ={c.setWipQ || (() => {})} />;
   },
 };
 
@@ -635,7 +632,8 @@ export default function Accounting({ module }) {
   const [tab, setTab] = useState(tabs[0][0]);
   const [entities, setEntities] = useState(DEMO_ENTITIES);
   const [entityId, setEntityId] = useState(DEMO_ENTITIES[0].id);
-  const [entSrch, setEntSrch]   = useState(null); // null = show the selected entity's label; string = user is typing
+  const [entSrch, setEntSrch]   = useState(null);
+  const [wipQ, setWipQ]         = useState("");   // shared entity search drives the WIP drill-down
   const [liveKpis, setLiveKpis] = useState(null);
   const [liveCf, setLiveCf] = useState(null);
   const [liveArCredit, setLiveArCredit] = useState(null);
@@ -825,6 +823,7 @@ export default function Accounting({ module }) {
           value={entSrch === null ? ((entities.find((e) => e.id === entityId) || {}).label || "") : entSrch}
           onChange={(v) => {
             setEntSrch(v);
+            setWipQ(v);                       // same box searches WIP on the WIP tab
             const m = entities.find((e) => e.label === v);
             if (m) { setEntityId(m.id); setEntSrch(null); }
             if (!v) setEntSrch("");
@@ -842,7 +841,7 @@ export default function Accounting({ module }) {
           ))}
         </div>
       )}
-      {tab === "acc_ov" ? render(liveKpis) : tab === "acc_cf" ? render(liveCf) : tab === "acc_ar" ? render({ credit: liveArCredit, collections: liveArCol }) : tab === "acc_ap" ? render(liveAp) : tab === "acc_fa" ? render(liveFa) : tab === "acc_ic" ? render(liveIc) : tab === "acc_gl" ? render(liveGl) : tab === "acc_bud" ? render(liveBud) : tab === "acc_mgmt" ? render(liveMgmt) : (tab === "acc_fs" || tab === "acc_aud") ? render(livePack) : tab === "acc_ctl" ? render(liveCtl) : tab === "acc_bank" ? render(liveBank) : tab === "acc_fx" ? render(liveFx) : tab === "acc_tax" ? render(liveTax) : tab === "acc_con" ? render(liveCon) : render()}
+      {tab === "acc_ov" ? render(liveKpis) : tab === "acc_cf" ? render(liveCf) : tab === "acc_ar" ? render({ credit: liveArCredit, collections: liveArCol }) : tab === "acc_ap" ? render(liveAp) : tab === "acc_fa" ? render(liveFa) : tab === "acc_ic" ? render(liveIc) : tab === "acc_gl" ? render(liveGl) : tab === "acc_bud" ? render(liveBud) : tab === "acc_mgmt" ? render(liveMgmt) : (tab === "acc_fs" || tab === "acc_aud") ? render(livePack) : tab === "acc_ctl" ? render(liveCtl) : tab === "acc_bank" ? render(liveBank) : tab === "acc_fx" ? render(liveFx) : tab === "acc_tax" ? render(liveTax) : tab === "acc_con" ? render(liveCon) : tab === "wip" ? render(null, { wipQ, setWipQ }) : render()}
     </div>
   );
 }

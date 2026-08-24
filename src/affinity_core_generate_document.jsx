@@ -166,8 +166,10 @@ export default function AffinityGenerateDocument() {
         {doc.act && <Badge label={doc.act} colors={{ bg:"#f0f0f0", color:"#555" }} />}
       </div>
       <div style={{ display:"flex", flexDirection:"column", gap:5, flexShrink:0 }}>
-        <input list="gd-entity-list" value={entity} onChange={e=>setEntity(e.target.value)} placeholder="Search entity…"
-          style={{ height:26, padding:"0 6px", border:"0.5px solid #ccc", borderRadius:4, fontSize:10, background:"#fff", maxWidth:160, boxSizing:"border-box" }} />
+        <span title="Uses the entity selected at the top of the page"
+          style={{ fontSize:10, color:"#666", background:"#f4f4f6", borderRadius:4, padding:"3px 7px", maxWidth:160, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+          {entity || "No entity selected"}
+        </span>
         <div style={{ display:"flex", gap:4 }}>
           <button style={{ ...nb, fontSize:10, padding:"4px 8px" }} onClick={()=>openModal(doc)}>DOCX ↗</button>
           <button style={{ ...nba, fontSize:10, padding:"4px 8px" }} onClick={()=>openModal(doc)}>PDF ↗</button>
@@ -230,7 +232,7 @@ export default function AffinityGenerateDocument() {
       </div>
       {/* Entity search — same component on every page showing client data */}
       <div style={{ padding:"10px 20px", borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)", background:"var(--bg-primary,#fff)" }}>
-        <EntitySearch value={entitySearch} onChange={setEntitySearch} compact />
+        <EntitySearch value={entitySearch} compact onChange={(v)=>{ setEntitySearch(v); setEntity(v); }} />
       </div>
 
 
@@ -247,8 +249,7 @@ export default function AffinityGenerateDocument() {
       {/* Info banner */}
       <div style={{ background:"#f0f8fb", borderBottom:"0.5px solid #daeef5", padding:"8px 24px", fontSize:11, color:"#0077A8", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
         <span>📄 Documents are generated from live entity data. Select the entity before generating. All generated documents are auto-saved to DMS under the relevant folder.</span>
-        <input list="gd-entity-list" value={entity} onChange={e=>setEntity(e.target.value)} placeholder="Search entity…"
-          style={{ height:26, padding:"0 8px", border:"0.5px solid #ccc", borderRadius:4, fontSize:11, background:"#fff", minWidth:200, boxSizing:"border-box" }} />
+        <strong style={{ marginLeft:4 }}>{entity || "no entity selected"}</strong>
         {/* shared entity list — referenced by every entity search on this page */}
         <datalist id="gd-entity-list">{ENTITIES.map(e=><option key={e} value={e}/>)}</datalist>
       </div>

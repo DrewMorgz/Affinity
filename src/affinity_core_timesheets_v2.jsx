@@ -134,7 +134,7 @@ export default function AffinityTimesheets({ onNav }) {
       </div>
       {/* Entity search — same component on every page showing client data */}
       <div style={{ padding:"10px 20px", borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)", background:"var(--bg-primary,#fff)" }}>
-        <EntitySearch value={entitySearch} onChange={setEntitySearch} compact />
+        <EntitySearch value={entitySearch} compact onChange={(v)=>{ setEntitySearch(v); setTimerEntity(v); }} />
       </div>
 
 
@@ -169,7 +169,7 @@ export default function AffinityTimesheets({ onNav }) {
             {fmtTimer(timerSeconds)}
           </div>
           <div style={{ display:"flex", gap:6, flex:1, flexWrap:"wrap" }}>
-            <input list="ts-timer-entities" value={timerEntity} onChange={e=>setTimerEntity(e.target.value)} placeholder="Search entity…" style={{ height:30, padding:"0 8px", border:"0.5px solid #e5e5e5", borderRadius:5, fontSize:11, minWidth:160 }}/>
+            <span title="Set by the entity search above" style={{ height:30, display:"flex", alignItems:"center", padding:"0 10px", border:"0.5px solid #e5e5e5", borderRadius:5, fontSize:11.5, background:"#f7f7f9", color:timerEntity?"#111":"#999", minWidth:180 }}>{timerEntity || "No entity selected"}</span>
             <datalist id="ts-timer-entities">{["Meridian Holdings Ltd","Harrington Family Trust","Pacific Wealth Trust","Caledonian Ventures Ltd","Azure Mediterranean Fdn","North Star Holdings Ltd"].map(e=><option key={e} value={e}/>)}</datalist>
             <input value={timerMatter} onChange={e=>setTimerMatter(e.target.value)} placeholder="Matter description…" style={{ height:30, padding:"0 10px", border:"0.5px solid #e5e5e5", borderRadius:5, fontSize:11, minWidth:160, outline:"none" }}/>
             <select value={timerType} onChange={e=>setTimerType(e.target.value)} style={{ height:30, padding:"0 8px", border:"0.5px solid #e5e5e5", borderRadius:5, fontSize:11 }}>
