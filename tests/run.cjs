@@ -352,7 +352,16 @@ group("Budget model — payroll taxes by region");
 {
   const M = require(path.join(SRC, "affinity_budget_model.js"));
   const regions = Object.keys(M.ONCOSTS_BY_REGION);
-  ok("every Affinity region has its own rates", regions.length >= 5);
+  ok("every Affinity region has its own rates", regions.length >= 6);
+  ok("Cyprus is included", !!M.ONCOSTS_BY_REGION.CYPRUS);
+  ok("Cyprus charges employer social with a ceiling",
+     M.ONCOSTS_BY_REGION.CYPRUS.socialPct > 0 && M.ONCOSTS_BY_REGION.CYPRUS.socialCap > 0);
+  ok("Cyprus has no mandatory occupational pension",
+     M.phaseStaffCost({ annualSalary:60000, region:"CYPRUS" }).pension[0] === 0);
+  ok("Cyprus's ceiling caps the annual social charge",
+     M.phaseStaffCost({ annualSalary:150000, region:"CYPRUS" }).social.reduce((a,b)=>a+b,0)
+       <= 66612 * M.ONCOSTS_BY_REGION.CYPRUS.socialPct + 0.01);
+  ok("Cyprus has its own benefit costs", !!M.BENEFITS_BY_REGION.CYPRUS);
   ok("every region is labelled and dated for review",
      regions.every((r) => M.ONCOSTS_BY_REGION[r].label && M.ONCOSTS_BY_REGION[r].reviewed));
   ok("every Affinity company maps to a region",

@@ -251,6 +251,16 @@ export const ONCOSTS_BY_REGION = {
     pensionCap: null,
     reviewed: "placeholder — confirm against current Maltese SSC classes",
   },
+  CYPRUS: {
+    label: "Cyprus",
+    socialPct: 0.1230,       // employer social insurance 8.8% + redundancy 1.2%
+                             // + industrial training 0.5% + social cohesion 2.0%
+    socialThreshold: 0,
+    socialCap: 66612,        // insurable earnings ceiling — social cohesion is uncapped
+    pensionPct: 0,           // no mandatory occupational pension
+    pensionCap: null,
+    reviewed: "placeholder — confirm employer contribution split and the insurable earnings ceiling",
+  },
   CAYMAN: {
     label: "Cayman Islands",
     socialPct: 0,            // no payroll tax
@@ -275,6 +285,7 @@ export const ONCOSTS_BY_REGION = {
 export const ENTITY_REGION = {
   "AFG-000": "IOM", "AFG-IOM": "IOM", "AFG-MLT": "MALTA",
   "AFG-CYM": "CAYMAN", "AFG-UK": "UK", "AFG-SD": "US", "AFG-FL": "US",
+  "AFG-CYP": "CYPRUS",          // no Cyprus company yet; rates ready if one is added
 };
 
 export const DEFAULT_ONCOSTS = ONCOSTS_BY_REGION.IOM;
@@ -284,6 +295,7 @@ export const BENEFITS_BY_REGION = {
   IOM:    { healthcare: 95,  wellness: 25, cinema: 8 },
   UK:     { healthcare: 88,  wellness: 25, cinema: 8 },
   MALTA:  { healthcare: 62,  wellness: 20, cinema: 6 },
+  CYPRUS: { healthcare: 70,  wellness: 20, cinema: 6 },
   CAYMAN: { healthcare: 240, wellness: 30, cinema: 0 },   // employer health cover is mandatory
   US:     { healthcare: 420, wellness: 30, cinema: 0 },   // materially higher
 };
