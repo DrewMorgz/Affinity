@@ -214,41 +214,139 @@ export function projectBalanceSheet({
 // Neil's staff requirements: opening salary pre-populated, pay changes from a
 // stated month, bonuses, leavers stopping in the right month, and on-costs
 // (employer social, pension) plus per-head benefits flowing automatically.
-export const DEFAULT_ONCOSTS = { socialPct: 0.11, pensionPct: 0.06 };
-export const DEFAULT_BENEFITS = { healthcare: 95, wellness: 25, cinema: 8 };  // per head per month
+// ── Employer on-costs by region ─────────────────────────────────────────────
+// Payroll taxes differ by jurisdiction, and the CEILINGS matter as much as the
+// percentages: once cumulative earnings pass a cap, the charge stops for the
+// rest of the year, so a flat monthly percentage overstates the cost for senior
+// staff. Applied cumulatively below rather than month by month.
+//
+// ⚠️ RATES TO BE CONFIRMED BY FINANCE. These are placeholders in the right
+// shape, not authoritative figures, and they change every tax year. Each entry
+// is dated so it is obvious when it was last checked.
+export const ONCOSTS_BY_REGION = {
+  IOM: {
+    label: "Isle of Man",
+    socialPct: 0.128,        // employer National Insurance
+    socialThreshold: 5000,   // annual earnings below which no employer NI
+    socialCap: null,         // uncapped for the employer
+    pensionPct: 0.06,
+    pensionCap: null,
+    reviewed: "placeholder — confirm against current IOM Treasury rates",
+  },
+  UK: {
+    label: "United Kingdom",
+    socialPct: 0.15,         // employer NI
+    socialThreshold: 5000,   // secondary threshold
+    socialCap: null,
+    pensionPct: 0.03,        // auto-enrolment employer minimum
+    pensionCap: null,
+    reviewed: "placeholder — confirm against current HMRC rates",
+  },
+  MALTA: {
+    label: "Malta",
+    socialPct: 0.10,         // employer social security contribution
+    socialThreshold: 0,
+    socialCap: 28000,        // capped — contribution stops above the ceiling
+    pensionPct: 0,           // no mandatory second pillar
+    pensionCap: null,
+    reviewed: "placeholder — confirm against current Maltese SSC classes",
+  },
+  CAYMAN: {
+    label: "Cayman Islands",
+    socialPct: 0,            // no payroll tax
+    socialThreshold: 0,
+    socialCap: null,
+    pensionPct: 0.05,        // mandatory employer pension
+    pensionCap: 87000,       // capped on pensionable earnings
+    reviewed: "placeholder — confirm against NPL pensionable earnings cap",
+  },
+  US: {
+    label: "United States",
+    socialPct: 0.0765,       // FICA: social security plus Medicare
+    socialThreshold: 0,
+    socialCap: 168600,       // social security wage base (Medicare is uncapped)
+    pensionPct: 0.04,        // typical 401(k) match
+    pensionCap: null,
+    reviewed: "placeholder — confirm wage base and state unemployment separately",
+  },
+};
+
+// Which region each Affinity company sits in.
+export const ENTITY_REGION = {
+  "AFG-000": "IOM", "AFG-IOM": "IOM", "AFG-MLT": "MALTA",
+  "AFG-CYM": "CAYMAN", "AFG-UK": "UK", "AFG-SD": "US", "AFG-FL": "US",
+};
+
+export const DEFAULT_ONCOSTS = ONCOSTS_BY_REGION.IOM;
+
+// Benefits also differ by region — cost and availability both vary.
+export const BENEFITS_BY_REGION = {
+  IOM:    { healthcare: 95,  wellness: 25, cinema: 8 },
+  UK:     { healthcare: 88,  wellness: 25, cinema: 8 },
+  MALTA:  { healthcare: 62,  wellness: 20, cinema: 6 },
+  CAYMAN: { healthcare: 240, wellness: 30, cinema: 0 },   // employer health cover is mandatory
+  US:     { healthcare: 420, wellness: 30, cinema: 0 },   // materially higher
+};
+export const DEFAULT_BENEFITS = BENEFITS_BY_REGION.IOM;
 
 // staff: { name, dept, role, annualSalary, startMonth, leaveMonth,
 //          changes:[{ month, annualSalary }], bonuses:[{ month, amount }] }
 export function phaseStaffCost(person, opts = {}) {
-  const on = { ...DEFAULT_ONCOSTS, ...(opts.oncosts || {}) };
-  const ben = { ...DEFAULT_BENEFITS, ...(opts.benefits || {}) };
+  const region = person.region || opts.region || "IOM";
+  const rates  = { ...(ONCOSTS_BY_REGION[region] || ONCOSTS_BY_REGION.IOM), ...(opts.oncosts || {}) };
+  const ben    = { ...(BENEFITS_BY_REGION[region] || BENEFITS_BY_REGION.IOM), ...(opts.benefits || {}) };
+
   const salary = new Array(12).fill(0), social = new Array(12).fill(0),
         pension = new Array(12).fill(0), bonus = new Array(12).fill(0),
         benefits = new Array(12).fill(0);
 
   const from = person.startMonth != null ? person.startMonth : 0;
-  const to   = person.leaveMonth != null ? person.leaveMonth : 11;   // inclusive
+  const to   = person.leaveMonth != null ? person.leaveMonth : 11;
 
-  // salary in force each month: opening, then each change from its month on
   let current = Number(person.annualSalary || 0);
   const changes = (person.changes || []).slice().sort((a, b) => a.month - b.month);
 
   for (let i = 0; i < 12; i++) {
     changes.filter((c) => c.month === i).forEach((c) => { current = Number(c.annualSalary); });
     if (i < from || i > to) continue;
-    salary[i]  = current / 12;
-    social[i]  = salary[i] * on.socialPct;
-    pension[i] = salary[i] * on.pensionPct;
-    benefits[i] = ben.healthcare + ben.wellness + ben.cinema;
+    salary[i] = current / 12;
+    benefits[i] = (ben.healthcare || 0) + (ben.wellness || 0) + (ben.cinema || 0);
   }
   (person.bonuses || []).forEach((b) => {
     if (b.month >= from && b.month <= to) bonus[b.month] += Number(b.amount || 0);
   });
-  // employer social also applies to bonus
-  for (let i = 0; i < 12; i++) social[i] += bonus[i] * on.socialPct;
+
+  // Caps and thresholds are annual, so walk the year keeping a running total of
+  // chargeable pay rather than applying a flat percentage each month.
+  const monthlyThreshold = (rates.socialThreshold || 0) / 12;
+  let ytdForSocial = 0, ytdForPension = 0;
+
+  for (let i = 0; i < 12; i++) {
+    const pay = salary[i] + bonus[i];
+    if (!pay) continue;
+
+    // employer social: above a threshold, below a cap
+    let chargeable = Math.max(0, pay - monthlyThreshold);
+    if (rates.socialCap != null) {
+      const headroom = Math.max(0, rates.socialCap - ytdForSocial);
+      chargeable = Math.min(chargeable, headroom);
+    }
+    social[i] = chargeable * (rates.socialPct || 0);
+    ytdForSocial += Math.max(0, pay - monthlyThreshold);
+
+    // pension: usually on salary only, and often capped
+    let pensionable = salary[i];
+    if (rates.pensionCap != null) {
+      const headroom = Math.max(0, rates.pensionCap - ytdForPension);
+      pensionable = Math.min(pensionable, headroom);
+    }
+    pension[i] = pensionable * (rates.pensionPct || 0);
+    ytdForPension += salary[i];
+  }
 
   const total = salary.map((_, i) => salary[i] + social[i] + pension[i] + bonus[i] + benefits[i]);
   return {
+    region, rates,
     salary: salary.map(r2), social: social.map(r2), pension: pension.map(r2),
     bonus: bonus.map(r2), benefits: benefits.map(r2), total: total.map(r2),
     annual: r2(total.reduce((a, b) => a + b, 0)),

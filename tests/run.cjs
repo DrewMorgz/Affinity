@@ -290,8 +290,8 @@ group("Budget model — payroll");
   eq("opening salary phased monthly", p.salary[0], 5000);
   eq("a pay rise takes effect in the stated month", p.salary[6], 5500);
   eq("...and not before it", p.salary[5], 5000);
-  eq("employer social is 11% of salary", p.social[0], 550);
-  eq("pension is 6% of salary", p.pension[0], 300);
+  ok("employer social is charged", p.social[0] > 0);
+  ok("pension is charged", p.pension[0] > 0);
   eq("a bonus lands in its month", p.bonus[11], 5000);
   ok("employer social applies to the bonus too", p.social[11] > p.social[10]);
   ok("benefits flow automatically per head", p.benefits[0] > 0);
@@ -328,6 +328,70 @@ group("Budget model — governance");
   ok("...and a Group discussion before submission",
      M.BUDGET_STAGES.findIndex((s) => s.code === "group_disc") <
      M.BUDGET_STAGES.findIndex((s) => s.code === "submitted"));
+}
+
+
+group("Budget model — day count basis (actual days, not a flat 365)");
+{
+  const M = require(path.join(SRC, "affinity_budget_model.js"));
+  eq("2026 is a 365 day year", M.daysInYear(2026), 365);
+  eq("2028 is a leap year and must be 366", M.daysInYear(2028), 366);
+  eq("February 2028 has 29 days", M.daysInMonth(2028)[1], 29);
+
+  // an annual fee in a leap year must still tie to the invoiced amount
+  const leap = M.phaseFee({ amount:2000, frequency:"A", markup:true }, 2028);
+  eq("leap-year annual fee still ties to the invoiced total",
+     Math.round(leap.earned.reduce((a,b)=>a+b,0) * 100) / 100, 2100);
+  eq("leap-year February earns on 29 days",
+     leap.earned[1], Math.round(2000/366*29*1.05*100)/100);
+  ok("a leap-year February earns more than a normal one",
+     leap.earned[1] > M.phaseFee({ amount:2000, frequency:"A", markup:true }, 2026).earned[1]);
+}
+
+group("Budget model — payroll taxes by region");
+{
+  const M = require(path.join(SRC, "affinity_budget_model.js"));
+  const regions = Object.keys(M.ONCOSTS_BY_REGION);
+  ok("every Affinity region has its own rates", regions.length >= 5);
+  ok("every region is labelled and dated for review",
+     regions.every((r) => M.ONCOSTS_BY_REGION[r].label && M.ONCOSTS_BY_REGION[r].reviewed));
+  ok("every Affinity company maps to a region",
+     ["AFG-000","AFG-IOM","AFG-MLT","AFG-CYM","AFG-UK","AFG-SD","AFG-FL"]
+       .every((r) => M.ENTITY_REGION[r]));
+
+  // the same salary costs different amounts in different places
+  const same = { annualSalary: 60000 };
+  const cost = (region) => M.phaseStaffCost({ ...same, region }).annual;
+  ok("the same salary costs more in the US than the Isle of Man", cost("US") > cost("IOM"));
+  ok("Cayman carries no payroll tax but does carry pension",
+     M.phaseStaffCost({ ...same, region:"CAYMAN" }).social[0] === 0 &&
+     M.phaseStaffCost({ ...same, region:"CAYMAN" }).pension[0] > 0);
+  ok("Malta charges social but has no mandatory pension",
+     M.phaseStaffCost({ ...same, region:"MALTA" }).social[0] > 0 &&
+     M.phaseStaffCost({ ...same, region:"MALTA" }).pension[0] === 0);
+
+  // ceilings: a capped contribution must stop once the ceiling is passed
+  const high = M.phaseStaffCost({ annualSalary: 400000, region:"US" });
+  ok("a capped social charge stops later in the year", high.social[11] < high.social[0],
+     "Jan " + high.social[0] + " vs Dec " + high.social[11]);
+  const mlt = M.phaseStaffCost({ annualSalary: 120000, region:"MALTA" });
+  ok("Malta's ceiling caps the annual social charge",
+     mlt.social.reduce((a,b)=>a+b,0) <= 28000 * 0.10 + 0.01);
+
+  // thresholds: low pay attracts less employer NI proportionally
+  const lowUK  = M.phaseStaffCost({ annualSalary: 6000,  region:"UK" });
+  const highUK = M.phaseStaffCost({ annualSalary: 60000, region:"UK" });
+  const rateOf = (r) => r.social.reduce((a,b)=>a+b,0) / r.salary.reduce((a,b)=>a+b,0);
+  ok("the UK threshold means low pay attracts a lower effective rate",
+     rateOf(lowUK) < rateOf(highUK));
+
+  // benefits differ by region too
+  ok("US healthcare costs more than Isle of Man healthcare",
+     M.BENEFITS_BY_REGION.US.healthcare > M.BENEFITS_BY_REGION.IOM.healthcare);
+
+  // bonuses still attract employer social where applicable
+  const withBonus = M.phaseStaffCost({ annualSalary: 60000, region:"IOM", bonuses:[{ month:11, amount:10000 }] });
+  ok("a bonus attracts employer social", withBonus.social[11] > withBonus.social[10]);
 }
 
 // ── report ─────────────────────────────────────────────────────────────────

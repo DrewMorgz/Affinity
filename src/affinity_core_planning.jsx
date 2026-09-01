@@ -23,8 +23,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { budgetList, budgetGrid, setBudgetCell, submitBudget, approveBudget, pivotToGrid } from "./affinity_planning_api";
-import { phaseFee, phaseFees, phaseHeadcount, projectBalanceSheet, daysInMonth,
-         FREQUENCIES, PHASING, COST_CENTRES, BUDGET_STAGES } from "./affinity_budget_model";
+import { phaseFee, phaseFees, phaseHeadcount, phaseStaffCost, projectBalanceSheet, daysInMonth,
+         FREQUENCIES, PHASING, COST_CENTRES, BUDGET_STAGES,
+         ONCOSTS_BY_REGION, ENTITY_REGION } from "./affinity_budget_model";
 
 const NAVY = "#001242", CY = "#00C4CC";
 const INK  = "var(--text-primary,#111)";
@@ -173,14 +174,14 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
 
   // ── Staff, imported from payroll then amended here ────────────────────────
   const [staff, setStaff] = useState([
-    { id:1, name:"Roxy Sheeley",   dept:"Corporate Services", role:"Managing Director", annualSalary:96000, changes:[], bonuses:[{ month:11, amount:12000 }] },
-    { id:2, name:"Neil Kelly",     dept:"Finance",            role:"CFO",               annualSalary:88000, changes:[], bonuses:[{ month:11, amount:10000 }] },
-    { id:3, name:"Colette Grisdale",dept:"Compliance",        role:"MLRO",              annualSalary:72000, changes:[{ month:6, annualSalary:76000 }], bonuses:[] },
-    { id:4, name:"Joanne Fenech",  dept:"Corporate Services", role:"Director",          annualSalary:68000, changes:[], bonuses:[] },
-    { id:5, name:"Garry Crossan",  dept:"Corporate Services", role:"Director",          annualSalary:66000, changes:[], bonuses:[] },
-    { id:6, name:"Administrator A",dept:"Corporate Services", role:"Administrator",     annualSalary:34000, changes:[{ month:3, annualSalary:36000 }], bonuses:[] },
-    { id:7, name:"Administrator B",dept:"Trust",              role:"Administrator",     annualSalary:32000, changes:[], bonuses:[], leaveMonth:5 },
-    { id:8, name:"Trainee (planned)",dept:"Corporate Services",role:"Trainee",          annualSalary:24000, changes:[], bonuses:[], startMonth:8 },
+    { id:1, name:"Roxy Sheeley",   dept:"Corporate Services", role:"Managing Director", region:"IOM",    annualSalary:96000, changes:[], bonuses:[{ month:11, amount:12000 }] },
+    { id:2, name:"Neil Kelly",     dept:"Finance",            role:"CFO",               region:"IOM",    annualSalary:88000, changes:[], bonuses:[{ month:11, amount:10000 }] },
+    { id:3, name:"Colette Grisdale",dept:"Compliance",        role:"MLRO",              region:"IOM",    annualSalary:72000, changes:[{ month:6, annualSalary:76000 }], bonuses:[] },
+    { id:4, name:"Joanne Fenech",  dept:"Corporate Services", role:"Director",          region:"MALTA",  annualSalary:68000, changes:[], bonuses:[] },
+    { id:5, name:"Garry Crossan",  dept:"Corporate Services", role:"Director",          region:"CAYMAN", annualSalary:66000, changes:[], bonuses:[] },
+    { id:6, name:"Administrator A",dept:"Corporate Services", role:"Administrator",     region:"IOM",    annualSalary:34000, changes:[{ month:3, annualSalary:36000 }], bonuses:[] },
+    { id:7, name:"Administrator B",dept:"Trust",              role:"Administrator",     region:"UK",     annualSalary:32000, changes:[], bonuses:[], leaveMonth:5 },
+    { id:8, name:"Trainee (planned)",dept:"Corporate Services",role:"Trainee",          region:"US",     annualSalary:24000, changes:[], bonuses:[], startMonth:8 },
   ]);
 
   const [collectionDays, setCollectionDays] = useState(35);
@@ -764,7 +765,7 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
             <div style={{ ...panelBox, overflowX:"auto", marginBottom:18 }}>
               <table style={{ width:"100%", borderCollapse:"collapse", minWidth:1050 }}>
                 <thead><tr>
-                  {["Name","Department","Role","Opening salary","Change","From","Bonus","Starts","Leaves","Cost FY"].map((h)=>(
+                  {["Name","Department","Role","Region","Opening salary","Change","From","Bonus","Starts","Leaves","Cost FY"].map((h)=>(
                     <th key={h} style={thS}>{h}</th>
                   ))}
                 </tr></thead>
@@ -779,6 +780,14 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
                         <td style={{ ...tdS, fontWeight:600 }}>{p.name}</td>
                         <td style={tdS}>{p.dept}</td>
                         <td style={{ ...tdS, color:MUT }}>{p.role}</td>
+                        <td style={tdS}>
+                          <select value={p.region||"IOM"} onChange={(e)=>setP(p.id,{region:e.target.value})} style={selS}
+                            title="Employer social and pension are charged at this region's rates, including its ceilings">
+                            {Object.keys(ONCOSTS_BY_REGION).map((k)=>(
+                              <option key={k} value={k}>{ONCOSTS_BY_REGION[k].label}</option>
+                            ))}
+                          </select>
+                        </td>
                         <td style={tdS}>
                           <input type="number" value={p.annualSalary}
                             onChange={(e)=>setP(p.id,{annualSalary:Number(e.target.value)||0})}
@@ -811,6 +820,38 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
                   })}
                 </tbody>
               </table>
+            </div>
+
+            <div style={{ fontSize:12.5, fontWeight:600, color:NAVY, marginBottom:8 }}>Employer on-costs by region</div>
+            <div style={{ ...panelBox, marginBottom:8 }}>
+              <table style={{ width:"100%", borderCollapse:"collapse" }}>
+                <thead><tr>{["Region","Employer social","Threshold","Ceiling","Pension","Pension ceiling","Heads"].map((h)=>(
+                  <th key={h} style={thS}>{h}</th>))}</tr></thead>
+                <tbody>
+                  {Object.keys(ONCOSTS_BY_REGION).map((k)=>{
+                    const r = ONCOSTS_BY_REGION[k];
+                    const heads = staff.filter((p)=>(p.region||"IOM")===k).length;
+                    return (
+                      <tr key={k} style={{ borderBottom:`0.5px solid ${LINE}` }}>
+                        <td style={{ ...tdS, fontWeight:600 }}>{r.label}</td>
+                        <td style={numS}>{(r.socialPct*100).toFixed(2)}%</td>
+                        <td style={numS}>{r.socialThreshold ? nf(r.socialThreshold) : "—"}</td>
+                        <td style={numS}>{r.socialCap ? nf(r.socialCap) : "uncapped"}</td>
+                        <td style={numS}>{(r.pensionPct*100).toFixed(2)}%</td>
+                        <td style={numS}>{r.pensionCap ? nf(r.pensionCap) : "uncapped"}</td>
+                        <td style={numS}>{heads || "—"}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div style={{ background:"#FDF4DC", border:"0.5px solid #E5CE9A", borderRadius:8, padding:"9px 12px",
+                          fontSize:10.5, color:"#7B4F1D", lineHeight:1.65, marginBottom:18 }}>
+              ⚠️ These rates are placeholders in the right shape, not authoritative figures, and they change every tax
+              year. Ceilings are applied cumulatively, so a capped contribution correctly stops once the year's earnings
+              pass the limit rather than being charged flat each month. Finance to confirm each region before the budget
+              is relied on.
             </div>
 
             <div style={{ fontSize:12.5, fontWeight:600, color:NAVY, marginBottom:8 }}>Staff cost by month, built from the above</div>
