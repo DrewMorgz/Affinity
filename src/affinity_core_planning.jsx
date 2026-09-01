@@ -23,6 +23,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { budgetList, budgetGrid, setBudgetCell, submitBudget, approveBudget, pivotToGrid } from "./affinity_planning_api";
+import { phaseFee, phaseFees, phaseHeadcount, projectBalanceSheet, daysInMonth,
+         FREQUENCIES, PHASING, COST_CENTRES, BUDGET_STAGES } from "./affinity_budget_model";
 
 const NAVY = "#001242", CY = "#00C4CC";
 const INK  = "var(--text-primary,#111)";
@@ -156,6 +158,34 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
     { at:"14/11/2025 09:20", who:"Neil Kelly", what:"Budget created from FY25 actuals" },
   ]);
   const gridRef = useRef(null);
+
+  // ── Fee book, imported from recurring fees then amended here ──────────────
+  const [fees, setFees] = useState([
+    { id:1, client:"Meridian Holdings Ltd", service:"AA", desc:"Company administration", amount:1000, frequency:"M", ccy:"GBP", markup:true, status:"Recurring" },
+    { id:2, client:"Meridian Holdings Ltd", service:"AB", desc:"Directorship",           amount:2000, frequency:"A", ccy:"GBP", markup:true, status:"Recurring" },
+    { id:3, client:"Meridian Holdings Ltd", service:"AC", desc:"AEOI reporting",         amount:750,  frequency:"A", ccy:"GBP", markup:true, status:"Recurring" },
+    { id:4, client:"Meridian Holdings Ltd", service:"AD", desc:"Tax compliance",         amount:300,  frequency:"A", ccy:"GBP", markup:true, status:"Recurring" },
+    { id:5, client:"Azure Mediterranean Foundation", service:"AA", desc:"Administration", amount:2000, frequency:"M", ccy:"EUR", markup:true, status:"Recurring" },
+    { id:6, client:"Azure Mediterranean Foundation", service:"AF", desc:"VAT returns",    amount:750,  frequency:"Q", ccy:"EUR", markup:true, status:"Recurring" },
+    { id:7, client:"Thornbury Asset Co Ltd", service:"AA", desc:"Company administration", amount:1600, frequency:"A", ccy:"GBP", markup:true, status:"Lost", endsMonth:5 },
+    { id:8, client:"Kestrel Gaming Ltd (new)", service:"AA", desc:"Company administration", amount:2400, frequency:"M", ccy:"GBP", markup:true, status:"New business", startsMonth:9, sector:"eGaming" },
+  ]);
+
+  // ── Staff, imported from payroll then amended here ────────────────────────
+  const [staff, setStaff] = useState([
+    { id:1, name:"Roxy Sheeley",   dept:"Corporate Services", role:"Managing Director", annualSalary:96000, changes:[], bonuses:[{ month:11, amount:12000 }] },
+    { id:2, name:"Neil Kelly",     dept:"Finance",            role:"CFO",               annualSalary:88000, changes:[], bonuses:[{ month:11, amount:10000 }] },
+    { id:3, name:"Colette Grisdale",dept:"Compliance",        role:"MLRO",              annualSalary:72000, changes:[{ month:6, annualSalary:76000 }], bonuses:[] },
+    { id:4, name:"Joanne Fenech",  dept:"Corporate Services", role:"Director",          annualSalary:68000, changes:[], bonuses:[] },
+    { id:5, name:"Garry Crossan",  dept:"Corporate Services", role:"Director",          annualSalary:66000, changes:[], bonuses:[] },
+    { id:6, name:"Administrator A",dept:"Corporate Services", role:"Administrator",     annualSalary:34000, changes:[{ month:3, annualSalary:36000 }], bonuses:[] },
+    { id:7, name:"Administrator B",dept:"Trust",              role:"Administrator",     annualSalary:32000, changes:[], bonuses:[], leaveMonth:5 },
+    { id:8, name:"Trainee (planned)",dept:"Corporate Services",role:"Trainee",          annualSalary:24000, changes:[], bonuses:[], startMonth:8 },
+  ]);
+
+  const [collectionDays, setCollectionDays] = useState(35);
+  const [paymentDays, setPaymentDays]       = useState(30);
+  const [stage, setStage]                   = useState("owner_md");
   const [live, setLive]       = useState(false);   // true once real budget lines are loaded
   const [budgetId, setBudgetId] = useState(null);
   const [loadErr, setLoadErr] = useState(null);
@@ -327,6 +357,15 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
   // ── shared styles ─────────────────────────────────────────────────────────
   const btn  = { padding:"6px 12px", fontSize:11.5, borderRadius:6, border:`0.5px solid ${LINE}`, background:"transparent", color:MUT, cursor:"pointer" };
   const btnP = { ...btn, background:CY, color:"#fff", border:`0.5px solid ${CY}`, fontWeight:600 };
+  const panelBox  = { background:CARD, border:`0.5px solid ${LINE}`, borderRadius:9, overflow:"hidden" };
+  const panelNote = { background:"#EFF7F8", border:`0.5px solid #cfe7ea`, borderRadius:8, padding:"10px 13px",
+                      fontSize:11.5, color:"#0d5c66", lineHeight:1.7 };
+  const thS = { padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:600, color:MUT, textTransform:"uppercase",
+                letterSpacing:"0.4px", background:SUBTLE, borderBottom:`0.5px solid ${LINE}`, whiteSpace:"nowrap" };
+  const tdS = { padding:"7px 12px", fontSize:12, borderBottom:"none", whiteSpace:"nowrap" };
+  const numS = { ...tdS, textAlign:"right", fontVariantNumeric:"tabular-nums" };
+  const selS = { height:26, padding:"0 6px", fontSize:11, border:`0.5px solid ${LINE}`, borderRadius:5,
+                 background:CARD, color:INK, boxSizing:"border-box" };
   const cellBase = { padding:"0", borderRight:`0.5px solid ${LINE}`, borderBottom:`0.5px solid ${LINE}`, height:28, fontSize:12,
                      textAlign:"right", fontVariantNumeric:"tabular-nums", whiteSpace:"nowrap" };
   const stickyHead = { position:"sticky", top:0, zIndex:3, background:SUBTLE };
@@ -344,7 +383,7 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
       <div style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 22px", background:CARD, borderBottom:`0.5px solid ${LINE}`, flexWrap:"wrap" }}>
         <h2 style={{ margin:0, fontSize:18, fontWeight:500, color:NAVY }}>Planning</h2>
         <div style={{ display:"flex", border:`0.5px solid ${LINE}`, borderRadius:6, overflow:"hidden" }}>
-          {[["input","Budget input"],["workflow","Workflow"],["scenarios","Scenarios"],["variance","Variance & analysis"]].map(([v,l])=>(
+          {[["input","Budget input"],["fees","Fees & sales"],["staff","Staff"],["balance","Balance sheet & cash"],["workflow","Workflow"],["scenarios","Scenarios"],["variance","Variance & analysis"]].map(([v,l])=>(
             <button key={v} onClick={()=>setView(v)}
               style={{ border:"none", cursor:"pointer", fontSize:11.5, padding:"6px 13px", fontWeight:view===v?600:400,
                        background:view===v?CY:CARD, color:view===v?"#fff":MUT }}>{l}</button>
@@ -578,21 +617,368 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
         </div>
       )}
 
+      {/* ══════════════ FEES & SALES ══════════════ */}
+      {view === "fees" && (() => {
+        const phased = fees.map((f) => ({ f, p: phaseFee(f, 2026) }));
+        const totals = phaseFees(fees, 2026);
+        const annualInv = totals.invoiced.reduce((a,b)=>a+b,0);
+        const annualErn = totals.earned.reduce((a,b)=>a+b,0);
+        const setFee = (id, patch) => setFees((rows)=>rows.map((r)=>r.id===id?{...r,...patch}:r));
+        return (
+          <div style={{ padding:"14px 22px 60px" }}>
+            <div style={{ ...panelNote }}>
+              Sales start from the recurring fee book rather than being typed in. Amend an amount here and both the
+              billing profile and the revenue recognised move with it. A fee marked <strong>Lost</strong> stops in the
+              month given; <strong>New business</strong> starts in its month and carries the client's sector for reporting.
+            </div>
+
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))", gap:10, margin:"12px 0 14px" }}>
+              {[["Fees in the book", String(fees.length), NAVY],
+                ["Annual billed", "£"+nf(annualInv), CY],
+                ["Annual earned", "£"+nf(annualErn), NAVY],
+                ["Deferred at any point", "£"+nf(Math.max(...totals.invoiced.map((v,i)=>
+                    totals.invoiced.slice(0,i+1).reduce((a,b)=>a+b,0) - totals.earned.slice(0,i+1).reduce((a,b)=>a+b,0)))), AMBER],
+                ["Lost / new this year", fees.filter(f=>f.status==="Lost").length+" / "+fees.filter(f=>f.status==="New business").length, MUT],
+              ].map(([l,v,c])=>(
+                <div key={l} style={{ background:CARD, border:`0.5px solid ${LINE}`, borderRadius:9, padding:"11px 13px" }}>
+                  <div style={{ fontSize:10.5, color:MUT, marginBottom:4 }}>{l}</div>
+                  <div style={{ fontSize:17, fontWeight:700, color:c, fontVariantNumeric:"tabular-nums" }}>{v}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ ...panelBox, overflowX:"auto" }}>
+              <table style={{ width:"100%", borderCollapse:"collapse", minWidth:1100 }}>
+                <thead><tr>
+                  {["Client","Service","Description","Freq","Amount","Ccy","Uplift","Status","From","To","Billed FY","Earned FY"].map((h)=>(
+                    <th key={h} style={thS}>{h}</th>
+                  ))}
+                </tr></thead>
+                <tbody>
+                  {phased.map(({f,p})=>(
+                    <tr key={f.id} style={{ borderBottom:`0.5px solid ${LINE}`,
+                        background: f.status==="Lost" ? "#FFF7F7" : f.status==="New business" ? "#F5FBF7" : "transparent" }}>
+                      <td style={tdS}>{f.client}</td>
+                      <td style={{ ...tdS, fontFamily:"ui-monospace,monospace", fontSize:11 }}>{f.service}</td>
+                      <td style={tdS}>{f.desc}</td>
+                      <td style={tdS}>
+                        <select value={f.frequency} onChange={(e)=>setFee(f.id,{frequency:e.target.value})} style={selS}>
+                          {FREQUENCIES.map((x)=><option key={x.code} value={x.code}>{x.label}</option>)}
+                        </select>
+                      </td>
+                      <td style={tdS}>
+                        <input type="number" value={f.amount} onChange={(e)=>setFee(f.id,{amount:Number(e.target.value)||0})}
+                          style={{ ...selS, width:88, textAlign:"right" }} />
+                      </td>
+                      <td style={{ ...tdS, color:MUT }}>{f.ccy}</td>
+                      <td style={{ ...tdS, textAlign:"center" }}>
+                        <input type="checkbox" checked={!!f.markup} onChange={()=>setFee(f.id,{markup:!f.markup})}
+                          title="Apply the 5% annual uplift" style={{ width:14, height:14, cursor:"pointer" }} />
+                      </td>
+                      <td style={tdS}>
+                        <span style={{ fontSize:10, fontWeight:700, borderRadius:20, padding:"2px 8px",
+                          background: f.status==="Lost"?"#FCEBEB":f.status==="New business"?"#E7F4EF":"#EAF0FB",
+                          color: f.status==="Lost"?"#A32D2D":f.status==="New business"?"#1F6F54":"#274690" }}>{f.status}</span>
+                        {f.sector && <span style={{ marginLeft:5, fontSize:9.5, color:MUT }}>{f.sector}</span>}
+                      </td>
+                      <td style={tdS}>
+                        <select value={f.startsMonth ?? 0} onChange={(e)=>setFee(f.id,{startsMonth:Number(e.target.value)})} style={selS}>
+                          {MONTHS.map((m,i)=><option key={m} value={i}>{m}</option>)}
+                        </select>
+                      </td>
+                      <td style={tdS}>
+                        <select value={f.endsMonth ?? 11} onChange={(e)=>setFee(f.id,{endsMonth:Number(e.target.value)})} style={selS}>
+                          {MONTHS.map((m,i)=><option key={m} value={i}>{m}</option>)}
+                        </select>
+                      </td>
+                      <td style={numS}>{nf(p.invoiced.reduce((a,b)=>a+b,0))}</td>
+                      <td style={numS}>{nf(p.earned.reduce((a,b)=>a+b,0))}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ fontSize:12.5, fontWeight:600, color:NAVY, margin:"18px 0 8px" }}>
+              Billed against earned, by month — the difference is deferred income
+            </div>
+            <div style={{ ...panelBox, overflowX:"auto" }}>
+              <table style={{ width:"100%", borderCollapse:"collapse", minWidth:900 }}>
+                <thead><tr><th style={{ ...thS, minWidth:150 }}>Basis</th>
+                  {MONTHS.map((m)=><th key={m} style={{ ...thS, textAlign:"right" }}>{m}</th>)}
+                  <th style={{ ...thS, textAlign:"right" }}>Year</th></tr></thead>
+                <tbody>
+                  {[["Invoiced (billing)", totals.invoiced, NAVY],
+                    ["Earned (P&L)", totals.earned, CY]].map(([l,arr,c])=>(
+                    <tr key={l} style={{ borderBottom:`0.5px solid ${LINE}` }}>
+                      <td style={{ ...tdS, fontWeight:600, color:c }}>{l}</td>
+                      {arr.map((v,i)=><td key={i} style={numS}>{nf(v)}</td>)}
+                      <td style={{ ...numS, fontWeight:700 }}>{nf(arr.reduce((a,b)=>a+b,0))}</td>
+                    </tr>
+                  ))}
+                  <tr>
+                    <td style={{ ...tdS, fontWeight:700, background:SUBTLE }}>Difference</td>
+                    {totals.invoiced.map((v,i)=>(
+                      <td key={i} style={{ ...numS, background:SUBTLE, fontWeight:600,
+                        color: Math.abs(v-totals.earned[i])<0.01?MUT:AMBER }}>
+                        {nf(v-totals.earned[i])}
+                      </td>
+                    ))}
+                    <td style={{ ...numS, background:SUBTLE, fontWeight:700 }}>
+                      {nf(totals.invoiced.reduce((a,b)=>a+b,0)-totals.earned.reduce((a,b)=>a+b,0))}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ══════════════ STAFF ══════════════ */}
+      {view === "staff" && (() => {
+        const team = phaseHeadcount(staff);
+        const setP = (id, patch) => setStaff((rows)=>rows.map((r)=>r.id===id?{...r,...patch}:r));
+        return (
+          <div style={{ padding:"14px 22px 60px" }}>
+            <div style={panelNote}>
+              Staff start from the payroll file. Enter a pay change and the month it applies from, and gross, employer
+              social and pension recalculate from that month on. A leaver's date stops their cost in the right month.
+              Healthcare, wellness and cinema follow headcount automatically rather than being budgeted separately.
+            </div>
+
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(170px,1fr))", gap:10, margin:"12px 0 14px" }}>
+              {[["Headcount at Jan", String(team.heads[0]), NAVY],
+                ["Headcount at Dec", String(team.heads[11]), NAVY],
+                ["Salaries FY", "£"+nf(team.salary.reduce((a,b)=>a+b,0)), CY],
+                ["On-costs FY", "£"+nf(team.social.reduce((a,b)=>a+b,0)+team.pension.reduce((a,b)=>a+b,0)), MUT],
+                ["Total staff cost FY", "£"+nf(team.total.reduce((a,b)=>a+b,0)), NAVY],
+              ].map(([l,v,c])=>(
+                <div key={l} style={{ background:CARD, border:`0.5px solid ${LINE}`, borderRadius:9, padding:"11px 13px" }}>
+                  <div style={{ fontSize:10.5, color:MUT, marginBottom:4 }}>{l}</div>
+                  <div style={{ fontSize:17, fontWeight:700, color:c, fontVariantNumeric:"tabular-nums" }}>{v}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ ...panelBox, overflowX:"auto", marginBottom:18 }}>
+              <table style={{ width:"100%", borderCollapse:"collapse", minWidth:1050 }}>
+                <thead><tr>
+                  {["Name","Department","Role","Opening salary","Change","From","Bonus","Starts","Leaves","Cost FY"].map((h)=>(
+                    <th key={h} style={thS}>{h}</th>
+                  ))}
+                </tr></thead>
+                <tbody>
+                  {staff.map((p)=>{
+                    const r = phaseHeadcount([p]);
+                    const chg = (p.changes||[])[0];
+                    const bon = (p.bonuses||[])[0];
+                    return (
+                      <tr key={p.id} style={{ borderBottom:`0.5px solid ${LINE}`,
+                          background: p.leaveMonth!=null ? "#FFF7F7" : p.startMonth!=null ? "#F5FBF7" : "transparent" }}>
+                        <td style={{ ...tdS, fontWeight:600 }}>{p.name}</td>
+                        <td style={tdS}>{p.dept}</td>
+                        <td style={{ ...tdS, color:MUT }}>{p.role}</td>
+                        <td style={tdS}>
+                          <input type="number" value={p.annualSalary}
+                            onChange={(e)=>setP(p.id,{annualSalary:Number(e.target.value)||0})}
+                            style={{ ...selS, width:96, textAlign:"right" }} />
+                        </td>
+                        <td style={tdS}>
+                          <input type="number" value={chg?chg.annualSalary:""} placeholder="—"
+                            onChange={(e)=>{ const v=Number(e.target.value)||0;
+                              setP(p.id,{changes: v? [{ month: chg?chg.month:6, annualSalary:v }] : [] }); }}
+                            style={{ ...selS, width:96, textAlign:"right" }} />
+                        </td>
+                        <td style={tdS}>
+                          <select value={chg?chg.month:6} disabled={!chg}
+                            onChange={(e)=>setP(p.id,{changes:[{ month:Number(e.target.value), annualSalary:chg.annualSalary }]})}
+                            style={selS}>
+                            {MONTHS.map((m,i)=><option key={m} value={i}>{m}</option>)}
+                          </select>
+                        </td>
+                        <td style={tdS}>
+                          <input type="number" value={bon?bon.amount:""} placeholder="—"
+                            onChange={(e)=>{ const v=Number(e.target.value)||0;
+                              setP(p.id,{bonuses: v? [{ month: bon?bon.month:11, amount:v }] : [] }); }}
+                            style={{ ...selS, width:88, textAlign:"right" }} />
+                        </td>
+                        <td style={{ ...tdS, color:MUT, fontSize:11 }}>{p.startMonth!=null?MONTHS[p.startMonth]:"—"}</td>
+                        <td style={{ ...tdS, color: p.leaveMonth!=null?NEG:MUT, fontSize:11 }}>{p.leaveMonth!=null?MONTHS[p.leaveMonth]:"—"}</td>
+                        <td style={{ ...numS, fontWeight:600 }}>{nf(r.total.reduce((a,b)=>a+b,0))}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ fontSize:12.5, fontWeight:600, color:NAVY, marginBottom:8 }}>Staff cost by month, built from the above</div>
+            <div style={{ ...panelBox, overflowX:"auto" }}>
+              <table style={{ width:"100%", borderCollapse:"collapse", minWidth:900 }}>
+                <thead><tr><th style={{ ...thS, minWidth:150 }}>Element</th>
+                  {MONTHS.map((m)=><th key={m} style={{ ...thS, textAlign:"right" }}>{m}</th>)}
+                  <th style={{ ...thS, textAlign:"right" }}>Year</th></tr></thead>
+                <tbody>
+                  {[["Salaries","salary"],["Employer social","social"],["Pension","pension"],
+                    ["Bonus","bonus"],["Healthcare, wellness, cinema","benefits"]].map(([l,k])=>(
+                    <tr key={k} style={{ borderBottom:`0.5px solid ${LINE}` }}>
+                      <td style={tdS}>{l}</td>
+                      {team[k].map((v,i)=><td key={i} style={numS}>{nf(v)}</td>)}
+                      <td style={{ ...numS, fontWeight:600 }}>{nf(team[k].reduce((a,b)=>a+b,0))}</td>
+                    </tr>
+                  ))}
+                  <tr>
+                    <td style={{ ...tdS, fontWeight:700, background:SUBTLE }}>Total</td>
+                    {team.total.map((v,i)=><td key={i} style={{ ...numS, background:SUBTLE, fontWeight:700 }}>{nf(v)}</td>)}
+                    <td style={{ ...numS, background:SUBTLE, fontWeight:700 }}>{nf(team.total.reduce((a,b)=>a+b,0))}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ ...tdS, color:MUT }}>Headcount</td>
+                    {team.heads.map((v,i)=><td key={i} style={{ ...numS, color:MUT }}>{v}</td>)}
+                    <td style={{ ...numS, color:MUT }}>—</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ══════════════ BALANCE SHEET & CASH ══════════════ */}
+      {view === "balance" && (() => {
+        const totals = phaseFees(fees, 2026);
+        const team = phaseHeadcount(staff);
+        const overheads = MONTHS.map(()=>18000);
+        const costs = team.total.map((v,i)=>v+overheads[i]);
+        const bs = projectBalanceSheet({
+          invoiced: totals.invoiced, earned: totals.earned, costsIncurred: costs,
+          collectionDays, paymentDays,
+        });
+        return (
+          <div style={{ padding:"14px 22px 60px" }}>
+            <div style={panelNote}>
+              The balance sheet and cash flow are calculated, not budgeted separately. Revenue recognised comes from the
+              earned basis; cash comes from the billed basis and the collection period. The gap between the two is
+              deferred income. Change the assumptions below and the projection moves.
+            </div>
+
+            <div style={{ display:"flex", gap:14, alignItems:"center", margin:"12px 0 14px", flexWrap:"wrap" }}>
+              <label style={{ fontSize:11.5, color:MUT, display:"flex", alignItems:"center", gap:6 }}>
+                Debtor days
+                <input type="number" value={collectionDays} onChange={(e)=>setCollectionDays(Number(e.target.value)||0)}
+                  style={{ ...selS, width:70, textAlign:"right" }} />
+              </label>
+              <label style={{ fontSize:11.5, color:MUT, display:"flex", alignItems:"center", gap:6 }}>
+                Creditor days
+                <input type="number" value={paymentDays} onChange={(e)=>setPaymentDays(Number(e.target.value)||0)}
+                  style={{ ...selS, width:70, textAlign:"right" }} />
+              </label>
+              <span style={{ fontSize:11, fontWeight:600, borderRadius:20, padding:"3px 10px",
+                background: bs.balances?"#E7F4EF":"#FCEBEB", color: bs.balances?"#1F6F54":"#A32D2D" }}>
+                {bs.balances ? "Balance sheet balances in every month ✓" : "Does not balance — check assumptions"}
+              </span>
+              <span style={{ fontSize:11, color:MUT, marginLeft:"auto" }}>
+                Closing bank £{nf(bs.closing.bank)} · closing debtors £{nf(bs.closing.receivables)}
+              </span>
+            </div>
+
+            <div style={{ ...panelBox, overflowX:"auto" }}>
+              <table style={{ width:"100%", borderCollapse:"collapse", minWidth:1000 }}>
+                <thead><tr>
+                  {["Month","Invoiced","Earned","Costs","Receipts","Payments","Debtors","Deferred income","Creditors","Bank","Retained"].map((h)=>(
+                    <th key={h} style={{ ...thS, textAlign: h==="Month"?"left":"right" }}>{h}</th>
+                  ))}
+                </tr></thead>
+                <tbody>
+                  {bs.rows.map((r)=>(
+                    <tr key={r.month} style={{ borderBottom:`0.5px solid ${LINE}` }}>
+                      <td style={{ ...tdS, fontWeight:600 }}>{r.month}</td>
+                      <td style={numS}>{nf(r.invoiced)}</td>
+                      <td style={numS}>{nf(r.earned)}</td>
+                      <td style={numS}>{nf(r.costs)}</td>
+                      <td style={numS}>{nf(r.receipts)}</td>
+                      <td style={numS}>{nf(r.payments)}</td>
+                      <td style={numS}>{nf(r.receivables)}</td>
+                      <td style={{ ...numS, color: r.deferredIncome>0?AMBER:MUT }}>{nf(r.deferredIncome)}</td>
+                      <td style={numS}>{nf(r.payables)}</td>
+                      <td style={{ ...numS, fontWeight:600, color: r.bank<0?NEG:INK }}>{nf(r.bank)}</td>
+                      <td style={{ ...numS, fontWeight:600, color: r.retained<0?NEG:POS }}>{nf(r.retained)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ fontSize:11, color:MUT, marginTop:10, lineHeight:1.7 }}>
+              Assets less liabilities equals retained earnings in every month, which is the check that the projection is
+              internally consistent. Per-account assumptions — collection profiles by client, payment terms by supplier —
+              are the next layer and need the ledger connected.
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ══════════════ WORKFLOW ══════════════ */}
       {view === "workflow" && (
         <div style={{ padding:"16px 22px 60px" }}>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:9, marginBottom:16 }}>
-            {STATES.map((st)=>{
-              const n = st===state ? 1 : st==="Not started" ? 3 : st==="Approved" ? 2 : 0;
-              const sty = STATE_STYLE[st];
+          {/* Neil's sequence: principles, then owners gather, then two levels of
+              review before Group finance sees it. */}
+          <div style={{ ...panelNote, marginBottom:14 }}>
+            A budget is not just submitted and approved. The year's principles are issued first, each cost centre owner
+            gathers their team's requirements, the owner and their MD review and amend, the MD then reviews every centre
+            for their office, and the key points are agreed with Group before anything reaches Group finance.
+          </div>
+
+          <div style={{ display:"flex", gap:0, marginBottom:18, flexWrap:"wrap" }}>
+            {BUDGET_STAGES.map((st, i) => {
+              const idx = BUDGET_STAGES.findIndex((x) => x.code === stage);
+              const done = i < idx, current = i === idx;
               return (
-                <div key={st} style={{ background:CARD, border:`0.5px solid ${st===state?CY:LINE}`, borderRadius:9, padding:"11px 13px" }}>
-                  <div style={{ fontSize:10.5, fontWeight:700, color:sty.color, marginBottom:5 }}>{st.toUpperCase()}</div>
-                  <div style={{ fontSize:20, fontWeight:700, color: n?NAVY:"#ddd" }}>{n}</div>
-                  <div style={{ fontSize:10, color:MUT }}>{n===1?"entity":"entities"}</div>
+                <div key={st.code} onClick={() => setStage(st.code)}
+                  title={st.note || st.label}
+                  style={{ flex:"1 1 150px", minWidth:150, cursor:"pointer", padding:"10px 12px",
+                           background: current ? CY : done ? "#E7F4EF" : CARD,
+                           color: current ? "#fff" : done ? "#1F6F54" : MUT,
+                           borderTop:`3px solid ${current ? NAVY : done ? POS : LINE}`,
+                           borderRight:`0.5px solid ${LINE}`, borderBottom:`0.5px solid ${LINE}` }}>
+                  <div style={{ fontSize:9.5, opacity:0.8, marginBottom:3 }}>STEP {i + 1}{done ? " · done" : current ? " · here" : ""}</div>
+                  <div style={{ fontSize:11.5, fontWeight:600, lineHeight:1.35 }}>{st.label}</div>
+                  <div style={{ fontSize:9.5, opacity:0.85, marginTop:3 }}>{st.owner}</div>
                 </div>
               );
             })}
+          </div>
+
+          <div style={{ fontSize:12.5, fontWeight:600, color:NAVY, marginBottom:8 }}>
+            Cost centres and their business owners
+          </div>
+          <div style={{ ...panelBox, marginBottom:18 }}>
+            <table style={{ width:"100%", borderCollapse:"collapse" }}>
+              <thead><tr>{["Cost centre","Business owner","Stage","Wish list","Reviewed with MD"].map((h)=>(
+                <th key={h} style={thS}>{h}</th>))}</tr></thead>
+              <tbody>
+                {COST_CENTRES.map((c, i) => {
+                  const st = ["submitted","gathering","owner_md","md_review","gathering","owner_md",
+                              "md_review","gathering","submitted","submitted","owner_md"][i] || "gathering";
+                  const label = (BUDGET_STAGES.find((x)=>x.code===st) || {}).label;
+                  return (
+                    <tr key={c.code} style={{ borderBottom:`0.5px solid ${LINE}` }}>
+                      <td style={{ ...tdS, fontWeight:600 }}>{c.name}
+                        <span style={{ fontSize:9.5, color:MUT, marginLeft:6, fontFamily:"ui-monospace,monospace" }}>{c.code}</span></td>
+                      <td style={tdS}>{c.owner}</td>
+                      <td style={tdS}>
+                        <span style={{ fontSize:10, fontWeight:700, borderRadius:20, padding:"2px 8px",
+                          background: st==="submitted"?"#E7F4EF":st==="md_review"?"#FDF4DC":"#EAF0FB",
+                          color: st==="submitted"?"#1F6F54":st==="md_review"?"#7B4F1D":"#274690" }}>{label}</span>
+                      </td>
+                      <td style={{ ...tdS, textAlign:"center" }}>{st==="gathering" ? "in progress" : "✓"}</td>
+                      <td style={{ ...tdS, textAlign:"center" }}>{["submitted","md_review","group_disc","approved","locked"].includes(st) ? "✓" : "—"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
 
           <div style={{ background:CARD, border:`0.5px solid ${LINE}`, borderRadius:9, overflow:"hidden", marginBottom:18 }}>
