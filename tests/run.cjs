@@ -198,6 +198,138 @@ group("Module permissions");
      rbac.can("director", "documents", "D") && !rbac.can("admin", "documents", "D"));
 }
 
+
+// ── 6. Budget model — reproduces Neil's Budget_Summary workbook ────────────
+group("Budget model — phasing (validated against Budget_Summary.xlsx)");
+{
+  const M = require(path.join(SRC, "affinity_budget_model.js"));
+  const YEAR = 2026;
+  const dim = M.daysInMonth(YEAR);
+  eq("days in year", dim.reduce((a,b)=>a+b,0), 365);
+
+  const aa = M.phaseFee({ amount:1000, frequency:"M", markup:true }, YEAR);
+  eq("monthly fee invoiced every month at 1.05", aa.invoiced, new Array(12).fill(1050));
+  eq("monthly fee earned every month", aa.earned, new Array(12).fill(1050));
+
+  const ab = M.phaseFee({ amount:2000, frequency:"A", markup:true }, YEAR);
+  eq("annual fee invoiced whole in January", ab.invoiced[0], 2100);
+  eq("annual fee invoiced nowhere else", ab.invoiced.slice(1), new Array(11).fill(0));
+  eq("annual fee earned in Jan by days (2000/365*31*1.05)",
+     ab.earned[0], Math.round(2000/365*31*1.05*100)/100);
+  eq("annual fee earned in Feb by days (28 days)",
+     ab.earned[1], Math.round(2000/365*28*1.05*100)/100);
+  eq("annual fee earned total ties to the penny with the invoiced total",
+     Math.round(ab.earned.reduce((a,b)=>a+b,0) * 100) / 100, 2100);
+
+  const af = M.phaseFee({ amount:750, frequency:"Q", markup:true }, YEAR);
+  eq("quarterly fee invoiced in four months", af.invoiced.filter(v=>v>0).length, 4);
+  eq("quarterly invoice amount is 787.50", af.invoiced[0], 787.5);
+  eq("quarterly invoiced in Jan, Apr, Jul, Oct",
+     af.invoiced.map((v,i)=>v>0?i:null).filter(v=>v!==null), [0,3,6,9]);
+  eq("quarterly fee earned in Jan by days within its quarter",
+     af.earned[0], Math.round(750/(31+28+31)*31*1.05*100)/100);
+  eq("quarterly earned total ties to the penny with the invoiced total",
+     Math.round(af.earned.reduce((a,b)=>a+b,0) * 100) / 100, 3150);
+
+  const lost = M.phaseFee({ amount:1000, frequency:"M", markup:true, endsMonth:5 }, YEAR);
+  eq("lost business stops after the stated month", lost.invoiced.slice(6), new Array(6).fill(0));
+  eq("lost business still billed up to it", lost.invoiced[5], 1050);
+  const won = M.phaseFee({ amount:1200, frequency:"M", markup:true, startsMonth:9 }, YEAR);
+  eq("new business starts in the stated month", won.invoiced[9], 1260);
+  eq("new business bills nothing before it", won.invoiced.slice(0,9), new Array(9).fill(0));
+}
+
+group("Budget model — phasing methods");
+{
+  const M = require(path.join(SRC, "affinity_budget_model.js"));
+  const all = [0,1,2,3,4,5,6,7,8,9,10,11];
+  eq("'evenly' splits into twelve equal amounts", M.spread(1200, all, "even", 2026)[0], 100);
+  const days = M.spread(3650, all, "days", 2026);
+  ok("'by days in month' gives January more than February", days[0] > days[1]);
+  eq("'by days' sums to the penny to the full amount",
+     Math.round(days.reduce((a,b)=>a+b,0) * 100) / 100, 3650);
+  const spec = M.spread(5000, [8], "specific", 2026);
+  eq("'specific month' puts it all in that month", spec[8], 5000);
+  eq("...and nothing elsewhere", spec.reduce((a,b)=>a+b,0), 5000);
+}
+
+group("Budget model — balance sheet and cash flow");
+{
+  const M = require(path.join(SRC, "affinity_budget_model.js"));
+  const f = M.phaseFee({ amount:12000, frequency:"A", markup:false }, 2026);
+  const bs = M.projectBalanceSheet({
+    invoiced: f.invoiced, earned: f.earned,
+    costsIncurred: new Array(12).fill(500), collectionDays: 35, paymentDays: 30,
+  });
+  ok("the balance sheet balances in every month", bs.balances);
+  ok("deferred income arises when billing runs ahead of earning", bs.rows[0].deferredIncome > 0);
+  ok("deferred income unwinds to nil by the year end",
+     Math.abs(bs.closing.deferredIncome) < 0.02, "closing " + bs.closing.deferredIncome);
+  eq("nothing is collected in the first month on 35 day terms", bs.rows[0].receipts, 0);
+  eq("the January invoice is collected in February", bs.rows[1].receipts, 12000);
+  eq("receivables carry the uncollected invoice at January", bs.rows[0].receivables, 12000);
+  eq("receivables clear once collected", bs.rows[1].receivables, 0);
+  ok("retained earnings equal cumulative profit",
+     Math.abs(bs.closing.retained - 6000) < 0.02);
+
+  const slow = M.projectBalanceSheet({
+    invoiced: f.invoiced, earned: f.earned,
+    costsIncurred: new Array(12).fill(500), collectionDays: 95, paymentDays: 30,
+  });
+  ok("slower collection delays receipts", slow.rows[1].receipts === 0);
+  ok("...but profit is unchanged", Math.abs(slow.closing.retained - bs.closing.retained) < 0.02);
+  ok("...and the balance sheet still balances", slow.balances);
+}
+
+group("Budget model — payroll");
+{
+  const M = require(path.join(SRC, "affinity_budget_model.js"));
+  const p = M.phaseStaffCost({
+    annualSalary:60000, changes:[{ month:6, annualSalary:66000 }], bonuses:[{ month:11, amount:5000 }],
+  });
+  eq("opening salary phased monthly", p.salary[0], 5000);
+  eq("a pay rise takes effect in the stated month", p.salary[6], 5500);
+  eq("...and not before it", p.salary[5], 5000);
+  eq("employer social is 11% of salary", p.social[0], 550);
+  eq("pension is 6% of salary", p.pension[0], 300);
+  eq("a bonus lands in its month", p.bonus[11], 5000);
+  ok("employer social applies to the bonus too", p.social[11] > p.social[10]);
+  ok("benefits flow automatically per head", p.benefits[0] > 0);
+
+  const leaver = M.phaseStaffCost({ annualSalary:48000, leaveMonth:4 });
+  eq("a leaver's cost stops the month after they go", leaver.salary[5], 0);
+  eq("...and is charged up to their last month", leaver.salary[4], 4000);
+  const starter = M.phaseStaffCost({ annualSalary:36000, startMonth:9 });
+  eq("a starter costs nothing before joining", starter.salary[8], 0);
+  eq("...and is charged from their start month", starter.salary[9], 3000);
+
+  const team = M.phaseHeadcount([
+    { annualSalary:60000 }, { annualSalary:48000, leaveMonth:5 }, { annualSalary:36000, startMonth:6 },
+  ]);
+  eq("headcount reflects joiners and leavers", team.heads, [2,2,2,2,2,2,2,2,2,2,2,2]);
+  ok("total staff cost includes salary, on-costs and benefits", team.total[0] > team.salary[0]);
+}
+
+group("Budget model — governance");
+{
+  const M = require(path.join(SRC, "affinity_budget_model.js"));
+  ok("every cost centre has a named business owner",
+     M.COST_CENTRES.every((c) => c.owner && c.ownerRole));
+  ok("sales sits with the Managing Director",
+     M.COST_CENTRES.find((c) => c.code === "SALES").ownerRole === "md");
+  ok("events sits with Business Development",
+     M.COST_CENTRES.find((c) => c.code === "EVENTS").ownerRole === "bd");
+  ok("bank charges and depreciation sit with the Accountant",
+     M.COST_CENTRES.find((c) => c.code === "BANKCHG").ownerRole === "acct" &&
+     M.COST_CENTRES.find((c) => c.code === "DEPN").ownerRole === "acct");
+  ok("the workflow includes a wish-list gathering stage",
+     M.BUDGET_STAGES.some((s) => s.code === "gathering"));
+  ok("...an MD consolidated review", M.BUDGET_STAGES.some((s) => s.code === "md_review"));
+  ok("...and a Group discussion before submission",
+     M.BUDGET_STAGES.findIndex((s) => s.code === "group_disc") <
+     M.BUDGET_STAGES.findIndex((s) => s.code === "submitted"));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
