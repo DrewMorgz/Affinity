@@ -71,6 +71,7 @@ const ENTITIES = [
   { ref:"AFG-MLT", name:"Affinity (Malta) Limited",      ccy:"EUR" },
   { ref:"AFG-CYM", name:"Affinity (Cayman) Limited",     ccy:"USD" },
   { ref:"AFG-UK",  name:"Affinity (UK) Limited",         ccy:"GBP" },
+  { ref:"AFG-CYP", name:"Affinity (Cyprus) Limited",     ccy:"EUR" },
   { ref:"AFG-SD",  name:"Affinity South Dakota, LLC",    ccy:"USD" },
   { ref:"AFG-FL",  name:"Affinity South Florida, LLC",   ccy:"USD" },
 ];

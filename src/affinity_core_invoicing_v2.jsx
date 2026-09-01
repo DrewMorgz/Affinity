@@ -58,6 +58,9 @@ const FEE_SCHEDULES = [
   { office:"Cayman Islands", type:"Company admin",     fee:"$3,600",  freq:"Per annum",  currency:"USD" },
   { office:"Cayman Islands", type:"Trustee fee",       fee:"$4,200",  freq:"Per annum",  currency:"USD" },
   { office:"United Kingdom", type:"Company admin",     fee:"£1,600",  freq:"Per annum",  currency:"GBP" },
+  { office:"Cyprus",         type:"Company admin",     fee:"€1,750",  freq:"Per annum",  currency:"EUR" },
+  { office:"Cyprus",         type:"Directorship",      fee:"€1,150",  freq:"Per annum",  currency:"EUR" },
+  { office:"Cyprus",         type:"Registered office", fee:"€450",    freq:"Per annum",  currency:"EUR" },
   { office:"Miami",          type:"Company admin",     fee:"$2,400",  freq:"Per annum",  currency:"USD" },
   { office:"Miami",          type:"Registered agent",  fee:"$600",    freq:"Per annum",  currency:"USD" },
 ];
@@ -491,7 +494,7 @@ export default function AffinityInvoicing({ onNav }) {
             <select value={feeOffice} onChange={e=>setFeeOffice(e.target.value)}
               style={{ height:30, padding:"0 8px", fontSize:11.5, border:"0.5px solid #e5e5e5", borderRadius:6, background:"var(--bg-primary,#fff)" }}>
               <option value="">All offices</option>
-              {["Isle of Man","Malta","Cayman Islands","United Kingdom","Miami"].map(o=><option key={o}>{o}</option>)}
+              {["Isle of Man","Malta","Cayman Islands","United Kingdom","Miami","Cyprus"].map(o=><option key={o}>{o}</option>)}
             </select>
             <span style={{ fontSize:11, color:"#888", marginLeft:"auto" }}>
               Standard rates per office and service type — used for retainer invoices and proposal fees.
@@ -563,7 +566,7 @@ export default function AffinityInvoicing({ onNav }) {
                 ["Invoice type","select","",false,["Retainer","Ad hoc","Disbursement","Fixed fee"]],
                 ["Currency","select","",false,["GBP","USD","EUR"]],
                 ["Amount","number","0.00",false],["Due date","text","DD/MM/YYYY",false],
-                ["Office","select","",false,["Isle of Man","Malta","Cayman Islands","United Kingdom","Miami"]],
+                ["Office","select","",false,["Isle of Man","Malta","Cayman Islands","United Kingdom","Miami","Cyprus"]],
               ].map(([l,t,ph,full,opts])=>(
                 <div key={l} style={{ display:"flex", flexDirection:"column", gap:3, gridColumn:full?"1/-1":"auto" }}>
                   <label style={{ fontSize:11, color:"#666" }}>{l}</label>

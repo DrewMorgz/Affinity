@@ -403,6 +403,35 @@ group("Budget model — payroll taxes by region");
   ok("a bonus attracts employer social", withBonus.social[11] > withBonus.social[10]);
 }
 
+
+group("Cyprus office — present everywhere the other six are");
+{
+  const rbac = require(path.join(SRC, "affinity_core_rbac.js"));
+  const off  = require(path.join(SRC, "affinity_offices.js"));
+
+  eq("six offices, Cyprus included", off.OFFICES.length, 6);
+  ok("Cyprus is an office", off.OFFICE_NAMES.includes("Cyprus"));
+  ok("every office has a flag, currency and entity", off.OFFICES.every((o)=>o.flag&&o.ccy&&o.entity));
+  ok("every office maps to a payroll region",
+     off.OFFICES.every((o)=>!!require(path.join(SRC,"affinity_budget_model.js")).ONCOSTS_BY_REGION[o.region]));
+
+  eq("eight Affinity group companies", rbac.INTERNAL_ENTITIES.length, 8);
+  ok("Affinity (Cyprus) Limited is one of them",
+     rbac.INTERNAL_ENTITIES.some((e)=>e.ref==="AFG-CYP"));
+  ok("Cyprus can be granted and denied like any other company",
+     rbac.canAccessInternalEntity("admin","AFG-CYP",["AFG-CYP"]) &&
+     !rbac.canAccessInternalEntity("admin","AFG-CYP",["AFG-MLT"]));
+  ok("Super Admin holds Cyprus by default",
+     rbac.internalRefsFor("system_admin").includes("AFG-CYP"));
+  ok("a Manager does not hold Cyprus by default",
+     !rbac.internalRefsFor("manager").includes("AFG-CYP"));
+
+  // the office list is now one source rather than seven copies
+  ok("offices are exported for reuse", Array.isArray(off.OFFICE_NAMES) && off.OFFICE_NAMES.length === 6);
+  ok("jurisdictions are wider than offices", off.JURISDICTIONS.length > off.OFFICES.length);
+  ok("Cyprus appears in the jurisdiction list too", off.JURISDICTIONS.includes("Cyprus"));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

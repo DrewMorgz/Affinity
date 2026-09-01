@@ -43,6 +43,7 @@ export const ENTITY_LIST = [
   { name: "Affinity (Malta) Limited",        ref: "AFG-MLT",     jur: "Malta" },
   { name: "Affinity (Cayman) Limited",       ref: "AFG-CYM",     jur: "Cayman Islands" },
   { name: "Affinity (UK) Limited",           ref: "AFG-UK",      jur: "United Kingdom" },
+  { name: "Affinity (Cyprus) Limited",       ref: "AFG-CYP",     jur: "Cyprus" },
   { name: "Affinity South Dakota, LLC",      ref: "AFG-SD",      jur: "United States" },
   { name: "Affinity South Florida, LLC",     ref: "AFG-FL",      jur: "United States" },
 ];

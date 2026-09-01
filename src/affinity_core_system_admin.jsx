@@ -302,7 +302,7 @@ export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false })
           <div style={s.sw}><span style={{ color:"#aaa" }}>🔍</span><input style={s.swInput} placeholder="Search users..." value={search} onChange={e=>{setSearch(e.target.value)}} /></div>
           <select style={s.sel} value={officeF} onChange={e=>setOfficeF(e.target.value)}>
             <option value="">All offices</option>
-            {["Isle of Man","Malta","Cayman Islands","United Kingdom","Miami","Group"].map(o=><option key={o}>{o}</option>)}
+            {["Isle of Man","Malta","Cayman Islands","United Kingdom","Miami","Cyprus","Group"].map(o=><option key={o}>{o}</option>)}
           </select>
           <select style={s.sel} value={roleF} onChange={e=>setRoleF(e.target.value)}>
             <option value="">All roles</option>

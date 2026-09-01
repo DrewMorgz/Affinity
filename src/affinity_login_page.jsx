@@ -85,6 +85,7 @@ export default function AffinityLoginPage({ onLogin }) {
           { flag: "🇮🇲", name: "Isle of Man" },
           { flag: "🇲🇹", name: "Malta" },
           { flag: "🇰🇾", name: "Cayman Islands" },
+          { flag: "🇨🇾", name: "Cyprus" },
           { flag: "🇬🇧", name: "United Kingdom" },
           { flag: "🇺🇸", name: "Miami" },
           { flag: "🇨🇾", name: "Cyprus" },

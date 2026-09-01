@@ -39,7 +39,7 @@ const REG = {
   "Cayman Islands": { short:"CIMA Regulated", regulator:"Cayman Islands Monetary Authority (CIMA)", licence:"Corporate services", entity:"Affinity (Cayman) Limited (WT-359621)", office:"Buckingham Square, South Building, 2nd Floor, West Bay Road, Grand Cayman", mlro:"Colette Grisdale", legislation:"Proceeds of Crime Act (Revised), Anti-Money Laundering Regulations", obligation:"CDD, risk-based monitoring, SAR reporting to the Financial Reporting Authority" },
   "Malta": { short:"MFSA Regulated", regulator:"Malta Financial Services Authority (MFSA)", licence:"Company Service Provider (CSP)", entity:"Affinity (Malta) Limited (C53435)", office:"Level 2, Progetta House, Tower Street, Swatar, Birkirkara BKR 4012, Malta", mlro:"Gilber Spiteri Spadaro", legislation:"Prevention of Money Laundering Act (PMLA), PMLFTR", obligation:"CDD, risk-based monitoring, STR reporting to the FIAU" },
 };
-const JUR_OPTS = ["Isle of Man","Cayman Islands","Malta","All jurisdictions"];
+const JUR_OPTS = ["Isle of Man","Cayman Islands","Malta","Cyprus","All jurisdictions"];
 
 const reportingObs = [
   { id:1, type:"Annual compliance return", regulator:"IOMFSA", due:"31/03/2026", filed:"31/03/2025", status:"Filed",    freq:"Annual" },

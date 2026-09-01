@@ -61,7 +61,7 @@ const FIELDS = [
   { sec:"entity",     key:"ref",         label:"Reference",            type:"text" },
   { sec:"entity",     key:"class",       label:"Internal / client",    type:"enum", options:["Internal","Client"] },
   { sec:"entity",     key:"type",        label:"Entity type",          type:"enum", options:["Company","Trust","Foundation","Partnership"] },
-  { sec:"entity",     key:"jur",         label:"Jurisdiction",         type:"enum", options:["Isle of Man","Malta","Cayman Islands","United Kingdom","United States"] },
+  { sec:"entity",     key:"jur",         label:"Jurisdiction",         type:"enum", options:["Isle of Man","Malta","Cayman Islands","United Kingdom","United States","Cyprus"] },
   { sec:"entity",     key:"status",      label:"Status",               type:"enum", options:["Active","Dormant","In liquidation"] },
   { sec:"entity",     key:"incorporated",label:"Incorporated",         type:"date" },
   { sec:"entity",     key:"yearEnd",     label:"Year end",             type:"text" },
@@ -124,7 +124,7 @@ const FIELDS = [
 
   { sec:"crm",        key:"leadSource",   label:"Lead source",          type:"enum", options:["Referral","Introducer","Direct","Event","Existing client","Website"] },
   { sec:"crm",        key:"sector",       label:"Sector",               type:"enum", options:["Financial services","eGaming","Medicinal Cannabis","Crypto & digital assets","Shipping & aviation","Property","Family office"] },
-  { sec:"crm",        key:"office",       label:"Servicing office",     type:"enum", options:["Isle of Man","Malta","Cayman Islands","United Kingdom","Miami"] },
+  { sec:"crm",        key:"office",       label:"Servicing office",     type:"enum", options:["Isle of Man","Malta","Cayman Islands","United Kingdom","Miami","Cyprus"] },
   { sec:"crm",        key:"relManager",   label:"Relationship manager", type:"text" },
   { sec:"crm",        key:"feeReviewDue", label:"Fee review due",       type:"date" },
 
@@ -137,7 +137,7 @@ const FIELDS = [
   { sec:"people",     key:"reviewer",     label:"Compliance reviewer",  type:"text" },
   { sec:"people",     key:"directorStaff",label:"Affinity director appointed", type:"list" },
   { sec:"people",     key:"cpdHours",     label:"CPD hours (staff)",    type:"number" },
-  { sec:"people",     key:"office",       label:"Servicing office",     type:"enum", options:["Isle of Man","Malta","Cayman Islands","United Kingdom","Miami"] },
+  { sec:"people",     key:"office",       label:"Servicing office",     type:"enum", options:["Isle of Man","Malta","Cayman Islands","United Kingdom","Miami","Cyprus"] },
 
   // ── Officers & Directors — the register itself, not just a count
   { sec:"officers",   key:"officerRole",  label:"Officer role",         type:"enum", options:["Director","Alternate director","Secretary","Trustee","Protector","Enforcer","Council member","Nominee","Reporting Officer"] },
@@ -355,6 +355,13 @@ const ROWS = [
     isGaming:false, licenceStatus:"Not licensed", regulator:"None", licenceNo:"—",
     risk:"Low", reviewDue:"2027-03-01", cddComplete:true, openBreaches:0,
     docCount:88, missingDocs:0, feeAnnual:0, wip:0, agedDebt:0 },
+  { name:"Affinity (Cyprus) Limited", ref:"AFG-CYP", class:"Internal", type:"Company", jur:"Cyprus", status:"Active", incorporated:"2026-07-01", yearEnd:"31/12",
+    uboNames:["Affinity Group Limited"], uboCountries:["Isle of Man"], uboPct:100, uboPep:false,
+    directors:["Andrew Morgan"], affinityDirector:true, directorCount:1,
+    services:["Company administration"], admin:"Andrew Morgan",
+    isGaming:false, licenceStatus:"Not licensed", regulator:"None", licenceNo:"—",
+    risk:"Low", reviewDue:"2027-07-01", cddComplete:true, openBreaches:0,
+    docCount:14, missingDocs:0, feeAnnual:0, wip:0, agedDebt:0 },
   { name:"Affinity (Malta) Limited", ref:"AFG-MLT", class:"Internal", type:"Company", jur:"Malta", status:"Active", incorporated:"2012-05-14", yearEnd:"31/12",
     uboNames:["Affinity Group Limited"], uboCountries:["Isle of Man"], uboPct:100, uboPep:false,
     directors:["Andy Morgan","Joanne Fenech"], affinityDirector:true, directorCount:2,

@@ -117,6 +117,7 @@ export const INTERNAL_ENTITIES = [
   { ref:"AFG-MLT", name:"Affinity (Malta) Limited",       jur:"Malta",          note:"Corporate services" },
   { ref:"AFG-CYM", name:"Affinity (Cayman) Limited",      jur:"Cayman Islands", note:"Corporate services" },
   { ref:"AFG-UK",  name:"Affinity (UK) Limited",          jur:"United Kingdom", note:"Corporate services" },
+  { ref:"AFG-CYP", name:"Affinity (Cyprus) Limited",      jur:"Cyprus",         note:"Corporate services" },
   { ref:"AFG-SD",  name:"Affinity South Dakota, LLC",     jur:"United States",  note:"US trust services" },
   { ref:"AFG-FL",  name:"Affinity South Florida, LLC",    jur:"United States",  note:"US corporate services" },
 ];

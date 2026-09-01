@@ -195,7 +195,7 @@ export default function AffinityStatutory() {
               <div style={{ display:"flex", gap:8 }}>
                 <select value={jurF} onChange={e=>setJurF(e.target.value)} style={{ height:30, padding:"0 8px", border:"0.5px solid #ccc", borderRadius:5, fontSize:11 }}>
                   <option value="">All jurisdictions</option>
-                  {["Isle of Man","Malta","Cayman Islands"].map(j=><option key={j}>{j}</option>)}
+                  {["Isle of Man","Malta","Cayman Islands","Cyprus"].map(j=><option key={j}>{j}</option>)}
                 </select>
               </div>
               <div style={{ display:"flex", gap:6 }}>
@@ -360,7 +360,7 @@ export default function AffinityStatutory() {
               </h3>
               <button onClick={()=>setModal(null)} style={{ background:"none", border:"none", fontSize:20, cursor:"pointer", color:"#888" }}>×</button>
             </div>
-            {[["Entity","select",["Meridian Holdings Ltd","Harrington Family Trust","Caledonian Ventures Ltd","Azure Mediterranean Fdn","Apex Growth Fund Ltd","Stonebridge Capital Ltd"]],["Jurisdiction","select",["Isle of Man","Malta","Cayman Islands"]],["Date","date"],["Notes","text","Optional notes"]].map(([l,t,opts])=>(
+            {[["Entity","select",["Meridian Holdings Ltd","Harrington Family Trust","Caledonian Ventures Ltd","Azure Mediterranean Fdn","Apex Growth Fund Ltd","Stonebridge Capital Ltd"]],["Jurisdiction","select",["Isle of Man","Malta","Cayman Islands","Cyprus"]],["Date","date"],["Notes","text","Optional notes"]].map(([l,t,opts])=>(
               <div key={l} style={{ marginBottom:12 }}>
                 <label style={{ display:"block", fontSize:11, fontWeight:600, color:"#555", marginBottom:4 }}>{l}</label>
                 {(l==="Entity"||l==="Client"||l==="Entity name"||l==="Client name"||l==="Linked entity")?<><input list="st-ent-1" placeholder="Search entity…" style={{ width:"100%", padding:"8px 10px", border:"1.5px solid #e0e0e0", borderRadius:6, fontSize:12, outline:"none" , boxSizing:"border-box" }} /><datalist id="st-ent-1">{(opts||[]).map(o=><option key={o} value={o}/>)}</datalist></>:t==="select"?<select style={{ width:"100%", padding:"8px 10px", border:"1.5px solid #e0e0e0", borderRadius:6, fontSize:12, outline:"none" }}>{(opts||[]).map(o=><option key={o}>{o}</option>)}</select>

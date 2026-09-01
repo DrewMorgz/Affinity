@@ -44,6 +44,7 @@ const MEMBERS = [
   { ref:"AFG-MLT", name:"Affinity (Malta) Limited",       ccy:"EUR", own:100, parent:"AFG-000",role:"Subsidiary" },
   { ref:"AFG-CYM", name:"Affinity (Cayman) Limited",      ccy:"USD", own:100, parent:"AFG-000",role:"Subsidiary" },
   { ref:"AFG-UK",  name:"Affinity (UK) Limited",          ccy:"GBP", own:100, parent:"AFG-000",role:"Subsidiary" },
+  { ref:"AFG-CYP", name:"Affinity (Cyprus) Limited",      ccy:"EUR", own:100, parent:"AFG-000",role:"Subsidiary (new)" },
   { ref:"AFG-SD",  name:"Affinity South Dakota, LLC",     ccy:"USD", own:80,  parent:"AFG-000",role:"Subsidiary (NCI 20%)" },
   { ref:"AFG-FL",  name:"Affinity South Florida, LLC",    ccy:"USD", own:100, parent:"AFG-000",role:"Subsidiary" },
 ];
@@ -57,6 +58,7 @@ const READINESS = {
   "AFG-MLT": [1,1,1,1,0,1,0],   // intercompany unmatched
   "AFG-CYM": [1,0,1,1,1,0,0],   // unmapped accounts
   "AFG-UK":  [1,1,1,1,1,1,1],
+  "AFG-CYP": [1,1,1,0,1,0,0],   // new office — translation and journals outstanding
   "AFG-SD":  [1,1,0,0,0,0,0],   // trial balance out of balance
   "AFG-FL":  [0,0,0,0,0,0,0],   // nothing received
 };
