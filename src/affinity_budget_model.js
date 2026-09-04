@@ -468,16 +468,33 @@ export function computeRecharges(staff, entityCcy = {}, rates = BUDGET_FX, opts 
     });
   });
 
-  // ── Step 2: the group passes on what it received ────────────────────────
-  const grp = out[groupRef];
-  if (grp) {
+  // ── Step 2: the group passes everything on ──────────────────────────────
+  // The group company retains no staff cost. Two things therefore go out:
+  //   a) what it received from other companies (the Florida case), and
+  //   b) the cost of the people it employs directly, less anything already
+  //      recharged out at person level.
+  // Missing (b) would leave the group carrying its own payroll, which is not
+  // how the group is meant to work.
+  const groupOwn = new Array(12).fill(0);
+  (staff || []).forEach((p) => {
+    if ((p.entity || "AFG-IOM") !== groupRef) return;
+    const cost = phaseStaffCost({ ...p, region: p.region }, opts).total;
+    const away = (p.recharges || []).slice(0, MAX_RECHARGE_TARGETS)
+      .reduce((sum, r) => sum + ((r && r.entity && r.entity !== groupRef) ? (Number(r.pct) || 0) : 0), 0);
+    const retained = Math.max(0, 100 - away) / 100;
+    for (let i = 0; i < 12; i++) groupOwn[i] += cost[i] * retained;
+  });
+
+  const hasGroupActivity = out[groupRef] || groupOwn.some((v) => v > 0);
+  if (hasGroupActivity) {
+    const grp = touch(groupRef);
     const groupCcy = entityCcy[groupRef] || "GBP";
     const receivers = Object.keys(allocation).filter((k) => k !== groupRef);
     const totalPct  = receivers.reduce((s, k) => s + (allocation[k] || 0), 0);
 
     if (totalPct > 0) {
       for (let i = 0; i < 12; i++) {
-        const pool = grp.rechargedIn[i];
+        const pool = grp.rechargedIn[i] + groupOwn[i];
         if (!pool) continue;
         grp.groupOnChargeOut[i] += pool;                 // group keeps nothing
         receivers.forEach((ref) => {

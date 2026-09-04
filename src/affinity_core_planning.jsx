@@ -99,10 +99,18 @@ function seedValues() {
   const v = {};
   ACCOUNTS.forEach((a) => {
     if (a.kind !== "input" && a.kind !== "actual") return;
-    const base = a.group === "Revenue" ? 18000 + (Number(a.code) % 7) * 2200
-               : a.group === "Staff costs" ? 26000
-               : a.group === "Direct costs" ? 4200
-               : 3100 + (Number(a.code) % 5) * 400;
+    // Per-account starting figures. Previously every staff-cost account was
+    // seeded at 26,000 a month, which put an absurd recruitment and training
+    // budget on every company and made the group look like it retained cost
+    // when it does not.
+    const base = a.code === "6030" ? 1500          // recruitment & training
+               : a.code === "5000" ? 5400          // government and registry fees
+               : a.code === "5010" ? 2600          // sub-contracted services
+               : a.code === "7000" ? 6800 : a.code === "7010" ? 4200
+               : a.code === "7020" ? 2900 : a.code === "7030" ? 3400
+               : a.code === "7040" ? 1700 : a.code === "7050" ? 1250
+               : a.group === "Revenue" ? 18000 + (Number(a.code) % 7) * 2200
+               : 2500;
     MONTHS.forEach((m, i) => {
       const drift = 1 + (i * 0.006) + (((Number(a.code) + i) % 5) - 2) * 0.012;
       v[a.code + ":" + i] = Math.round((base * drift) / 50) * 50;
@@ -191,6 +199,8 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
     { id:6, name:"Administrator A",dept:"Corporate Services", role:"Administrator",     entity:"AFG-IOM",    annualSalary:34000, changes:[{ month:3, annualSalary:36000 }], bonuses:[] },
     { id:7, name:"Administrator B",dept:"Trust",              role:"Administrator",     entity:"AFG-UK",     annualSalary:32000, changes:[], bonuses:[], leaveMonth:5 },
     { id:8, name:"Trainee (planned)",dept:"Corporate Services",role:"Trainee",          entity:"AFG-FL",     annualSalary:24000, changes:[], bonuses:[], startMonth:8 },
+    { id:9, name:"Group Financial Controller",dept:"Finance",   role:"Controller",        entity:"AFG-000",    annualSalary:64000, changes:[], bonuses:[] },
+    { id:10,name:"Group IT Manager",dept:"IT",                  role:"IT Manager",        entity:"AFG-000",    annualSalary:58000, changes:[], bonuses:[] },
   ]);
 
   const [collectionDays, setCollectionDays] = useState(35);

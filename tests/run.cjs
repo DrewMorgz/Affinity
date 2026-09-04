@@ -573,6 +573,60 @@ group("Budget model — the Florida case: recharge to group, then on to subsidia
      M.rechargeSummary(seventh).targets, 6);
 }
 
+
+group("Budget model — the group company retains no staff cost");
+{
+  const M = require(path.join(SRC, "affinity_budget_model.js"));
+  const CCY = { "AFG-000":"GBP","AFG-IOM":"GBP","AFG-MLT":"EUR","AFG-CYM":"USD",
+                "AFG-UK":"GBP","AFG-CYP":"EUR","AFG-SD":"USD","AFG-FL":"USD" };
+
+  // someone employed directly BY the group, with no person-level recharge
+  const groupStaff = { name:"Group role", entity:"AFG-000", region:"IOM", annualSalary:90000 };
+  const rc = M.computeRecharges([groupStaff], CCY);
+  const cost = M.phaseStaffCost(groupStaff).total;
+
+  ok("the group on-charges its own payroll out", rc["AFG-000"].groupOnChargeOut[0] > 0);
+  eq("all of its own staff cost goes out",
+     rc["AFG-000"].groupOnChargeOut[0], Math.round(cost[0] * 100) / 100);
+  eq("the group is left carrying nothing",
+     Math.round((cost[0] - rc["AFG-000"].groupOnChargeOut[0]) * 100) / 100, 0);
+  ok("the subsidiaries pick it up", rc["AFG-IOM"].groupOnChargeIn[0] > 0 && rc["AFG-MLT"].groupOnChargeIn[0] > 0);
+
+  // combined: group's own payroll AND a recharge received from Florida
+  const florida = { name:"CFO", entity:"AFG-FL", region:"US", annualSalary:120000,
+                    recharges:[{ entity:"AFG-000", pct:100 }] };
+  const both = M.computeRecharges([groupStaff, florida], CCY);
+  ok("the group's on-charge covers both its own cost and what it received",
+     both["AFG-000"].groupOnChargeOut[0] > both["AFG-000"].rechargedIn[0]);
+  eq("group nets to nil overall",
+     Math.round((cost[0] + both["AFG-000"].rechargedIn[0] - both["AFG-000"].groupOnChargeOut[0]) * 100) / 100, 0);
+
+  // and the whole thing still balances group-wide
+  const toGBP = (ref, series) => M.convert(series.reduce((a,b)=>a+b,0), CCY[ref], "GBP");
+  let debits = 0, credits = 0;
+  Object.keys(both).forEach((ref) => {
+    debits  += toGBP(ref, both[ref].rechargedIn) + toGBP(ref, both[ref].groupOnChargeIn);
+    credits += toGBP(ref, both[ref].rechargedOut) + toGBP(ref, both[ref].groupOnChargeOut);
+  });
+  // The recharge lines themselves still net to nil: every on-charge out is
+  // matched by an on-charge in somewhere. The group's own payroll is a real
+  // cost and sits in the staff cost lines, not in these transfer lines — which
+  // is exactly why staff costs are shown gross and recharges separately.
+  eq("the recharge lines net to nil group-wide, both hops included",
+     Math.round((credits - debits) * 100) / 100, 0);
+
+  // a group employee partly recharged directly: only the remainder is on-charged
+  const partly = { entity:"AFG-000", region:"IOM", annualSalary:60000,
+                   recharges:[{ entity:"AFG-IOM", pct:40 }] };
+  const rc3 = M.computeRecharges([partly], CCY);
+  const c3 = M.phaseStaffCost(partly).total[0];
+  eq("40% goes out directly", rc3["AFG-000"].rechargedOut[0], Math.round(c3 * 0.4 * 100) / 100);
+  eq("the remaining 60% goes out via the allocation basis",
+     rc3["AFG-000"].groupOnChargeOut[0], Math.round(c3 * 0.6 * 100) / 100);
+  eq("nothing is double counted",
+     Math.round((rc3["AFG-000"].rechargedOut[0] + rc3["AFG-000"].groupOnChargeOut[0] - c3) * 100) / 100, 0);
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
