@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import AffinityLoginPage from "./affinity_login_page";
+import { signOut as authSignOut } from "./affinity_auth";
 import Planning from "./affinity_core_planning";
 import Consolidation from "./affinity_core_consolidation";
 import JurisdictionCompliance from "./affinity_core_jurisdiction_compliance";
@@ -327,6 +328,24 @@ class ErrorBoundary extends React.Component {
 export default function AffinityCore(){
   const [loggedIn, setLoggedIn] = useState(false);
   const [signedInUser, setSignedInUser] = useState(null);   // set when signed in via Microsoft
+
+  // Signing out. There was previously no way to leave the application at all —
+  // on a shared machine the next person inherited the session, and a laptop
+  // left open stayed signed in.
+  //
+  // Also tells the service worker to drop its caches, so a shared or returned
+  // device is left holding nothing.
+  const handleSignOut = async () => {
+    try { await authSignOut(); } catch (e) { /* sign out locally regardless */ }
+    try {
+      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage("affinity-signed-out");
+      }
+    } catch (e) { /* clearing the cache is best effort */ }
+    setSignedInUser(null);
+    setLoggedIn(false);
+    setSplash(true);
+  };
   const [splash, setSplash] = useState(true);
   const [mod,setMod]=useState("dashboard");
   const [uid,setUid]=useState(1);
@@ -502,6 +521,16 @@ export default function AffinityCore(){
               </div>
               {uid===u.id&&<span style={{color:CY,fontWeight:700,flexShrink:0}}>✓</span>}
             </div>)}
+          </div>
+          {/* Sign out sits at the foot of this panel, separated from the user
+              list — switching user and leaving the application are different
+              intentions and should not look alike. */}
+          <div onClick={handleSignOut}
+               style={{display:"flex",alignItems:"center",gap:8,padding:"11px 12px",cursor:"pointer",
+                       borderTop:"0.5px solid #e5e5e5",flexShrink:0,color:"#A32D2D",
+                       fontSize:12,fontWeight:500}}
+               title="Sign out of Affinity Core on this device">
+            <span style={{fontSize:13}}>⏻</span> Sign out
           </div>
         </div>}
       </div>

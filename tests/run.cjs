@@ -840,6 +840,52 @@ group("Authentication — no route past the login page");
      /client secret may have expired/.test(src));
 }
 
+
+group("Installable app — manifest, and what the service worker must not cache");
+{
+  const root = path.join(SRC, "..");
+  const manifest = JSON.parse(fs.readFileSync(path.join(root, "public/manifest.json"), "utf8"));
+  const sw = fs.readFileSync(path.join(root, "public/service-worker.js"), "utf8");
+  const html = fs.readFileSync(path.join(root, "public/index.html"), "utf8");
+
+  eq("installs in its own window", manifest.display, "standalone");
+  eq("uses Midnight Navy as the theme", manifest.theme_color, "#001242");
+  ok("has both required icon sizes",
+     [192, 512].every((n) => manifest.icons.some((i) => i.sizes === n + "x" + n)));
+  ok("has maskable icons so Android does not crop the wordmark",
+     manifest.icons.some((i) => i.purpose === "maskable"));
+
+  // The service worker exists to make the app installable, NOT to work offline.
+  // Caching client data would put beneficial ownership records on staff laptops
+  // in six jurisdictions and show a stale register as current. Both are worse
+  // than the app simply needing a connection.
+  ok("only same-origin GETs are ever intercepted",
+     /req\.method !== "GET" \|\| url\.origin !== self\.location\.origin/.test(sw));
+  ok("requests carrying an auth token are never cached",
+     /access_token/.test(sw) && /return;/.test(sw));
+  ok("the document is network-first, so a deploy is picked up immediately",
+     /network first/i.test(sw));
+  ok("signing out clears the caches", /affinity-signed-out/.test(sw));
+  ok("the offline notice says no data is held on the device",
+     /never stored on\s*\n?\s*.{0,20}this device|never stored on this device/.test(sw));
+
+  ok("the manifest is linked from the page", /rel="manifest"/.test(html));
+  ok("iOS gets its own icon and title", /apple-touch-icon/.test(html) && /apple-mobile-web-app-title/.test(html));
+  ok("an internal system is not indexed by search engines", /noindex/.test(html));
+}
+
+group("There is a way to sign out");
+{
+  // The application had no sign-out at all. With the preview bypass removed,
+  // sign-in is the only way in — so a shared machine kept the previous
+  // person's session until the browser was closed.
+  const shell = fs.readFileSync(path.join(SRC, "affinity_core_unified_v3.jsx"), "utf8");
+  ok("a sign-out control exists", /Sign out/.test(shell));
+  ok("it calls the auth sign-out", /authSignOut\(\)/.test(shell));
+  ok("it clears the local session state", /setLoggedIn\(false\)/.test(shell));
+  ok("it tells the service worker to drop its caches", /affinity-signed-out/.test(shell));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

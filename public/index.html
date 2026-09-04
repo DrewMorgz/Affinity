@@ -2,10 +2,36 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Affinity Core</title>
+    <meta name="description" content="Practice management for Affinity Group — entities, compliance, time, billing and accounts." />
+
+    <!-- Installable as an application. See public/service-worker.js for what is
+         and is not cached: the shell only, never client data. -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#001242" />
+
+    <!-- iOS does not read the manifest for these -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Affinity Core" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png" />
+
+    <!-- An internal system should never appear in search results. -->
+    <meta name="robots" content="noindex, nofollow" />
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Registered after load so it never delays first paint. Failure is not
+      // reported to the user: it only means the app cannot be installed, which
+      // has no bearing on whether it works.
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("/service-worker.js").catch(function () {});
+        });
+      }
+    </script>
   </body>
 </html>
