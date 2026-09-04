@@ -1,0 +1,37 @@
+# Kong routing: one address in front of PostgREST and GoTrue, so the
+# application needs a single URL exactly as it does with Supabase today.
+_format_version: "2.1"
+
+consumers:
+  # These are the two keys the browser can hold. Neither can bypass the
+  # database grants — that is the point of them being separate from any
+  # service role, which deliberately does not exist in this stack.
+  - username: anon
+    keyauth_credentials:
+      - key: ${ANON_KEY}
+  - username: authenticated
+    keyauth_credentials:
+      - key: ${ANON_KEY}
+
+services:
+  - name: auth
+    url: http://gotrue:9999/
+    routes:
+      - name: auth-all
+        strip_path: true
+        paths: ["/auth/v1/"]
+    plugins:
+      - name: cors
+
+  - name: rest
+    url: http://postgrest:3000/
+    routes:
+      - name: rest-all
+        strip_path: true
+        paths: ["/rest/v1/"]
+    plugins:
+      - name: cors
+      - name: key-auth
+        config:
+          hide_credentials: true
+          key_names: ["apikey"]

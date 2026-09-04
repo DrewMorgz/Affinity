@@ -1,0 +1,110 @@
+# =============================================================================
+# AFFINITY CORE — SELF-HOSTED STACK
+#
+# Runs the parts Supabase currently provides, in Affinity's own Azure tenant.
+# Four containers plus a managed database:
+#
+#   postgres   NOT in this file. Use Azure Database for PostgreSQL — Flexible
+#              Server. Microsoft then handles backups, patching, failover and
+#              point-in-time restore. Running Postgres in a container yourself
+#              means owning all of that, and it is the part most likely to be
+#              neglected until the day it matters.
+#
+#   postgrest  turns the app's 94 function calls into HTTP. This is what makes
+#              supabase.rpc() work; without it the application has no API.
+#
+#   gotrue     the Entra sign-in, JWT issuing and session refresh.
+#
+#   kong       the gateway. One address in front of the two above, so the app
+#              needs one URL exactly as it does today.
+#
+# WHAT CHANGES IN THE APPLICATION: one environment variable. Point
+# REACT_APP_SUPABASE_URL at the Kong address and REACT_APP_SUPABASE_ANON_KEY at
+# the anon JWT generated below. No code changes.
+#
+# Deploy to Azure Container Apps rather than a VM: it scales to zero, handles
+# TLS, and does not need patching.
+# =============================================================================
+
+version: "3.8"
+
+services:
+
+  # ── Gateway ───────────────────────────────────────────────────────────────
+  kong:
+    image: kong:2.8.1
+    restart: unless-stopped
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /var/lib/kong/kong.yml
+      KONG_DNS_ORDER: LAST,A,CNAME
+      KONG_PLUGINS: request-transformer,cors,key-auth
+    volumes:
+      - ./kong.yml:/var/lib/kong/kong.yml:ro
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgrest
+      - gotrue
+
+  # ── The API the application actually calls ────────────────────────────────
+  postgrest:
+    image: postgrest/postgrest:v12.2.0
+    restart: unless-stopped
+    environment:
+      # A dedicated, non-superuser role. PostgREST switches to the role named
+      # in the JWT for each request, which is what makes the grants in db/052
+      # and db/053 enforceable — so this role must NOT be able to bypass them.
+      PGRST_DB_URI: ${DATABASE_URL}
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+      # Keep the schema cache warm; 263 functions take a moment to introspect.
+      PGRST_DB_POOL: 10
+      PGRST_DB_POOL_ACQUISITION_TIMEOUT: 10
+      # Deliberately off. The app calls named functions; it has no need to
+      # issue arbitrary queries, and leaving this on widens the surface for no
+      # benefit.
+      PGRST_DB_PLAN_ENABLED: "false"
+      PGRST_OPENAPI_MODE: disabled
+
+  # ── Sign-in ───────────────────────────────────────────────────────────────
+  gotrue:
+    image: supabase/gotrue:v2.158.1
+    restart: unless-stopped
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: ${PUBLIC_URL}
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: ${DATABASE_URL_AUTH}
+
+      GOTRUE_SITE_URL: ${SITE_URL}
+      GOTRUE_URI_ALLOW_LIST: ${REDIRECT_URLS}
+      GOTRUE_JWT_SECRET: ${JWT_SECRET}
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+
+      # Entra. Same application registration as today — the redirect URI
+      # changes from Supabase's callback to this stack's.
+      GOTRUE_EXTERNAL_AZURE_ENABLED: "true"
+      GOTRUE_EXTERNAL_AZURE_CLIENT_ID: ${AZURE_CLIENT_ID}
+      GOTRUE_EXTERNAL_AZURE_SECRET: ${AZURE_CLIENT_SECRET}
+      GOTRUE_EXTERNAL_AZURE_URL: ${AZURE_TENANT_URL}
+      GOTRUE_EXTERNAL_AZURE_REDIRECT_URI: ${PUBLIC_URL}/auth/v1/callback
+
+      # Sign-in is the only route in, so everything else stays off.
+      GOTRUE_DISABLE_SIGNUP: "true"          # Entra decides who exists
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "false" # no passwords
+      GOTRUE_EXTERNAL_PHONE_ENABLED: "false"
+      GOTRUE_MAILER_AUTOCONFIRM: "true"      # Entra has already verified them
+
+      # The session controls that were unavailable on Supabase's free plan.
+      # A laptop left open in a meeting room should not stay signed in.
+      GOTRUE_SESSION_TIMEBOX: 12h
+      GOTRUE_SESSION_INACTIVITY_TIMEOUT: 2h
+      GOTRUE_SECURITY_REFRESH_TOKEN_ROTATION_ENABLED: "true"
+      GOTRUE_SECURITY_REFRESH_TOKEN_REUSE_INTERVAL: 10
+
+      GOTRUE_LOG_LEVEL: info
