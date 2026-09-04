@@ -532,7 +532,11 @@ export default function AffinityCore(){
           </div>
           {/* Shortcuts help */}
           {!mobile&&<button onClick={e=>{e.stopPropagation();setShortcutsOpen(p=>!p);}} title="Keyboard shortcuts" style={{width:32,height:32,borderRadius:6,border:"0.5px solid #e5e5e5",background:"transparent",cursor:"pointer",fontSize:13,color:"#999",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:600}}>?</button>}
-          <span style={{display:mobile?"none":"inline",fontSize:11,color:"#999"}}>14 Jul 2025</span>
+          {/* Today's date. This was hardcoded to a fixed day, which every user
+              would have seen as the date forever. */}
+          <span style={{display:mobile?"none":"inline",fontSize:11,color:"#999"}}>
+            {new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"})}
+          </span>
           {/* PDF export */}
           {!mobile&&<button onClick={e=>{e.stopPropagation();window.print();}} title="Export current view as PDF" style={{width:32,height:32,borderRadius:6,border:"0.5px solid #e5e5e5",background:"transparent",cursor:"pointer",fontSize:13,color:"#999",display:"flex",alignItems:"center",justifyContent:"center"}}>⬇️</button>}
           <div style={{width:30,height:30,borderRadius:"50%",background:user.c,color:"#fff",fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{user.av}</div>
