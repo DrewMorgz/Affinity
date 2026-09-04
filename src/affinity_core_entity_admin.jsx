@@ -1395,7 +1395,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
                   {tab==="fatca"&&<FATCATab entity={entity}/>}
                   {tab==="crs"&&<CRSTab entity={entity}/>}
                   {tab==="substance"&&<SubstanceTab entity={entity}/>}
-                  {tab==="structure"&&<div style={{margin:"-20px -24px"}}><EntityChart/></div>}
+                  {tab==="structure"&&<div style={{margin:"-20px -24px"}}><EntityChart onNav={onNav}/></div>}
                   {tab==="egaming_reg"&&<div style={{margin:"-14px -20px"}}>
                     <AffinityEGaming entity={entity} onNav={onNav}/>
                     {/* Gaming compliance log — the same register catalogue as Compliance,

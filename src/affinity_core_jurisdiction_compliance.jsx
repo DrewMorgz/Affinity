@@ -80,7 +80,7 @@ const statusC = {
 const th = { padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:600, color:"#666", textTransform:"uppercase", letterSpacing:"0.4px", borderBottom:"0.5px solid #e5e5e5", background:"#f9f9f9" };
 const td = { padding:"9px 12px", fontSize:11, borderBottom:"0.5px solid #e5e5e5" };
 
-export default function AffinityJurisdictionCompliance() {
+export default function AffinityJurisdictionCompliance({ onNav }) {
   const [liveJ,setLiveJ]=useState(null);
   useEffect(()=>{ if(!isConfigured) return; let ok=true; getDatasets("jur.").then(({data})=>{ if(ok&&data&&data.length){ const r=data.find(x=>x.dkey==="jur.info"); if(r)setLiveJ(r.data);} }).catch(()=>{}); return ()=>{ok=false;}; },[]);
   const [jur, setJur]   = useState("Cayman");
@@ -102,7 +102,7 @@ export default function AffinityJurisdictionCompliance() {
         </div>
         <div style={{ display:"flex", gap:5 }}>
           {["Entity Admin","Compliance","Statutory"].map(n=><button key={n} style={{ ...nb, color:"#8892b0", borderColor:"#334" }}>{n}</button>)}
-          <button style={nba} disabled title="Needs a write function that is not built yet">Jurisdiction</button>
+          <button style={nba} disabled disabled aria-current="page" title="You are already on this page">Jurisdiction</button>
         </div>
       </div>
 
@@ -236,7 +236,7 @@ export default function AffinityJurisdictionCompliance() {
                     <td style={td}><Badge label={e.risk} colors={{ Low:{bg:"#EAF3DE",color:"#27500A"}, Medium:{bg:"#FAEEDA",color:"#633806"}, High:{bg:"#FCEBEB",color:"#A32D2D"}, "Very High":{bg:"#F7C1C1",color:"#501313"} }[e.risk]||{bg:"#eee",color:"#666"}} /></td>
                     <td style={{ ...td, color:"#666" }}>{e.administrator}</td>
                     <td style={td}>{e.issues>0?<Badge label={e.issues+" open"} colors={{ bg:"#FCEBEB", color:"#A32D2D" }} />:<span style={{ color:"#4CAF7D", fontSize:11 }}>✓ None</span>}</td>
-                    <td style={td}><button style={{ ...nb, fontSize:10 }} disabled title="Needs a write function that is not built yet">Open in Entity Admin ↗</button></td>
+                    <td style={td}><button style={{ ...nb, fontSize:10 }} onClick={()=>onNav&&onNav("entities")}>Open in Entity Admin ↗</button></td>
                   </tr>
                 ))}
               </tbody>

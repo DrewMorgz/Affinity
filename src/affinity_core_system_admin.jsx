@@ -287,7 +287,7 @@ export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false })
         <div style={s.logo}>System Admin</div>
         <div style={{ display:"flex", gap:5 }}>
           {["Entities","Compliance","Documents","Invoicing","Reporting"].map(n=><button key={n} style={nb} onClick={()=>onNav&&onNav({Entities:"entities",Compliance:"compliance",Timesheets:"timesheets",Invoicing:"invoicing",Reporting:"reporting",Documents:"documents",Bookkeeping:"bookkeeping"}[n])}>{n}</button>)}
-          <button style={nbActive} disabled title="Needs a write function that is not built yet">System</button>
+          <button style={nbActive} disabled disabled aria-current="page" title="You are already on this page">System</button>
         </div>
       </div>
 

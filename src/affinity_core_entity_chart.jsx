@@ -112,7 +112,7 @@ function Edge({ from, to, pct }) {
   );
 }
 
-export default function AffinityEntityChart() {
+export default function AffinityEntityChart({ onNav }) {
   const [liveS,setLiveS]=useState(null);
   useEffect(()=>{ if(!isConfigured) return; let ok=true; getDatasets("chart.").then(({data})=>{ if(ok&&data&&data.length){ const r=data.find(x=>x.dkey==="chart.structures"); if(r&&r.data&&r.data.length)setLiveS(r.data);} }).catch(()=>{}); return ()=>{ok=false;}; },[]);
   const structures = liveS || STRUCTURES;
@@ -145,8 +145,8 @@ export default function AffinityEntityChart() {
           <span style={{ color:"#8892b0", fontSize:13 }}>Entity Structure</span>
         </div>
         <div style={{ display:"flex", gap:6 }}>
-          <button style={{ ...nb, color:"#8892b0", borderColor:"#334" }} disabled title="Needs a write function that is not built yet">Entity Admin ↗</button>
-          <button style={nba} disabled title="Needs a write function that is not built yet">Structure chart</button>
+          <button style={{ ...nb, color:"#8892b0", borderColor:"#334" }} onClick={()=>onNav&&onNav("entities")}>Entity Admin ↗</button>
+          <button style={nba} onClick={()=>onNav&&onNav("entity_chart")}>Structure chart</button>
         </div>
       </div>
 
@@ -243,8 +243,8 @@ export default function AffinityEntityChart() {
                 )}
               </div>
               <div style={{ marginTop:14, display:"flex", flexDirection:"column", gap:6 }}>
-                <button style={nba} disabled title="Needs a write function that is not built yet">Open in Entity Admin ↗</button>
-                <button style={nb} disabled title="Needs a write function that is not built yet">View documents ↗</button>
+                <button style={nba} onClick={()=>onNav&&onNav("entities")}>Open in Entity Admin ↗</button>
+                <button style={nb} onClick={()=>onNav&&onNav("documents")}>View documents ↗</button>
               </div>
             </div>
           )}

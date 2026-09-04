@@ -121,7 +121,7 @@ export default function AffinityStatutory() {
         </div>
         <div style={{ display:"flex", gap:5 }}>
           {["Entity Admin","Compliance","Documents"].map(n => <button key={n} style={{ ...nb, color:"#8892b0", borderColor:"#334" }}>{n}</button>)}
-          <button style={nba} disabled title="Needs a write function that is not built yet">Statutory</button>
+          <button style={nba} disabled disabled aria-current="page" title="You are already on this page">Statutory</button>
         </div>
       </div>
       {/* Entity search — same component on every page showing client data */}

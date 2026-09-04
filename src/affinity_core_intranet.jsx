@@ -66,7 +66,7 @@ function Clock({office}) {
   );
 }
 
-export default function AffinityIntranet() {
+export default function AffinityIntranet({ onNav }) {
   const [ds,setDs]=useState(null);
   useEffect(()=>{ if(!isConfigured) return; let ok=true; getDatasets("intranet.").then(({data})=>{ if(ok&&data&&data.length){ const m={}; data.forEach(r=>{m[r.dkey.split(".")[1]]=r.data;}); setDs(m);} }).catch(()=>{}); return ()=>{ok=false;}; },[]);
   const OFFICESL=(ds&&ds.OFFICES)||OFFICES, NEWSL=(ds&&ds.NEWS)||NEWS, EVENTSL=(ds&&ds.EVENTS)||EVENTS, RESOURCESL=(ds&&ds.RESOURCES)||RESOURCES, ADVENTURE_VALUESL=(ds&&ds.VALUES)||ADVENTURE_VALUES;

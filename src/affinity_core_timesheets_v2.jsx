@@ -164,7 +164,7 @@ export default function AffinityTimesheets({ onNav }) {
         <div style={{ fontSize:18, fontWeight:500, color:"#001242" }}>Timesheets</div>
         <div style={{ display:"flex", gap:5 }}>
           {["Entities","Compliance","Invoicing","Reporting"].map(n=><button key={n} style={nb} onClick={()=>onNav&&onNav({Entities:"entities",Compliance:"compliance",Timesheets:"timesheets",Invoicing:"invoicing",Reporting:"reporting",Documents:"documents",Bookkeeping:"bookkeeping"}[n])}>{n}</button>)}
-          <button style={nba} disabled title="Needs a write function that is not built yet">Timesheets</button>
+          <button style={nba} disabled disabled aria-current="page" title="You are already on this page">Timesheets</button>
         </div>
       </div>
       {/* Entity search — same component on every page showing client data */}
