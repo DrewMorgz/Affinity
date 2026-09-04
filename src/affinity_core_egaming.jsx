@@ -239,7 +239,7 @@ export default function AffinityEGaming({ entity, onNav }) {
                 {rtns.filter(r=>r.status==="Overdue").map(r=>(
                   <div key={r.id} style={{ fontSize:11, color:"#A32D2D", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                     <span>{r.entity} — {r.ref} — due {r.due}</span>
-                    <button style={{ ...nba, background:"#EF4444", borderColor:"#EF4444", fontSize:10 }} disabled title="This shortcut is not routed yet — open the record and act on it there">Take action ↗</button>
+                    <button style={{ ...nba, background:"#EF4444", borderColor:"#EF4444", fontSize:10 }} title="Open the entity to act on this return" onClick={()=>onNav&&onNav("entities")}>Take action ↗</button>
                   </div>
                 ))}
               </div>
@@ -436,7 +436,7 @@ export default function AffinityEGaming({ entity, onNav }) {
                     <td style={td}><Badge label={c.type} colors={{ "Licence breach":{bg:"#FCEBEB",color:"#A32D2D"}, "Player complaint":{bg:"#FAEEDA",color:"#633806"}, "AML/KYC review":{bg:"#EAF3DE",color:"#27500A"}, "GSC query response":{bg:"#E6F7FB",color:"#0077A8"} }[c.type]||{bg:"#eee",color:"#666"}} /></td>
                     <td style={td}><Badge label={c.status} colors={statusC[c.status]||{bg:"#eee",color:"#666"}} /></td>
                     <td style={{ ...td, maxWidth:300, whiteSpace:"normal", fontSize:10, color:"#444", lineHeight:1.4 }}>{c.detail}</td>
-                    <td style={td}>{c.status==="Open"?<button style={{ ...nba, fontSize:10 }} disabled title="This shortcut is not routed yet — open the record and act on it there">Resolve ↗</button>:<button style={{ ...nb, fontSize:10 }} disabled title="Not routed yet — open the record from its own module">View ↗</button>}</td>
+                    <td style={td}>{c.status==="Open"?<button style={{ ...nba, fontSize:10 }} title="Open Compliance to resolve this issue" onClick={()=>onNav&&onNav("compliance")}>Resolve ↗</button>:<button style={{ ...nb, fontSize:10 }} title="View this in Compliance" onClick={()=>onNav&&onNav("compliance")}>View ↗</button>}</td>
                   </tr>
                 ))}
               </tbody>

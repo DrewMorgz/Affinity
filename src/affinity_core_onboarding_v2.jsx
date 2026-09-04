@@ -407,7 +407,7 @@ export default function AffinityOnboarding({ initialView , onNav }) {
                   <td style={{ ...td, color:"#666" }}>{r.sent}</td>
                   <td style={{ ...td, color:r.status==="Expired"?"#EF4444":"#666" }}>{r.exp}</td>
                   <td style={td}><Badge label={r.status} colors={{ Completed:{bg:"#EAF3DE",color:"#27500A"}, "Accessed — incomplete":{bg:"#FAEEDA",color:"#633806"}, "Awaiting response":{bg:"#E6F7FB",color:"#0077A8"}, Expired:{bg:"#FCEBEB",color:"#A32D2D"} }[r.status]||{bg:"#eee",color:"#666"}} /></td>
-                  <td style={td}>{r.status==="Expired"?<button style={{ ...nb, fontSize:10 }} onClick={reInvite}>Re-invite</button>:<button style={{ ...nb, fontSize:10 }} disabled title="Not routed yet — open the record from its own module">View ↗</button>}</td>
+                  <td style={td}>{r.status==="Expired"?<button style={{ ...nb, fontSize:10 }} onClick={reInvite}>Re-invite</button>:<button style={{ ...nb, fontSize:10 }} title="Open the client portal view" onClick={()=>onNav&&onNav("client_portal")}>View ↗</button>}</td>
                 </tr>
               ))}
             </tbody>

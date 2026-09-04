@@ -82,6 +82,31 @@ export default function AffinityInvoicing({ onNav }) {
   // A printable invoice, and chase or reminder messages prepared for the
   // user's mail client. Sending an invoice unattended needs a mail service,
   // which is a separate build — this covers a person sending it from their desk.
+  // A line on an unsaved draft exists only in the form; once the draft has been
+  // saved to the database the line has an id and must be removed there too.
+  // The builder's lines are state so they can be added to and removed from.
+  // They were a hardcoded array, which is why removal had nothing to act on.
+  const [lineItems, setLineItems] = useState([
+    { id:1, desc:"Annual administration fee — FY2025/26", type:"Annual fee",   units:1, rate:19800, amount:19800 },
+    { id:2, desc:"Director services — Q3 2025",           type:"Disbursement", units:1, rate:3600,  amount:3600  },
+    { id:3, desc:"Compliance review — periodic",          type:"Time",         units:3, rate:250,   amount:750   },
+  ]);
+
+  const addLine = () => setLineItems((prev) => [...prev,
+    { id: Date.now(), desc:"", type:"Time", units:1, rate:0, amount:0 }]);
+
+  const removeLine = async (item) => {
+    if (item && item.dbId) {
+      const res = await DW.invLineRemove(item.dbId);
+      if (res && !res.ok) { setOutMsg(res.error || "That line could not be removed."); return; }
+    }
+    if (typeof setLineItems === "function") {
+      setLineItems((prev) => prev.filter((l) => l !== item));
+    } else {
+      setOutMsg("Line removed from the draft.");
+    }
+  };
+
   const printInvoice = () => {
     const inv = (typeof selInv !== "undefined" && selInv) ? selInv : null;
     if (!inv) { setOutMsg("Select an invoice first."); return; }
@@ -290,23 +315,19 @@ export default function AffinityInvoicing({ onNav }) {
                 {["Description","Type","Units","Rate","Amount",""].map(h=><th key={h} style={{padding:"7px 10px",textAlign:"left",fontSize:10,fontWeight:600,color:"#666",textTransform:"uppercase",letterSpacing:"0.4px",borderBottom:"0.5px solid #e5e5e5"}}>{h}</th>)}
               </tr></thead>
               <tbody>
-                {[
-                  {desc:"Annual administration fee — FY2025/26",type:"Annual fee",units:1,rate:19800,amount:19800},
-                  {desc:"Director services — Q3 2025",type:"Disbursement",units:1,rate:3600,amount:3600},
-                  {desc:"Compliance review — periodic",type:"Time",units:3,rate:250,amount:750},
-                ].map((item,i)=>(
+                {lineItems.map((item,i)=>(
                   <tr key={i} style={{borderBottom:"0.5px solid #f0f0f0"}}>
                     <td style={{padding:"8px 10px"}}><input defaultValue={item.desc} style={{width:"100%",border:"none",fontSize:12,outline:"none",background:"transparent"}}/></td>
                     <td style={{padding:"8px 10px"}}><select defaultValue={item.type} style={{border:"none",fontSize:11,outline:"none",background:"transparent",color:"#666"}}><option>Annual fee</option><option>Time</option><option>Disbursement</option><option>One-off</option></select></td>
                     <td style={{padding:"8px 10px"}}><input defaultValue={item.units} type="number" style={{width:50,border:"none",fontSize:12,outline:"none",background:"transparent",textAlign:"center"}}/></td>
                     <td style={{padding:"8px 10px"}}><input defaultValue={"£"+item.rate.toLocaleString()} style={{width:80,border:"none",fontSize:12,outline:"none",background:"transparent"}}/></td>
                     <td style={{padding:"8px 10px",fontWeight:600}}>{"£"+item.amount.toLocaleString()}</td>
-                    <td style={{padding:"8px 10px"}}><button disabled title="Removing an invoice line needs the write layer" style={{background:"none",border:"none",color:"#EF4444",cursor:"pointer",fontSize:14}}>×</button></td>
+                    <td style={{padding:"8px 10px"}}><button title="Remove this line" onClick={()=>removeLine(item)} style={{background:"none",border:"none",color:"#EF4444",cursor:"pointer",fontSize:14}}>×</button></td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <button style={{padding:"6px 14px",borderRadius:5,border:"0.5px solid #00C4CC",background:"transparent",color:"#00C4CC",fontSize:11,cursor:"pointer"}} onClick={addInvoiceLine}>＋ Add line item</button>
+            <button style={{padding:"6px 14px",borderRadius:5,border:"0.5px solid #00C4CC",background:"transparent",color:"#00C4CC",fontSize:11,cursor:"pointer"}} onClick={()=>{ addLine(); addInvoiceLine(); }}>＋ Add line item</button>
 
             <div style={{marginTop:16,display:"flex",justifyContent:"flex-end"}}>
               <div style={{minWidth:220}}>

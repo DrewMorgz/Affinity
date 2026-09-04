@@ -246,7 +246,7 @@ export default function AffinityProcedures() {
                   </div>
                   <div style={{ display:"flex", gap:8, alignItems:"center" }}>
                     <span style={{ fontSize:11, color:"#aaa" }}>{r.assignee}</span>
-                    <button style={{ ...nba, fontSize:10 }} disabled title="Not routed yet — open the record from its own module">Open ↗</button>
+                    <button style={{ ...nba, fontSize:10 }} title="Open this run" onClick={()=>{ if(typeof setSelRun==="function") setSelRun(r); else if(typeof setView==="function") setView("runs"); }}>Open ↗</button>
                   </div>
                 </div>
                 <div style={{ display:"flex", alignItems:"center", gap:10 }}>

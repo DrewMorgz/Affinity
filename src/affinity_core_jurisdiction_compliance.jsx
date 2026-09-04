@@ -224,7 +224,7 @@ export default function AffinityJurisdictionCompliance({ onNav }) {
                 {obligations.filter(o=>o.status==="Overdue").map(o=>(
                   <div key={o.id} style={{ fontSize:11, color:"#A32D2D", display:"flex", justifyContent:"space-between", alignItems:"center", padding:"3px 0" }}>
                     <span>{o.title} · Due: {o.due} · Owner: {o.owner}</span>
-                    <button style={{ ...nb, fontSize:10, borderColor:"#EF4444", color:"#EF4444" }} disabled title="This shortcut is not routed yet — open the record and act on it there">Action ↗</button>
+                    <button style={{ ...nb, fontSize:10, borderColor:"#EF4444", color:"#EF4444" }} title="Open Statutory to action this obligation" onClick={()=>onNav&&onNav("statutory")}>Action ↗</button>
                   </div>
                 ))}
               </div>
@@ -285,7 +285,7 @@ export default function AffinityJurisdictionCompliance({ onNav }) {
                     <td style={{ ...td, color:o.status==="Overdue"?"#EF4444":"#666", fontWeight:o.status==="Overdue"?600:400 }}>{o.due}</td>
                     <td style={{ ...td, color:"#666" }}>{o.owner}</td>
                     <td style={td}><Badge label={o.status} colors={statusC[o.status]||{bg:"#eee",color:"#666"}} /></td>
-                    <td style={td}>{o.status==="Overdue"?<button style={{ ...nb, fontSize:10, borderColor:"#EF4444", color:"#EF4444" }} onClick={openPortal}>File ↗</button>:<button style={{ ...nb, fontSize:10 }} disabled title="Not routed yet — open the record from its own module">View ↗</button>}</td>
+                    <td style={td}>{o.status==="Overdue"?<button style={{ ...nb, fontSize:10, borderColor:"#EF4444", color:"#EF4444" }} onClick={openPortal}>File ↗</button>:<button style={{ ...nb, fontSize:10 }} title="View this obligation in Statutory" onClick={()=>onNav&&onNav("statutory")}>View ↗</button>}</td>
                   </tr>
                 ))}
               </tbody>
@@ -375,7 +375,7 @@ export default function AffinityJurisdictionCompliance({ onNav }) {
                 <div key={i} style={{ display:"flex", gap:12, padding:"9px 0", borderBottom:"0.5px solid #f5f5f5", alignItems:"center" }}>
                   <span style={{ width:24, height:24, borderRadius:"50%", background:"#E6F7FB", color:CY, fontSize:11, fontWeight:700, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>{i+1}</span>
                   <span style={{ fontSize:12, fontWeight:500 }}>{l}</span>
-                  <button style={{ ...nb, fontSize:10, marginLeft:"auto", flexShrink:0 }} disabled title="Not routed yet — open the record from its own module">View ↗</button>
+                  <button style={{ ...nb, fontSize:10, marginLeft:"auto", flexShrink:0 }} title="View this obligation in Statutory" onClick={()=>onNav&&onNav("statutory")}>View ↗</button>
                 </div>
               ))}
             </div>

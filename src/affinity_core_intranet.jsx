@@ -264,7 +264,7 @@ export default function AffinityIntranet({ onNav }) {
             <div style={{flex:1}}>
               <div style={{fontSize:12,fontWeight:600,color:NAVY,marginBottom:3}}>{r.name}</div>
               <div style={{fontSize:11,color:"#666",lineHeight:1.5}}>{r.desc}</div>
-              <button style={{marginTop:6,fontSize:11,color:CY,background:"none",border:"none",cursor:"pointer",padding:0}} disabled title="Not routed yet — open the record from its own module">Open ↗</button>
+              <button style={{marginTop:6,fontSize:11,color:CY,background:"none",border:"none",cursor:"pointer",padding:0}} title="Open the document library" onClick={()=>onNav&&onNav("documents")}>Open ↗</button>
             </div>
           </div>
         ))}
