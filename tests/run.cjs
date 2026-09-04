@@ -782,6 +782,47 @@ group("Output — spreadsheet export and printable documents");
      OUT.openRegulatorPortal("Nowhere").ok === false);
 }
 
+
+group("Authentication — identity matching");
+{
+  // Staff records hold firstname.surname@ but real Entra accounts vary. The
+  // CEO's actual account is andy@affinityco.com against a record for
+  // andrew.morgan@affinityco.com, which the original exact-match logic missed —
+  // he would have signed in on the least privileged role.
+  const Module = require("module");
+  const supaPath = path.join(SRC, "affinity_accounting_supabase.js");
+  const realJs = require.extensions[".js"];
+  require.extensions[".js"] = function (m, f) {
+    if (f === supaPath) return m._compile("exports.supabase=null;exports.isConfigured=false;", f);
+    return realJs(m, f);
+  };
+  const A = require(path.join(SRC, "affinity_auth.js"));
+  require.extensions[".js"] = realJs;
+
+  const STAFF = [
+    { id: 1, name: "Andy Morgan", firstName: "Andrew",
+      email: "andrew.morgan@affinityco.com", role: "Super Admin" },
+    { id: 2, name: "Roxy Sheeley", firstName: "Roxy",
+      email: "roxy.sheeley@affinityco.com", role: "Director" },
+  ];
+  const who = (email, display) =>
+    A.identityFromSession({ user: { email, user_metadata: { full_name: display } } }, STAFF);
+
+  eq("an exact email matches", who("andrew.morgan@affinityco.com", "Andy Morgan").role, "Super Admin");
+  eq("a short account matches on display name", who("andy@affinityco.com", "Andy Morgan").role, "Super Admin");
+  eq("initial.surname matches", who("a.morgan@affinityco.com", "Andrew Morgan").role, "Super Admin");
+  eq("knownas.surname matches", who("andy.morgan@affinityco.com", "Andy Morgan").role, "Super Admin");
+  eq("a first name alone matches", who("roxy@affinityco.com", "Roxy Sheeley").role, "Director");
+
+  // The safety property that matters more than any match: an unrecognised
+  // account must never inherit privilege.
+  const unknown = who("brand.new@affinityco.com", "Brand New");
+  ok("an unmatched account is not treated as matched", unknown.matched === false);
+  eq("...and defaults to the least privileged role", unknown.role, "Administrator");
+  ok("...but is still let in rather than locked out", !!unknown.email);
+  ok("a session with no user yields nothing", A.identityFromSession(null, STAFF) === null);
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

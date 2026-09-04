@@ -62,9 +62,18 @@ export function onAuthChange(cb) {
 
 // Map the signed-in Entra identity onto a Core staff record.
 //
-// Matching is on work email. Entra group-to-role mapping comes next: until the
-// groups exist, everyone lands on the least-privileged role rather than the
-// most, so a mapping gap cannot hand out System Admin by accident.
+// Matching is on work email, but the two do not always agree. Staff records
+// hold firstname.surname@affinityco.com while real Entra accounts may be
+// shorter or use a known-as name — andy@affinityco.com against a record for
+// andrew.morgan@affinityco.com, for instance. So matching tries, in order:
+//   1. the email exactly
+//   2. the local part against the record's local part
+//   3. firstname. prefix (andrew.morgan@ for a record named Andrew)
+//   4. the display name from Entra against the record's name
+//
+// If none match, the user still gets in but on the LEAST privileged role, so a
+// matching gap can never hand out System Admin by accident. It is logged so
+// the mismatch can be corrected rather than silently tolerated.
 export function identityFromSession(session, staff) {
   if (!session || !session.user) return null;
   const u = session.user;
@@ -72,11 +81,38 @@ export function identityFromSession(session, staff) {
   const claims = u.user_metadata || {};
   const displayName = claims.full_name || claims.name || u.email || "Unknown user";
 
-  const match = (staff || []).find(
-    (s) => (s.email || "").toLowerCase() === email
-  ) || (staff || []).find(
-    (s) => email.startsWith((s.firstName || "").toLowerCase() + ".")
-  );
+  const list  = staff || [];
+  const local = email.split("@")[0];
+  const norm  = (v) => String(v || "").toLowerCase().replace(/[^a-z]/g, "");
+
+  const match =
+    // 1. exact email
+    list.find((s) => (s.email || "").toLowerCase() === email) ||
+    // 2. same local part
+    list.find((s) => (s.email || "").toLowerCase().split("@")[0] === local) ||
+    // 3. firstname. prefix
+    list.find((s) => (s.firstName || "") &&
+                     local === String(s.firstName).toLowerCase()) ||
+    list.find((s) => (s.firstName || "") &&
+                     local.startsWith(String(s.firstName).toLowerCase() + ".")) ||
+    // 4. the Entra display name against the record name, ignoring punctuation
+    list.find((s) => norm(s.name) && norm(s.name) === norm(displayName)) ||
+    // 5. surname in the local part with a matching first initial — catches
+    //    a.morgan@ and andy.morgan@ against a record for Andrew Morgan
+    list.find((s) => {
+      const parts = String(s.name || "").toLowerCase().split(/\s+/);
+      if (parts.length < 2) return false;
+      const surname = parts[parts.length - 1];
+      const initial = parts[0][0];
+      return surname.length > 2 && local.includes(surname) && local[0] === initial;
+    });
+
+  if (!match && typeof console !== "undefined" && console.warn) {
+    // Worth surfacing: the person is in, but on the least privileged role,
+    // which will look like missing permissions rather than a bad match.
+    console.warn("Signed in as " + email + " but no Core staff record matched. "
+      + "Role defaulted to Administrator — add the email to the staff record in System admin.");
+  }
 
   return {
     id: match ? match.id : null,
