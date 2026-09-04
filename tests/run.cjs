@@ -511,6 +511,68 @@ group("Budget model — staff recharges across companies");
   ok("an unknown currency is left alone rather than corrupted", M.convert(100, "XXX", "GBP") === 100);
 }
 
+
+group("Budget model — the Florida case: recharge to group, then on to subsidiaries");
+{
+  const M = require(path.join(SRC, "affinity_budget_model.js"));
+  const CCY = { "AFG-000":"GBP","AFG-IOM":"GBP","AFG-MLT":"EUR","AFG-CYM":"USD",
+                "AFG-UK":"GBP","AFG-CYP":"EUR","AFG-SD":"USD","AFG-FL":"USD" };
+
+  eq("up to six recharge targets per person", M.MAX_RECHARGE_TARGETS, 6);
+  ok("a group allocation basis exists", Object.keys(M.GROUP_ALLOCATION).length >= 6);
+  eq("the group allocation sums to 100",
+     Object.values(M.GROUP_ALLOCATION).reduce((a,b)=>a+b,0), 100);
+
+  // paid by Florida, wholly recharged to Group, which passes it on
+  const cfo = { name:"Group CFO", entity:"AFG-FL", region:"US", annualSalary:120000,
+                recharges:[{ entity:"AFG-000", pct:100 }] };
+  const rc = M.computeRecharges([cfo], CCY);
+
+  ok("Florida recharges the cost out", rc["AFG-FL"].rechargedOut[0] > 0);
+  ok("the group receives it", rc["AFG-000"].rechargedIn[0] > 0);
+  ok("the group then passes all of it on", rc["AFG-000"].groupOnChargeOut[0] > 0);
+  eq("the group keeps nothing",
+     Math.round((rc["AFG-000"].rechargedIn[0] - rc["AFG-000"].groupOnChargeOut[0]) * 100) / 100, 0);
+
+  ok("the Isle of Man picks up its share", rc["AFG-IOM"].groupOnChargeIn[0] > 0);
+  ok("Malta picks up its share",           rc["AFG-MLT"].groupOnChargeIn[0] > 0);
+  ok("Cayman picks up its share",          rc["AFG-CYM"].groupOnChargeIn[0] > 0);
+  ok("Cyprus picks up its share",          rc["AFG-CYP"].groupOnChargeIn[0] > 0);
+  ok("the Isle of Man share is larger than Cyprus's, per the basis",
+     rc["AFG-IOM"].groupOnChargeIn[0] > rc["AFG-CYP"].groupOnChargeIn[0]);
+
+  // the shares arrive in each company's own currency
+  const iomShare = rc["AFG-IOM"].groupOnChargeIn[0];
+  const mltShare = rc["AFG-MLT"].groupOnChargeIn[0];
+  ok("Malta's share is stated in euro, not sterling",
+     Math.abs(mltShare - M.convert(mltShare, "EUR", "GBP")) > 0.01);
+
+  // THE INVARIANT: two steps of recharge must still net to nil group-wide
+  const toGBP = (ref, series) => M.convert(series.reduce((a,b)=>a+b,0), CCY[ref], "GBP");
+  let debits = 0, credits = 0;
+  Object.keys(rc).forEach((ref) => {
+    debits  += toGBP(ref, rc[ref].rechargedIn) + toGBP(ref, rc[ref].groupOnChargeIn);
+    credits += toGBP(ref, rc[ref].rechargedOut) + toGBP(ref, rc[ref].groupOnChargeOut);
+  });
+  ok("a two-step recharge still nets to nil across the group",
+     Math.abs(debits - credits) < 0.10, "debits " + debits.toFixed(2) + " credits " + credits.toFixed(2));
+
+  // six targets at once
+  const spread6 = { entity:"AFG-IOM", region:"IOM", annualSalary:90000, recharges:[
+    { entity:"AFG-MLT", pct:10 }, { entity:"AFG-CYM", pct:10 }, { entity:"AFG-UK", pct:10 },
+    { entity:"AFG-CYP", pct:10 }, { entity:"AFG-SD", pct:10 },  { entity:"AFG-FL", pct:10 },
+  ]};
+  const rc6 = M.computeRecharges([spread6], CCY);
+  eq("all six targets receive a share",
+     ["AFG-MLT","AFG-CYM","AFG-UK","AFG-CYP","AFG-SD","AFG-FL"].filter((r)=>rc6[r] && rc6[r].rechargedIn[0] > 0).length, 6);
+  eq("the summary counts the targets", M.rechargeSummary(spread6).targets, 6);
+  eq("and the retained share", M.rechargeSummary(spread6).retained, 40);
+  const seventh = { entity:"AFG-IOM", annualSalary:50000, recharges:
+    Array.from({length:8}, (_,k)=>({ entity:"AFG-MLT", pct:5 })) };
+  eq("a seventh target is ignored rather than silently double counted",
+     M.rechargeSummary(seventh).targets, 6);
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

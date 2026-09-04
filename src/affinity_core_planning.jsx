@@ -26,7 +26,8 @@ import { budgetList, budgetGrid, setBudgetCell, submitBudget, approveBudget, piv
 import { phaseFee, phaseFees, phaseHeadcount, phaseStaffCost, projectBalanceSheet, daysInMonth,
          FREQUENCIES, PHASING, COST_CENTRES, BUDGET_STAGES,
          ONCOSTS_BY_REGION, ENTITY_REGION,
-         computeRecharges, rechargeSummary, convert, BUDGET_FX } from "./affinity_budget_model";
+         computeRecharges, rechargeSummary, convert, BUDGET_FX,
+         MAX_RECHARGE_TARGETS, GROUP_ALLOCATION, GROUP_REF } from "./affinity_budget_model";
 
 const NAVY = "#001242", CY = "#00C4CC";
 const INK  = "var(--text-primary,#111)";
@@ -57,8 +58,10 @@ const ACCOUNTS = [
   { group:"Staff costs",   code:"6025", name:"Bonuses",                     kind:"linked", src:"staff", el:"bonus" },
   { group:"Staff costs",   code:"6026", name:"Healthcare, wellness, cinema",kind:"linked", src:"staff", el:"benefits" },
   { group:"Staff costs",   code:"6030", name:"Recruitment & training",      kind:"input" },
-  { group:"Staff costs",   code:"6040", name:"Staff recharged in",           kind:"linked", src:"staff", el:"rechargedIn" },
-  { group:"Staff costs",   code:"6045", name:"Staff recharged out",          kind:"linked", src:"staff", el:"rechargedOut", credit:true },
+  { group:"Staff recharges", code:"6040", name:"Recharged in — direct",       kind:"linked", src:"staff" },
+  { group:"Staff recharges", code:"6041", name:"Recharged in — via group",    kind:"linked", src:"staff" },
+  { group:"Staff recharges", code:"6045", name:"Recharged out — direct",      kind:"linked", src:"staff", credit:true },
+  { group:"Staff recharges", code:"6046", name:"Recharged out — on to subsidiaries", kind:"linked", src:"staff", credit:true },
   { group:"Overheads",     code:"7000", name:"Premises & rates",            kind:"input" },
   { group:"Overheads",     code:"7010", name:"IT & software",               kind:"input" },
   { group:"Overheads",     code:"7020", name:"Professional indemnity",      kind:"input" },
@@ -67,8 +70,8 @@ const ACCOUNTS = [
   { group:"Overheads",     code:"7050", name:"Depreciation",                kind:"actual" },
 ];
 
-const GROUPS = ["Revenue","Direct costs","Staff costs","Overheads"];
-const SIGN = { "Revenue":1, "Direct costs":-1, "Staff costs":-1, "Overheads":-1 };
+const GROUPS = ["Revenue","Direct costs","Staff costs","Staff recharges","Overheads"];
+const SIGN = { "Revenue":1, "Direct costs":-1, "Staff costs":-1, "Staff recharges":-1, "Overheads":-1 };
 
 const ENTITIES = [
   { ref:"AFG-000", name:"Affinity Group Limited",        ccy:"GBP" },
@@ -181,7 +184,7 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
   // ── Staff, imported from payroll then amended here ────────────────────────
   const [staff, setStaff] = useState([
     { id:1, name:"Roxy Sheeley",   dept:"Corporate Services", role:"Managing Director", entity:"AFG-IOM",    annualSalary:96000, changes:[], bonuses:[{ month:11, amount:12000 }] },
-    { id:2, name:"Neil Kelly",     dept:"Finance",            role:"CFO",               entity:"AFG-000",    annualSalary:88000, changes:[], bonuses:[{ month:11, amount:10000 }], recharges:[{ entity:"AFG-IOM", pct:30 },{ entity:"AFG-MLT", pct:15 },{ entity:"AFG-CYM", pct:10 }] },
+    { id:2, name:"Neil Kelly",     dept:"Finance",            role:"CFO",               entity:"AFG-FL",     annualSalary:88000, changes:[], bonuses:[{ month:11, amount:10000 }], recharges:[{ entity:"AFG-000", pct:100 }] },
     { id:3, name:"Colette Grisdale",dept:"Compliance",        role:"MLRO",              entity:"AFG-IOM",    annualSalary:72000, changes:[{ month:6, annualSalary:76000 }], bonuses:[], recharges:[{ entity:"AFG-MLT", pct:25 },{ entity:"AFG-CYM", pct:15 }] },
     { id:4, name:"Joanne Fenech",  dept:"Corporate Services", role:"Director",          entity:"AFG-MLT",  annualSalary:68000, changes:[], bonuses:[] },
     { id:5, name:"Garry Crossan",  dept:"Corporate Services", role:"Director",          entity:"AFG-CYM", annualSalary:66000, changes:[], bonuses:[] },
@@ -193,6 +196,7 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
   const [collectionDays, setCollectionDays] = useState(35);
   const [paymentDays, setPaymentDays]       = useState(30);
   const [stage, setStage]                   = useState("owner_md");
+  const [rcOpen, setRcOpen]                 = useState(null);   // staff id whose recharges are open
   const [live, setLive]       = useState(false);   // true once real budget lines are loaded
   const [budgetId, setBudgetId] = useState(null);
   const [loadErr, setLoadErr] = useState(null);
@@ -240,12 +244,15 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
     // recharges: a credit in the employing company, a debit in the receiver's,
     // each in its own budget currency
     const ccyMap = ENTITIES.reduce((a, e) => { a[e.ref] = e.ccy; return a; }, {});
+    const zero = new Array(12).fill(0);
     const rc = computeRecharges(
       staff.map((p) => ({ ...p, region: ENTITY_REGION[p.entity || "AFG-IOM"] || "IOM" })),
       ccyMap
-    )[entity] || { rechargedIn: new Array(12).fill(0), rechargedOut: new Array(12).fill(0) };
+    )[entity] || { rechargedIn: zero, rechargedOut: zero, groupOnChargeIn: zero, groupOnChargeOut: zero };
     out["6040"] = rc.rechargedIn;
-    out["6045"] = rc.rechargedOut.map((v) => -v);      // shown as a credit
+    out["6041"] = rc.groupOnChargeIn;
+    out["6045"] = rc.rechargedOut.map((v) => -v);        // credits
+    out["6046"] = rc.groupOnChargeOut.map((v) => -v);
     return out;
   }, [fees, staff, entity]);
 
@@ -843,7 +850,7 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
             <div style={{ ...panelBox, overflowX:"auto", marginBottom:18 }}>
               <table style={{ width:"100%", borderCollapse:"collapse", minWidth:1050 }}>
                 <thead><tr>
-                  {["Name","Employing company","Department","Role","Payroll region","Opening salary","Change","From","Bonus","Starts","Leaves","Cost FY","Recharge to","%","Recharge to","%","Retained","Recharged out"].map((h,hi)=>(
+                  {["Name","Employing company","Department","Role","Payroll region","Opening salary","Change","From","Bonus","Starts","Leaves","Cost FY","Recharged to","Retained","Recharged out",""].map((h,hi)=>(
                     <th key={h} style={thS}>{h}</th>
                   ))}
                 </tr></thead>
@@ -899,37 +906,17 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
                         <td style={{ ...tdS, color:MUT, fontSize:11 }}>{p.startMonth!=null?MONTHS[p.startMonth]:"—"}</td>
                         <td style={{ ...tdS, color: p.leaveMonth!=null?NEG:MUT, fontSize:11 }}>{p.leaveMonth!=null?MONTHS[p.leaveMonth]:"—"}</td>
                         <td style={{ ...numS, fontWeight:600 }}>{nf(r.total.reduce((a,b)=>a+b,0))}</td>
-                        {/* Recharges: which companies carry a share of this person and how much.
-                            Converted into the receiving company's budget currency. */}
-                        {[0,1].map((k)=>{
-                          const rec = (p.recharges||[])[k] || {};
-                          const setRec = (patch)=>{
-                            const list = (p.recharges||[]).slice();
-                            list[k] = { ...(list[k]||{ entity:"", pct:0 }), ...patch };
-                            setP(p.id, { recharges: list.filter((x)=>x && x.entity && x.pct) });
-                          };
-                          return [
-                            <td key={"e"+k} style={{ ...tdS, background:"#FAFCFF" }}>
-                              <select value={rec.entity||""} onChange={(e)=>setRec({ entity:e.target.value })} style={selS}>
-                                <option value="">—</option>
-                                {ENTITIES.filter((x)=>x.ref!==(p.entity||"AFG-IOM")).map((x)=>(
-                                  <option key={x.ref} value={x.ref}>{x.name}</option>
-                                ))}
-                              </select>
-                            </td>,
-                            <td key={"p"+k} style={{ ...tdS, background:"#FAFCFF" }}>
-                              <input type="number" min="0" max="100" value={rec.pct||""} placeholder="—"
-                                onChange={(e)=>setRec({ pct:Number(e.target.value)||0 })}
-                                style={{ ...selS, width:56, textAlign:"right" }} />
-                            </td>,
-                          ];
-                        })}
                         {(() => {
                           const sum = rechargeSummary(p);
                           const ccyMap = ENTITIES.reduce((a,e)=>{a[e.ref]=e.ccy;return a;},{});
                           const rc = computeRecharges([{ ...p, region: ENTITY_REGION[p.entity||"AFG-IOM"]||"IOM" }], ccyMap)[p.entity||"AFG-IOM"];
                           const outFY = rc ? rc.rechargedOut.reduce((a,b)=>a+b,0) : 0;
                           return [
+                            <td key="tg" style={{ ...tdS, background:"#FAFCFF" }}>
+                              {sum.targets
+                                ? <span style={{ fontSize:11 }}>{sum.targets} {sum.targets===1?"company":"companies"} · {sum.pct}%</span>
+                                : <span style={{ fontSize:11, color:MUT }}>—</span>}
+                            </td>,
                             <td key="ret" style={{ ...numS, background:"#FAFCFF",
                                  color: sum.valid ? (sum.pct?NAVY:MUT) : NEG, fontWeight: sum.pct?600:400 }}
                                  title={sum.warning || "Share of cost kept by the employing company"}>
@@ -938,11 +925,88 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
                             <td key="out" style={{ ...numS, background:"#FAFCFF", fontWeight:600, color: outFY?NEG:MUT }}>
                               {outFY ? "("+nf(outFY)+")" : "—"}
                             </td>,
+                            <td key="ed" style={{ ...tdS, background:"#FAFCFF" }}>
+                              <button style={{ ...btn, padding:"2px 8px", fontSize:10 }}
+                                onClick={()=>setRcOpen(rcOpen===p.id?null:p.id)}>
+                                {rcOpen===p.id ? "Close" : "Recharges ▾"}
+                              </button>
+                            </td>,
                           ];
                         })()}
                       </tr>
                     );
                   })}
+                  {/* Up to six recharge targets per person. Twelve columns would be
+                      unreadable, so the detail opens under the row instead. */}
+                  {staff.filter((p)=>(p.entity||"AFG-IOM")===entity && rcOpen===p.id).map((p)=>{
+                    const sum = rechargeSummary(p);
+                    const list = (p.recharges||[]).slice(0, MAX_RECHARGE_TARGETS);
+                    const slots = list.concat(Array.from({length:MAX_RECHARGE_TARGETS-list.length},()=>({entity:"",pct:0})));
+                    const setRec = (k, patch) => {
+                      const next = slots.slice();
+                      next[k] = { ...next[k], ...patch };
+                      setP(p.id, { recharges: next.filter((x)=>x && x.entity && x.pct) });
+                    };
+                    return (
+                      <tr key={"rc"+p.id}>
+                        <td colSpan={16} style={{ padding:"12px 16px", background:"#F5F9FF",
+                             borderBottom:`0.5px solid ${LINE}` }}>
+                          <div style={{ fontSize:11.5, fontWeight:600, color:NAVY, marginBottom:8 }}>
+                            Recharges for {p.name} — up to {MAX_RECHARGE_TARGETS} companies
+                            <span style={{ fontWeight:400, color: sum.valid?MUT:NEG, marginLeft:8 }}>
+                              {sum.pct}% recharged, {sum.retained}% retained{sum.warning ? " · "+sum.warning : ""}
+                            </span>
+                          </div>
+                          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))", gap:8 }}>
+                            {slots.map((rec,k)=>(
+                              <div key={k} style={{ display:"flex", gap:6, alignItems:"center" }}>
+                                <span style={{ fontSize:10, color:MUT, width:14 }}>{k+1}</span>
+                                <select value={rec.entity||""} onChange={(e)=>setRec(k,{ entity:e.target.value })}
+                                  style={{ ...selS, flex:1 }}>
+                                  <option value="">— not recharged —</option>
+                                  {ENTITIES.filter((x)=>x.ref!==(p.entity||"AFG-IOM")).map((x)=>(
+                                    <option key={x.ref} value={x.ref}>{x.name}{x.ref===GROUP_REF?" (on-charged to subs)":""}</option>
+                                  ))}
+                                </select>
+                                <input type="number" min="0" max="100" value={rec.pct||""} placeholder="%"
+                                  onChange={(e)=>setRec(k,{ pct:Number(e.target.value)||0 })}
+                                  style={{ ...selS, width:60, textAlign:"right" }} />
+                                <span style={{ fontSize:10.5, color:MUT }}>%</span>
+                              </div>
+                            ))}
+                          </div>
+                          <div style={{ fontSize:10.5, color:MUT, marginTop:9, lineHeight:1.6 }}>
+                            Recharging to <strong>Affinity Group Limited</strong> is a two-step charge: the group receives
+                            it, then passes it on to the operating companies using the group allocation basis. That is the
+                            case for anyone paid from one company but working across the whole group.
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ fontSize:12.5, fontWeight:600, color:NAVY, marginBottom:8 }}>Group allocation basis — how the group passes on what it receives</div>
+            <div style={{ ...panelBox, marginBottom:18 }}>
+              <table style={{ width:"100%", borderCollapse:"collapse" }}>
+                <thead><tr>{["Company","Share of group on-charge"].map((h)=>(<th key={h} style={thS}>{h}</th>))}</tr></thead>
+                <tbody>
+                  {Object.keys(GROUP_ALLOCATION).map((ref)=>{
+                    const e = ENTITIES.find((x)=>x.ref===ref);
+                    return (
+                      <tr key={ref} style={{ borderBottom:`0.5px solid ${LINE}`,
+                          background: ref===entity ? "rgba(0,196,204,0.06)" : "transparent" }}>
+                        <td style={tdS}>{e ? e.name : ref}</td>
+                        <td style={numS}>{GROUP_ALLOCATION[ref]}%</td>
+                      </tr>
+                    );
+                  })}
+                  <tr><td style={{ ...tdS, fontWeight:700, background:SUBTLE }}>Total</td>
+                    <td style={{ ...numS, fontWeight:700, background:SUBTLE }}>
+                      {Object.values(GROUP_ALLOCATION).reduce((a,b)=>a+b,0)}%
+                    </td></tr>
                 </tbody>
               </table>
             </div>

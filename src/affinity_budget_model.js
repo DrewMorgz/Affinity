@@ -411,43 +411,100 @@ export function convert(amount, from, to, rates = BUDGET_FX) {
 //   rechargedOut  a credit in the employing company, in its own currency
 //   rechargedIn   a debit in the receiving company, in ITS currency
 // Both are 12-month series.
+export const MAX_RECHARGE_TARGETS = 6;
+
+// Where the group company passes on what it receives. Someone paid by Florida
+// and recharged to Group ends up spread across the operating companies via
+// this basis, so the cost reaches the subsidiaries that actually benefit.
+//
+// ⚠️ SET BY FINANCE. Should sum to 100 across the receiving companies.
+export const GROUP_ALLOCATION = {
+  "AFG-IOM": 40, "AFG-MLT": 18, "AFG-CYM": 16,
+  "AFG-UK": 10, "AFG-CYP": 6, "AFG-SD": 5, "AFG-FL": 5,
+};
+
+export const GROUP_REF = "AFG-000";
+
+// Staff recharges, in two steps.
+//
+//   Step 1  person-level recharges, up to MAX_RECHARGE_TARGETS companies each.
+//   Step 2  anything the group company receives is passed on to the operating
+//           companies using GROUP_ALLOCATION. This is the Florida case: paid
+//           from one company, recharged to Group, then out to the subsidiaries.
+//
+// Returns per company reference:
+//   rechargedIn        direct recharges received, in that company's currency
+//   rechargedOut       direct recharges passed out, in its own currency
+//   groupOnChargeIn    share of the group's on-charge received
+//   groupOnChargeOut   what the group passed on (group company only)
 export function computeRecharges(staff, entityCcy = {}, rates = BUDGET_FX, opts = {}) {
-  const out = {};       // ref -> { rechargedIn:[12], rechargedOut:[12] }
+  const groupRef   = opts.groupRef || GROUP_REF;
+  const allocation = opts.allocation || GROUP_ALLOCATION;
+  const out = {};
   const touch = (ref) => {
-    if (!out[ref]) out[ref] = { rechargedIn: new Array(12).fill(0), rechargedOut: new Array(12).fill(0) };
+    if (!out[ref]) out[ref] = {
+      rechargedIn: new Array(12).fill(0), rechargedOut: new Array(12).fill(0),
+      groupOnChargeIn: new Array(12).fill(0), groupOnChargeOut: new Array(12).fill(0),
+    };
     return out[ref];
   };
 
+  // ── Step 1: person-level recharges ──────────────────────────────────────
   (staff || []).forEach((p) => {
     const employer = p.entity || "AFG-IOM";
     const fromCcy  = entityCcy[employer] || "GBP";
     const cost = phaseStaffCost({ ...p, region: p.region }, opts).total;
 
-    (p.recharges || []).forEach((r) => {
+    (p.recharges || []).slice(0, MAX_RECHARGE_TARGETS).forEach((r) => {
       if (!r || !r.entity || !r.pct) return;
-      if (r.entity === employer) return;                  // recharging to itself is a no-op
+      if (r.entity === employer) return;
       const toCcy = entityCcy[r.entity] || "GBP";
       for (let i = 0; i < 12; i++) {
         const share = cost[i] * (Number(r.pct) / 100);
         if (!share) continue;
-        touch(employer).rechargedOut[i] += share;                                  // employer's own currency
-        touch(r.entity).rechargedIn[i]  += convert(share, fromCcy, toCcy, rates);  // receiver's currency
+        touch(employer).rechargedOut[i] += share;
+        touch(r.entity).rechargedIn[i]  += convert(share, fromCcy, toCcy, rates);
       }
     });
   });
 
+  // ── Step 2: the group passes on what it received ────────────────────────
+  const grp = out[groupRef];
+  if (grp) {
+    const groupCcy = entityCcy[groupRef] || "GBP";
+    const receivers = Object.keys(allocation).filter((k) => k !== groupRef);
+    const totalPct  = receivers.reduce((s, k) => s + (allocation[k] || 0), 0);
+
+    if (totalPct > 0) {
+      for (let i = 0; i < 12; i++) {
+        const pool = grp.rechargedIn[i];
+        if (!pool) continue;
+        grp.groupOnChargeOut[i] += pool;                 // group keeps nothing
+        receivers.forEach((ref) => {
+          const share = pool * ((allocation[ref] || 0) / totalPct);
+          if (!share) return;
+          const toCcy = entityCcy[ref] || "GBP";
+          touch(ref).groupOnChargeIn[i] += convert(share, groupCcy, toCcy, rates);
+        });
+      }
+    }
+  }
+
   Object.keys(out).forEach((k) => {
-    out[k].rechargedIn  = out[k].rechargedIn.map(r2);
-    out[k].rechargedOut = out[k].rechargedOut.map(r2);
+    ["rechargedIn","rechargedOut","groupOnChargeIn","groupOnChargeOut"].forEach((f) => {
+      out[k][f] = out[k][f].map(r2);
+    });
   });
   return out;
 }
 
 // How much of a person is recharged away, and whether that is coherent.
 export function rechargeSummary(person) {
-  const total = (person.recharges || []).reduce((s, r) => s + (Number(r.pct) || 0), 0);
+  const list = (person.recharges || []).slice(0, MAX_RECHARGE_TARGETS);
+  const total = list.reduce((s, r) => s + (Number(r.pct) || 0), 0);
   return {
     pct: total,
+    targets: list.filter((r) => r && r.entity && r.pct).length,
     retained: Math.max(0, 100 - total),
     valid: total >= 0 && total <= 100,
     warning: total > 100 ? "Recharges exceed 100% of this person's cost"
