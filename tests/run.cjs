@@ -823,6 +823,23 @@ group("Authentication — identity matching");
   ok("a session with no user yields nothing", A.identityFromSession(null, STAFF) === null);
 }
 
+
+group("Authentication — no route past the login page");
+{
+  // The preview fallback was removed once sign-in worked. Assert it stays gone:
+  // its only remaining effect would be to let someone work in a convincing copy
+  // whose entries are never saved, and the site is publicly reachable.
+  const src = fs.readFileSync(path.join(SRC, "affinity_login_page.jsx"), "utf8");
+  ok("no preview button remains", !/Continue to preview/.test(src));
+  ok("no preview handler remains", !/handlePreview/.test(src));
+  ok("onLogin is only called with a real session",
+     !/onLogin\(\s*1\s*\)/.test(src));
+  ok("the unconfigured state points at IT rather than offering a way round",
+     /contact IT/.test(src));
+  ok("...and mentions the expiring client secret, the likeliest cause of a sudden failure",
+     /client secret may have expired/.test(src));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

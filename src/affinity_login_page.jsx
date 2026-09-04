@@ -82,6 +82,18 @@ export default function AffinityLoginPage({ onLogin }) {
   const [error, setError]           = useState("");
   const [loading, setLoading]       = useState(false);
 
+  // There is deliberately no way past this page. Sign-in is the only route in.
+  //
+  // A "continue to preview" fallback used to sit here for the period before
+  // Entra was configured. It was removed once sign-in worked, because its only
+  // remaining effect was to let someone work in a convincing copy of the system
+  // whose entries are never saved — and the site is publicly reachable, so it
+  // also let anyone with the URL walk past authentication into a screen full of
+  // realistic-looking client names.
+  //
+  // If sign-in is ever broken, the right outcome is that nobody gets in and
+  // somebody fixes it, not that people are shown fabricated records.
+
   useEffect(() => {
     const timer = setTimeout(() => setShowSplash(false), 3200);
     return () => clearTimeout(timer);
@@ -93,11 +105,6 @@ export default function AffinityLoginPage({ onLogin }) {
     if (error) { setError(error.message); setLoading(false); }
     // On success the browser leaves for Microsoft and returns signed in.
   };
-
-  // Demo access while Entra is being set up. Grants the read-only preview only —
-  // the database stays locked, so no client data is reachable this way.
-  const handlePreview = () => { onLogin(1); };
-
 
   // ── SPLASH SCREEN (block-letter Affinity wordmark, pure CSS) ──
   if (checkingSession) {
@@ -262,17 +269,16 @@ export default function AffinityLoginPage({ onLogin }) {
               {!isAuthConfigured() && (
                 <div style={{ marginTop: 14, padding: "11px 13px", background: "#FDF4DC", border: "0.5px solid #E5CE9A",
                               borderRadius: 8, fontSize: 11, color: "#7B4F1D", lineHeight: 1.65 }}>
-                  Microsoft sign-in is not switched on yet. IT need to register the application in Entra and enable the Azure provider in Supabase.
+                  Microsoft sign-in is not available at the moment. There is no other way in —
+                  contact IT, who need to check the Entra application and the Azure provider in Supabase.
+                  If sign-in was working before, the client secret may have expired.
                 </div>
               )}
 
-              <button onClick={handlePreview}
-                style={{ width: "100%", marginTop: 12, padding: "11px", background: "transparent", color: "#666",
-                         border: "1px solid #e0e0e0", borderRadius: 8, fontSize: 12.5, cursor: "pointer" }}>
-                Continue to preview (demonstration data)
-              </button>
+
               <div style={{ fontSize: 10.5, color: "#999", marginTop: 8, textAlign: "center", lineHeight: 1.6 }}>
-                Preview shows sample data only. Client records stay locked until you sign in.
+                Use the Microsoft account you sign in to Outlook and Teams with.
+                Access is managed in Entra — removing someone there removes their access here.
               </div>
 
               <div style={{ marginTop: 20, padding: "12px 14px", background: "#f8f9fc", borderRadius: 8, fontSize: 11, color: "#888", lineHeight: 1.6 }}>
