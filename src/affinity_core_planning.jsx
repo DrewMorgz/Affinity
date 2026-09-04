@@ -42,17 +42,19 @@ const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov
 // ── Chart of accounts for planning. kind drives cell behaviour:
 //    input = editable, calc = derived subtotal, actual = posted from the ledger
 const ACCOUNTS = [
-  { group:"Revenue",       code:"4000", name:"Company administration fees", kind:"input" },
-  { group:"Revenue",       code:"4010", name:"Trustee fees",                kind:"input" },
-  { group:"Revenue",       code:"4020", name:"Directorship fees",           kind:"input" },
-  { group:"Revenue",       code:"4030", name:"Registered office fees",      kind:"input" },
-  { group:"Revenue",       code:"4040", name:"Time-based / ad hoc",         kind:"input" },
-  { group:"Revenue",       code:"4090", name:"Disbursements recovered",     kind:"input" },
+  { group:"Revenue",       code:"4000", name:"Company administration fees", kind:"linked", src:"fees" },
+  { group:"Revenue",       code:"4010", name:"Trustee fees",                kind:"linked", src:"fees" },
+  { group:"Revenue",       code:"4020", name:"Directorship fees",           kind:"linked", src:"fees" },
+  { group:"Revenue",       code:"4030", name:"Registered office fees",      kind:"linked", src:"fees" },
+  { group:"Revenue",       code:"4040", name:"Time-based / ad hoc",         kind:"linked", src:"fees" },
+  { group:"Revenue",       code:"4090", name:"Disbursements recovered",     kind:"linked", src:"fees" },
   { group:"Direct costs",  code:"5000", name:"Government & registry fees",  kind:"input" },
   { group:"Direct costs",  code:"5010", name:"Sub-contracted services",     kind:"input" },
-  { group:"Staff costs",   code:"6000", name:"Salaries",                    kind:"input" },
-  { group:"Staff costs",   code:"6010", name:"Employer NI / social",        kind:"calcPct", of:"6000", pct:0.11 },
-  { group:"Staff costs",   code:"6020", name:"Pension contributions",       kind:"calcPct", of:"6000", pct:0.06 },
+  { group:"Staff costs",   code:"6000", name:"Salaries",                    kind:"linked", src:"staff", el:"salary" },
+  { group:"Staff costs",   code:"6010", name:"Employer social",             kind:"linked", src:"staff", el:"social" },
+  { group:"Staff costs",   code:"6020", name:"Pension contributions",       kind:"linked", src:"staff", el:"pension" },
+  { group:"Staff costs",   code:"6025", name:"Bonuses",                     kind:"linked", src:"staff", el:"bonus" },
+  { group:"Staff costs",   code:"6026", name:"Healthcare, wellness, cinema",kind:"linked", src:"staff", el:"benefits" },
   { group:"Staff costs",   code:"6030", name:"Recruitment & training",      kind:"input" },
   { group:"Overheads",     code:"7000", name:"Premises & rates",            kind:"input" },
   { group:"Overheads",     code:"7010", name:"IT & software",               kind:"input" },
@@ -163,26 +165,26 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
 
   // ── Fee book, imported from recurring fees then amended here ──────────────
   const [fees, setFees] = useState([
-    { id:1, client:"Meridian Holdings Ltd", service:"AA", desc:"Company administration", amount:1000, frequency:"M", ccy:"GBP", markup:true, status:"Recurring" },
-    { id:2, client:"Meridian Holdings Ltd", service:"AB", desc:"Directorship",           amount:2000, frequency:"A", ccy:"GBP", markup:true, status:"Recurring" },
-    { id:3, client:"Meridian Holdings Ltd", service:"AC", desc:"AEOI reporting",         amount:750,  frequency:"A", ccy:"GBP", markup:true, status:"Recurring" },
-    { id:4, client:"Meridian Holdings Ltd", service:"AD", desc:"Tax compliance",         amount:300,  frequency:"A", ccy:"GBP", markup:true, status:"Recurring" },
-    { id:5, client:"Azure Mediterranean Foundation", service:"AA", desc:"Administration", amount:2000, frequency:"M", ccy:"EUR", markup:true, status:"Recurring" },
-    { id:6, client:"Azure Mediterranean Foundation", service:"AF", desc:"VAT returns",    amount:750,  frequency:"Q", ccy:"EUR", markup:true, status:"Recurring" },
-    { id:7, client:"Thornbury Asset Co Ltd", service:"AA", desc:"Company administration", amount:1600, frequency:"A", ccy:"GBP", markup:true, status:"Lost", endsMonth:5 },
-    { id:8, client:"Kestrel Gaming Ltd (new)", service:"AA", desc:"Company administration", amount:2400, frequency:"M", ccy:"GBP", markup:true, status:"New business", startsMonth:9, sector:"eGaming" },
+    { id:1, client:"Meridian Holdings Ltd", service:"AA", desc:"Company administration", amount:1000, frequency:"M", ccy:"GBP", markup:true, status:"Recurring", billedBy:"AFG-IOM", account:"4000" },
+    { id:2, client:"Meridian Holdings Ltd", service:"AB", desc:"Directorship",           amount:2000, frequency:"A", ccy:"GBP", markup:true, status:"Recurring", billedBy:"AFG-IOM", account:"4020" },
+    { id:3, client:"Meridian Holdings Ltd", service:"AC", desc:"AEOI reporting",         amount:750,  frequency:"A", ccy:"GBP", markup:true, status:"Recurring", billedBy:"AFG-IOM", account:"4040" },
+    { id:4, client:"Meridian Holdings Ltd", service:"AD", desc:"Tax compliance",         amount:300,  frequency:"A", ccy:"GBP", markup:true, status:"Recurring", billedBy:"AFG-IOM", account:"4040" },
+    { id:5, client:"Azure Mediterranean Foundation", service:"AA", desc:"Administration", amount:2000, frequency:"M", ccy:"EUR", markup:true, status:"Recurring", billedBy:"AFG-MLT", account:"4000" },
+    { id:6, client:"Azure Mediterranean Foundation", service:"AF", desc:"VAT returns",    amount:750,  frequency:"Q", ccy:"EUR", markup:true, status:"Recurring", billedBy:"AFG-MLT", account:"4040" },
+    { id:7, client:"Thornbury Asset Co Ltd", service:"AA", desc:"Company administration", amount:1600, frequency:"A", ccy:"GBP", markup:true, status:"Lost", endsMonth:5, billedBy:"AFG-UK", account:"4000" },
+    { id:8, client:"Kestrel Gaming Ltd (new)", service:"AA", desc:"Company administration", amount:2400, frequency:"M", ccy:"GBP", markup:true, status:"New business", startsMonth:9, sector:"eGaming", billedBy:"AFG-IOM", account:"4000" },
   ]);
 
   // ── Staff, imported from payroll then amended here ────────────────────────
   const [staff, setStaff] = useState([
-    { id:1, name:"Roxy Sheeley",   dept:"Corporate Services", role:"Managing Director", region:"IOM",    annualSalary:96000, changes:[], bonuses:[{ month:11, amount:12000 }] },
-    { id:2, name:"Neil Kelly",     dept:"Finance",            role:"CFO",               region:"IOM",    annualSalary:88000, changes:[], bonuses:[{ month:11, amount:10000 }] },
-    { id:3, name:"Colette Grisdale",dept:"Compliance",        role:"MLRO",              region:"IOM",    annualSalary:72000, changes:[{ month:6, annualSalary:76000 }], bonuses:[] },
-    { id:4, name:"Joanne Fenech",  dept:"Corporate Services", role:"Director",          region:"MALTA",  annualSalary:68000, changes:[], bonuses:[] },
-    { id:5, name:"Garry Crossan",  dept:"Corporate Services", role:"Director",          region:"CAYMAN", annualSalary:66000, changes:[], bonuses:[] },
-    { id:6, name:"Administrator A",dept:"Corporate Services", role:"Administrator",     region:"IOM",    annualSalary:34000, changes:[{ month:3, annualSalary:36000 }], bonuses:[] },
-    { id:7, name:"Administrator B",dept:"Trust",              role:"Administrator",     region:"UK",     annualSalary:32000, changes:[], bonuses:[], leaveMonth:5 },
-    { id:8, name:"Trainee (planned)",dept:"Corporate Services",role:"Trainee",          region:"US",     annualSalary:24000, changes:[], bonuses:[], startMonth:8 },
+    { id:1, name:"Roxy Sheeley",   dept:"Corporate Services", role:"Managing Director", entity:"AFG-IOM",    annualSalary:96000, changes:[], bonuses:[{ month:11, amount:12000 }] },
+    { id:2, name:"Neil Kelly",     dept:"Finance",            role:"CFO",               entity:"AFG-000",    annualSalary:88000, changes:[], bonuses:[{ month:11, amount:10000 }] },
+    { id:3, name:"Colette Grisdale",dept:"Compliance",        role:"MLRO",              entity:"AFG-IOM",    annualSalary:72000, changes:[{ month:6, annualSalary:76000 }], bonuses:[] },
+    { id:4, name:"Joanne Fenech",  dept:"Corporate Services", role:"Director",          entity:"AFG-MLT",  annualSalary:68000, changes:[], bonuses:[] },
+    { id:5, name:"Garry Crossan",  dept:"Corporate Services", role:"Director",          entity:"AFG-CYM", annualSalary:66000, changes:[], bonuses:[] },
+    { id:6, name:"Administrator A",dept:"Corporate Services", role:"Administrator",     entity:"AFG-IOM",    annualSalary:34000, changes:[{ month:3, annualSalary:36000 }], bonuses:[] },
+    { id:7, name:"Administrator B",dept:"Trust",              role:"Administrator",     entity:"AFG-UK",     annualSalary:32000, changes:[], bonuses:[], leaveMonth:5 },
+    { id:8, name:"Trainee (planned)",dept:"Corporate Services",role:"Trainee",          entity:"AFG-FL",     annualSalary:24000, changes:[], bonuses:[], startMonth:8 },
   ]);
 
   const [collectionDays, setCollectionDays] = useState(35);
@@ -211,15 +213,42 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
   const ent = ENTITIES.find((e) => e.ref === entity) || ENTITIES[0];
   const locked = state === "Locked" || state === "Approved";
 
+  // ── Values pulled from other tabs ─────────────────────────────────────────
+  // Revenue comes from Fees & sales, staff costs from Staff, both filtered to
+  // the employing / billing company selected above. These are read-only on the
+  // grid: typing over a figure that another sheet supplies would be overwritten
+  // silently, which is worse than not offering the cell at all.
+  const linked = useMemo(() => {
+    const out = {};
+    const mine = fees.filter((f) => (f.billedBy || "AFG-IOM") === entity);
+    mine.forEach((f) => {
+      const code = f.account || "4000";
+      const p = phaseFee(f, 2026);
+      out[code] = out[code] || new Array(12).fill(0);
+      for (let i = 0; i < 12; i++) out[code][i] += p.earned[i];   // P&L basis
+    });
+    const team = phaseHeadcount(
+      staff.filter((p) => (p.entity || "AFG-IOM") === entity)
+           .map((p) => ({ ...p, region: ENTITY_REGION[p.entity || "AFG-IOM"] || "IOM" }))
+    );
+    out["6000"] = team.salary; out["6010"] = team.social; out["6020"] = team.pension;
+    out["6025"] = team.bonus;  out["6026"] = team.benefits;
+    return out;
+  }, [fees, staff, entity]);
+
   // ── derived values ────────────────────────────────────────────────────────
   const valueOf = useCallback((acc, i) => {
+    if (acc.kind === "linked") {
+      const series = linked[acc.code];
+      return series ? Math.round(series[i]) : 0;
+    }
     if (acc.kind === "calcPct") {
       const src = values[acc.of + ":" + i];
       return src == null ? 0 : Math.round(src * acc.pct);
     }
     const v = values[acc.code + ":" + i];
     return v == null ? 0 : Number(v);
-  }, [values]);
+  }, [values, linked]);
 
   const rowTotal = useCallback((acc) => MONTHS.reduce((s, _, i) => s + valueOf(acc, i), 0), [valueOf]);
 
@@ -300,7 +329,7 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
     return () => clearTimeout(t);
   }, [dirty, values]);
 
-  const editableRows = ACCOUNTS.filter((a) => a.kind === "input");
+  const editableRows = ACCOUNTS.filter((a) => a.kind === "input");   // excludes linked and formula rows
 
   // keyboard navigation across the grid
   const onKey = (e) => {
@@ -487,6 +516,14 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
                               <span style={{ color:MUT, fontSize:10.5, marginRight:8 }}>{a.code}</span>{a.name}
                               {a.kind==="calcPct" && <span style={{ marginLeft:6, fontSize:9, color:"#7B4F1D", background:"#FDF4DC", borderRadius:8, padding:"1px 5px" }}>FORMULA</span>}
                               {a.kind==="actual"  && <span style={{ marginLeft:6, fontSize:9, color:"#1F6F54", background:"#E7F4EF", borderRadius:8, padding:"1px 5px" }}>ACTUAL</span>}
+                              {a.kind==="linked"  && (
+                                <button onClick={()=>setView(a.src==="fees"?"fees":"staff")}
+                                  title={"Pulled from the "+(a.src==="fees"?"Fees & sales":"Staff")+" tab — change it there, not here"}
+                                  style={{ marginLeft:6, fontSize:9, color:"#274690", background:"#EAF0FB", border:"none",
+                                           borderRadius:8, padding:"1px 6px", cursor:"pointer" }}>
+                                  FROM {a.src==="fees" ? "FEES" : "STAFF"} ↗
+                                </button>
+                              )}
                               {a.kind==="input" && (
                                 <button title="Spread a full-year figure evenly across the periods"
                                   onClick={()=>{ const t=window.prompt("Annual figure to spread evenly across 12 periods:", String(rowTotal(a))); if(t!=null) spread(a,t); }}
@@ -499,6 +536,7 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
                               const isSel = rowIdx>-1 && sel.r===rowIdx && sel.c===i;
                               const editable = a.kind==="input" && !locked;
                               const bg = locked ? "#F4F4F6"
+                                       : a.kind==="linked"  ? "#EFF3FA"
                                        : a.kind==="calcPct" ? "#FBF7EC"
                                        : a.kind==="actual"  ? "#F1F7F4"
                                        : isSel ? "rgba(0,196,204,0.12)" : "#FCFEFF";
@@ -621,16 +659,18 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
 
       {/* ══════════════ FEES & SALES ══════════════ */}
       {view === "fees" && (() => {
-        const phased = fees.map((f) => ({ f, p: phaseFee(f, 2026) }));
-        const totals = phaseFees(fees, 2026);
+        const mineF = fees.filter((f) => (f.billedBy || "AFG-IOM") === entity);
+        const phased = mineF.map((f) => ({ f, p: phaseFee(f, 2026) }));
+        const totals = phaseFees(mineF, 2026);
         const annualInv = totals.invoiced.reduce((a,b)=>a+b,0);
         const annualErn = totals.earned.reduce((a,b)=>a+b,0);
         const setFee = (id, patch) => setFees((rows)=>rows.map((r)=>r.id===id?{...r,...patch}:r));
         return (
           <div style={{ padding:"14px 22px 60px" }}>
             <div style={{ ...panelNote }}>
-              Sales start from the recurring fee book rather than being typed in. Amend an amount here and both the
-              billing profile and the revenue recognised move with it. A fee marked <strong>Lost</strong> stops in the
+              Showing the <strong>{mineF.length}</strong> {mineF.length===1?"fee":"fees"} billed by <strong>{ent.name}</strong>.
+              This is what feeds that company's revenue on the budget front sheet, which is why those rows are locked
+              there. Amend an amount here and both the billing profile and the revenue recognised move with it. A fee marked <strong>Lost</strong> stops in the
               month given; <strong>New business</strong> starts in its month and carries the client's sector for reporting.
             </div>
 
@@ -652,7 +692,7 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
             <div style={{ ...panelBox, overflowX:"auto" }}>
               <table style={{ width:"100%", borderCollapse:"collapse", minWidth:1100 }}>
                 <thead><tr>
-                  {["Client","Service","Description","Freq","Amount","Ccy","Uplift","Status","From","To","Billed FY","Earned FY"].map((h)=>(
+                  {["Client","Billed by","Service","Description","Freq","Amount","Ccy","Uplift","Status","From","To","Billed FY","Earned FY"].map((h)=>(
                     <th key={h} style={thS}>{h}</th>
                   ))}
                 </tr></thead>
@@ -661,6 +701,12 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
                     <tr key={f.id} style={{ borderBottom:`0.5px solid ${LINE}`,
                         background: f.status==="Lost" ? "#FFF7F7" : f.status==="New business" ? "#F5FBF7" : "transparent" }}>
                       <td style={tdS}>{f.client}</td>
+                      <td style={tdS}>
+                        <select value={f.billedBy||"AFG-IOM"} onChange={(e)=>setFee(f.id,{billedBy:e.target.value})} style={selS}
+                          title="Which Affinity company bills this fee. The revenue rolls up to that company's budget.">
+                          {ENTITIES.map((x)=><option key={x.ref} value={x.ref}>{x.name}</option>)}
+                        </select>
+                      </td>
                       <td style={{ ...tdS, fontFamily:"ui-monospace,monospace", fontSize:11 }}>{f.service}</td>
                       <td style={tdS}>{f.desc}</td>
                       <td style={tdS}>
@@ -739,14 +785,22 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
 
       {/* ══════════════ STAFF ══════════════ */}
       {view === "staff" && (() => {
-        const team = phaseHeadcount(staff);
+        const withRegion = (p) => ({ ...p, region: ENTITY_REGION[p.entity || "AFG-IOM"] || "IOM" });
+        const mine = staff.filter((p) => (p.entity || "AFG-IOM") === entity).map(withRegion);
+        const team = phaseHeadcount(mine);
+        const groupTeam = phaseHeadcount(staff.map(withRegion));
         const setP = (id, patch) => setStaff((rows)=>rows.map((r)=>r.id===id?{...r,...patch}:r));
         return (
           <div style={{ padding:"14px 22px 60px" }}>
             <div style={panelNote}>
-              Staff start from the payroll file. Enter a pay change and the month it applies from, and gross, employer
-              social and pension recalculate from that month on. A leaver's date stops their cost in the right month.
-              Healthcare, wellness and cinema follow headcount automatically rather than being budgeted separately.
+              Showing the <strong>{mine.length}</strong> {mine.length===1?"person":"people"} employed by <strong>{ent.name}</strong>.
+              Their cost is what feeds that company's budget front sheet — change the employing company and the cost
+              moves with them. Group-wide there are {staff.length} staff costing £{nf(groupTeam.total.reduce((a,b)=>a+b,0))} for the year.
+              <div style={{ marginTop:6 }}>
+                A pay change and the month it applies from recalculates gross, employer social and pension from that
+                month. A leaver's date stops their cost in the right month. Healthcare, wellness and cinema follow
+                headcount automatically. Employer rates follow the employing company's jurisdiction.
+              </div>
             </div>
 
             <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(170px,1fr))", gap:10, margin:"12px 0 14px" }}>
@@ -766,28 +820,34 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
             <div style={{ ...panelBox, overflowX:"auto", marginBottom:18 }}>
               <table style={{ width:"100%", borderCollapse:"collapse", minWidth:1050 }}>
                 <thead><tr>
-                  {["Name","Department","Role","Region","Opening salary","Change","From","Bonus","Starts","Leaves","Cost FY"].map((h)=>(
+                  {["Name","Employing company","Department","Role","Payroll region","Opening salary","Change","From","Bonus","Starts","Leaves","Cost FY"].map((h)=>(
                     <th key={h} style={thS}>{h}</th>
                   ))}
                 </tr></thead>
                 <tbody>
-                  {staff.map((p)=>{
-                    const r = phaseHeadcount([p]);
+                  {staff.filter((p)=>(p.entity||"AFG-IOM")===entity).map((p)=>{
+                    const r = phaseHeadcount([withRegion(p)]);
                     const chg = (p.changes||[])[0];
                     const bon = (p.bonuses||[])[0];
                     return (
                       <tr key={p.id} style={{ borderBottom:`0.5px solid ${LINE}`,
                           background: p.leaveMonth!=null ? "#FFF7F7" : p.startMonth!=null ? "#F5FBF7" : "transparent" }}>
                         <td style={{ ...tdS, fontWeight:600 }}>{p.name}</td>
+                        <td style={tdS}>
+                          <select value={p.entity||"AFG-IOM"} onChange={(e)=>setP(p.id,{entity:e.target.value})} style={selS}
+                            title="Which Affinity company employs this person. Their cost rolls up to that company's budget.">
+                            {ENTITIES.map((x)=><option key={x.ref} value={x.ref}>{x.name}</option>)}
+                          </select>
+                        </td>
                         <td style={tdS}>{p.dept}</td>
                         <td style={{ ...tdS, color:MUT }}>{p.role}</td>
                         <td style={tdS}>
-                          <select value={p.region||"IOM"} onChange={(e)=>setP(p.id,{region:e.target.value})} style={selS}
-                            title="Employer social and pension are charged at this region's rates, including its ceilings">
-                            {Object.keys(ONCOSTS_BY_REGION).map((k)=>(
-                              <option key={k} value={k}>{ONCOSTS_BY_REGION[k].label}</option>
-                            ))}
-                          </select>
+                          {/* Payroll region follows the employing company rather than being
+                              set separately — the two must never disagree. */}
+                          <span style={{ fontSize:10.5, color:"#274690", background:"#EAF0FB", borderRadius:8, padding:"2px 8px" }}
+                            title="Follows the employing company. Employer social and pension use this region's rates and ceilings.">
+                            {(ONCOSTS_BY_REGION[ENTITY_REGION[p.entity||"AFG-IOM"]||"IOM"]||{}).label}
+                          </span>
                         </td>
                         <td style={tdS}>
                           <input type="number" value={p.annualSalary}

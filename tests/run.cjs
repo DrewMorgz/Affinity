@@ -152,13 +152,28 @@ group("Planning — budget arithmetic");
   ok("revenue is treated as positive and costs as negative",
      SIGN["Revenue"] === 1 && SIGN["Staff costs"] === -1 && SIGN["Overheads"] === -1);
 
+  // Employer social and pension are no longer a flat percentage on the front
+  // sheet. They come from the Staff tab, which applies the employing company's
+  // regional rates and ceilings — so they are linked, not typed and not a
+  // single hardcoded rate.
   const ni = ACCOUNTS.find((a) => a.code === "6010");
-  ok("employer NI is a formula account, not typed in", ni && ni.kind === "calcPct");
-  ok("employer NI derives from salaries", ni && ni.of === "6000");
-  eq("employer NI is 11% of salaries", Math.round(40000 * ni.pct), 4400);
-
+  eq("employer social is pulled from the Staff tab", ni.kind, "linked");
+  eq("...and identified as coming from staff", ni.src, "staff");
   const pension = ACCOUNTS.find((a) => a.code === "6020");
-  eq("pension is 6% of salaries", Math.round(40000 * pension.pct), 2400);
+  eq("pension is pulled from the Staff tab", pension.kind, "linked");
+
+  // nothing that another tab supplies may be typed over on the front sheet
+  const linkedCodes = ACCOUNTS.filter((a) => a.kind === "linked").map((a) => a.code);
+  ok("revenue accounts are all linked, not editable",
+     ["4000","4010","4020","4030","4040","4090"].every((c) => linkedCodes.includes(c)));
+  ok("staff cost accounts are all linked, not editable",
+     ["6000","6010","6020","6025","6026"].every((c) => linkedCodes.includes(c)));
+  ok("genuinely manual accounts remain editable",
+     ACCOUNTS.filter((a) => a.kind === "input").length > 0);
+  ok("recruitment and training stays manual",
+     ACCOUNTS.find((a) => a.code === "6030").kind === "input");
+  ok("every linked account names its source tab",
+     ACCOUNTS.filter((a) => a.kind === "linked").every((a) => a.src === "fees" || a.src === "staff"));
 
   ok("depreciation comes from the ledger rather than being budgeted by hand",
      ACCOUNTS.find((a) => a.code === "7050").kind === "actual");
@@ -167,7 +182,13 @@ group("Planning — budget arithmetic");
   const values = {}; ACCOUNTS.forEach((a) => { values[a.code] = 1000; });
   const groupTotal = (g) => ACCOUNTS.filter((a) => a.group === g).reduce((s, a) => s + values[a.code], 0);
   const net = ["Revenue", "Direct costs", "Staff costs", "Overheads"].reduce((s, g) => s + SIGN[g] * groupTotal(g), 0);
-  eq("net result subtracts every cost group from revenue", net, 6000 - 2000 - 4000 - 6000);
+  // computed from the chart rather than hardcoded, so adding an account does
+  // not silently break the assertion
+  const expected = groupTotal("Revenue") - groupTotal("Direct costs")
+                 - groupTotal("Staff costs") - groupTotal("Overheads");
+  eq("net result subtracts every cost group from revenue", net, expected);
+  ok("revenue is the only group added", SIGN["Revenue"] === 1 &&
+     ["Direct costs","Staff costs","Overheads"].every((g) => SIGN[g] === -1));
 }
 
 // ── 4. Budget period pivot ─────────────────────────────────────────────────
