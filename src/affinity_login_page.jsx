@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { signInWithMicrosoft, isAuthConfigured } from "./affinity_auth";
+import { signInWithMicrosoft, isAuthConfigured, getSession, onAuthChange } from "./affinity_auth";
 
 const CY = "#00C4CC";
 const NAVY = "#001242";
@@ -33,7 +33,49 @@ const VALUES = [
 // The previous LOGIN_MAP put 17 staff passwords into the public bundle.
 
 export default function AffinityLoginPage({ onLogin }) {
-  const [showSplash, setShowSplash] = useState(true);
+  // After Microsoft returns, the Supabase client parses the token from the URL
+  // hash into a session. Nothing was reading that result, so a successful
+  // sign-in landed straight back here — which presents as a refresh loop.
+  const [checkingSession, setCheckingSession] = useState(isAuthConfigured());
+
+  useEffect(() => {
+    if (!isAuthConfigured()) { setCheckingSession(false); return; }
+    let live = true;
+
+    getSession().then((session) => {
+      if (!live) return;
+      setCheckingSession(false);
+      if (session) {
+        // Tidy the token out of the address bar so it is not left in history,
+        // bookmarks or a screenshot.
+        if (window.location.hash && window.location.hash.includes("access_token")) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+        if (typeof onLogin === "function") onLogin(session);
+      }
+    });
+
+    // Also listen, because the client may finish parsing the hash just after
+    // the first check.
+    const stop = onAuthChange((session) => {
+      if (!live || !session) return;
+      setCheckingSession(false);
+      if (window.location.hash && window.location.hash.includes("access_token")) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+      if (typeof onLogin === "function") onLogin(session);
+    });
+
+    return () => { live = false; stop(); };
+  }, []);
+
+  // Do not show the splash when returning from Microsoft: the sign-in is
+  // already in flight, and a splash that needs a click would strand the user
+  // there — which is what presented as a redirect loop.
+  const returningFromSignIn =
+    typeof window !== "undefined" && window.location.hash &&
+    window.location.hash.includes("access_token");
+  const [showSplash, setShowSplash] = useState(!returningFromSignIn);
   const [username, setUsername]     = useState("");
   const [password, setPassword]     = useState("");
   const [showPass, setShowPass]     = useState(false);
@@ -58,6 +100,17 @@ export default function AffinityLoginPage({ onLogin }) {
 
 
   // ── SPLASH SCREEN (block-letter Affinity wordmark, pure CSS) ──
+  if (checkingSession) {
+    return (
+      <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center",
+                    background:"#001242", color:"#fff", fontFamily:"Catamaran, system-ui, sans-serif" }}>
+        <div style={{ textAlign:"center" }}>
+          <div style={{ fontSize:30, fontWeight:700, color:"#00C4CC", marginBottom:10 }}>Affinity</div>
+          <div style={{ fontSize:13, opacity:0.8 }}>Signing you in…</div>
+        </div>
+      </div>
+    );
+  }
   if (showSplash) return (
     <div onClick={() => setShowSplash(false)} style={{
       minHeight: "100vh", background: NAVY, display: "flex", alignItems: "center",
@@ -106,6 +159,11 @@ export default function AffinityLoginPage({ onLogin }) {
       </div>
     </div>
   );
+
+  // While the session is being read, do not show the form — a visible sign-in
+  // button at this moment invites a second click, which starts the OAuth round
+  // trip again and genuinely does loop.
+
 
   return (
     <div style={{ fontFamily: "'Catamaran', system-ui, sans-serif", background: "#fff", minHeight: "100vh", color: "#111" }}>

@@ -326,6 +326,7 @@ class ErrorBoundary extends React.Component {
 
 export default function AffinityCore(){
   const [loggedIn, setLoggedIn] = useState(false);
+  const [signedInUser, setSignedInUser] = useState(null);   // set when signed in via Microsoft
   const [splash, setSplash] = useState(true);
   const [mod,setMod]=useState("dashboard");
   const [uid,setUid]=useState(1);
@@ -450,7 +451,16 @@ export default function AffinityCore(){
 
   const navTo = (id) => { setMod(id); setSideOpen(false); };
 
-  if (!loggedIn) return <AffinityLoginPage onLogin={(id)=>{ setUid(id); setLoggedIn(true); setSplash(false); }}/>;
+  // onLogin receives either a chosen preview user id, or a Supabase session
+  // once Microsoft sign-in completes. Both mean the same thing here: show the app.
+  if (!loggedIn) return <AffinityLoginPage onLogin={(idOrSession)=>{
+    if (idOrSession && typeof idOrSession === "object" && idOrSession.user) {
+      setSignedInUser(idOrSession.user);          // real Entra identity
+    } else if (typeof idOrSession === "number") {
+      setUid(idOrSession);                        // preview user
+    }
+    setLoggedIn(true); setSplash(false);
+  }}/>;
   if (splash) return <SplashScreen onDone={() => setSplash(false)} />;
 
   return <div style={{display:"flex",height:"100vh",fontFamily:"'Catamaran',system-ui,sans-serif",overflow:"hidden",position:"relative",background:dark?"#1a1a2e":"#fff",...dm}} onClick={()=>{if(uOpen)setU(false);setSearchOpen(false);setNotifOpen(false);}}>
