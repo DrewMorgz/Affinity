@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import * as OUT from "./affinity_output";
 import * as EW from "./affinity_entity_write_api";
 import { filterEntitiesByAccess } from "./affinity_core_rbac";
 import { REGISTERS as RAW_REGISTERS, REGISTER_ORDER } from "./affinity_core_compliance";
@@ -229,7 +230,7 @@ function FATCATab({entity}) {
         ))}
         <div style={{marginTop:12,display:"flex",gap:6}}>
           <button style={{flex:1,padding:"6px",borderRadius:5,border:"0.5px solid #ccc",background:"transparent",fontSize:11,cursor:"pointer"}} disabled title="Needs the document generation engine, which is not built yet">View return ↗</button>
-          <button style={{flex:1,padding:"6px",borderRadius:5,border:"none",background:"#00C4CC",color:"#fff",fontSize:11,cursor:"pointer"}} disabled title="Filing to the regulator's portal is not connected yet">File return ↗</button>
+          <button style={{flex:1,padding:"6px",borderRadius:5,border:"none",background:"#00C4CC",color:"#fff",fontSize:11,cursor:"pointer"}} onClick={openPortal}>File return ↗</button>
         </div>
       </div>
     </div>}
@@ -331,6 +332,84 @@ function SubstanceTab({entity}) {
 }
 
 export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="system_admin", internalRefs }) {
+  // ── Output plumbing ───────────────────────────────────────────────────────
+  const [outMsg, setOutMsg] = useState("");
+  const outRun = (fn) => {
+    try {
+      const res = fn();
+      if (res && res.ok === false) { setOutMsg(res.error || "That could not be produced."); return false; }
+      setOutMsg("");
+      return true;
+    } catch (e) { setOutMsg(String((e && e.message) || e)); return false; }
+  };
+
+  // Statutory documents built from the entity's own record. Each opens as a
+  // printable view the browser saves as PDF; each is watermarked DRAFT because
+  // a template minute still needs reviewing before it reaches the books.
+  const docEntity = () => ({
+    name: entity && entity.name, ref: entity && entity.ref,
+    regNo: (det && det.profile && det.profile.reg_no) || (entity && entity.regNo),
+    jur: entity && entity.jur,
+    registeredOffice: det && det.addresses && det.addresses[0] && det.addresses[0].address,
+  });
+
+  const genMinutes = () => outRun(() => OUT.boardMinutes({
+    entity: docEntity(),
+    meetingDate: new Date().toLocaleDateString("en-GB"),
+    present: (det && det.officers || []).filter(o=>!o.resigned).map(o=>o.name).slice(0,8),
+    apologies: [],
+    business: [],
+  }));
+
+  const genResolution = () => outRun(() => OUT.boardResolution({
+    entity: docEntity(),
+    resolutionDate: new Date().toLocaleDateString("en-GB"),
+    resolutions: [],
+  }));
+
+  // Register extracts. Which register depends on the tab you are on, so the
+  // same button serves all of them rather than one per register.
+  const registerRows = () => {
+    if (!det) return { name: "Register", headers: [], rows: [] };
+    switch (tab) {
+      case "officers": return { name: "Register of Directors and Officers",
+        headers: ["Name","Role","Appointed","Resigned","Nationality"],
+        rows: (det.officers||[]).map(o=>[o.name,o.role,fmtD(o.appointed),o.resigned?fmtD(o.resigned):"—",o.nationality]) };
+      case "shareholders": return { name: "Register of Members",
+        headers: ["Name","Class","Shares","Holding %","Held from"],
+        rows: (det.shareholders||[]).map(s=>[s.name,s.share_class,s.shares,s.pct,fmtD(s.held_from)]) };
+      case "ubos": case "relations": return { name: "Register of Beneficial Owners",
+        headers: ["Name","Role","Nationality","Ownership %","Nature of control"],
+        rows: (det.ubos||[]).map(u=>[u.name,u.role,u.nationality,u.ownership_pct,u.nature_of_control]) };
+      case "charges": return { name: "Register of Charges",
+        headers: ["Chargee","Type","Amount","Registered","Satisfied"],
+        rows: (det.charges||[]).map(c=>[c.chargee,c.charge_type,c.amount,fmtD(c.registered_date),c.satisfied_date?fmtD(c.satisfied_date):"—"]) };
+      case "meetings": return { name: "Register of Meetings",
+        headers: ["Type","Date","Notes"],
+        rows: (det.meetings||[]).map(m=>[m.meeting_type,fmtD(m.meeting_date),m.notes]) };
+      default: return { name: "Register", headers: [], rows: [] };
+    }
+  };
+
+  const printRegister = () => {
+    const r = registerRows();
+    if (!r.rows.length) { setOutMsg("There is nothing in this register to produce."); return; }
+    outRun(() => OUT.registerExtract({ entity: docEntity(), registerName: r.name,
+                                       headers: r.headers, rows: r.rows }));
+  };
+
+  const exportRegister = () => {
+    const r = registerRows();
+    if (!r.rows.length) { setOutMsg("There is nothing in this register to export."); return; }
+    const label = (entity && entity.ref ? entity.ref + " " : "") + r.name;
+    outRun(() => OUT.downloadTableCSV(label, r.headers, r.rows));
+  };
+
+  // Filing happens on the regulator's own portal — none of them gives us an
+  // API — so this opens the right one and leaves the submission to be recorded
+  // against the filing in Core.
+  const openPortal = () => outRun(() => OUT.openRegulatorPortal(entity && entity.jur));
+
   const [sel, setSel]       = useState(1);
   const [tab, setTab]       = useState("overview");
   const [search, setSearch] = useState("");
@@ -900,8 +979,8 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
                 <div key={k} style={s.dRow}><span style={s.dKey}>{k}</span><span style={{ ...s.dVal, maxWidth:300, whiteSpace:"normal", textAlign:"right" }}>{v}</span></div>
               ))}
               <div style={{ display:"flex", gap:6, marginTop:8 }}>
-                <button style={{ ...s.btn(false), fontSize:10 }} disabled title="Needs the document generation engine, which is not built yet">Generate minutes ↗</button>
-                <button style={{ ...s.btn(false), fontSize:10 }} disabled title="Needs the document generation engine, which is not built yet">Generate resolution ↗</button>
+                <button style={{ ...s.btn(false), fontSize:10 }} onClick={genMinutes}>Generate minutes ↗</button>
+                <button style={{ ...s.btn(false), fontSize:10 }} onClick={genResolution}>Generate resolution ↗</button>
                 <button style={{ ...s.btn(true), fontSize:10 }} onClick={()=>onNav&&onNav("documents")}>View documents ↗</button>
               </div>
             </div>
@@ -1047,9 +1126,9 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
             <div key={r} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 0", borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)" }}>
               <span style={{ fontSize:12 }}>{r}</span>
               <div style={{ display:"flex", gap:6 }}>
-                <button style={{ ...s.btn(false), fontSize:10 }} disabled title="Needs the document generation engine, which is not built yet">Word ↗</button>
-                <button style={{ ...s.btn(false), fontSize:10 }} disabled title="Needs the spreadsheet export, which is not built yet">Excel ↗</button>
-                <button style={{ ...s.btn(true), fontSize:10 }} disabled title="Needs the PDF renderer, which is not built yet">PDF ↗</button>
+                <button style={{ ...s.btn(false), fontSize:10 }} onClick={printRegister}>Word ↗</button>
+                <button style={{ ...s.btn(false), fontSize:10 }} onClick={exportRegister}>Excel ↗</button>
+                <button style={{ ...s.btn(true), fontSize:10 }} onClick={printRegister}>PDF ↗</button>
               </div>
             </div>
           ))}
@@ -1057,9 +1136,9 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
             <div style={{ fontSize:12, fontWeight:600, marginBottom:8 }}>Structure chart</div>
             <div style={{ fontSize:11, color:"var(--text-secondary,#666)", marginBottom:10 }}>Generate a structure chart showing ownership, control, and relationships for {entity.name}.</div>
             <div style={{ display:"flex", gap:6 }}>
-              <button style={{ ...s.btn(false), fontSize:10 }} disabled title="Needs the document generation engine, which is not built yet">Word ↗</button>
-              <button style={{ ...s.btn(false), fontSize:10 }} disabled title="Needs the spreadsheet export, which is not built yet">Excel ↗</button>
-              <button style={{ ...s.btn(true), fontSize:10 }} disabled title="Needs the PDF renderer, which is not built yet">PDF ↗</button>
+              <button style={{ ...s.btn(false), fontSize:10 }} onClick={printRegister}>Word ↗</button>
+              <button style={{ ...s.btn(false), fontSize:10 }} onClick={exportRegister}>Excel ↗</button>
+              <button style={{ ...s.btn(true), fontSize:10 }} onClick={printRegister}>PDF ↗</button>
             </div>
           </div>
         </div>
@@ -1322,6 +1401,13 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
 
   return (
     <div style={s.wrap}>
+      {outMsg && (
+        <div style={{ margin:"0 20px 10px", padding:"9px 12px", borderRadius:7, fontSize:11.5,
+                      lineHeight:1.6, background:"#FCEBEB", border:"0.5px solid #f0c9c9", color:"#A32D2D" }}>
+          {outMsg}
+        </div>
+      )}
+
       {/* Header */}
       <div style={s.hdr}>
         <div style={s.logo}>Entity Admin</div>

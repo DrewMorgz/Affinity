@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import * as OUT from "./affinity_output";
 import * as DW from "./affinity_docs_onb_write_api";
 import EntitySearch from "./affinity_entity_search";
 const ENTITY_NAMES = ["Meridian Holdings Ltd","Harrington Family Trust","Pacific Wealth Trust","Caledonian Ventures Ltd","North Star Holdings Ltd","Azure Mediterranean Foundation","Apex Growth Fund Ltd","Stonebridge Capital Ltd","Thornbury Asset Co Ltd","Bluewater Family Trust","Phoenix eGaming Ltd","Meridian Digital Ltd","Suncoast Ventures LLC"];
@@ -67,6 +68,47 @@ const FEE_SCHEDULES = [
 ];
 
 export default function AffinityInvoicing({ onNav }) {
+  // ── Output plumbing ───────────────────────────────────────────────────────
+  const [outMsg, setOutMsg] = useState("");
+  const outRun = (fn) => {
+    try {
+      const res = fn();
+      if (res && res.ok === false) { setOutMsg(res.error || "That could not be produced."); return false; }
+      setOutMsg("");
+      return true;
+    } catch (e) { setOutMsg(String((e && e.message) || e)); return false; }
+  };
+
+  // A printable invoice, and chase or reminder messages prepared for the
+  // user's mail client. Sending an invoice unattended needs a mail service,
+  // which is a separate build — this covers a person sending it from their desk.
+  const printInvoice = () => {
+    const inv = (typeof selInv !== "undefined" && selInv) ? selInv : null;
+    if (!inv) { setOutMsg("Select an invoice first."); return; }
+    outRun(() => OUT.statementDocument({
+      entity: { name: inv.client || inv.entity || "Client" },
+      title: "Invoice " + (inv.number || inv.ref || ""),
+      headers: ["Description","Net","VAT","Gross"],
+      numericCols: [1,2,3],
+      rows: (inv.lines || [[inv.description || "Professional services", inv.net || inv.amount, inv.vat || 0, inv.gross || inv.amount]]),
+      periodLabel: inv.date ? "Dated " + inv.date : null,
+      totals: [["Total due", (inv.ccy || "£") + (inv.gross || inv.amount || "")]],
+    }));
+  };
+
+  const chaseInvoice = () => {
+    const inv = (typeof selInv !== "undefined" && selInv) ? selInv : null;
+    outRun(() => OUT.composeEmail({
+      to: "",
+      subject: "Outstanding invoice" + (inv && inv.number ? " " + inv.number : ""),
+      body: "Our records show the following invoice remains outstanding"
+          + (inv && inv.number ? ": " + inv.number : ".") + "\n\n"
+          + (inv && inv.amount ? "Amount: " + inv.amount + "\n" : "")
+          + (inv && inv.date ? "Dated: " + inv.date + "\n" : "")
+          + "\nWe would be grateful for settlement. If payment has already been made, please let us know.\n",
+    }));
+  };
+
   // ── Write layer plumbing ──────────────────────────────────────────────────
   const [wBusy, setWBusy] = useState(false);
   const [wMsg, setWMsg]   = useState("");
@@ -175,6 +217,13 @@ export default function AffinityInvoicing({ onNav }) {
 
   return (
     <div style={{ fontFamily:"'Catamaran',system-ui,sans-serif", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)", minHeight:600 }}>
+      {outMsg && (
+        <div style={{ margin:"0 20px 10px", padding:"9px 12px", borderRadius:7, fontSize:11.5,
+                      lineHeight:1.6, background:"#FCEBEB", border:"0.5px solid #f0c9c9", color:"#A32D2D" }}>
+          {outMsg}
+        </div>
+      )}
+
       {wMsg && (
         <div style={{ margin:"0 20px 10px", padding:"9px 12px", borderRadius:7, fontSize:11.5,
                       lineHeight:1.6, border:"0.5px solid",
@@ -277,7 +326,7 @@ export default function AffinityInvoicing({ onNav }) {
 
           <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
             <button style={{padding:"9px 20px",borderRadius:6,border:"0.5px solid #e5e5e5",background:"transparent",fontSize:13,cursor:"pointer",color:"#666"}} onClick={saveInvoiceDraft}>Save draft</button>
-            <button style={{padding:"9px 20px",borderRadius:6,border:"0.5px solid #00C4CC",background:"transparent",fontSize:13,cursor:"pointer",color:"#00C4CC",fontWeight:600}} disabled title="Needs the PDF renderer, which is not built yet">Preview PDF ↗</button>
+            <button style={{padding:"9px 20px",borderRadius:6,border:"0.5px solid #00C4CC",background:"transparent",fontSize:13,cursor:"pointer",color:"#00C4CC",fontWeight:600}} onClick={printInvoice}>Preview PDF ↗</button>
             <button style={{padding:"9px 20px",borderRadius:6,border:"none",background:"#00C4CC",color:"#fff",fontSize:13,cursor:"pointer",fontWeight:600}} onClick={issueInvoice}>Issue invoice ↗</button>
           </div>
         </div>
@@ -381,7 +430,7 @@ export default function AffinityInvoicing({ onNav }) {
                 )}
               </div>
               <div style={{ display:"flex", gap:6, marginTop:12 }}>
-                <button style={nb} disabled title="Needs the PDF renderer, which is not built yet">PDF ↗</button>
+                <button style={nb} onClick={printInvoice}>PDF ↗</button>
                 <button style={nba} disabled title="Needs email sending, which is not connected yet">Send ↗</button>
               </div>
             </div>
@@ -497,7 +546,7 @@ export default function AffinityInvoicing({ onNav }) {
                   <td style={{ ...td, textAlign:"right", color:r.c61?"#F59E0B":"#aaa" }}>{r.c61?fmt(r.c61):"—"}</td>
                   <td style={{ ...td, textAlign:"right", color:r.c90?"#EF4444":"#aaa" }}>{r.c90?fmt(r.c90):"—"}</td>
                   <td style={{ ...td, textAlign:"right", fontWeight:600 }}>{fmt(r.c0+r.c31+r.c61+r.c90)}</td>
-                  <td style={td}>{(r.c61||r.c90)>0?<button style={{ ...nb, fontSize:10, color:"#EF4444", borderColor:"#EF4444" }} disabled title="Needs email sending, which is not connected yet">Chase ↗</button>:<span style={{ color:"#aaa", fontSize:11 }}>Sent</span>}</td>
+                  <td style={td}>{(r.c61||r.c90)>0?<button style={{ ...nb, fontSize:10, color:"#EF4444", borderColor:"#EF4444" }} onClick={chaseInvoice}>Chase ↗</button>:<span style={{ color:"#aaa", fontSize:11 }}>Sent</span>}</td>
                 </tr>
               ))}
             </tbody>
@@ -606,7 +655,7 @@ export default function AffinityInvoicing({ onNav }) {
                   <div style={{ fontWeight:600, fontSize:14, color:days>60?"#EF4444":"#F59E0B" }}>{fmt(i.balance)}</div>
                   <div style={{ fontSize:11, color:days>60?"#EF4444":"#F59E0B", marginTop:2 }}>{days} days overdue</div>
                   <div style={{ display:"flex", gap:6, marginTop:8, justifyContent:"flex-end" }}>
-                    <button style={{ ...nb, fontSize:10 }} disabled title="Needs email sending, which is not connected yet">Send reminder</button>
+                    <button style={{ ...nb, fontSize:10 }} onClick={chaseInvoice}>Send reminder</button>
                     {days>60&&<button style={{ fontSize:10, padding:"4px 10px", borderRadius:5, border:"0.5px solid #EF4444", color:"#EF4444", background:"transparent", cursor:"pointer" }} disabled title="Escalation routing is not configured yet — chase the owner directly for now">Escalate</button>}
                   </div>
                 </div>

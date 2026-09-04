@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import * as OUT from "./affinity_output";
 import * as DW from "./affinity_docs_onb_write_api";
 import EntitySearch from "./affinity_entity_search";
 import { isConfigured } from "./affinity_accounting_supabase";
@@ -73,6 +74,31 @@ const th = { padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:600, 
 const td = { padding:"9px 12px", fontSize:11, borderBottom:"0.5px solid #e5e5e5", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" };
 
 export default function AffinityStatutory() {
+  // ── Output plumbing ───────────────────────────────────────────────────────
+  const [outMsg, setOutMsg] = useState("");
+  const outRun = (fn) => {
+    try {
+      const res = fn();
+      if (res && res.ok === false) { setOutMsg(res.error || "That could not be produced."); return false; }
+      setOutMsg("");
+      return true;
+    } catch (e) { setOutMsg(String((e && e.message) || e)); return false; }
+  };
+
+  // Export whatever the current table holds, and open the regulator's portal
+  // for the entity's jurisdiction.
+  const exportFilings = () => {
+    const rows = (typeof filings !== "undefined" && Array.isArray(filings)) ? filings : [];
+    if (!rows.length) { setOutMsg("There is nothing on this page to export."); return; }
+    outRun(() => OUT.downloadCSV("Statutory filings", [
+      { label:"Entity", key:"entity" }, { label:"Filing", key:"type" },
+      { label:"Due", key:"due" }, { label:"Status", key:"status" },
+      { label:"Owner", key:"owner" },
+    ], rows));
+  };
+  const openPortal = (jur) => outRun(() => OUT.openRegulatorPortal(jur ||
+    (typeof selJur !== "undefined" ? selJur : "Isle of Man")));
+
   // ── Write layer plumbing ──────────────────────────────────────────────────
   const [wBusy, setWBusy] = useState(false);
   const [wMsg, setWMsg]   = useState("");
@@ -154,6 +180,13 @@ export default function AffinityStatutory() {
 
   return (
     <div style={{ fontFamily:"'Catamaran',system-ui,sans-serif", background:"#f8f9fc", color:"#111", minHeight:"100vh" }}>
+      {outMsg && (
+        <div style={{ margin:"0 20px 10px", padding:"9px 12px", borderRadius:7, fontSize:11.5,
+                      lineHeight:1.6, background:"#FCEBEB", border:"0.5px solid #f0c9c9", color:"#A32D2D" }}>
+          {outMsg}
+        </div>
+      )}
+
       {wMsg && (
         <div style={{ margin:"0 20px 10px", padding:"9px 12px", borderRadius:7, fontSize:11.5,
                       lineHeight:1.6, border:"0.5px solid",
@@ -250,7 +283,7 @@ export default function AffinityStatutory() {
                 </select>
               </div>
               <div style={{ display:"flex", gap:6 }}>
-                <button style={{ ...nb, fontSize:10 }} disabled title="Needs the spreadsheet export, which is not built yet">Export to Excel ↗</button>
+                <button style={{ ...nb, fontSize:10 }} onClick={exportFilings}>Export to Excel ↗</button>
                 <button style={nba} onClick={()=>setModal("newReturn")}>＋ Log filing</button>
               </div>
             </div>
@@ -270,7 +303,7 @@ export default function AffinityStatutory() {
                     <td style={{ ...td, color:"#666" }}>{r.admin}</td>
                     <td style={{ ...td, color:"#aaa" }}>{r.fee}</td>
                     <td style={td}><Badge label={r.status} colors={statusC[r.status]||{bg:"#eee",color:"#666"}} /></td>
-                    <td style={td}>{r.status==="Overdue"?<button style={{ ...nb, fontSize:10, borderColor:"#EF4444", color:"#EF4444" }} disabled title="Filing to the regulator's portal is not connected yet">File ↗</button>:<button style={{ ...nb, fontSize:10 }} onClick={()=>filingAction("prepare")}>Prepare ↗</button>}</td>
+                    <td style={td}>{r.status==="Overdue"?<button style={{ ...nb, fontSize:10, borderColor:"#EF4444", color:"#EF4444" }} onClick={()=>openPortal()}>File ↗</button>:<button style={{ ...nb, fontSize:10 }} onClick={()=>filingAction("prepare")}>Prepare ↗</button>}</td>
                   </tr>
                 ))}
               </tbody>

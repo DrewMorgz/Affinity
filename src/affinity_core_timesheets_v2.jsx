@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import * as OUT from "./affinity_output";
 import * as OW from "./affinity_ops_write_api";
 import EntitySearch from "./affinity_entity_search";
 const ENTITY_NAMES = ["Meridian Holdings Ltd","Harrington Family Trust","Pacific Wealth Trust","Caledonian Ventures Ltd","North Star Holdings Ltd","Azure Mediterranean Foundation","Apex Growth Fund Ltd","Stonebridge Capital Ltd","Thornbury Asset Co Ltd","Bluewater Family Trust","Phoenix eGaming Ltd","Meridian Digital Ltd","Suncoast Ventures LLC"];
@@ -51,6 +52,37 @@ const VIEWS = ["entry","wip","utilisation","missing","approval","reports"];
 const VLABELS = ["Time entry","WIP by entity","Utilisation","Missing timesheets","Approval queue","Reports"];
 
 export default function AffinityTimesheets({ onNav }) {
+  // ── Output plumbing ───────────────────────────────────────────────────────
+  const [outMsg, setOutMsg] = useState("");
+  const outRun = (fn) => {
+    try {
+      const res = fn();
+      if (res && res.ok === false) { setOutMsg(res.error || "That could not be produced."); return false; }
+      setOutMsg("");
+      return true;
+    } catch (e) { setOutMsg(String((e && e.message) || e)); return false; }
+  };
+
+  // A timesheet report as a printable document, and a reminder handed to the
+  // user's mail client — a browser cannot send mail itself, and this keeps the
+  // sent copy in their own mailbox.
+  const printTimesheetReport = () => outRun(() => OUT.statementDocument({
+    entity: { name: "Affinity Group" },
+    title: "Time and recovery report",
+    headers: ["Date","Entity","Matter","Hours","Billable","Status"],
+    numericCols: [3],
+    rows: (typeof entries !== "undefined" && Array.isArray(entries) ? entries : [])
+      .slice(0, 200).map(e=>[e.date, e.entity, e.matter, e.hours, e.billable ? "Yes" : "No", e.status]),
+    periodLabel: "As at " + new Date().toLocaleDateString("en-GB"),
+  }));
+
+  const sendTimeReminder = () => outRun(() => OUT.composeEmail({
+    to: "",
+    subject: "Timesheets outstanding",
+    body: "Your timesheet for the current week has not been submitted.\n\n"
+        + "Please complete and submit it in Affinity Core.\n\nThank you.",
+  }));
+
   // ── Write layer plumbing ──────────────────────────────────────────────────
   const [wBusy, setWBusy] = useState(false);
   const [wMsg, setWMsg]   = useState("");
@@ -203,6 +235,13 @@ export default function AffinityTimesheets({ onNav }) {
 
   return (
     <div style={{ fontFamily:"'Catamaran',system-ui,sans-serif", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)", minHeight:600 }}>
+      {outMsg && (
+        <div style={{ margin:"0 20px 10px", padding:"9px 12px", borderRadius:7, fontSize:11.5,
+                      lineHeight:1.6, background:"#FCEBEB", border:"0.5px solid #f0c9c9", color:"#A32D2D" }}>
+          {outMsg}
+        </div>
+      )}
+
       {wMsg && (
         <div style={{ margin:"0 20px 10px", padding:"9px 12px", borderRadius:7, fontSize:11.5,
                       lineHeight:1.6, border:"0.5px solid",
@@ -410,7 +449,7 @@ export default function AffinityTimesheets({ onNav }) {
                 <div style={{ fontSize:11, color:"#A32D2D", marginTop:2 }}>No timesheet submitted for W/C 14 Jul 2025 · {s.office}</div>
               </div>
               <div style={{ display:"flex", gap:8 }}>
-                <button style={{ ...nb, fontSize:11 }} disabled title="Needs email sending, which is not connected yet">Send reminder</button>
+                <button style={{ ...nb, fontSize:11 }} onClick={sendTimeReminder}>Send reminder</button>
                 <button style={{ color:"#EF4444", border:"0.5px solid #EF4444", padding:"5px 12px", borderRadius:5, background:"transparent", fontSize:11, cursor:"pointer" }} disabled title="Escalation routing is not configured yet — chase the owner directly for now">Escalate ↗</button>
               </div>
             </div>
@@ -462,7 +501,7 @@ export default function AffinityTimesheets({ onNav }) {
                   <select style={{ height:28, padding:"0 6px", fontSize:11, borderRadius:5, border:"0.5px solid #ccc", background:"var(--bg-primary,#fff)", cursor:"pointer" }}>
                     <option>This week</option><option>This month</option><option>YTD</option><option>Custom</option>
                   </select>
-                  <button style={nba} disabled title="Needs the document generation engine, which is not built yet">Generate ↗</button>
+                  <button style={nba} onClick={printTimesheetReport}>Generate ↗</button>
                 </div>
               </div>
             ))}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import * as OUT from "./affinity_output";
 import * as DW from "./affinity_docs_onb_write_api";
 import EntitySearch from "./affinity_entity_search";
 import { isConfigured } from "./affinity_accounting_supabase";
@@ -52,6 +53,55 @@ const VIEWS = ["pipeline","active","transfer","attrition","portal"];
 const VLABELS = ["Overview","Active onboardings","Transfer-in","Attrition","Client portal"];
 
 export default function AffinityOnboarding({ initialView , onNav }) {
+  // ── Output plumbing ───────────────────────────────────────────────────────
+  const [outMsg, setOutMsg] = useState("");
+  const outRun = (fn) => {
+    try {
+      const res = fn();
+      if (res && res.ok === false) { setOutMsg(res.error || "That could not be produced."); return false; }
+      setOutMsg("");
+      return true;
+    } catch (e) { setOutMsg(String((e && e.message) || e)); return false; }
+  };
+
+  // The CDD gap report is the useful document here: what is still outstanding,
+  // per case, which is what gets chased.
+  const gapReport = () => {
+    const c = (typeof selCase !== "undefined" && selCase) ? selCase : null;
+    if (!c) { setOutMsg("Select a case first."); return; }
+    const outstanding = (c.docs && c.docs.outstanding) || [];
+    const received = (c.docs && c.docs.received) || [];
+    outRun(() => OUT.genericDocument({
+      entity: { name: c.entity || c.client || "Onboarding case" },
+      title: "Customer due diligence — outstanding items",
+      sections: [
+        { heading: "Case", pairs: [
+            ["Client", c.client || c.entity], ["Stage", c.stage],
+            ["Risk rating", c.risk], ["Administrator", c.admin || c.assigned],
+            ["Target date", c.target] ] },
+        { heading: "Outstanding (" + outstanding.length + ")",
+          table: outstanding.length
+            ? { headers: ["Item"], rows: outstanding.map(d=>[d]) }
+            : null,
+          text: outstanding.length ? null : "Nothing outstanding." },
+        { heading: "Received (" + received.length + ")",
+          table: received.length ? { headers: ["Item"], rows: received.map(d=>[d]) } : null,
+          text: received.length ? null : "Nothing recorded as received yet." },
+      ],
+    }));
+  };
+
+  const reInvite = () => {
+    const c = (typeof selCase !== "undefined" && selCase) ? selCase : null;
+    outRun(() => OUT.composeEmail({
+      to: "",
+      subject: "Affinity client portal — invitation",
+      body: "We have re-issued your invitation to the Affinity client portal"
+          + (c && (c.client || c.entity) ? " for " + (c.client || c.entity) : "") + ".\n\n"
+          + "Please use it to upload the outstanding due diligence items.\n",
+    }));
+  };
+
   const [entitySearch, setEntitySearch] = useState("");
   const [view, setView]   = useState(initialView || "pipeline");
   const [live, setLive]   = useState(null);
@@ -147,6 +197,13 @@ export default function AffinityOnboarding({ initialView , onNav }) {
 
   return (
     <div style={{ fontFamily:"'Catamaran',system-ui,sans-serif", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)", minHeight:600 }}>
+      {outMsg && (
+        <div style={{ margin:"0 20px 10px", padding:"9px 12px", borderRadius:7, fontSize:11.5,
+                      lineHeight:1.6, background:"#FCEBEB", border:"0.5px solid #f0c9c9", color:"#A32D2D" }}>
+          {outMsg}
+        </div>
+      )}
+
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 20px", borderBottom:"0.5px solid #e5e5e5" }}>
         <div style={{ fontSize:18, fontWeight:500, color:"#001242" }}>Onboarding</div>
         <div style={{ display:"flex", gap:5 }}>
@@ -288,7 +345,7 @@ export default function AffinityOnboarding({ initialView , onNav }) {
                 <span style={{ color:icon==="✓"?"#4CAF7D":"#EF4444", fontWeight:500 }}>{icon} {status}</span>
               </div>
             ))}
-            <button style={{ ...nba, marginTop:10, fontSize:11 }} disabled title="Needs the document generation engine, which is not built yet">Generate gap report ↗</button>
+            <button style={{ ...nba, marginTop:10, fontSize:11 }} onClick={gapReport}>Generate gap report ↗</button>
           </div>
         </div>
       )}
@@ -350,7 +407,7 @@ export default function AffinityOnboarding({ initialView , onNav }) {
                   <td style={{ ...td, color:"#666" }}>{r.sent}</td>
                   <td style={{ ...td, color:r.status==="Expired"?"#EF4444":"#666" }}>{r.exp}</td>
                   <td style={td}><Badge label={r.status} colors={{ Completed:{bg:"#EAF3DE",color:"#27500A"}, "Accessed — incomplete":{bg:"#FAEEDA",color:"#633806"}, "Awaiting response":{bg:"#E6F7FB",color:"#0077A8"}, Expired:{bg:"#FCEBEB",color:"#A32D2D"} }[r.status]||{bg:"#eee",color:"#666"}} /></td>
-                  <td style={td}>{r.status==="Expired"?<button style={{ ...nb, fontSize:10 }} disabled title="Needs email sending, which is not connected yet">Re-invite</button>:<button style={{ ...nb, fontSize:10 }} disabled title="Not routed yet — open the record from its own module">View ↗</button>}</td>
+                  <td style={td}>{r.status==="Expired"?<button style={{ ...nb, fontSize:10 }} onClick={reInvite}>Re-invite</button>:<button style={{ ...nb, fontSize:10 }} disabled title="Not routed yet — open the record from its own module">View ↗</button>}</td>
                 </tr>
               ))}
             </tbody>

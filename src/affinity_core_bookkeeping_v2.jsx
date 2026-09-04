@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import * as OUT from "./affinity_output";
 import * as DW from "./affinity_docs_onb_write_api";
 import EntitySearch from "./affinity_entity_search";
 import { bkEntities, bkTxnsAll, bkPnlAll, bkBanksAll, isConfigured } from "./affinity_ops_api";
@@ -64,6 +65,42 @@ const VIEWS = ["sales","purchases","cashbook","journals","reports"];
 const VLABELS = ["Sales","Purchases","Cashbook","Journals (adjustments)","Reports"];
 
 export default function AffinityBookkeeping({ onNav }) {
+  // ── Output plumbing ───────────────────────────────────────────────────────
+  const [outMsg, setOutMsg] = useState("");
+  const outRun = (fn) => {
+    try {
+      const res = fn();
+      if (res && res.ok === false) { setOutMsg(res.error || "That could not be produced."); return false; }
+      setOutMsg("");
+      return true;
+    } catch (e) { setOutMsg(String((e && e.message) || e)); return false; }
+  };
+
+  // Ledger export and a printable client statement.
+  const exportLedger = () => {
+    const rows = (typeof txns !== "undefined" && Array.isArray(txns)) ? txns : [];
+    if (!rows.length) { setOutMsg("There are no transactions to export."); return; }
+    outRun(() => OUT.downloadCSV("Ledger export", [
+      { label:"Date", key:"txn_date" }, { label:"Description", key:"descr" },
+      { label:"Type", key:"txn_type" }, { label:"Debit", key:"dr" },
+      { label:"Credit", key:"cr" }, { label:"Reference", key:"ref" },
+      { label:"Account", key:"account" }, { label:"Status", key:"status" },
+    ], rows));
+  };
+
+  const printStatement = () => {
+    const rows = (typeof txns !== "undefined" && Array.isArray(txns)) ? txns : [];
+    const ent = (ents||[]).find(e=>e.id===eId) || {};
+    outRun(() => OUT.statementDocument({
+      entity: { name: ent.name || "Selected entity" },
+      title: "Statement of account",
+      headers: ["Date","Description","Debit","Credit"],
+      numericCols: [2,3],
+      rows: rows.map(t=>[t.txn_date, t.descr, t.dr || "", t.cr || ""]),
+      periodLabel: "As at " + new Date().toLocaleDateString("en-GB"),
+    }));
+  };
+
   const [entitySearch, setEntitySearch] = useState("");
   const [bkE,setBkE]=useState(null),[bkT,setBkT]=useState(null),[bkP,setBkP]=useState(null),[bkB,setBkB]=useState(null);
   useEffect(()=>{ if(!isConfigured) return; let ok=true;
@@ -199,6 +236,13 @@ export default function AffinityBookkeeping({ onNav }) {
 
   return (
     <div style={{ fontFamily:"'Catamaran',system-ui,sans-serif", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)", minHeight:600 }}>
+      {outMsg && (
+        <div style={{ margin:"0 20px 10px", padding:"9px 12px", borderRadius:7, fontSize:11.5,
+                      lineHeight:1.6, background:"#FCEBEB", border:"0.5px solid #f0c9c9", color:"#A32D2D" }}>
+          {outMsg}
+        </div>
+      )}
+
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 20px", borderBottom:"0.5px solid #e5e5e5" }}>
         <div style={{ fontSize:18, fontWeight:500, color:"#001242" }}>Bookkeeping</div>
         <div style={{ display:"flex", gap:5 }}>
@@ -334,7 +378,7 @@ export default function AffinityBookkeeping({ onNav }) {
         </div>
         <div style={{ padding:"8px 20px", display:"flex", justifyContent:"flex-end", gap:8 }}>
           <button style={nb} onClick={()=>setModal("journal")}>＋ Post journal</button>
-          <button style={nba} disabled title="Needs the spreadsheet export, which is not built yet">Export ledger ↗</button>
+          <button style={nba} onClick={exportLedger}>Export ledger ↗</button>
         </div>
       </>)}
 
@@ -417,7 +461,7 @@ export default function AffinityBookkeeping({ onNav }) {
                   ))}
                   <div style={{ display:"flex", gap:6, marginTop:10 }}>
                     <button style={{ ...nb, fontSize:10 }} disabled title="Needs a bank feed, which is not connected yet">Reconcile ↗</button>
-                    <button style={{ ...nb, fontSize:10 }} disabled title="Needs the document generation engine, which is not built yet">Statement ↗</button>
+                    <button style={{ ...nb, fontSize:10 }} onClick={printStatement}>Statement ↗</button>
                   </div>
                 </div>
               ))}
@@ -497,7 +541,7 @@ export default function AffinityBookkeeping({ onNav }) {
                 <div style={{ display:"flex", gap:6 }}>
                   <select style={{ ...sel, flex:1, height:28, fontSize:11 }}><option>YTD 2025</option><option>Q2 2025</option><option>FY 2024</option></select>
                   <><input list="bk-rep-entity" defaultValue="All entities" placeholder="Search entity…" style={{ ...sel, flex:1, height:28, fontSize:11, boxSizing:"border-box" }} /><datalist id="bk-rep-entity"><option value="All entities"/>{ents.map(e=><option key={e.id} value={e.name}/>)}</datalist></>
-                  <button style={nba} disabled title="Needs the document generation engine, which is not built yet">Generate ↗</button>
+                  <button style={nba} onClick={printStatement}>Generate ↗</button>
                 </div>
               </div>
             ))}

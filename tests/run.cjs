@@ -739,6 +739,49 @@ group("Write layer — retention override is opt-in");
      DW.ONBOARDING_STAGES[DW.ONBOARDING_STAGES.length - 1] === "Declined");
 }
 
+
+group("Output — spreadsheet export and printable documents");
+{
+  // The output layer takes no new dependencies: CSV is a Blob, and PDFs come
+  // from the browser's own print dialogue over a styled view.
+  const OUT = require(path.join(SRC, "affinity_output.js"));
+
+  // Excel is unforgiving about these three things.
+  const csv = OUT.toCSV(
+    [{ label: "Name", key: "n" }, { label: "Amount", key: "a" }],
+    [{ n: "Müller & Co", a: 1200 }, { n: 'O"Brien, A', a: -50 }, { n: "=1+1", a: 0 }]);
+  ok("a BOM is written so accented names survive Excel", csv.charCodeAt(0) === 0xFEFF);
+  ok("a value containing a comma and quote is escaped", csv.includes('"O""Brien, A"'));
+  ok("a value Excel would evaluate as a formula is neutralised", csv.includes("'=1+1"));
+  ok("rows are CRLF terminated as Excel expects", csv.includes("\r\n"));
+  eq("header plus one row per record", csv.trim().split("\r\n").length, 4);
+  // trim() would remove the very empty cell being tested, so split the raw text
+  eq("a nil value becomes an empty cell, not the text null",
+     OUT.toCSV([{ label: "A", key: "a" }], [{ a: null }]).split("\r\n")[1], "");
+  ok("...and not the string 'null'",
+     !OUT.toCSV([{ label: "A", key: "a" }], [{ a: null }]).includes("null"));
+
+  // HTML built for a document must not be injectable from entity data.
+  ok("entity data is escaped into documents",
+     OUT.htmlTable(["A"], [["<script>alert(1)</script>"]]).includes("&lt;script&gt;"));
+  ok("a blank value shows as a dash rather than nothing",
+     OUT.htmlPairs([["Registered number", ""]]).includes("—"));
+  ok("a table marks its numeric columns for right alignment",
+     OUT.htmlTable(["A", "B"], [["1", "2"]], [1]).includes('class="num"'));
+
+  // Email: a browser cannot send, but it can hand over a prepared message.
+  const long = OUT.composeEmail({ to: "a@b.com", body: "x".repeat(2500) });
+  ok("an over-long message is refused rather than silently truncated by the OS",
+     long.ok === false && /too long/.test(long.error));
+
+  // Regulator portals: filing is done on their site, so the right action is to
+  // open the correct one.
+  ["Isle of Man","Malta","Cayman Islands","United Kingdom","Cyprus","United States"]
+    .forEach((j) => ok("a portal is recorded for " + j, !!OUT.REGULATOR_PORTALS[j]));
+  ok("an unknown jurisdiction is reported, not opened blindly",
+     OUT.openRegulatorPortal("Nowhere").ok === false);
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import * as OUT from "./affinity_output";
 import * as DW from "./affinity_docs_onb_write_api";
 import EntitySearch from "./affinity_entity_search";
 import { isConfigured } from "./affinity_accounting_supabase";
@@ -64,6 +65,38 @@ const th = { padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:600, 
 const td = { padding:"9px 12px", fontSize:11, borderBottom:"0.5px solid #e5e5e5", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" };
 
 export default function AffinityEGaming({ entity, onNav }) {
+  // ── Output plumbing ───────────────────────────────────────────────────────
+  const [outMsg, setOutMsg] = useState("");
+  const outRun = (fn) => {
+    try {
+      const res = fn();
+      if (res && res.ok === false) { setOutMsg(res.error || "That could not be produced."); return false; }
+      setOutMsg("");
+      return true;
+    } catch (e) { setOutMsg(String((e && e.message) || e)); return false; }
+  };
+
+  // Gaming returns are filed on the regulator's portal; this opens it and
+  // produces the return as a printable document to work from.
+  const openGamingPortal = () => outRun(() => OUT.openRegulatorPortal(
+    (typeof selEnt !== "undefined" && selEnt && selEnt.jur) || "Isle of Man"));
+
+  const generateReturn = () => {
+    const e = (typeof selEnt !== "undefined" && selEnt) ? selEnt : null;
+    outRun(() => OUT.genericDocument({
+      entity: { name: (e && e.name) || "Gaming entity" },
+      title: "Regulatory return — working copy",
+      sections: [
+        { heading: "Licence", pairs: [
+            ["Entity", e && e.name], ["Regulator", e && e.regulator],
+            ["Licence number", e && e.licenceNo], ["Status", e && e.licenceStatus] ] },
+        { heading: "Submission", text:
+            "Complete the return on the regulator's portal, then record the submission "
+            + "against the filing in Core so the date and reference are held here." },
+      ],
+    }));
+  };
+
   // ── Write layer plumbing ──────────────────────────────────────────────────
   const [wBusy, setWBusy] = useState(false);
   const [wMsg, setWMsg]   = useState("");
@@ -132,6 +165,13 @@ export default function AffinityEGaming({ entity, onNav }) {
 
   return (
     <div style={{ fontFamily:"'Catamaran',system-ui,sans-serif", background:"#f8f9fc", color:"#111", minHeight:"100vh" }}>
+      {outMsg && (
+        <div style={{ margin:"0 20px 10px", padding:"9px 12px", borderRadius:7, fontSize:11.5,
+                      lineHeight:1.6, background:"#FCEBEB", border:"0.5px solid #f0c9c9", color:"#A32D2D" }}>
+          {outMsg}
+        </div>
+      )}
+
       {wMsg && (
         <div style={{ margin:"0 20px 10px", padding:"9px 12px", borderRadius:7, fontSize:11.5,
                       lineHeight:1.6, border:"0.5px solid",
@@ -369,8 +409,8 @@ export default function AffinityEGaming({ entity, onNav }) {
                   </div>
                 ))}
                 <div style={{ display:"flex", gap:6, marginTop:12 }}>
-                  <button style={nb} disabled title="Needs the document generation engine, which is not built yet">Generate return document ↗</button>
-                  {r.status==="Overdue"?<button style={{ ...nba, background:"#EF4444", borderColor:"#EF4444" }} disabled title="Filing to the regulator's portal is not connected yet">File now — urgent</button>:<button style={nba} disabled title="Filing to the regulator's portal is not connected yet">Prepare filing</button>}
+                  <button style={nb} onClick={generateReturn}>Generate return document ↗</button>
+                  {r.status==="Overdue"?<button style={{ ...nba, background:"#EF4444", borderColor:"#EF4444" }} onClick={openGamingPortal}>File now — urgent</button>:<button style={nba} onClick={generateReturn}>Prepare filing</button>}
                 </div>
               </div>
             ))}

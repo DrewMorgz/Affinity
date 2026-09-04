@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import * as OUT from "./affinity_output";
 import { flagFor } from "./affinity_offices";
 import { getDatasets, isConfigured } from "./affinity_ops_api";
 const CY = "#00C4CC";
@@ -120,6 +121,19 @@ const th = { padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:600, 
 const td = { padding:"9px 12px", fontSize:11, borderBottom:"0.5px solid #e5e5e5" };
 
 export default function AffinityJurisdictionCompliance({ onNav }) {
+  // ── Output plumbing ───────────────────────────────────────────────────────
+  const [outMsg, setOutMsg] = useState("");
+  const outRun = (fn) => {
+    try {
+      const res = fn();
+      if (res && res.ok === false) { setOutMsg(res.error || "That could not be produced."); return false; }
+      setOutMsg("");
+      return true;
+    } catch (e) { setOutMsg(String((e && e.message) || e)); return false; }
+  };
+
+  const openPortal = () => outRun(() => OUT.openRegulatorPortal(data && data.name));
+
   const [liveJ,setLiveJ]=useState(null);
   useEffect(()=>{ if(!isConfigured) return; let ok=true; getDatasets("jur.").then(({data})=>{ if(ok&&data&&data.length){ const r=data.find(x=>x.dkey==="jur.info"); if(r)setLiveJ(r.data);} }).catch(()=>{}); return ()=>{ok=false;}; },[]);
   const [jur, setJur]   = useState("Cayman");
@@ -141,6 +155,13 @@ export default function AffinityJurisdictionCompliance({ onNav }) {
 
   return (
     <div style={{ fontFamily:"'Catamaran',system-ui,sans-serif", background:"#f8f9fc", color:"#111", minHeight:"100vh" }}>
+      {outMsg && (
+        <div style={{ margin:"0 20px 10px", padding:"9px 12px", borderRadius:7, fontSize:11.5,
+                      lineHeight:1.6, background:"#FCEBEB", border:"0.5px solid #f0c9c9", color:"#A32D2D" }}>
+          {outMsg}
+        </div>
+      )}
+
       <div style={{ background:NAVY, padding:"12px 24px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
           
@@ -264,7 +285,7 @@ export default function AffinityJurisdictionCompliance({ onNav }) {
                     <td style={{ ...td, color:o.status==="Overdue"?"#EF4444":"#666", fontWeight:o.status==="Overdue"?600:400 }}>{o.due}</td>
                     <td style={{ ...td, color:"#666" }}>{o.owner}</td>
                     <td style={td}><Badge label={o.status} colors={statusC[o.status]||{bg:"#eee",color:"#666"}} /></td>
-                    <td style={td}>{o.status==="Overdue"?<button style={{ ...nb, fontSize:10, borderColor:"#EF4444", color:"#EF4444" }} disabled title="Filing to the regulator's portal is not connected yet">File ↗</button>:<button style={{ ...nb, fontSize:10 }} disabled title="Not routed yet — open the record from its own module">View ↗</button>}</td>
+                    <td style={td}>{o.status==="Overdue"?<button style={{ ...nb, fontSize:10, borderColor:"#EF4444", color:"#EF4444" }} onClick={openPortal}>File ↗</button>:<button style={{ ...nb, fontSize:10 }} disabled title="Not routed yet — open the record from its own module">View ↗</button>}</td>
                   </tr>
                 ))}
               </tbody>
