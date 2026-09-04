@@ -1410,7 +1410,27 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
 
       {/* Header */}
       <div style={s.hdr}>
-        <div style={s.logo}>Entity Admin</div>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <div style={s.logo}>Entity Admin</div>
+          {/* Where these records came from. The preview dataset mirrors the
+              seeded database exactly, so without saying so there is no way to
+              tell whether the page is reading Supabase or falling back. */}
+          {liveEnts && liveEnts.length ? (
+            <span title="Reading live records from the database"
+                  style={{ fontSize:10, fontWeight:600, padding:"3px 9px", borderRadius:20,
+                           background:"#E7F4EF", color:"#1F6F54", border:"0.5px solid #bfe0d2" }}>
+              ● Live data · {liveEnts.length} entities
+            </span>
+          ) : (
+            <span title={isConfigured
+                    ? "Signed in, but the database returned no records — the grants may not be in place"
+                    : "Not signed in, so the database cannot be read"}
+                  style={{ fontSize:10, fontWeight:600, padding:"3px 9px", borderRadius:20,
+                           background:"#FDF4DC", color:"#7B4F1D", border:"0.5px solid #E5CE9A" }}>
+              ● {isConfigured ? "No records returned" : "Preview data"}
+            </span>
+          )}
+        </div>
       </div>
 
       <div style={s.body}>
