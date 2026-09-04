@@ -188,7 +188,7 @@ export default function AffinityDMS() {
               Folders
               <span style={{display:"flex",alignItems:"center",gap:8}}>
                 <button onClick={()=>setShowAll(s=>!s)} title={showAll?"Showing every folder in the structure":"Showing only folders that hold documents for this entity"} style={{background:"none",border:"none",cursor:"pointer",color:showAll?CY:"#aaa",fontSize:9,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px",padding:0}}>{showAll?"All folders":"In use"}</button>
-                {isAdmin&&<button style={{background:"none",border:"none",cursor:"pointer",color:CY,fontSize:11}} disabled title="Needs a write function that is not built yet">+ New folder</button>}
+                {isAdmin&&<button style={{background:"none",border:"none",cursor:"pointer",color:CY,fontSize:11}} onClick={()=>setModal("newFolder")}>+ New folder</button>}
               </span>
             </div>
             {FOLDER_TREE.filter(f=>showAll||docs.filter(d=>d.folder===f.name&&d.entity===entity).length>0).map(f=>(

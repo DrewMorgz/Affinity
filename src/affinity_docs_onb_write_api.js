@@ -132,3 +132,81 @@ export function journalImbalance(lines) {
 }
 
 export const canWrite = () => isConfigured;
+
+// ── Batch 5: invoicing, statutory filings, users, gaming, folders, events ───
+// Wrappers for db/062_write_remaining_gaps.sql.
+
+export const invDraftCreate = (entityId, invoiceDate, ccy, bankAccountId) =>
+  call("inv_draft_create", { p_entity: entityId, p_invoice_date: invoiceDate,
+                             p_ccy: ccy || "GBP", p_bank_account_id: bankAccountId ?? null });
+export const invLineAdd = (invoiceId, description, net, vat, serviceId) =>
+  call("inv_line_add", { p_invoice: invoiceId, p_description: description,
+                         p_net: net, p_vat: vat ?? 0, p_service_id: serviceId ?? null });
+export const invLineRemove = (lineId) => call("inv_line_remove", { p_line: lineId });
+// Issuing posts the invoice. There is no separate "issued" state — the engine
+// allows only draft or posted, so posting IS issuing, and it cannot be amended
+// afterwards. Correct an issued invoice with a credit note.
+export const invIssue = (invoiceId) => call("inv_issue", { p_invoice: invoiceId });
+export const invCreditNote = (invoiceId, reason) =>
+  call("inv_credit_note", { p_invoice: invoiceId, p_reason: reason });
+export const invList = (entityId, status) =>
+  call("inv_list", { p_entity: entityId ?? null, p_status: status || null });
+
+export const statFilingAdd = (entityId, f) => call("stat_filing_add", {
+  p_entity: entityId, p_filing_type: f.filingType, p_due_date: f.dueDate,
+  p_period: f.period || null, p_notes: f.notes || null,
+});
+export const statFilingPrepare = (id, reference) =>
+  call("stat_filing_prepare", { p_id: id, p_reference: reference || null });
+// Refused unless the filing has been prepared — a separate act by a separate
+// person, the same control as journal approval.
+export const statFilingSubmit = (id, reference) =>
+  call("stat_filing_submit", { p_id: id, p_reference: reference || null });
+export const statFilingChase = (id, note) =>
+  call("stat_filing_chase", { p_id: id, p_note: note || null });
+export const statFilingList = (entityId, status) =>
+  call("stat_filing_list", { p_entity: entityId ?? null, p_status: status || null });
+
+export const gamingRecordUpdate = (entityId, g) => call("gaming_record_update", {
+  p_entity: entityId, p_regulator: g.regulator || null, p_licence_no: g.licenceNo || null,
+  p_licence_status: g.licenceStatus || null, p_licence_from: g.licenceFrom || null,
+  p_licence_to: g.licenceTo || null, p_categories: g.categories || null,
+  p_notes: g.notes || null,
+});
+
+// Suspending removes access within Core only. It does NOT disable the person's
+// Microsoft account, so it is not the leaver process on its own.
+export const sysUserSuspend = (id, reason) =>
+  call("sys_user_suspend", { p_id: id, p_reason: reason });
+export const sysUserReinstate = (id, reason) =>
+  call("sys_user_reinstate", { p_id: id, p_reason: reason });
+export const sysUserSetRole = (id, role) =>
+  call("sys_user_set_role", { p_id: id, p_role: role });
+
+// Creating a folder takes its retention policy at the same time — a folder
+// with no policy leaves its documents with no expiry.
+export const dmsCategoryAdd = (name, retainYears, basis) =>
+  call("dms_category_add", { p_name: name, p_retain_years: retainYears ?? null,
+                             p_basis: basis || null });
+
+export const intranetEventAdd = (e) => call("intranet_event_add", {
+  p_title: e.title, p_event_date: e.eventDate, p_office: e.office || null,
+  p_category: e.category || null, p_detail: e.detail || null,
+});
+export const intranetEventList = (from) =>
+  call("intranet_event_list", { p_from: from || null });
+
+export const eaProfileUpdate = (entityId, p) => call("ea_profile_update", {
+  p_entity: entityId, p_reg_no: p.regNo || null, p_year_end: p.yearEnd || null,
+  p_business_activity: p.businessActivity || null, p_admin_status: p.adminStatus || null,
+  p_risk_rating: p.riskRating || null, p_next_review_date: p.nextReviewDate || null,
+  p_tax_status: p.taxStatus || null,
+});
+export const eaClassificationUpdate = (entityId, c) => call("ea_classification_update", {
+  p_entity: entityId, p_fatca_class: c.fatcaClass || null,
+  p_crs_class: c.crsClass || null, p_giin: c.giin || null,
+});
+
+export const planningScenarioCreate = (sourceBudgetId, name, scenario) =>
+  call("planning_scenario_create", { p_source_budget: sourceBudgetId, p_name: name,
+                                     p_scenario: scenario || "scenario" });

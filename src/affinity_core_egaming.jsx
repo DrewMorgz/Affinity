@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import * as DW from "./affinity_docs_onb_write_api";
 import EntitySearch from "./affinity_entity_search";
 import { isConfigured } from "./affinity_accounting_supabase";
 import { egLicences, egLog } from "./affinity_egaming_api";
@@ -63,6 +64,42 @@ const th = { padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:600, 
 const td = { padding:"9px 12px", fontSize:11, borderBottom:"0.5px solid #e5e5e5", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" };
 
 export default function AffinityEGaming({ entity, onNav }) {
+  // ── Write layer plumbing ──────────────────────────────────────────────────
+  const [wBusy, setWBusy] = useState(false);
+  const [wMsg, setWMsg]   = useState("");
+  const wRun = async (fn, okText) => {
+    setWBusy(true); setWMsg("");
+    try {
+      const res = await fn();
+      setWBusy(false);
+      if (res && res.ok) { setWMsg(okText || "Saved."); return true; }
+      if (res && res.live === false) { setWMsg("Not signed in — this cannot be saved yet."); return false; }
+      setWMsg((res && res.error) || "That could not be saved.");
+      return false;
+    } catch (e) {
+      setWBusy(false);
+      setWMsg(String((e && e.message) || e));
+      return false;
+    }
+  };
+
+  const [gamingModal, setGamingModal] = useState(false);
+  const [gm, setGm] = useState({});
+
+  // Updating the licence record. The database refuses a licence number without
+  // a regulator, and an end date before the start.
+  const saveGaming = async () => {
+    const eid = (typeof entityDbId !== "undefined" && entityDbId) ? entityDbId : null;
+    if (!eid) { setWMsg("Choose an entity that is loaded from the database."); return; }
+    const ok = await wRun(() => DW.gamingRecordUpdate(eid, {
+      regulator: gm.regulator || null, licenceNo: gm.licenceNo || null,
+      licenceStatus: gm.licenceStatus || null, licenceFrom: gm.licenceFrom || null,
+      licenceTo: gm.licenceTo || null, categories: gm.categories || null,
+      notes: gm.notes || null,
+    }), "Licence record updated.");
+    if (ok) { setGamingModal(false); setGm({}); }
+  };
+
   const [entitySearch, setEntitySearch] = useState("");
   const [view, setView]   = useState("overview");
   const [sel, setSel]     = useState(null);
@@ -95,6 +132,16 @@ export default function AffinityEGaming({ entity, onNav }) {
 
   return (
     <div style={{ fontFamily:"'Catamaran',system-ui,sans-serif", background:"#f8f9fc", color:"#111", minHeight:"100vh" }}>
+      {wMsg && (
+        <div style={{ margin:"0 20px 10px", padding:"9px 12px", borderRadius:7, fontSize:11.5,
+                      lineHeight:1.6, border:"0.5px solid",
+                      background: /Saved|Submitted|Approved|Returned|Posted|Issued|Created|Prepared|Chased|Suspended|Started|Added/.test(wMsg) ? "#E7F4EF" : "#FCEBEB",
+                      borderColor: /Saved|Submitted|Approved|Returned|Posted|Issued|Created|Prepared|Chased|Suspended|Started|Added/.test(wMsg) ? "#bfe0d2" : "#f0c9c9",
+                      color: /Saved|Submitted|Approved|Returned|Posted|Issued|Created|Prepared|Chased|Suspended|Started|Added/.test(wMsg) ? "#1F6F54" : "#A32D2D" }}>
+          {wMsg}
+        </div>
+      )}
+
       <div style={{ background:NAVY, padding:"12px 24px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
           <span style={{ color:"#fff", fontWeight:700, fontSize:17 }}>Affinity <span style={{ fontWeight:300 }}>Core</span></span>
@@ -152,7 +199,7 @@ export default function AffinityEGaming({ entity, onNav }) {
                 {rtns.filter(r=>r.status==="Overdue").map(r=>(
                   <div key={r.id} style={{ fontSize:11, color:"#A32D2D", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                     <span>{r.entity} — {r.ref} — due {r.due}</span>
-                    <button style={{ ...nba, background:"#EF4444", borderColor:"#EF4444", fontSize:10 }} disabled title="Needs a write function that is not built yet">Take action ↗</button>
+                    <button style={{ ...nba, background:"#EF4444", borderColor:"#EF4444", fontSize:10 }} disabled title="This shortcut is not routed yet — open the record and act on it there">Take action ↗</button>
                   </div>
                 ))}
               </div>
@@ -222,7 +269,7 @@ export default function AffinityEGaming({ entity, onNav }) {
                     </div>
                     <div style={{ display:"flex", gap:6 }}>
                       <button style={nb} onClick={()=>onNav&&onNav("documents")}>Documents ↗</button>
-                      <button style={nba} disabled title="Needs a write function that is not built yet">Update record</button>
+                      <button style={nba} onClick={()=>setGamingModal(true)}>Update record</button>
                     </div>
                   </div>
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:16 }}>
@@ -292,7 +339,7 @@ export default function AffinityEGaming({ entity, onNav }) {
                 )}
                 <div style={{ display:"flex", gap:6 }}>
                   <button style={nb} onClick={()=>{ setSel(l.id); setView("licences"); }}>View checklist ↗</button>
-                  <button style={nba} disabled title="Needs a write function that is not built yet">Update status</button>
+                  <button style={nba} onClick={()=>setGamingModal(true)}>Update status</button>
                 </div>
               </div>
             ))}
@@ -349,7 +396,7 @@ export default function AffinityEGaming({ entity, onNav }) {
                     <td style={td}><Badge label={c.type} colors={{ "Licence breach":{bg:"#FCEBEB",color:"#A32D2D"}, "Player complaint":{bg:"#FAEEDA",color:"#633806"}, "AML/KYC review":{bg:"#EAF3DE",color:"#27500A"}, "GSC query response":{bg:"#E6F7FB",color:"#0077A8"} }[c.type]||{bg:"#eee",color:"#666"}} /></td>
                     <td style={td}><Badge label={c.status} colors={statusC[c.status]||{bg:"#eee",color:"#666"}} /></td>
                     <td style={{ ...td, maxWidth:300, whiteSpace:"normal", fontSize:10, color:"#444", lineHeight:1.4 }}>{c.detail}</td>
-                    <td style={td}>{c.status==="Open"?<button style={{ ...nba, fontSize:10 }} disabled title="Needs a write function that is not built yet">Resolve ↗</button>:<button style={{ ...nb, fontSize:10 }} disabled title="Needs a write function that is not built yet">View ↗</button>}</td>
+                    <td style={td}>{c.status==="Open"?<button style={{ ...nba, fontSize:10 }} disabled title="This shortcut is not routed yet — open the record and act on it there">Resolve ↗</button>:<button style={{ ...nb, fontSize:10 }} disabled title="Not routed yet — open the record from its own module">View ↗</button>}</td>
                   </tr>
                 ))}
               </tbody>

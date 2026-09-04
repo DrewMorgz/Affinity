@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { flagFor } from "./affinity_offices";
 import { getDatasets, isConfigured } from "./affinity_ops_api";
 const CY = "#00C4CC";
 const NAVY = "#001242";
@@ -7,7 +8,21 @@ const Badge = ({ label, colors }) => (
   <span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:600, background:colors?.bg||"#eee", color:colors?.color||"#333", whiteSpace:"nowrap" }}>{label}</span>
 );
 
+// Flags come from the shared offices list rather than being repeated here.
+const FLAGS = { IOM: flagFor("Isle of Man"), Malta: flagFor("Malta"),
+                Cayman: flagFor("Cayman Islands"), Cyprus: flagFor("Cyprus"),
+                UK: flagFor("United Kingdom"), USA: flagFor("United States") };
+
 const JUR_INFO = {
+  IOM: {
+    name: "Isle of Man",
+    regulator: "Isle of Man Financial Services Authority (IOMFSA)",
+    legislation: ["Companies Acts 1931-2004", "Companies Act 2006", "Trustee Act 2001",
+                  "Financial Services Act 2008", "Anti-Money Laundering and Countering the Financing of Terrorism Code 2019",
+                  "Beneficial Ownership Act 2017"],
+    obligations: [],
+    pending: "Obligation schedule to be confirmed by Compliance. Regulator and legislation are stated; filing deadlines are deliberately not pre-filled, because a wrong date in a compliance tracker is worse than a visibly empty one.",
+  },
   Cayman: {
     name: "Cayman Islands",
     regulator: "Cayman Islands Monetary Authority (CIMA)",
@@ -67,6 +82,30 @@ const JUR_INFO = {
       ["EDD threshold",        "All VH + High risk + all PEPs"],
     ],
   },
+  Cyprus: {
+    name: "Cyprus",
+    regulator: "Cyprus Securities and Exchange Commission (CySEC) / Registrar of Companies",
+    legislation: ["Companies Law Cap. 113", "Prevention and Suppression of Money Laundering Laws 2007-2021",
+                  "Administrative Service Providers Law 2012", "Beneficial Ownership Register (Directive 2018/843)"],
+    obligations: [],
+    pending: "New office. Obligation schedule and the ASP licensing position both need Compliance to confirm before this is relied on.",
+  },
+  UK: {
+    name: "United Kingdom",
+    regulator: "Companies House / HMRC",
+    legislation: ["Companies Act 2006", "Money Laundering Regulations 2017 (as amended)",
+                  "Economic Crime and Corporate Transparency Act 2023", "Trust Registration Service requirements"],
+    obligations: [],
+    pending: "Obligation schedule to be confirmed by Compliance.",
+  },
+  USA: {
+    name: "United States",
+    regulator: "State registries (South Dakota, Florida) / FinCEN / IRS",
+    legislation: ["Corporate Transparency Act (FinCEN beneficial ownership reporting)",
+                  "State trust and LLC statutes", "FATCA (IRS)"],
+    obligations: [],
+    pending: "Two entities in different states with different requirements. Obligation schedule to be confirmed by Compliance.",
+  },
 };
 
 const statusC = {
@@ -90,8 +129,15 @@ export default function AffinityJurisdictionCompliance({ onNav }) {
   const nb  = { padding:"5px 12px", fontSize:11, borderRadius:5, border:"0.5px solid #e5e5e5", background:"transparent", color:"#666", cursor:"pointer" };
   const nba = { ...nb, background:CY, color:"#fff", border:`0.5px solid ${CY}`, fontWeight:500 };
 
-  const data = (liveJ||JUR_INFO)[jur];
-  const overdueCount = data.obligations.filter(o=>o.status==="Overdue").length;
+  // A jurisdiction may be selected that the live list does not carry, and a new
+  // office has no obligation schedule yet — neither should throw.
+  const raw = ((liveJ||JUR_INFO)[jur]) || JUR_INFO[Object.keys(JUR_INFO)[0]];
+  // A newly added office carries a regulator and legislation but no schedule,
+  // entities or AML matrix yet. Default every list so the page renders rather
+  // than throwing on the first missing one.
+  const data = { obligations: [], entities: [], amlKey: [], legislation: [], ...raw };
+  const obligations = data.obligations || [];
+  const overdueCount = obligations.filter(o=>o.status==="Overdue").length;
 
   return (
     <div style={{ fontFamily:"'Catamaran',system-ui,sans-serif", background:"#f8f9fc", color:"#111", minHeight:"100vh" }}>
@@ -109,9 +155,9 @@ export default function AffinityJurisdictionCompliance({ onNav }) {
       {/* Jurisdiction switcher */}
       <div style={{ background:"#fff", borderBottom:"0.5px solid #e5e5e5", padding:"10px 24px", display:"flex", gap:8, alignItems:"center" }}>
         <span style={{ fontSize:11, color:"#666", marginRight:4 }}>Jurisdiction:</span>
-        {["Cayman","Malta"].map(j=>(
+        {Object.keys(JUR_INFO).map(j=>(
           <button key={j} onClick={()=>setJur(j)} style={{ padding:"6px 18px", borderRadius:20, border:`0.5px solid ${jur===j?"#ccc":"#e5e5e5"}`, background:jur===j?"#fff":"transparent", fontSize:12, fontWeight:jur===j?600:400, cursor:"pointer", color:jur===j?"#111":"#666" }}>
-            {j==="Cayman"?"🇰🇾 Cayman Islands":"🇲🇹 Malta"}
+            {(FLAGS[j] ? FLAGS[j] + " " : "") + (JUR_INFO[j].name || j)}
             {jur===j&&overdueCount>0&&<span style={{ marginLeft:6, background:"#EF4444", color:"#fff", borderRadius:10, padding:"1px 5px", fontSize:9, fontWeight:700 }}>{overdueCount}</span>}
           </button>
         ))}
@@ -122,6 +168,14 @@ export default function AffinityJurisdictionCompliance({ onNav }) {
             </button>
           ))}
         </div>
+
+      {obligations.length===0 && (
+        <div style={{ background:"#FDF4DC", border:"0.5px solid #E5CE9A", borderRadius:8,
+                      padding:"12px 14px", fontSize:11.5, color:"#7B4F1D", lineHeight:1.7, margin:"8px 0 14px" }}>
+          <strong>No obligation schedule recorded for {data.name} yet.</strong>
+          <div style={{ marginTop:5 }}>{data.pending}</div>
+        </div>
+      )}
       </div>
 
       <div style={{ background:"#fff", minHeight:"calc(100vh - 100px)", padding:"16px 24px" }}>
@@ -132,7 +186,7 @@ export default function AffinityJurisdictionCompliance({ onNav }) {
             <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:20 }}>
               {[
                 { l:"Entities",         v:data.entities.length,                             c:CY },
-                { l:"Obligations overdue", v:data.obligations.filter(o=>o.status==="Overdue").length, c:"#EF4444" },
+                { l:"Obligations overdue", v:obligations.filter(o=>o.status==="Overdue").length, c:"#EF4444" },
                 { l:"Issues flagged",   v:data.entities.reduce((s,e)=>s+e.issues,0),       c:"#F59E0B" },
                 { l:"Regulator",        v:jur==="Cayman"?"CIMA":"MFSA",                     c:"#666" },
               ].map(k=>(
@@ -146,10 +200,10 @@ export default function AffinityJurisdictionCompliance({ onNav }) {
             {overdueCount>0&&(
               <div style={{ background:"#FCEBEB22", border:"0.5px solid #EF4444", borderRadius:8, padding:"10px 14px", marginBottom:16 }}>
                 <div style={{ fontSize:12, fontWeight:600, color:"#A32D2D", marginBottom:6 }}>⚠️ Overdue obligations — {data.name}</div>
-                {data.obligations.filter(o=>o.status==="Overdue").map(o=>(
+                {obligations.filter(o=>o.status==="Overdue").map(o=>(
                   <div key={o.id} style={{ fontSize:11, color:"#A32D2D", display:"flex", justifyContent:"space-between", alignItems:"center", padding:"3px 0" }}>
                     <span>{o.title} · Due: {o.due} · Owner: {o.owner}</span>
-                    <button style={{ ...nb, fontSize:10, borderColor:"#EF4444", color:"#EF4444" }} disabled title="Needs a write function that is not built yet">Action ↗</button>
+                    <button style={{ ...nb, fontSize:10, borderColor:"#EF4444", color:"#EF4444" }} disabled title="This shortcut is not routed yet — open the record and act on it there">Action ↗</button>
                   </div>
                 ))}
               </div>
@@ -200,8 +254,9 @@ export default function AffinityJurisdictionCompliance({ onNav }) {
               <thead><tr>
                 {["Area","Obligation","Frequency","Due","Owner","Status","Action"].map(h=><th key={h} style={th}>{h}</th>)}
               </tr></thead>
-              <tbody>
-                {data.obligations.map(o=>(
+              
+            <tbody>
+                {obligations.map(o=>(
                   <tr key={o.id} style={{ borderBottom:"0.5px solid #f0f0f0", background:o.status==="Overdue"?"#FFF5F5":"transparent" }}>
                     <td style={td}><Badge label={o.area} colors={{ "AML/CFT":{bg:"#FCEBEB",color:"#A32D2D"}, AEOI:{bg:"#EEF0FB",color:"#3C3489"}, Substance:{bg:"#FAEEDA",color:"#633806"}, "BO register":{bg:"#EAF3DE",color:"#27500A"}, "Annual returns":{bg:"#E6F7FB",color:"#0077A8"}, "CSP licence":{bg:"#EAF3DE",color:"#27500A"}, Reporting:{bg:"#E6F7FB",color:"#0077A8"}, Funds:{bg:"#EEF0FB",color:"#3C3489"}, "Data protection":{bg:"#F1EFE8",color:"#555"} }[o.area]||{bg:"#eee",color:"#666"}} /></td>
                     <td style={{ ...td, fontWeight:500 }}>{o.title}</td>
@@ -209,7 +264,7 @@ export default function AffinityJurisdictionCompliance({ onNav }) {
                     <td style={{ ...td, color:o.status==="Overdue"?"#EF4444":"#666", fontWeight:o.status==="Overdue"?600:400 }}>{o.due}</td>
                     <td style={{ ...td, color:"#666" }}>{o.owner}</td>
                     <td style={td}><Badge label={o.status} colors={statusC[o.status]||{bg:"#eee",color:"#666"}} /></td>
-                    <td style={td}>{o.status==="Overdue"?<button style={{ ...nb, fontSize:10, borderColor:"#EF4444", color:"#EF4444" }} disabled title="Filing to the regulator's portal is not connected yet">File ↗</button>:<button style={{ ...nb, fontSize:10 }} disabled title="Needs a write function that is not built yet">View ↗</button>}</td>
+                    <td style={td}>{o.status==="Overdue"?<button style={{ ...nb, fontSize:10, borderColor:"#EF4444", color:"#EF4444" }} disabled title="Filing to the regulator's portal is not connected yet">File ↗</button>:<button style={{ ...nb, fontSize:10 }} disabled title="Not routed yet — open the record from its own module">View ↗</button>}</td>
                   </tr>
                 ))}
               </tbody>
@@ -299,7 +354,7 @@ export default function AffinityJurisdictionCompliance({ onNav }) {
                 <div key={i} style={{ display:"flex", gap:12, padding:"9px 0", borderBottom:"0.5px solid #f5f5f5", alignItems:"center" }}>
                   <span style={{ width:24, height:24, borderRadius:"50%", background:"#E6F7FB", color:CY, fontSize:11, fontWeight:700, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>{i+1}</span>
                   <span style={{ fontSize:12, fontWeight:500 }}>{l}</span>
-                  <button style={{ ...nb, fontSize:10, marginLeft:"auto", flexShrink:0 }} disabled title="Needs a write function that is not built yet">View ↗</button>
+                  <button style={{ ...nb, fontSize:10, marginLeft:"auto", flexShrink:0 }} disabled title="Not routed yet — open the record from its own module">View ↗</button>
                 </div>
               ))}
             </div>

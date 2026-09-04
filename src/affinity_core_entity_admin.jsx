@@ -228,7 +228,7 @@ function FATCATab({entity}) {
           <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"0.5px solid #e5e5e5",fontSize:12}}><span style={{color:"#666"}}>{k}</span><span style={{fontWeight:500,textAlign:"right",maxWidth:220}}>{v}</span></div>
         ))}
         <div style={{marginTop:12,display:"flex",gap:6}}>
-          <button style={{flex:1,padding:"6px",borderRadius:5,border:"0.5px solid #ccc",background:"transparent",fontSize:11,cursor:"pointer"}} disabled title="Needs a write function that is not built yet">View return ↗</button>
+          <button style={{flex:1,padding:"6px",borderRadius:5,border:"0.5px solid #ccc",background:"transparent",fontSize:11,cursor:"pointer"}} disabled title="Needs the document generation engine, which is not built yet">View return ↗</button>
           <button style={{flex:1,padding:"6px",borderRadius:5,border:"none",background:"#00C4CC",color:"#fff",fontSize:11,cursor:"pointer"}} disabled title="Filing to the regulator's portal is not connected yet">File return ↗</button>
         </div>
       </div>
@@ -246,7 +246,7 @@ function CRSTab({entity}) {
   return <div>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
       <div><div style={{fontSize:14,fontWeight:600}}>CRS — Common Reporting Standard</div><div style={{fontSize:11,color:"#666",marginTop:2}}>OECD automatic exchange of financial information</div></div>
-      {isApplicable&&<button style={{padding:"5px 14px",borderRadius:5,border:"none",background:"#00C4CC",color:"#fff",fontSize:11,cursor:"pointer"}} disabled title="Needs a write function that is not built yet">+ Add/edit CRS data</button>}
+      {isApplicable&&<button style={{padding:"5px 14px",borderRadius:5,border:"none",background:"#00C4CC",color:"#fff",fontSize:11,cursor:"pointer"}} onClick={()=>setModal("classification")}>+ Add/edit CRS data</button>}
     </div>
     {!isApplicable?<div style={{background:"#f9f9f9",borderRadius:8,padding:20,textAlign:"center",color:"#aaa",fontSize:12}}>CRS reporting does not apply to entities in {entity?.jur}.</div>:
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
@@ -285,7 +285,7 @@ function SubstanceTab({entity}) {
   return <div>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
       <div><div style={{fontSize:14,fontWeight:600}}>Substance requirements</div><div style={{fontSize:11,color:"#666",marginTop:2}}>Economic substance test — {entity?.jur}</div></div>
-      {isApplicable&&<button style={{padding:"5px 14px",borderRadius:5,border:"none",background:"#00C4CC",color:"#fff",fontSize:11,cursor:"pointer"}} disabled title="Needs a write function that is not built yet">+ Update substance data</button>}
+      {isApplicable&&<button style={{padding:"5px 14px",borderRadius:5,border:"none",background:"#00C4CC",color:"#fff",fontSize:11,cursor:"pointer"}} onClick={()=>setModal("substance")}>+ Update substance data</button>}
     </div>
     {!isApplicable?<div style={{background:"#f9f9f9",borderRadius:8,padding:20,textAlign:"center",color:"#aaa",fontSize:12}}>
       {entity?.type==="Trust"||entity?.type==="Foundation"?"Substance requirements do not apply to "+entity?.type.toLowerCase()+"s.":"Substance requirements do not apply to entities in "+entity?.jur+"."}
@@ -707,7 +707,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
                   <div style={{ fontSize:13, fontWeight:500 }}>{a.address}</div>
                   <div style={{ fontSize:11, color:"var(--text-secondary,#666)", marginTop:4 }}>From {a.from}{a.to?` to ${a.to}`:""}</div>
                 </div>
-                <button style={s.btn(false)} disabled title="Needs a write function that is not built yet">Edit</button>
+                <button style={s.btn(false)} onClick={()=>setModal("editProfile")}>Edit</button>
               </div>
             </div>
           ))):<div style={{ color:"var(--text-secondary,#666)", fontSize:12, padding:"20px 0", textAlign:"center" }}>No addresses recorded.</div>}
@@ -1074,7 +1074,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
                 <div style={{ fontSize:13, fontWeight:600, marginBottom:2 }}>eGaming & GSC licence</div>
                 <div style={{ fontSize:11, color:"var(--text-secondary,#666)" }}>Gambling Supervision Commission — Isle of Man</div>
               </div>
-              <button style={{ padding:"5px 14px", borderRadius:5, border:"none", background:"#00C4CC", color:"#fff", fontSize:11, cursor:"pointer" }} disabled title="Needs a write function that is not built yet">Update licence data</button>
+              <button style={{ padding:"5px 14px", borderRadius:5, border:"none", background:"#00C4CC", color:"#fff", fontSize:11, cursor:"pointer" }} onClick={()=>setModal("gaming")}>Update licence data</button>
             </div>
 
             {/* Licence summary */}

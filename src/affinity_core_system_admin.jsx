@@ -1,4 +1,5 @@
 import React from "react";
+import * as DW from "./affinity_docs_onb_write_api";
 import { useState, useEffect } from "react";
 import { appUsers, isConfigured } from "./affinity_ops_api";
 import { ROLES, ROLE_LABELS, permsFor, INTERNAL_ENTITIES, INTERNAL_ACCESS } from "./affinity_core_rbac";
@@ -216,6 +217,37 @@ const nb = { padding:"5px 12px", fontSize:12, borderRadius:6, border:"0.5px soli
 const nbActive = { ...nb, background:CY, color:"#fff", border:`0.5px solid ${CY}`, fontWeight:700 };
 
 export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false }) {
+  // ── Write layer plumbing ──────────────────────────────────────────────────
+  const [wBusy, setWBusy] = useState(false);
+  const [wMsg, setWMsg]   = useState("");
+  const wRun = async (fn, okText) => {
+    setWBusy(true); setWMsg("");
+    try {
+      const res = await fn();
+      setWBusy(false);
+      if (res && res.ok) { setWMsg(okText || "Saved."); return true; }
+      if (res && res.live === false) { setWMsg("Not signed in — this cannot be saved yet."); return false; }
+      setWMsg((res && res.error) || "That could not be saved.");
+      return false;
+    } catch (e) {
+      setWBusy(false);
+      setWMsg(String((e && e.message) || e));
+      return false;
+    }
+  };
+
+  // Suspending a user removes their access WITHIN Core only. It does not touch
+  // Entra, so it is not the leaver process — the message says so, because
+  // assuming otherwise would leave a leaver with a live mailbox and sign-in.
+  const suspendUser = async () => {
+    const id = typeof selUser !== "undefined" && selUser ? (selUser.id || selUser) : null;
+    if (!id) { setWMsg("Select a user first."); return; }
+    const reason = window.prompt("Reason for suspending this user:");
+    if (!reason) { setWMsg("A reason is required to suspend a user."); return; }
+    const ok = await wRun(() => DW.sysUserSuspend(id, reason), "Suspended within Core.");
+    if (ok) setWMsg("Suspended within Core. This does NOT disable their Microsoft account — for a leaver, IT must also remove them from Entra.");
+  };
+
   const [liveU,setLiveU]=useState(null);
   useEffect(()=>{ if(!isConfigured) return; let ok=true; appUsers().then(({data})=>{ if(ok&&data&&data.length) setLiveU(data); }).catch(()=>{}); return ()=>{ok=false;}; },[]);
   const users = liveU || usersData;
@@ -282,6 +314,16 @@ export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false })
 
   return (
     <div style={s.wrap}>
+      {wMsg && (
+        <div style={{ margin:"0 20px 10px", padding:"9px 12px", borderRadius:7, fontSize:11.5,
+                      lineHeight:1.6, border:"0.5px solid",
+                      background: /Saved|Submitted|Approved|Returned|Posted|Issued|Created|Prepared|Chased|Suspended|Started|Added/.test(wMsg) ? "#E7F4EF" : "#FCEBEB",
+                      borderColor: /Saved|Submitted|Approved|Returned|Posted|Issued|Created|Prepared|Chased|Suspended|Started|Added/.test(wMsg) ? "#bfe0d2" : "#f0c9c9",
+                      color: /Saved|Submitted|Approved|Returned|Posted|Issued|Created|Prepared|Chased|Suspended|Started|Added/.test(wMsg) ? "#1F6F54" : "#A32D2D" }}>
+          {wMsg}
+        </div>
+      )}
+
       {/* Header */}
       <div style={s.header}>
         <div style={s.logo}>System Admin</div>
@@ -368,8 +410,8 @@ export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false })
               </div>
               <div style={s.actRow}>
                 <button style={s.actBtn(false)} onClick={()=>setModal("editUser")}>Edit ↗</button>
-                {!selUser.mfa && <button style={{ ...s.actBtn(false), color:"#F59E0B", borderColor:"#F59E0B" }} disabled title="Needs a write function that is not built yet">Enforce MFA ↗</button>}
-                <button style={{ ...s.actBtn(false), color:"#EF4444", borderColor:"#EF4444" }} disabled title="Needs a write function that is not built yet">Suspend ↗</button>
+                {!selUser.mfa && <button style={{ ...s.actBtn(false), color:"#F59E0B", borderColor:"#F59E0B" }} disabled title="MFA is enforced in Entra, not here — set it in the Microsoft admin centre">Enforce MFA ↗</button>}
+                <button style={{ ...s.actBtn(false), color:"#EF4444", borderColor:"#EF4444" }} onClick={suspendUser}>Suspend ↗</button>
               </div>
             </div>
           )}

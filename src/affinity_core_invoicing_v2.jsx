@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import * as DW from "./affinity_docs_onb_write_api";
 import EntitySearch from "./affinity_entity_search";
 const ENTITY_NAMES = ["Meridian Holdings Ltd","Harrington Family Trust","Pacific Wealth Trust","Caledonian Ventures Ltd","North Star Holdings Ltd","Azure Mediterranean Foundation","Apex Growth Fund Ltd","Stonebridge Capital Ltd","Thornbury Asset Co Ltd","Bluewater Family Trust","Phoenix eGaming Ltd","Meridian Digital Ltd","Suncoast Ventures LLC"];
 import { isConfigured } from "./affinity_accounting_supabase";
@@ -66,6 +67,56 @@ const FEE_SCHEDULES = [
 ];
 
 export default function AffinityInvoicing({ onNav }) {
+  // ── Write layer plumbing ──────────────────────────────────────────────────
+  const [wBusy, setWBusy] = useState(false);
+  const [wMsg, setWMsg]   = useState("");
+  const wRun = async (fn, okText) => {
+    setWBusy(true); setWMsg("");
+    try {
+      const res = await fn();
+      setWBusy(false);
+      if (res && res.ok) { setWMsg(okText || "Saved."); return true; }
+      if (res && res.live === false) { setWMsg("Not signed in — this cannot be saved yet."); return false; }
+      setWMsg((res && res.error) || "That could not be saved.");
+      return false;
+    } catch (e) {
+      setWBusy(false);
+      setWMsg(String((e && e.message) || e));
+      return false;
+    }
+  };
+
+  // Draft, add lines, then issue. Kept as three acts because an issued invoice
+  // is the client's document and cannot be amended afterwards.
+  const [draftInvoiceId, setDraftInvoiceId] = useState(null);
+
+  const saveInvoiceDraft = async () => {
+    const eid = (typeof entityDbId !== "undefined" && entityDbId) ? entityDbId : null;
+    if (!eid) { setWMsg("Choose an entity that is loaded from the database."); return; }
+    await wRun(async () => {
+      const r = await DW.invDraftCreate(eid, new Date().toISOString().slice(0,10), "GBP");
+      if (r.ok && r.data) {
+        const row = Array.isArray(r.data) ? r.data[0] : r.data;
+        if (row && row.id) setDraftInvoiceId(row.id);
+      }
+      return r;
+    }, "Draft invoice created.");
+  };
+
+  const addInvoiceLine = async () => {
+    if (!draftInvoiceId) { setWMsg("Save the draft first, then add lines to it."); return; }
+    const desc = window.prompt("Description for the line (this appears on the client's invoice):");
+    if (!desc) { setWMsg("A line needs a description."); return; }
+    const net = Number(window.prompt("Net amount:") || 0);
+    if (!net) { setWMsg("Enter a net amount for the line."); return; }
+    await wRun(() => DW.invLineAdd(draftInvoiceId, desc, net, 0), "Line added.");
+  };
+
+  const issueInvoice = async () => {
+    if (!draftInvoiceId) { setWMsg("There is no draft invoice to issue."); return; }
+    await wRun(() => DW.invIssue(draftInvoiceId), "Issued — it can no longer be amended.");
+  };
+
   const AGED_ROWS = [
     { e:"Harrington Family Trust",  c:"Harrington",  c0:0,    c31:0,    c61:1250, c90:500  },
     { e:"Pacific Wealth Trust",     c:"Pacific",     c0:4200, c31:0,    c61:0,    c90:0    },
@@ -124,6 +175,16 @@ export default function AffinityInvoicing({ onNav }) {
 
   return (
     <div style={{ fontFamily:"'Catamaran',system-ui,sans-serif", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)", minHeight:600 }}>
+      {wMsg && (
+        <div style={{ margin:"0 20px 10px", padding:"9px 12px", borderRadius:7, fontSize:11.5,
+                      lineHeight:1.6, border:"0.5px solid",
+                      background: /Saved|Submitted|Approved|Returned|Posted|Issued|Created|Prepared|Chased|Suspended|Started|Added/.test(wMsg) ? "#E7F4EF" : "#FCEBEB",
+                      borderColor: /Saved|Submitted|Approved|Returned|Posted|Issued|Created|Prepared|Chased|Suspended|Started|Added/.test(wMsg) ? "#bfe0d2" : "#f0c9c9",
+                      color: /Saved|Submitted|Approved|Returned|Posted|Issued|Created|Prepared|Chased|Suspended|Started|Added/.test(wMsg) ? "#1F6F54" : "#A32D2D" }}>
+          {wMsg}
+        </div>
+      )}
+
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 20px", borderBottom:"0.5px solid #e5e5e5" }}>
         <div style={{ fontSize:18, fontWeight:500, color:CY }}>Affinity <span style={{ color:"var(--text-primary,#111)", fontWeight:300 }}>Core</span><small style={{ fontSize:11, color:"#999", fontWeight:300, marginLeft:8 }}>Invoicing</small></div>
         <div style={{ display:"flex", gap:5 }}>
@@ -196,7 +257,7 @@ export default function AffinityInvoicing({ onNav }) {
                 ))}
               </tbody>
             </table>
-            <button style={{padding:"6px 14px",borderRadius:5,border:"0.5px solid #00C4CC",background:"transparent",color:"#00C4CC",fontSize:11,cursor:"pointer"}} disabled title="Needs a write function that is not built yet">＋ Add line item</button>
+            <button style={{padding:"6px 14px",borderRadius:5,border:"0.5px solid #00C4CC",background:"transparent",color:"#00C4CC",fontSize:11,cursor:"pointer"}} onClick={addInvoiceLine}>＋ Add line item</button>
 
             <div style={{marginTop:16,display:"flex",justifyContent:"flex-end"}}>
               <div style={{minWidth:220}}>
@@ -215,9 +276,9 @@ export default function AffinityInvoicing({ onNav }) {
           </div>
 
           <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
-            <button style={{padding:"9px 20px",borderRadius:6,border:"0.5px solid #e5e5e5",background:"transparent",fontSize:13,cursor:"pointer",color:"#666"}} disabled title="Needs a write function that is not built yet">Save draft</button>
+            <button style={{padding:"9px 20px",borderRadius:6,border:"0.5px solid #e5e5e5",background:"transparent",fontSize:13,cursor:"pointer",color:"#666"}} onClick={saveInvoiceDraft}>Save draft</button>
             <button style={{padding:"9px 20px",borderRadius:6,border:"0.5px solid #00C4CC",background:"transparent",fontSize:13,cursor:"pointer",color:"#00C4CC",fontWeight:600}} disabled title="Needs the PDF renderer, which is not built yet">Preview PDF ↗</button>
-            <button style={{padding:"9px 20px",borderRadius:6,border:"none",background:"#00C4CC",color:"#fff",fontSize:13,cursor:"pointer",fontWeight:600}} disabled title="Needs a write function that is not built yet">Issue invoice ↗</button>
+            <button style={{padding:"9px 20px",borderRadius:6,border:"none",background:"#00C4CC",color:"#fff",fontSize:13,cursor:"pointer",fontWeight:600}} onClick={issueInvoice}>Issue invoice ↗</button>
           </div>
         </div>
       )}
@@ -546,7 +607,7 @@ export default function AffinityInvoicing({ onNav }) {
                   <div style={{ fontSize:11, color:days>60?"#EF4444":"#F59E0B", marginTop:2 }}>{days} days overdue</div>
                   <div style={{ display:"flex", gap:6, marginTop:8, justifyContent:"flex-end" }}>
                     <button style={{ ...nb, fontSize:10 }} disabled title="Needs email sending, which is not connected yet">Send reminder</button>
-                    {days>60&&<button style={{ fontSize:10, padding:"4px 10px", borderRadius:5, border:"0.5px solid #EF4444", color:"#EF4444", background:"transparent", cursor:"pointer" }} disabled title="Needs a write function that is not built yet">Escalate</button>}
+                    {days>60&&<button style={{ fontSize:10, padding:"4px 10px", borderRadius:5, border:"0.5px solid #EF4444", color:"#EF4444", background:"transparent", cursor:"pointer" }} disabled title="Escalation routing is not configured yet — chase the owner directly for now">Escalate</button>}
                   </div>
                 </div>
               </div>

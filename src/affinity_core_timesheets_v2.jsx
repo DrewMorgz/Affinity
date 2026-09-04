@@ -51,6 +51,49 @@ const VIEWS = ["entry","wip","utilisation","missing","approval","reports"];
 const VLABELS = ["Time entry","WIP by entity","Utilisation","Missing timesheets","Approval queue","Reports"];
 
 export default function AffinityTimesheets({ onNav }) {
+  // ── Write layer plumbing ──────────────────────────────────────────────────
+  const [wBusy, setWBusy] = useState(false);
+  const [wMsg, setWMsg]   = useState("");
+  const wRun = async (fn, okText) => {
+    setWBusy(true); setWMsg("");
+    try {
+      const res = await fn();
+      setWBusy(false);
+      if (res && res.ok) { setWMsg(okText || "Saved."); return true; }
+      if (res && res.live === false) { setWMsg("Not signed in — this cannot be saved yet."); return false; }
+      setWMsg((res && res.error) || "That could not be saved.");
+      return false;
+    } catch (e) {
+      setWBusy(false);
+      setWMsg(String((e && e.message) || e));
+      return false;
+    }
+  };
+
+  // Submitting a week of draft time, and a manager approving or returning it.
+  // Both are database functions: submission refuses if there is no draft time,
+  // and returning refuses without a reason.
+  const submitTimesheet = async () => {
+    const today = new Date();
+    const from = new Date(today); from.setDate(from.getDate() - 6);
+    await wRun(() => OW.timeSubmit(Number(staffF) || 1,
+      from.toISOString().slice(0,10), today.toISOString().slice(0,10)),
+      "Submitted for approval.");
+  };
+
+  const approveTime = async (approve) => {
+    const ids = (typeof selectedEntries !== "undefined" && selectedEntries && selectedEntries.length)
+      ? selectedEntries : [];
+    if (!ids.length) { setWMsg("Select the entries to " + (approve ? "approve" : "return") + " first."); return; }
+    let reason = null;
+    if (!approve) {
+      reason = window.prompt("Reason for returning this time to the fee earner:");
+      if (!reason) { setWMsg("A reason is required when returning time."); return; }
+    }
+    await wRun(() => OW.timeApprove(ids, approve, reason),
+      approve ? "Approved." : "Returned to the fee earner.");
+  };
+
   const [entitySearch, setEntitySearch] = useState("");
   const [liveEntries,setLiveEntries]=useState(null);
   useEffect(()=>{ if(!isConfigured) return; let ok=true; tsEntries().then(({data})=>{ if(ok&&data&&data.length) setLiveEntries(data); }).catch(()=>{}); return ()=>{ok=false;}; },[]);
@@ -160,6 +203,16 @@ export default function AffinityTimesheets({ onNav }) {
 
   return (
     <div style={{ fontFamily:"'Catamaran',system-ui,sans-serif", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)", minHeight:600 }}>
+      {wMsg && (
+        <div style={{ margin:"0 20px 10px", padding:"9px 12px", borderRadius:7, fontSize:11.5,
+                      lineHeight:1.6, border:"0.5px solid",
+                      background: /Saved|Submitted|Approved|Returned|Posted|Issued|Created|Prepared|Chased|Suspended|Started|Added/.test(wMsg) ? "#E7F4EF" : "#FCEBEB",
+                      borderColor: /Saved|Submitted|Approved|Returned|Posted|Issued|Created|Prepared|Chased|Suspended|Started|Added/.test(wMsg) ? "#bfe0d2" : "#f0c9c9",
+                      color: /Saved|Submitted|Approved|Returned|Posted|Issued|Created|Prepared|Chased|Suspended|Started|Added/.test(wMsg) ? "#1F6F54" : "#A32D2D" }}>
+          {wMsg}
+        </div>
+      )}
+
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 20px", borderBottom:"0.5px solid #e5e5e5" }}>
         <div style={{ fontSize:18, fontWeight:500, color:"#001242" }}>Timesheets</div>
         <div style={{ display:"flex", gap:5 }}>
@@ -195,7 +248,7 @@ export default function AffinityTimesheets({ onNav }) {
           <datalist id="ts-staff-list">{STAFF.map(x=><option key={x.id} value={x.name}/>)}</datalist>
           <select style={sel}><option>{weekF}</option><option>W/C 07 Jul 2025</option><option>W/C 30 Jun 2025</option></select>
           <button style={{ ...nb, marginLeft:"auto" }} onClick={()=>setModal("entry")}>＋ Manual entry</button>
-          <button style={nba} disabled title="Needs a write function that is not built yet">Submit timesheet ↗</button>
+          <button style={nba} onClick={submitTimesheet}>Submit timesheet ↗</button>
         </div>
 
         {/* Live timer bar */}
@@ -305,7 +358,7 @@ export default function AffinityTimesheets({ onNav }) {
                   <td style={{ ...td, textAlign:"right", color:"#666" }}>{w.hours.toFixed(1)}</td>
                   <td style={{ ...td, textAlign:"right", fontWeight:600, color:CY }}>{fmt(w.value)}</td>
                   <td style={{ ...td, textAlign:"center" }}>{w.entries}</td>
-                  <td style={td}><button style={{ ...nb, fontSize:10, padding:"2px 8px" }} disabled title="Needs a write function that is not built yet">Bill ↗</button></td>
+                  <td style={td}><button style={{ ...nb, fontSize:10, padding:"2px 8px" }} disabled title="Billing approved time to an invoice is not wired yet">Bill ↗</button></td>
                 </tr>
               ))}
             </tbody>
@@ -358,7 +411,7 @@ export default function AffinityTimesheets({ onNav }) {
               </div>
               <div style={{ display:"flex", gap:8 }}>
                 <button style={{ ...nb, fontSize:11 }} disabled title="Needs email sending, which is not connected yet">Send reminder</button>
-                <button style={{ color:"#EF4444", border:"0.5px solid #EF4444", padding:"5px 12px", borderRadius:5, background:"transparent", fontSize:11, cursor:"pointer" }} disabled title="Needs a write function that is not built yet">Escalate ↗</button>
+                <button style={{ color:"#EF4444", border:"0.5px solid #EF4444", padding:"5px 12px", borderRadius:5, background:"transparent", fontSize:11, cursor:"pointer" }} disabled title="Escalation routing is not configured yet — chase the owner directly for now">Escalate ↗</button>
               </div>
             </div>
           ))):(<div style={{ fontSize:12, color:"#4CAF7D", padding:"20px 0", textAlign:"center" }}>✓ All timesheets submitted for this week</div>)}
@@ -380,8 +433,8 @@ export default function AffinityTimesheets({ onNav }) {
                 </div>
                 <div style={{ display:"flex", gap:6, flexShrink:0, marginLeft:12 }}>
                   <span style={{ fontSize:12, fontWeight:600, color:e.billable?CY:"#aaa", marginRight:8 }}>{e.billable?fmt(e.value):"Non-billable"}</span>
-                  <button style={{ ...nb, fontSize:10 }} disabled title="Needs a write function that is not built yet">Return</button>
-                  <button style={nba} disabled title="Needs a write function that is not built yet">Approve ✓</button>
+                  <button style={{ ...nb, fontSize:10 }} onClick={()=>approveTime(false)}>Return</button>
+                  <button style={nba} onClick={()=>approveTime(true)}>Approve ✓</button>
                 </div>
               </div>
             );

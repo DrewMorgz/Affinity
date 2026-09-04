@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import AffinityLoginPage from "./affinity_login_page";
 import Planning from "./affinity_core_planning";
 import Consolidation from "./affinity_core_consolidation";
+import JurisdictionCompliance from "./affinity_core_jurisdiction_compliance";
 import Tasks from "./affinity_core_tasks";
 import Dashboard     from "./affinity_core_dashboard";
 import EntityAdmin   from "./affinity_core_entity_admin";
@@ -85,6 +86,7 @@ const NAV = [
     {id:"client_portal",label:"Client portal", icon:"\uD83D\uDC64",b:null},
   ]},
   {s:"Compliance", items:[
+    {id:"jurisdiction", label:"Jurisdictions",  icon:"\uD83C\uDF0D",b:null},
     {id:"compliance",   label:"Compliance",     icon:"\uD83D\uDEE1",b:null},
     {id:"crm",          label:"CRM",           icon:"\uD83E\uDD1D",b:null},
   ]},
@@ -280,6 +282,7 @@ const SEARCH_INDEX = [
   {type:"Module",  label:"Budgets",                         sub:"Now in Planning",                 mod:"planning"},
   {type:"Module",  label:"Planning",                        sub:"Budget input, workflow, scenarios",mod:"planning"},
   {type:"Module",  label:"Consolidation",                   sub:"Group results, intercompany, runs",mod:"consol"},
+  {type:"Module",  label:"Jurisdictions",                   sub:"Regulatory obligations by jurisdiction",mod:"jurisdiction"},
   {type:"Module",  label:"Reporting",                       sub:"MI & financial statements",       mod:"reporting"},
   {type:"Module",  label:"Procedures",                     sub:"Process library",                 mod:"procedures"},
   {type:"Module",  label:"Generate Document",              sub:"Templates & statutory forms",     mod:"generate"},
@@ -418,6 +421,7 @@ export default function AffinityCore(){
       case "notifications":return <Tasks onNav={setMod} initialView="activity"/>;  // merged into Tasks
       case "client_portal": return <ClientPortal/>;
       case "entities":     return <EntityAdmin officeFilter={officeFilter} onNav={setMod} role={rbacRole}/>;
+      case "jurisdiction": return <JurisdictionCompliance onNav={setMod}/>;
       case "compliance":   return <Compliance/>;
       case "statutory":    return <Statutory/>;
       case "crm":          return <CRM/>;

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import * as OW from "./affinity_ops_write_api";
 import { proceduresList, procedureRuns, procedureHist, isConfigured } from "./affinity_ops_api";
 const CY = "#00C4CC";
 const NAVY = "#001242";
@@ -61,6 +62,38 @@ const VLABELS = ["Overview","Procedure library","Active runs","History"];
 const CATS = ["Onboarding","Compliance","Statutory","Finance","Operations"];
 
 export default function AffinityProcedures() {
+  // ── Write layer plumbing ──────────────────────────────────────────────────
+  const [wBusy, setWBusy] = useState(false);
+  const [wMsg, setWMsg]   = useState("");
+  const wRun = async (fn, okText) => {
+    setWBusy(true); setWMsg("");
+    try {
+      const res = await fn();
+      setWBusy(false);
+      if (res && res.ok) { setWMsg(okText || "Saved."); return true; }
+      if (res && res.live === false) { setWMsg("Not signed in — this cannot be saved yet."); return false; }
+      setWMsg((res && res.error) || "That could not be saved.");
+      return false;
+    } catch (e) {
+      setWBusy(false);
+      setWMsg(String((e && e.message) || e));
+      return false;
+    }
+  };
+
+  // Starting a procedure run against an entity.
+  const startProcedure = async (proc) => {
+    const p = proc || (typeof selProc !== "undefined" ? selProc : null);
+    if (!p) { setWMsg("Choose a procedure from the library first."); return; }
+    const entityLabel = window.prompt("Which entity is this procedure for?") || null;
+    await wRun(() => OW.procStart({
+      proc: p.id || p.code || String(p),
+      title: p.title || null,
+      entity: entityLabel,
+      totalSteps: p.steps || 1,
+    }), "Procedure started.");
+  };
+
   const [pL,setPL]=useState(null),[pR,setPR]=useState(null),[pH,setPH]=useState(null);
   useEffect(()=>{ if(!isConfigured) return; let ok=true; proceduresList().then(({data})=>{if(ok&&data&&data.length)setPL(data);}).catch(()=>{}); procedureRuns().then(({data})=>{if(ok&&data)setPR(data);}).catch(()=>{}); procedureHist().then(({data})=>{if(ok&&data)setPH(data);}).catch(()=>{}); return ()=>{ok=false;}; },[]);
   const proceduresLive=pL||PROCEDURES, runsLive=pR||RUNS, histLive=pH||HISTORY;
@@ -81,12 +114,22 @@ export default function AffinityProcedures() {
 
   return (
     <div style={{ fontFamily:"'Catamaran',system-ui,sans-serif", background:"#f8f9fc", color:"#111", minHeight:"100vh" }}>
+      {wMsg && (
+        <div style={{ margin:"0 20px 10px", padding:"9px 12px", borderRadius:7, fontSize:11.5,
+                      lineHeight:1.6, border:"0.5px solid",
+                      background: /Saved|Submitted|Approved|Returned|Posted|Issued|Created|Prepared|Chased|Suspended|Started|Added/.test(wMsg) ? "#E7F4EF" : "#FCEBEB",
+                      borderColor: /Saved|Submitted|Approved|Returned|Posted|Issued|Created|Prepared|Chased|Suspended|Started|Added/.test(wMsg) ? "#bfe0d2" : "#f0c9c9",
+                      color: /Saved|Submitted|Approved|Returned|Posted|Issued|Created|Prepared|Chased|Suspended|Started|Added/.test(wMsg) ? "#1F6F54" : "#A32D2D" }}>
+          {wMsg}
+        </div>
+      )}
+
       <div style={{ background:NAVY, padding:"12px 24px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
           <span style={{ color:"#fff", fontWeight:700, fontSize:17 }}>Affinity <span style={{ fontWeight:300 }}>Core</span></span>
           <span style={{ color:"#8892b0", fontSize:13 }}>Procedures</span>
         </div>
-        <button style={nba} disabled title="Needs a write function that is not built yet">＋ Start procedure</button>
+        <button style={nba} onClick={()=>startProcedure(null)}>＋ Start procedure</button>
       </div>
 
       <div style={{ background:"#fff", borderBottom:"0.5px solid #e5e5e5", padding:"0 24px", display:"flex", gap:2 }}>
@@ -181,7 +224,7 @@ export default function AffinityProcedures() {
                       {p.activeRuns>0 ? <span style={{ background:CY, color:"#fff", borderRadius:10, padding:"1px 6px", fontSize:10, fontWeight:700 }}>{p.activeRuns}</span> : <span style={{ color:"#ddd" }}>—</span>}
                     </td>
                     <td style={td}>
-                      <button style={{ ...nba, fontSize:10, padding:"3px 10px" }} disabled title="Needs a write function that is not built yet">Start ↗</button>
+                      <button style={{ ...nba, fontSize:10, padding:"3px 10px" }} onClick={()=>startProcedure(null)}>Start ↗</button>
                     </td>
                   </tr>
                 ))}
@@ -203,7 +246,7 @@ export default function AffinityProcedures() {
                   </div>
                   <div style={{ display:"flex", gap:8, alignItems:"center" }}>
                     <span style={{ fontSize:11, color:"#aaa" }}>{r.assignee}</span>
-                    <button style={{ ...nba, fontSize:10 }} disabled title="Needs a write function that is not built yet">Open ↗</button>
+                    <button style={{ ...nba, fontSize:10 }} disabled title="Not routed yet — open the record from its own module">Open ↗</button>
                   </div>
                 </div>
                 <div style={{ display:"flex", alignItems:"center", gap:10 }}>

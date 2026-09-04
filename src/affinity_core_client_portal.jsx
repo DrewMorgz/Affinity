@@ -196,7 +196,7 @@ export default function AffinityClientPortal() {
         {tab === "documents" && (<div style={card}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
             <div style={{ ...sectionTitle, marginBottom: 0 }}>Your documents ({c.documents.length})</div>
-            <button style={{ padding: "7px 14px", background: CY, color: "#fff", border: "none", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer" }} disabled title="Needs a write function that is not built yet">⬆ Upload document</button>
+            <button style={{ padding: "7px 14px", background: CY, color: "#fff", border: "none", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer" }} disabled title="Client-side upload needs the client portal to be authenticated separately">⬆ Upload document</button>
           </div>
           {c.documents.map((d, i) => (
             <div key={d.id} style={{ padding: "12px 0", borderBottom: i < c.documents.length - 1 ? "0.5px solid #f0f0f0" : "none", display: "flex", gap: 12, alignItems: "center" }}>

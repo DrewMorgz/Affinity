@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import * as DW from "./affinity_docs_onb_write_api";
 import EntitySearch from "./affinity_entity_search";
 import { isConfigured } from "./affinity_accounting_supabase";
 import { statAnnualReturns, statBoRegisters, statCogs, statOfficerChanges, statDissolutions } from "./affinity_statutory_api";
@@ -72,6 +73,46 @@ const th = { padding:"8px 12px", textAlign:"left", fontSize:10, fontWeight:600, 
 const td = { padding:"9px 12px", fontSize:11, borderBottom:"0.5px solid #e5e5e5", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" };
 
 export default function AffinityStatutory() {
+  // ── Write layer plumbing ──────────────────────────────────────────────────
+  const [wBusy, setWBusy] = useState(false);
+  const [wMsg, setWMsg]   = useState("");
+  const wRun = async (fn, okText) => {
+    setWBusy(true); setWMsg("");
+    try {
+      const res = await fn();
+      setWBusy(false);
+      if (res && res.ok) { setWMsg(okText || "Saved."); return true; }
+      if (res && res.live === false) { setWMsg("Not signed in — this cannot be saved yet."); return false; }
+      setWMsg((res && res.error) || "That could not be saved.");
+      return false;
+    } catch (e) {
+      setWBusy(false);
+      setWMsg(String((e && e.message) || e));
+      return false;
+    }
+  };
+
+  // Prepare, submit and chase a statutory filing. Submission is refused unless
+  // the filing has been prepared, which is enforced in the database.
+  const [selFilingId, setSelFilingId] = useState(null);
+
+  const filingAction = async (what) => {
+    if (!selFilingId) {
+      setWMsg("Select a filing first — these actions apply to one filing at a time.");
+      return;
+    }
+    if (what === "prepare") {
+      const ref = window.prompt("Reference for the prepared filing (optional):") || null;
+      await wRun(() => DW.statFilingPrepare(selFilingId, ref), "Prepared.");
+    } else if (what === "submit") {
+      const ref = window.prompt("Submission reference from the registry (optional):") || null;
+      await wRun(() => DW.statFilingSubmit(selFilingId, ref), "Submitted.");
+    } else if (what === "chase") {
+      const note = window.prompt("Note for the chase (optional):") || null;
+      await wRun(() => DW.statFilingChase(selFilingId, note), "Chased — recorded against the filing.");
+    }
+  };
+
   const [entitySearch, setEntitySearch] = useState("");
   const [view, setView]   = useState("calendar");
   const [modal, setModal] = useState(null);
@@ -113,6 +154,16 @@ export default function AffinityStatutory() {
 
   return (
     <div style={{ fontFamily:"'Catamaran',system-ui,sans-serif", background:"#f8f9fc", color:"#111", minHeight:"100vh" }}>
+      {wMsg && (
+        <div style={{ margin:"0 20px 10px", padding:"9px 12px", borderRadius:7, fontSize:11.5,
+                      lineHeight:1.6, border:"0.5px solid",
+                      background: /Saved|Submitted|Approved|Returned|Posted|Issued|Created|Prepared|Chased|Suspended|Started|Added/.test(wMsg) ? "#E7F4EF" : "#FCEBEB",
+                      borderColor: /Saved|Submitted|Approved|Returned|Posted|Issued|Created|Prepared|Chased|Suspended|Started|Added/.test(wMsg) ? "#bfe0d2" : "#f0c9c9",
+                      color: /Saved|Submitted|Approved|Returned|Posted|Issued|Created|Prepared|Chased|Suspended|Started|Added/.test(wMsg) ? "#1F6F54" : "#A32D2D" }}>
+          {wMsg}
+        </div>
+      )}
+
       {/* Header */}
       <div style={{ background:NAVY, padding:"12px 24px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
@@ -165,7 +216,7 @@ export default function AffinityStatutory() {
                   </div>
                   <div style={{ display:"flex", gap:6, alignItems:"center" }}>
                     <Badge label={item.jur} colors={jurC[item.jur]||{bg:"#eee",color:"#666"}} />
-                    <button style={{ ...nb, fontSize:10, borderColor:"#EF4444", color:"#EF4444" }} disabled title="Needs a write function that is not built yet">File now ↗</button>
+                    <button style={{ ...nb, fontSize:10, borderColor:"#EF4444", color:"#EF4444" }} onClick={()=>filingAction("submit")}>File now ↗</button>
                   </div>
                 </div>
               ))}
@@ -199,7 +250,7 @@ export default function AffinityStatutory() {
                 </select>
               </div>
               <div style={{ display:"flex", gap:6 }}>
-                <button style={{ ...nb, fontSize:10 }} disabled title="Needs a write function that is not built yet">Export to Excel ↗</button>
+                <button style={{ ...nb, fontSize:10 }} disabled title="Needs the spreadsheet export, which is not built yet">Export to Excel ↗</button>
                 <button style={nba} onClick={()=>setModal("newReturn")}>＋ Log filing</button>
               </div>
             </div>
@@ -219,7 +270,7 @@ export default function AffinityStatutory() {
                     <td style={{ ...td, color:"#666" }}>{r.admin}</td>
                     <td style={{ ...td, color:"#aaa" }}>{r.fee}</td>
                     <td style={td}><Badge label={r.status} colors={statusC[r.status]||{bg:"#eee",color:"#666"}} /></td>
-                    <td style={td}>{r.status==="Overdue"?<button style={{ ...nb, fontSize:10, borderColor:"#EF4444", color:"#EF4444" }} disabled title="Filing to the regulator's portal is not connected yet">File ↗</button>:<button style={{ ...nb, fontSize:10 }} disabled title="Needs a write function that is not built yet">Prepare ↗</button>}</td>
+                    <td style={td}>{r.status==="Overdue"?<button style={{ ...nb, fontSize:10, borderColor:"#EF4444", color:"#EF4444" }} disabled title="Filing to the regulator's portal is not connected yet">File ↗</button>:<button style={{ ...nb, fontSize:10 }} onClick={()=>filingAction("prepare")}>Prepare ↗</button>}</td>
                   </tr>
                 ))}
               </tbody>
@@ -250,7 +301,7 @@ export default function AffinityStatutory() {
                     <td style={td}><Badge label={b.status} colors={statusC[b.status]||{bg:"#eee",color:"#666"}} /></td>
                     <td style={{ ...td, color:"#666", fontSize:10 }}>{b.system}</td>
                     <td style={{ ...td, color:b.status==="Overdue"?"#EF4444":"#666", fontWeight:b.status==="Overdue"?600:400 }}>{b.nextReview}</td>
-                    <td style={td}>{b.status==="Overdue"?<button style={{ ...nb, fontSize:10, borderColor:"#EF4444", color:"#EF4444" }} disabled title="Needs a write function that is not built yet">Submit ↗</button>:<button style={{ ...nb, fontSize:10 }} disabled title="Needs a write function that is not built yet">Update ↗</button>}</td>
+                    <td style={td}>{b.status==="Overdue"?<button style={{ ...nb, fontSize:10, borderColor:"#EF4444", color:"#EF4444" }} onClick={()=>filingAction("submit")}>Submit ↗</button>:<button style={{ ...nb, fontSize:10 }} disabled title="Not wired yet — use the register tab for this entity">Update ↗</button>}</td>
                   </tr>
                 ))}
               </tbody>
@@ -280,7 +331,7 @@ export default function AffinityStatutory() {
                     <td style={{ ...td, color:c.filed==="Not yet"?"#F59E0B":"#666", fontWeight:c.filed==="Not yet"?600:400 }}>{c.dueDate}</td>
                     <td style={td}><Badge label={c.filed} colors={statusC[c.filed]||{bg:"#eee",color:"#666"}} /></td>
                     <td style={{ ...td, color:"#666" }}>{c.admin}</td>
-                    <td style={td}>{c.filed==="Not yet"?<button style={nba} disabled title="Needs a write function that is not built yet">Prepare form ↗</button>:<button style={{ ...nb, fontSize:10 }} disabled title="Needs a write function that is not built yet">View ↗</button>}</td>
+                    <td style={td}>{c.filed==="Not yet"?<button style={nba} onClick={()=>filingAction("prepare")}>Prepare form ↗</button>:<button style={{ ...nb, fontSize:10 }} disabled title="Not routed yet — open the record from its own module">View ↗</button>}</td>
                   </tr>
                 ))}
               </tbody>
@@ -308,7 +359,7 @@ export default function AffinityStatutory() {
                     <td style={{ ...td, color:"#666", fontSize:10 }}>{c.requestedBy}</td>
                     <td style={{ ...td, color:"#666", fontSize:10 }}>{c.purpose}</td>
                     <td style={td}><Badge label={c.status} colors={statusC[c.status]||{bg:"#eee",color:"#666"}} /></td>
-                    <td style={td}>{c.status==="Pending"?<button style={nba} disabled title="Needs a write function that is not built yet">Chase registry</button>:<button style={{ ...nb, fontSize:10 }} disabled title="Needs a write function that is not built yet">View in DMS ↗</button>}</td>
+                    <td style={td}>{c.status==="Pending"?<button style={nba} onClick={()=>filingAction("chase")}>Chase registry</button>:<button style={{ ...nb, fontSize:10 }} disabled title="Needs a write function that is not built yet">View in DMS ↗</button>}</td>
                   </tr>
                 ))}
               </tbody>
@@ -342,7 +393,7 @@ export default function AffinityStatutory() {
                 </div>
                 <div style={{ display:"flex", gap:6 }}>
                   <button style={nb} disabled title="Needs a write function that is not built yet">View checklist ↗</button>
-                  <button style={nba} disabled title="Needs a write function that is not built yet">Advance stage</button>
+                  <button style={nba} disabled title="Stage changes for statutory work are not wired yet">Advance stage</button>
                 </div>
               </div>
             ))}

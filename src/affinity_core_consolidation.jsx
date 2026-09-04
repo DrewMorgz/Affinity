@@ -372,7 +372,7 @@ export default function AffinityConsolidation({ onNav }) {
                     </td>
                     <td style={{ ...td, fontSize:11, color: r.status==="Failed"?NEG:MUT }}>{r.note || "—"}</td>
                     <td style={td}>
-                      {r.status==="Posted" && <button style={{ ...btn, padding:"3px 9px", fontSize:10 }} disabled title="Needs a write function that is not built yet">Roll back</button>}
+                      {r.status==="Posted" && <button style={{ ...btn, padding:"3px 9px", fontSize:10 }} disabled title="Rolling back a posted import is not built yet — re-import to supersede it instead">Roll back</button>}
                     </td>
                   </tr>
                 ))}

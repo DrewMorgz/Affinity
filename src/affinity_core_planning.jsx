@@ -23,6 +23,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { budgetList, budgetGrid, setBudgetCell, submitBudget, approveBudget, pivotToGrid } from "./affinity_planning_api";
+import { planningScenarioCreate } from "./affinity_docs_onb_write_api";
 import { phaseFee, phaseFees, phaseHeadcount, phaseStaffCost, projectBalanceSheet, daysInMonth,
          FREQUENCIES, PHASING, COST_CENTRES, BUDGET_STAGES,
          ONCOSTS_BY_REGION, ENTITY_REGION,
@@ -159,6 +160,34 @@ const SCENARIOS_SEED = [
 ];
 
 export default function AffinityPlanning({ onNav, userName = "" }) {
+  // ── Write layer plumbing ──────────────────────────────────────────────────
+  const [wBusy, setWBusy] = useState(false);
+  const [wMsg, setWMsg]   = useState("");
+  const wRun = async (fn, okText) => {
+    setWBusy(true); setWMsg("");
+    try {
+      const res = await fn();
+      setWBusy(false);
+      if (res && res.ok) { setWMsg(okText || "Saved."); return true; }
+      if (res && res.live === false) { setWMsg("Not signed in — this cannot be saved yet."); return false; }
+      setWMsg((res && res.error) || "That could not be saved.");
+      return false;
+    } catch (e) {
+      setWBusy(false);
+      setWMsg(String((e && e.message) || e));
+      return false;
+    }
+  };
+
+  // Copying an approved budget into a scenario. The copy carries all its lines,
+  // so changing the scenario never touches the approved figures.
+  const createScenario = async () => {
+    if (!budgetId) { setWMsg("No budget is loaded to copy from."); return; }
+    const name = window.prompt("Name for the new scenario:");
+    if (!name) { setWMsg("Give the scenario a name."); return; }
+    await wRun(() => planningScenarioCreate(budgetId, name), "Scenario created from the approved budget.");
+  };
+
   const [view, setView]       = useState("input");   // input | workflow | scenarios
   const [entity, setEntity]   = useState(ENTITIES[1].ref);
   const [scenario, setScenario] = useState("FY26 Budget");
@@ -441,6 +470,16 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
 
   return (
     <div style={{ fontFamily:FONT, background:PAGE, minHeight:"100vh", color:INK }} onPaste={onPaste}>
+      {wMsg && (
+        <div style={{ margin:"0 20px 10px", padding:"9px 12px", borderRadius:7, fontSize:11.5,
+                      lineHeight:1.6, border:"0.5px solid",
+                      background: /Saved|Submitted|Approved|Returned|Posted|Issued|Created|Prepared|Chased|Suspended|Started|Added/.test(wMsg) ? "#E7F4EF" : "#FCEBEB",
+                      borderColor: /Saved|Submitted|Approved|Returned|Posted|Issued|Created|Prepared|Chased|Suspended|Started|Added/.test(wMsg) ? "#bfe0d2" : "#f0c9c9",
+                      color: /Saved|Submitted|Approved|Returned|Posted|Issued|Created|Prepared|Chased|Suspended|Started|Added/.test(wMsg) ? "#1F6F54" : "#A32D2D" }}>
+          {wMsg}
+        </div>
+      )}
+
 
       {/* Header */}
       <div style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 22px", background:CARD, borderBottom:`0.5px solid ${LINE}`, flexWrap:"wrap" }}>
@@ -1287,7 +1326,7 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
           <div style={{ display:"flex", alignItems:"center", gap:9, marginBottom:11, flexWrap:"wrap" }}>
             <div style={{ fontSize:13, fontWeight:600, color:NAVY }}>Scenarios</div>
             <span style={{ fontSize:11, color:MUT }}>A scenario is a copy of an approved budget. Changing one never touches the approved figures.</span>
-            <button style={{ ...btnP, marginLeft:"auto" }} disabled title="Needs a write function that is not built yet">＋ New scenario from approved budget</button>
+            <button style={{ ...btnP, marginLeft:"auto" }} onClick={createScenario}>＋ New scenario from approved budget</button>
           </div>
 
           <div style={{ background:CARD, border:`0.5px solid ${LINE}`, borderRadius:9, overflow:"hidden", marginBottom:18 }}>

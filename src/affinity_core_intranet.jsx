@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import * as DW from "./affinity_docs_onb_write_api";
 import { getDatasets, isConfigured } from "./affinity_ops_api";
 
 const CY = "#00C4CC";
@@ -59,6 +60,8 @@ function Clock({office}) {
   const h12 = h%12||12;
   return (
     <div style={{background:"rgba(255,255,255,0.12)",borderRadius:8,padding:"10px 14px",minWidth:160}}>
+      
+
       <div style={{fontSize:11,color:"rgba(255,255,255,0.7)",marginBottom:2}}>{office.city}, {office.country}</div>
       <div style={{fontSize:22,fontWeight:700,color:"#fff",letterSpacing:"-0.5px"}}>{h12}:{m.toString().padStart(2,"0")} <span style={{fontSize:14,fontWeight:400}}>{ampm}</span></div>
       <div style={{fontSize:10,color:"rgba(255,255,255,0.5)",marginTop:2}}>{office.offset===0?"Same time as IOM":office.offset>0?office.offset+"h ahead":Math.abs(office.offset)+"h behind"}</div>
@@ -67,6 +70,38 @@ function Clock({office}) {
 }
 
 export default function AffinityIntranet({ onNav }) {
+  // ── Write layer plumbing ──────────────────────────────────────────────────
+  const [wBusy, setWBusy] = useState(false);
+  const [wMsg, setWMsg]   = useState("");
+  const wRun = async (fn, okText) => {
+    setWBusy(true); setWMsg("");
+    try {
+      const res = await fn();
+      setWBusy(false);
+      if (res && res.ok) { setWMsg(okText || "Saved."); return true; }
+      if (res && res.live === false) { setWMsg("Not signed in — this cannot be saved yet."); return false; }
+      setWMsg((res && res.error) || "That could not be saved.");
+      return false;
+    } catch (e) {
+      setWBusy(false);
+      setWMsg(String((e && e.message) || e));
+      return false;
+    }
+  };
+
+  const [eventModal, setEventModal] = useState(false);
+  const [evt, setEvt] = useState({});
+
+  const saveEvent = async () => {
+    if (!evt.title) { setWMsg("An event needs a title."); return; }
+    if (!evt.date)  { setWMsg("An event needs a date."); return; }
+    const ok = await wRun(() => DW.intranetEventAdd({
+      title: evt.title, eventDate: evt.date, office: evt.office || null,
+      category: evt.category || null, detail: evt.detail || null,
+    }), "Event added.");
+    if (ok) { setEventModal(false); setEvt({}); }
+  };
+
   const [ds,setDs]=useState(null);
   useEffect(()=>{ if(!isConfigured) return; let ok=true; getDatasets("intranet.").then(({data})=>{ if(ok&&data&&data.length){ const m={}; data.forEach(r=>{m[r.dkey.split(".")[1]]=r.data;}); setDs(m);} }).catch(()=>{}); return ()=>{ok=false;}; },[]);
   const OFFICESL=(ds&&ds.OFFICES)||OFFICES, NEWSL=(ds&&ds.NEWS)||NEWS, EVENTSL=(ds&&ds.EVENTS)||EVENTS, RESOURCESL=(ds&&ds.RESOURCES)||RESOURCES, ADVENTURE_VALUESL=(ds&&ds.VALUES)||ADVENTURE_VALUES;
@@ -144,7 +179,7 @@ export default function AffinityIntranet({ onNav }) {
         <div style={{marginBottom:24}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
             <div style={{fontSize:17,fontWeight:700,color:NAVY}}>Our Group Events</div>
-            <button style={{fontSize:12,color:CY,background:"none",border:"none",cursor:"pointer",fontWeight:500}} disabled title="Needs a write function that is not built yet">+ Add event</button>
+            <button style={{fontSize:12,color:CY,background:"none",border:"none",cursor:"pointer",fontWeight:500}} onClick={()=>setEventModal(true)}>+ Add event</button>
           </div>
           <div style={{display:"flex",gap:10,overflowX:"auto",paddingBottom:6}}>
             {EVENTSL.map(e=>(
@@ -229,7 +264,7 @@ export default function AffinityIntranet({ onNav }) {
             <div style={{flex:1}}>
               <div style={{fontSize:12,fontWeight:600,color:NAVY,marginBottom:3}}>{r.name}</div>
               <div style={{fontSize:11,color:"#666",lineHeight:1.5}}>{r.desc}</div>
-              <button style={{marginTop:6,fontSize:11,color:CY,background:"none",border:"none",cursor:"pointer",padding:0}} disabled title="Needs a write function that is not built yet">Open ↗</button>
+              <button style={{marginTop:6,fontSize:11,color:CY,background:"none",border:"none",cursor:"pointer",padding:0}} disabled title="Not routed yet — open the record from its own module">Open ↗</button>
             </div>
           </div>
         ))}

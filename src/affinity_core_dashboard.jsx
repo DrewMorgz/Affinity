@@ -452,7 +452,7 @@ export default function Dashboard({userId, onNav, userName}) {
           {[{item:"Q3 retainer invoices",type:"Invoicing",count:7},{item:"Time entries — week 28",type:"Timesheets",count:4},{item:"North Star attrition",type:"Onboarding",count:1}].map((a,i)=>(
             <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"0.5px solid #e5e5e5",fontSize:12}}>
               <div><div style={{fontWeight:500}}>{a.item}</div><Bx label={a.type} colors={modColors[a.type]||{bg:"#eee",color:"#666"}}/></div>
-              <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontWeight:600,color:CY}}>{a.count} item{a.count>1?"s":""}</span><button style={{padding:"4px 10px",borderRadius:5,border:"none",background:CY,color:"#fff",fontSize:11,cursor:"pointer"}} disabled title="Needs a write function that is not built yet">Open ↗</button></div>
+              <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontWeight:600,color:CY}}>{a.count} item{a.count>1?"s":""}</span><button style={{padding:"4px 10px",borderRadius:5,border:"none",background:CY,color:"#fff",fontSize:11,cursor:"pointer"}} disabled title="Not routed yet — open the record from its own module">Open ↗</button></div>
             </div>
           ))}
         </Card>}

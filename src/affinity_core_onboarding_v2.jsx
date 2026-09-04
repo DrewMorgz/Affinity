@@ -259,7 +259,7 @@ export default function AffinityOnboarding({ initialView , onNav }) {
                   title="Move this case to the next stage. Sign-off is refused while CDD is outstanding or no risk rating is set.">
                   {advBusy ? "Working…" : "Advance stage ↗"}
                 </button>
-                {selCase.overdue&&<button style={{ fontSize:10, padding:"5px 8px", borderRadius:5, border:"0.5px solid #EF4444", color:"#EF4444", background:"transparent", cursor:"pointer" }} disabled title="Needs a write function that is not built yet">Escalate</button>}
+                {selCase.overdue&&<button style={{ fontSize:10, padding:"5px 8px", borderRadius:5, border:"0.5px solid #EF4444", color:"#EF4444", background:"transparent", cursor:"pointer" }} disabled title="Escalation routing is not configured yet — chase the owner directly for now">Escalate</button>}
               </div>
             </div>
           )}
@@ -288,7 +288,7 @@ export default function AffinityOnboarding({ initialView , onNav }) {
                 <span style={{ color:icon==="✓"?"#4CAF7D":"#EF4444", fontWeight:500 }}>{icon} {status}</span>
               </div>
             ))}
-            <button style={{ ...nba, marginTop:10, fontSize:11 }} disabled title="Needs a write function that is not built yet">Generate gap report ↗</button>
+            <button style={{ ...nba, marginTop:10, fontSize:11 }} disabled title="Needs the document generation engine, which is not built yet">Generate gap report ↗</button>
           </div>
         </div>
       )}
@@ -315,8 +315,8 @@ export default function AffinityOnboarding({ initialView , onNav }) {
                 ))}
               </div>
               <div style={{ display:"flex", gap:8, marginTop:10 }}>
-                <button style={nb} disabled title="Needs a write function that is not built yet">View form ↗</button>
-                {Object.values(a.approvals).some(v=>v==="Pending")&&<button style={nba} disabled title="Needs a write function that is not built yet">Approve ✓</button>}
+                <button style={nb} disabled title="Needs the document generation engine, which is not built yet">View form ↗</button>
+                {Object.values(a.approvals).some(v=>v==="Pending")&&<button style={nba} onClick={()=>advanceStage(selCase)}>Approve ✓</button>}
               </div>
             </div>
           ))}
@@ -350,7 +350,7 @@ export default function AffinityOnboarding({ initialView , onNav }) {
                   <td style={{ ...td, color:"#666" }}>{r.sent}</td>
                   <td style={{ ...td, color:r.status==="Expired"?"#EF4444":"#666" }}>{r.exp}</td>
                   <td style={td}><Badge label={r.status} colors={{ Completed:{bg:"#EAF3DE",color:"#27500A"}, "Accessed — incomplete":{bg:"#FAEEDA",color:"#633806"}, "Awaiting response":{bg:"#E6F7FB",color:"#0077A8"}, Expired:{bg:"#FCEBEB",color:"#A32D2D"} }[r.status]||{bg:"#eee",color:"#666"}} /></td>
-                  <td style={td}>{r.status==="Expired"?<button style={{ ...nb, fontSize:10 }} disabled title="Needs a write function that is not built yet">Re-invite</button>:<button style={{ ...nb, fontSize:10 }} disabled title="Needs a write function that is not built yet">View ↗</button>}</td>
+                  <td style={td}>{r.status==="Expired"?<button style={{ ...nb, fontSize:10 }} disabled title="Needs email sending, which is not connected yet">Re-invite</button>:<button style={{ ...nb, fontSize:10 }} disabled title="Not routed yet — open the record from its own module">View ↗</button>}</td>
                 </tr>
               ))}
             </tbody>
