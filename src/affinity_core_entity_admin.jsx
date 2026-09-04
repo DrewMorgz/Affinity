@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import * as EW from "./affinity_entity_write_api";
 import { filterEntitiesByAccess } from "./affinity_core_rbac";
 import { REGISTERS as RAW_REGISTERS, REGISTER_ORDER } from "./affinity_core_compliance";
 // "breaches" is rendered by its own view in Compliance and has no catalogue entry.
@@ -360,6 +361,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
 
   const [liveEnts, setLiveEnts] = useState(null);
   const [det, setDet] = useState(null);
+  const [detVersion, setDetVersion] = useState(0);   // bumped after a save so the register reloads
   const fmtD = (s) => (s ? String(s).split("-").reverse().join("/") : null);
 
   // load live client portfolio
@@ -392,7 +394,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
         safeMovements: sm.data || [], signatories: sg.data || [] }); })
       .catch(() => { if (ok) setDet(null); });
     return () => { ok = false; };
-  }, [sel, liveEnts]);
+  }, [sel, liveEnts, detVersion]);
 
   // Internal-vs-client scoping: a role without "group" access never sees Affinity's
   // own entities anywhere in this module (portfolio, search, counts, reports).
@@ -450,30 +452,78 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
   const nb = { padding:"5px 12px", fontSize:11, borderRadius:5, border:"0.5px solid var(--border-tertiary,#e5e5e5)", background:"transparent", color:"var(--text-secondary,#666)", cursor:"pointer" };
   const nba = { ...nb, background:CY, color:"#fff", border:`0.5px solid ${CY}`, fontWeight:500 };
 
-  const FormModal = ({ title, fields, onClose }) => (
-    <div style={s.modal} onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div style={s.modalBox}>
-        <div style={{ fontSize:14, fontWeight:600, marginBottom:16 }}>{title}</div>
-        <div style={s.fgGrid}>
-          {fields.map((f,i)=>(
-            <div key={i} style={{ ...s.fg, gridColumn:f.full?"1/-1":"auto" }}>
-              <label style={s.fgl}>{f.label}</label>
-              {f.type==="select"
-                ?<select style={s.fgi}>{(f.opts||[]).map(o=><option key={o}>{o}</option>)}</select>
-                :f.type==="textarea"
-                ?<textarea style={{ ...s.fgi, height:60, padding:"6px 8px" }} placeholder={f.placeholder||""} />
-                :<input style={s.fgi} placeholder={f.placeholder||""} type={f.type||"text"} />
-              }
+  // One modal serves every register, so wiring it wires all of them. Inputs are
+  // controlled and Save calls the register's write function. onSave is supplied
+  // per register below; without one the form stays read-only and says so rather
+  // than offering a Save that does nothing.
+  const FormModal = ({ title, fields, onClose, onSave, note }) => {
+    const [vals, setVals]   = useState(() => {
+      const v = {};
+      fields.forEach((f) => { v[f.key || f.label] = f.type === "select" ? ((f.opts||[])[0] || "") : ""; });
+      return v;
+    });
+    const [busy, setBusy]   = useState(false);
+    const [err, setErr]     = useState("");
+    const set = (k, val) => setVals((p) => ({ ...p, [k]: val }));
+
+    const submit = async () => {
+      if (!onSave) return;
+      setBusy(true); setErr("");
+      const res = await onSave(vals);
+      setBusy(false);
+      if (res && res.ok) { onClose(true); }
+      else { setErr((res && res.error) || "That could not be saved."); }
+    };
+
+    return (
+      <div style={s.modal} onClick={e=>e.target===e.currentTarget&&onClose()}>
+        <div style={s.modalBox}>
+          <div style={{ fontSize:14, fontWeight:600, marginBottom:16 }}>{title}</div>
+          <div style={s.fgGrid}>
+            {fields.map((f,i)=>{
+              const k = f.key || f.label;
+              return (
+                <div key={i} style={{ ...s.fg, gridColumn:f.full?"1/-1":"auto" }}>
+                  <label style={s.fgl}>{f.label}{f.required && <span style={{ color:"#EF4444" }}> *</span>}</label>
+                  {f.type==="select"
+                    ?<select style={s.fgi} value={vals[k]} onChange={e=>set(k, e.target.value)}>
+                       {(f.opts||[]).map(op=><option key={op} value={op}>{op}</option>)}
+                     </select>
+                    :f.type==="textarea"
+                    ?<textarea style={{ ...s.fgi, height:60, padding:"6px 8px" }} placeholder={f.placeholder||""}
+                       value={vals[k]} onChange={e=>set(k, e.target.value)} />
+                    :<input style={s.fgi} placeholder={f.placeholder||""} type={f.type||"text"}
+                       value={vals[k]} onChange={e=>set(k, e.target.value)} />
+                  }
+                </div>
+              );
+            })}
+          </div>
+
+          {note && (
+            <div style={{ marginTop:12, fontSize:10.5, color:"#7B4F1D", background:"#FDF4DC",
+                          border:"0.5px solid #E5CE9A", borderRadius:6, padding:"8px 10px", lineHeight:1.6 }}>
+              {note}
             </div>
-          ))}
-        </div>
-        <div style={{ display:"flex", gap:8, justifyContent:"flex-end", marginTop:14 }}>
-          <button style={s.btn(false)} onClick={onClose}>Cancel</button>
-          <button style={s.btn(true)} onClick={onClose}>Save</button>
+          )}
+          {err && (
+            <div style={{ marginTop:12, fontSize:11.5, color:"#A32D2D", background:"#FCEBEB",
+                          border:"0.5px solid #f0c9c9", borderRadius:6, padding:"8px 10px", lineHeight:1.6 }}>
+              {err}
+            </div>
+          )}
+
+          <div style={{ display:"flex", gap:8, justifyContent:"flex-end", marginTop:14 }}>
+            <button style={s.btn(false)} onClick={()=>onClose()} disabled={busy}>Cancel</button>
+            {onSave
+              ? <button style={s.btn(true)} onClick={submit} disabled={busy}>{busy ? "Saving…" : "Save"}</button>
+              : <button style={s.btn(true)} disabled
+                  title="This register cannot be saved to yet">Save</button>}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderTab = () => {
     if(!entity) return null;
@@ -1097,6 +1147,79 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
     }
   };
 
+  // Turn "DD/MM/YYYY" as typed into the ISO date the database expects, and
+  // leave a blank as null rather than sending an empty string.
+  const toISO = (v) => {
+    if (!v || !String(v).trim()) return null;
+    const t = String(v).trim();
+    const uk = t.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+    if (uk) return `${uk[3]}-${uk[2].padStart(2,"0")}-${uk[1].padStart(2,"0")}`;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+    return null;
+  };
+  const num = (v) => (v === "" || v == null ? null : Number(String(v).replace(/[^0-9.\-]/g, "")) || null);
+
+  // A save handler per register. Only registers listed here can be saved; the
+  // rest keep a disabled Save so nothing looks writable when it is not.
+  // `sel` is the database id once the live portfolio has loaded. In preview mode
+  // it is a demo id, so writing is not offered at all.
+  const entityDbId = (isConfigured && liveEnts && sel != null) ? sel : null;
+
+  const modalSaves = {
+    director: (v) => EW.officerAdd(entityDbId, {
+      name: v["Full legal name"], role: v["Role"],
+      appointed: toISO(v["Date appointed"]), dob: toISO(v["Date of birth"]),
+      nationality: v["Nationality"], address: v["Residential address"],
+    }),
+    shareholder: (v) => EW.shareholderAdd(entityDbId, {
+      name: v["Shareholder name"], shareClass: v["Share class"],
+      shares: num(v["Number of shares"]), heldFrom: toISO(v["Registration date"]),
+    }),
+    ubo: (v) => EW.uboAdd(entityDbId, {
+      name: v["Full legal name"] || v["Name"], role: v["Role"],
+      dob: toISO(v["Date of birth"]), nationality: v["Nationality"],
+      ownershipPct: num(v["Ownership %"] || v["Ownership percentage"]),
+      natureOfControl: v["Nature of control"],
+    }),
+    account: (v) => EW.bankAdd(entityDbId, {
+      bank: v["Bank"] || v["Bank name"], accountName: v["Account name"],
+      number: v["Account number"], ccy: v["Currency"],
+      resolutionDate: toISO(v["Board resolution date"] || v["Resolution date"]),
+    }),
+    signatory: (v) => EW.signatoryAdd(entityDbId, {
+      name: v["Name"] || v["Full legal name"], category: v["Category"],
+      class: v["Class"], fromDate: toISO(v["From"] || v["From date"]),
+    }),
+    charge: (v) => EW.chargeAdd(entityDbId, {
+      chargee: v["Chargee"] || v["Chargee name"], chargeType: v["Charge type"],
+      amount: num(v["Amount"]), ccy: v["Currency"],
+      registeredDate: toISO(v["Date registered"] || v["Registration date"]),
+    }),
+    asset: (v) => EW.assetAdd(entityDbId, {
+      description: v["Description"] || v["Asset description"],
+      acquiredDate: toISO(v["Date acquired"]), value: num(v["Value"]),
+      ccy: v["Currency"], notes: v["Notes"],
+    }),
+    dividend: (v) => EW.dividendAdd(entityDbId, {
+      shareClass: v["Share class"], name: v["Shareholder"] || v["Name"],
+      requestedDate: toISO(v["Date requested"] || v["Date declared"]),
+      perShare: num(v["Per share"] || v["Amount per share"]), notes: v["Notes"],
+    }),
+    meeting: (v) => EW.meetingAdd(entityDbId, {
+      meetingType: v["Meeting type"], meetingDate: toISO(v["Date"] || v["Meeting date"]),
+      notes: v["Agenda"] || v["Notes"],
+    }),
+    address: (v) => EW.addressAdd(entityDbId, {
+      addressType: v["Address type"], address: v["Address"],
+      fromDate: toISO(v["Effective from"] || v["From"]),
+    }),
+    filenote: (v) => EW.fileNoteAdd(entityDbId, v["Note"] || v["File note"], toISO(v["Date"])),
+    safeitem: (v) => EW.safeItemAdd(entityDbId, {
+      item: v["Item"] || v["Description"], depositedDate: toISO(v["Date deposited"]),
+      authorisedBy: v["Authorised by"],
+    }),
+  };
+
   const modalForms = {
     director: { title:"Appoint officer / trustee", fields:[
       {label:"Full legal name",placeholder:"Full name",full:true},
@@ -1335,7 +1458,13 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
         <FormModal
           title={modalForms[modal].title}
           fields={modalForms[modal].fields}
-          onClose={()=>setModal(null)}
+          onSave={entityDbId && modalSaves[modal] ? modalSaves[modal] : null}
+          note={
+            !entityDbId ? "This entity is not loaded from the database, so nothing can be saved against it yet."
+            : !modalSaves[modal] ? "This register cannot be saved to yet — the write function for it is not built."
+            : null
+          }
+          onClose={(saved)=>{ setModal(null); if (saved) setDetVersion((v)=>v+1); }}
         />
       )}
       {modal==="newEntity"&&(
