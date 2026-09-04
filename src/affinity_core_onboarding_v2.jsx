@@ -96,6 +96,27 @@ export default function AffinityOnboarding({ initialView , onNav }) {
     return null;
   };
 
+  const [advBusy, setAdvBusy] = useState(false);
+  const [advMsg, setAdvMsg]   = useState("");
+
+  // Moving a case on. The CDD and risk-rating gates live in the database, so
+  // this does not check them — it shows what the database says, which is the
+  // point: the gate holds however the case is edited.
+  const advanceStage = async (c) => {
+    if (!c) return;
+    setAdvBusy(true); setAdvMsg("");
+    const order = DW.ONBOARDING_STAGES;
+    const at = order.indexOf(c.stage);
+    const next = at >= 0 && at < order.indexOf("Live") ? order[at + 1] : null;
+    if (!next) { setAdvBusy(false); setAdvMsg("That case is already live."); return; }
+
+    const res = await DW.onbCaseAdvance(c.dbId || c.id, next, c.risk || null);
+    setAdvBusy(false);
+    if (res.ok) { setAdvMsg("Moved to " + next + "."); return; }
+    if (!res.live) { setAdvMsg("Not signed in — the stage cannot be changed yet."); return; }
+    setAdvMsg(res.error);      // e.g. "3 CDD item(s) are still outstanding"
+  };
+
   const saveModal = async () => {
     setBusy(true); setErr("");
     let res;
@@ -130,7 +151,7 @@ export default function AffinityOnboarding({ initialView , onNav }) {
         <div style={{ fontSize:18, fontWeight:500, color:"#001242" }}>Onboarding</div>
         <div style={{ display:"flex", gap:5 }}>
           {["Entities","Compliance","Documents","Invoicing"].map(n=><button key={n} style={nb} onClick={()=>onNav&&onNav({Entities:"entities",Compliance:"compliance",Timesheets:"timesheets",Invoicing:"invoicing",Reporting:"reporting",Documents:"documents",Bookkeeping:"bookkeeping"}[n])}>{n}</button>)}
-          <button style={nba} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Onboarding</button>
+          <button style={nba} disabled title="Needs a write function that is not built yet">Onboarding</button>
         </div>
       </div>
       {/* Entity search — same component on every page showing client data */}
@@ -226,9 +247,19 @@ export default function AffinityOnboarding({ initialView , onNav }) {
                   </>
                 )}
               </div>
+              {advMsg && (
+                <div style={{ fontSize:10.5, lineHeight:1.6, marginBottom:6, padding:"7px 9px", borderRadius:6,
+                              background: /Moved to/.test(advMsg) ? "#E7F4EF" : "#FCEBEB",
+                              color: /Moved to/.test(advMsg) ? "#1F6F54" : "#A32D2D" }}>
+                  {advMsg}
+                </div>
+              )}
               <div style={{ display:"flex", gap:6 }}>
-                <button style={{ ...nb, flex:1, fontSize:10 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Advance stage ↗</button>
-                {selCase.overdue&&<button style={{ fontSize:10, padding:"5px 8px", borderRadius:5, border:"0.5px solid #EF4444", color:"#EF4444", background:"transparent", cursor:"pointer" }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Escalate</button>}
+                <button style={{ ...nb, flex:1, fontSize:10 }} onClick={()=>advanceStage(selCase)} disabled={advBusy}
+                  title="Move this case to the next stage. Sign-off is refused while CDD is outstanding or no risk rating is set.">
+                  {advBusy ? "Working…" : "Advance stage ↗"}
+                </button>
+                {selCase.overdue&&<button style={{ fontSize:10, padding:"5px 8px", borderRadius:5, border:"0.5px solid #EF4444", color:"#EF4444", background:"transparent", cursor:"pointer" }} disabled title="Needs a write function that is not built yet">Escalate</button>}
               </div>
             </div>
           )}
@@ -257,7 +288,7 @@ export default function AffinityOnboarding({ initialView , onNav }) {
                 <span style={{ color:icon==="✓"?"#4CAF7D":"#EF4444", fontWeight:500 }}>{icon} {status}</span>
               </div>
             ))}
-            <button style={{ ...nba, marginTop:10, fontSize:11 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Generate gap report ↗</button>
+            <button style={{ ...nba, marginTop:10, fontSize:11 }} disabled title="Needs a write function that is not built yet">Generate gap report ↗</button>
           </div>
         </div>
       )}
@@ -284,8 +315,8 @@ export default function AffinityOnboarding({ initialView , onNav }) {
                 ))}
               </div>
               <div style={{ display:"flex", gap:8, marginTop:10 }}>
-                <button style={nb} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">View form ↗</button>
-                {Object.values(a.approvals).some(v=>v==="Pending")&&<button style={nba} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Approve ✓</button>}
+                <button style={nb} disabled title="Needs a write function that is not built yet">View form ↗</button>
+                {Object.values(a.approvals).some(v=>v==="Pending")&&<button style={nba} disabled title="Needs a write function that is not built yet">Approve ✓</button>}
               </div>
             </div>
           ))}
@@ -319,7 +350,7 @@ export default function AffinityOnboarding({ initialView , onNav }) {
                   <td style={{ ...td, color:"#666" }}>{r.sent}</td>
                   <td style={{ ...td, color:r.status==="Expired"?"#EF4444":"#666" }}>{r.exp}</td>
                   <td style={td}><Badge label={r.status} colors={{ Completed:{bg:"#EAF3DE",color:"#27500A"}, "Accessed — incomplete":{bg:"#FAEEDA",color:"#633806"}, "Awaiting response":{bg:"#E6F7FB",color:"#0077A8"}, Expired:{bg:"#FCEBEB",color:"#A32D2D"} }[r.status]||{bg:"#eee",color:"#666"}} /></td>
-                  <td style={td}>{r.status==="Expired"?<button style={{ ...nb, fontSize:10 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Re-invite</button>:<button style={{ ...nb, fontSize:10 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">View ↗</button>}</td>
+                  <td style={td}>{r.status==="Expired"?<button style={{ ...nb, fontSize:10 }} disabled title="Needs a write function that is not built yet">Re-invite</button>:<button style={{ ...nb, fontSize:10 }} disabled title="Needs a write function that is not built yet">View ↗</button>}</td>
                 </tr>
               ))}
             </tbody>

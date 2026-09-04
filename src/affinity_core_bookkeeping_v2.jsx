@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import * as DW from "./affinity_docs_onb_write_api";
 import EntitySearch from "./affinity_entity_search";
 import { bkEntities, bkTxnsAll, bkPnlAll, bkBanksAll, isConfigured } from "./affinity_ops_api";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -79,6 +80,86 @@ export default function AffinityBookkeeping({ onNav }) {
   const [entityId, setEId]  = useState(1);
   const [search, setSearch] = useState("");
   const [modal, setModal]   = useState(null);
+  const [bf, setBf]       = useState({});
+  const [bBusy, setBBusy] = useState(false);
+  const [bErr, setBErr]   = useState("");
+  const setBv = (k,v) => setBf(p=>({ ...p, [k]:v }));
+
+  const toISO = (v) => {
+    if (!v || !String(v).trim()) return null;
+    const t=String(v).trim();
+    const uk=t.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+    if (uk) return `${uk[3]}-${uk[2].padStart(2,"0")}-${uk[1].padStart(2,"0")}`;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+    return null;
+  };
+  const bnum = (v) => (v==="" || v==null ? null : Number(String(v).replace(/[^0-9.\-]/g,"")) || null);
+  const bkEntityId = () => {
+    const byName = (ents||[]).find(e => e.name === bf["Entity"]);
+    if (byName) return byName.id;
+    const cur = (ents||[]).find(e => e.id === eId);
+    return cur ? cur.id : null;
+  };
+
+  // Two lines: debit positive, credit negative. The imbalance is checked here
+  // so it is shown before submitting rather than returned as a database error.
+  const postJournal = async () => {
+    setBBusy(true); setBErr("");
+    const dr = bnum(bf["Debit amount"]), cr = bnum(bf["Credit amount"]);
+    const drAcc = bf["Debit account"], crAcc = bf["Credit account"];
+    if (!drAcc || !crAcc) { setBBusy(false); setBErr("Give both a debit and a credit account."); return; }
+    if (!dr || !cr)       { setBBusy(false); setBErr("Enter both a debit and a credit amount."); return; }
+    if (Math.round((dr - cr) * 100) !== 0) {
+      setBBusy(false);
+      setBErr("The journal does not balance — debits and credits differ by " +
+              (Math.round(Math.abs(dr - cr) * 100) / 100).toFixed(2) + ".");
+      return;
+    }
+    if (!bf["Description"] || !String(bf["Description"]).trim()) {
+      setBBusy(false); setBErr("Give the journal a narrative — it is what the auditor reads."); return;
+    }
+    const entityId = bkEntityId();
+    if (!entityId) { setBBusy(false); setBErr("Choose an entity that is loaded from the database."); return; }
+
+    const res = await DW.journalPost(entityId, {
+      date: toISO(bf["Date"]) || new Date().toISOString().slice(0,10),
+      narrative: bf["Description"],
+      lines: [
+        { accountCode: drAcc, amount:  dr, ccy: bf["Currency"] || "GBP", memo: bf["Journal reference"] },
+        { accountCode: crAcc, amount: -cr, ccy: bf["Currency"] || "GBP", memo: bf["Journal reference"] },
+      ],
+    });
+    setBBusy(false);
+    if (res.ok) { setModal(null); setBf({}); return; }
+    if (!res.live) { setBErr("Not signed in — this journal cannot be posted yet."); return; }
+    setBErr(res.error);
+  };
+
+  const saveBookkeeping = async () => {
+    if (modal === "journal") return postJournal();
+    if (modal === "moneyin" || modal === "moneyout") {
+      setBBusy(true); setBErr("");
+      const amt = bnum(bf["Amount"]);
+      if (!amt) { setBBusy(false); setBErr("Enter an amount."); return; }
+      const entityId = bkEntityId();
+      if (!entityId) { setBBusy(false); setBErr("Choose an entity that is loaded from the database."); return; }
+      const res = await DW.txnAdd(entityId, {
+        date: toISO(bf["Date"]) || new Date().toISOString().slice(0,10),
+        description: bf["Description"] || bf["Narrative"] || bf["Reference"],
+        type: modal === "moneyin" ? "Receipt" : "Payment",
+        debit:  modal === "moneyin"  ? amt : null,
+        credit: modal === "moneyout" ? amt : null,
+        ref: bf["Reference"] || null, account: bf["Account"] || null,
+      });
+      setBBusy(false);
+      if (res.ok) { setModal(null); setBf({}); return; }
+      if (!res.live) { setBErr("Not signed in — this cannot be saved yet."); return; }
+      setBErr(res.error);
+      return;
+    }
+    setBErr("This form cannot be saved yet — the write function for it is not built.");
+  };
+
 
   const entity = ents.find(e=>e.id===entityId);
   const txns   = txnsMap[entityId]||[];
@@ -122,7 +203,7 @@ export default function AffinityBookkeeping({ onNav }) {
         <div style={{ fontSize:18, fontWeight:500, color:"#001242" }}>Bookkeeping</div>
         <div style={{ display:"flex", gap:5 }}>
           {["Entities","Timesheets","Invoicing","Reporting"].map(n=><button key={n} style={nb} onClick={()=>onNav&&onNav({Entities:"entities",Compliance:"compliance",Timesheets:"timesheets",Invoicing:"invoicing",Reporting:"reporting",Documents:"documents",Bookkeeping:"bookkeeping"}[n])}>{n}</button>)}
-          <button style={nba} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Bookkeeping</button>
+          <button style={nba} onClick={()=>onNav&&onNav("acc_book")}>Bookkeeping</button>
         </div>
       </div>
       {/* Entity search — same component on every page showing client data */}
@@ -253,7 +334,7 @@ export default function AffinityBookkeeping({ onNav }) {
         </div>
         <div style={{ padding:"8px 20px", display:"flex", justifyContent:"flex-end", gap:8 }}>
           <button style={nb} onClick={()=>setModal("journal")}>＋ Post journal</button>
-          <button style={nba} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Export ledger ↗</button>
+          <button style={nba} disabled title="Needs the spreadsheet export, which is not built yet">Export ledger ↗</button>
         </div>
       </>)}
 
@@ -335,8 +416,8 @@ export default function AffinityBookkeeping({ onNav }) {
                     </div>
                   ))}
                   <div style={{ display:"flex", gap:6, marginTop:10 }}>
-                    <button style={{ ...nb, fontSize:10 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Reconcile ↗</button>
-                    <button style={{ ...nb, fontSize:10 }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Statement ↗</button>
+                    <button style={{ ...nb, fontSize:10 }} disabled title="Needs a bank feed, which is not connected yet">Reconcile ↗</button>
+                    <button style={{ ...nb, fontSize:10 }} disabled title="Needs the document generation engine, which is not built yet">Statement ↗</button>
                   </div>
                 </div>
               ))}
@@ -416,7 +497,7 @@ export default function AffinityBookkeeping({ onNav }) {
                 <div style={{ display:"flex", gap:6 }}>
                   <select style={{ ...sel, flex:1, height:28, fontSize:11 }}><option>YTD 2025</option><option>Q2 2025</option><option>FY 2024</option></select>
                   <><input list="bk-rep-entity" defaultValue="All entities" placeholder="Search entity…" style={{ ...sel, flex:1, height:28, fontSize:11, boxSizing:"border-box" }} /><datalist id="bk-rep-entity"><option value="All entities"/>{ents.map(e=><option key={e.id} value={e.name}/>)}</datalist></>
-                  <button style={nba} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Generate ↗</button>
+                  <button style={nba} disabled title="Needs the document generation engine, which is not built yet">Generate ↗</button>
                 </div>
               </div>
             ))}
@@ -447,8 +528,8 @@ export default function AffinityBookkeeping({ onNav }) {
                 {[["Entity","select",ents.map(e=>e.name)],["Journal reference","text","JNL-2025-"],["Date","text","DD/MM/YYYY"],["Description","text","Narrative"],["Debit account","text","e.g. Debtors"],["Debit amount","number","0.00"],["Credit account","text","e.g. Income"],["Credit amount","number","0.00"],["Currency","select",["GBP","USD","EUR"]]].map(([l,t,opts])=>(
                   <div key={l} style={{ display:"flex", flexDirection:"column", gap:3 }}>
                     <label style={{ fontSize:11, color:"#666" }}>{l}</label>
-                    {(l==="Entity"||l==="Client"||l==="Entity name"||l==="Client name"||l==="Linked entity")?<><input list="bk-ent-1" placeholder="Search entity…" style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)" , boxSizing:"border-box" }} /><datalist id="bk-ent-1">{(Array.isArray(opts)?opts:[]).map(o=><option key={o} value={o}/>)}</datalist></>:t==="select"?<select style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)" }}>{(Array.isArray(opts)?opts:[]).map(o=><option key={o}>{o}</option>)}</select>
-                    :<input type={t} style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)" }} placeholder={typeof opts==="string"?opts:""} />}
+                    {(l==="Entity"||l==="Client"||l==="Entity name"||l==="Client name"||l==="Linked entity")?<><input list="bk-ent-1" value={bf[l]||""} onChange={e=>setBv(l, e.target.value)} placeholder="Search entity…" style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)" , boxSizing:"border-box" }} /><datalist id="bk-ent-1">{(Array.isArray(opts)?opts:[]).map(o=><option key={o} value={o}/>)}</datalist></>:t==="select"?<select value={bf[l]||""} onChange={e=>setBv(l, e.target.value)} style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)" }}>{(Array.isArray(opts)?opts:[]).map(o=><option key={o}>{o}</option>)}</select>
+                    :<input type={t} value={bf[l]||""} onChange={e=>setBv(l, e.target.value)} style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)" }} placeholder={typeof opts==="string"?opts:""} />}
                   </div>
                 ))}
               </div>
@@ -458,15 +539,31 @@ export default function AffinityBookkeeping({ onNav }) {
                 {[["Bank name","text"],["Account name","text"],["Currency","select",["GBP","USD","EUR"]],["Opening balance","number"],["Balance date","text"]].map(([l,t,opts])=>(
                   <div key={l} style={{ display:"flex", flexDirection:"column", gap:3 }}>
                     <label style={{ fontSize:11, color:"#666" }}>{l}</label>
-                    {(l==="Entity"||l==="Client"||l==="Entity name"||l==="Client name"||l==="Linked entity")?<><input list="bk-ent-2" placeholder="Search entity…" style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)" , boxSizing:"border-box" }} /><datalist id="bk-ent-2">{(Array.isArray(opts)?opts:[]).map(o=><option key={o} value={o}/>)}</datalist></>:t==="select"?<select style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)" }}>{(Array.isArray(opts)?opts:[]).map(o=><option key={o}>{o}</option>)}</select>
-                    :<input type={t} style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)" }} />}
+                    {(l==="Entity"||l==="Client"||l==="Entity name"||l==="Client name"||l==="Linked entity")?<><input list="bk-ent-2" value={bf[l]||""} onChange={e=>setBv(l, e.target.value)} placeholder="Search entity…" style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)" , boxSizing:"border-box" }} /><datalist id="bk-ent-2">{(Array.isArray(opts)?opts:[]).map(o=><option key={o} value={o}/>)}</datalist></>:t==="select"?<select value={bf[l]||""} onChange={e=>setBv(l, e.target.value)} style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)" }}>{(Array.isArray(opts)?opts:[]).map(o=><option key={o}>{o}</option>)}</select>
+                    :<input type={t} value={bf[l]||""} onChange={e=>setBv(l, e.target.value)} style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)" }} />}
                   </div>
                 ))}
               </div>
             )}
+            {bErr && (
+              <div style={{ marginTop:12, fontSize:11.5, color:"#A32D2D", background:"#FCEBEB",
+                            border:"0.5px solid #f0c9c9", borderRadius:6, padding:"8px 10px", lineHeight:1.6 }}>
+                {bErr}
+              </div>
+            )}
+            {modal==="journal" && (
+              <div style={{ marginTop:10, fontSize:10.5, color:"#7B4F1D", background:"#FDF4DC",
+                            border:"0.5px solid #E5CE9A", borderRadius:6, padding:"8px 10px", lineHeight:1.6 }}>
+                Use account codes rather than names. A journal must balance and needs a narrative.
+                It posts as a draft — someone other than you approves it, and approving is what
+                posts it to the ledger.
+              </div>
+            )}
             <div style={{ display:"flex", gap:8, justifyContent:"flex-end", marginTop:14 }}>
-              <button style={nb} onClick={()=>setModal(null)}>Cancel</button>
-              <button style={nba} onClick={()=>setModal(null)}>{modal==="journal"?"Post journal":"Save account"}</button>
+              <button style={nb} onClick={()=>{setModal(null); setBErr("");}} disabled={bBusy}>Cancel</button>
+              <button style={nba} onClick={saveBookkeeping} disabled={bBusy}>
+                {bBusy ? "Saving…" : modal==="journal" ? "Post journal" : "Save"}
+              </button>
             </div>
           </div>
         </div>

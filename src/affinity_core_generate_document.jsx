@@ -227,7 +227,7 @@ export default function AffinityGenerateDocument() {
         </div>
         <div style={{ display:"flex", gap:5 }}>
           {["Entity Admin","Documents","Onboarding"].map(n=><button key={n} style={{ ...nb, color:"#8892b0", borderColor:"#334" }}>{n}</button>)}
-          <button style={nba} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Generate</button>
+          <button style={nba} disabled title="Needs the document generation engine, which is not built yet">Generate</button>
         </div>
       </div>
       {/* Entity search — same component on every page showing client data */}
@@ -385,8 +385,8 @@ export default function AffinityGenerateDocument() {
                     <td style={{ padding:"9px 12px" }}><Badge label={r.format} colors={{ DOCX:{bg:"#E6EEF7",color:"#0D4A7A"}, PDF:{bg:"#FCEBEB",color:"#A32D2D"} }[r.format]||{bg:"#eee",color:"#666"}} /></td>
                     <td style={{ padding:"9px 12px" }}>
                       <div style={{ display:"flex", gap:4 }}>
-                        <button style={{ ...nb, fontSize:10, padding:"3px 8px" }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Download ↓</button>
-                        <button style={{ ...nb, fontSize:10, padding:"3px 8px" }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">View in DMS ↗</button>
+                        <button style={{ ...nb, fontSize:10, padding:"3px 8px" }} disabled title="Needs the document generation engine, which is not built yet">Download ↓</button>
+                        <button style={{ ...nb, fontSize:10, padding:"3px 8px" }} disabled title="Needs a write function that is not built yet">View in DMS ↗</button>
                       </div>
                     </td>
                   </tr>

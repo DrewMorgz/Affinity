@@ -692,6 +692,53 @@ group("Budget model — contribution to group vs conduit through it");
      Math.abs(debits - credits) < 1, "debits " + debits.toFixed(2) + " credits " + credits.toFixed(2));
 }
 
+
+group("Write layer — API contracts and journal balancing");
+{
+  const DW = require(path.join(SRC, "affinity_docs_onb_write_api.js"));
+
+  // The imbalance helper is what the bookkeeping form uses to refuse a journal
+  // before it reaches the database.
+  eq("a balanced journal has zero imbalance",
+     DW.journalImbalance([{ amount: 1200 }, { amount: -1200 }]), 0);
+  eq("an unbalanced journal reports the difference",
+     DW.journalImbalance([{ amount: 1200 }, { amount: -950 }]), 250);
+  eq("a credit-heavy journal reports a negative difference",
+     DW.journalImbalance([{ amount: 500 }, { amount: -800 }]), -300);
+  eq("many lines still net correctly",
+     DW.journalImbalance([{ amount: 100 }, { amount: 250 }, { amount: -350 }]), 0);
+  eq("pennies are handled without floating point drift",
+     DW.journalImbalance([{ amount: 0.1 }, { amount: 0.2 }, { amount: -0.3 }]), 0);
+  eq("an empty journal is zero, not an error", DW.journalImbalance([]), 0);
+
+  // Every write wrapper must refuse cleanly with no database rather than
+  // throwing — the forms rely on that. Checked synchronously via canWrite,
+  // since an await at module top level would exit the test file early.
+  ok("the write layer reports itself unavailable with no database", DW.canWrite() === false);
+  ok("every documented write function is exported",
+     ["docFile","docReclassify","docDelete","onbCaseAdd","onbCaseAdvance","cddItemAdd",
+      "cddItemVerify","journalPost","journalApprove","journalReverse","txnAdd",
+      "periodOpen","periodClose","periodReopen","periodLockFinal"]
+       .every((f) => typeof DW[f] === "function"));
+}
+
+group("Write layer — retention override is opt-in");
+{
+  const DW = require(path.join(SRC, "affinity_docs_onb_write_api.js"));
+  // The point of the retention control is that overriding it is deliberate.
+  // Assert the default rather than trusting it stays that way.
+  const src = fs.readFileSync(path.join(SRC, "affinity_docs_onb_write_api.js"), "utf8");
+  ok("docDelete defaults override to false",
+     /docDelete = \(id, reason, overrideRetention = false\)/.test(src));
+  ok("CDD methods are enumerated so a form cannot invent one",
+     Array.isArray(DW.CDD_METHODS) && DW.CDD_METHODS.includes("Certified copy"));
+  ok("journal types match the engine's allowed set",
+     DW.JOURNAL_TYPES.join(",") === "manual,recurring,reversing,accrual,system,stat_adjustment");
+  ok("onboarding stages are in order with Declined last",
+     DW.ONBOARDING_STAGES[0] === "Enquiry" &&
+     DW.ONBOARDING_STAGES[DW.ONBOARDING_STAGES.length - 1] === "Declined");
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

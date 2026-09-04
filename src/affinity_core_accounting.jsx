@@ -572,7 +572,7 @@ const PANELS = {
       <>
         <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
           <input placeholder="Search documents…" style={{ flex: 1, padding: "9px 12px", border: `0.5px solid ${LINE}`, borderRadius: 8, fontSize: 13 }} />
-          <button style={{ background: CY, color: "#04313a", border: "none", borderRadius: 8, padding: "8px 13px", fontWeight: 600, cursor: "pointer" }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Search</button>
+          <button style={{ background: CY, color: "#04313a", border: "none", borderRadius: 8, padding: "8px 13px", fontWeight: 600, cursor: "pointer" }} disabled title="Not implemented on this page yet">Search</button>
         </div>
         <Panel title="Repository (17 categories)"><Table head={["Document", "Category", "Retention until"]} rows={[
           ["Register of Members.pdf", "Statutory Registers", "Permanent"],

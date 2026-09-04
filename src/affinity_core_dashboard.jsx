@@ -332,7 +332,7 @@ export default function Dashboard({userId, onNav, userName}) {
       })()}
 
       {/* Timesheet alert */}
-      {userId===4&&<div style={{background:"#FCEBEB22",border:"0.5px solid #EF4444",borderRadius:8,padding:"10px 14px",marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontSize:12,fontWeight:600,color:"#A32D2D"}}>⚠ Timesheet not submitted — Wednesday, Thursday missing</div><button style={{padding:"5px 12px",borderRadius:5,border:"none",background:"#EF4444",color:"#fff",fontSize:11,cursor:"pointer"}} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Submit now</button></div>}
+      {userId===4&&<div style={{background:"#FCEBEB22",border:"0.5px solid #EF4444",borderRadius:8,padding:"10px 14px",marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontSize:12,fontWeight:600,color:"#A32D2D"}}>⚠ Timesheet not submitted — Wednesday, Thursday missing</div><button style={{padding:"5px 12px",borderRadius:5,border:"none",background:"#EF4444",color:"#fff",fontSize:11,cursor:"pointer"}} disabled title="Filing to the regulator's portal is not connected yet">Submit now</button></div>}
 
       {/* Inbox 7d+ alert */}
       {overdueInbox.length>0&&<div style={{background:"#FAEEDA22",border:"0.5px solid #F59E0B",borderRadius:8,padding:"10px 14px",marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontSize:12,fontWeight:500,color:"#633806"}}>✉ {overdueInbox.length} item{overdueInbox.length>1?"s":""} in your inbox have been waiting 7+ days and need attention.</div><button onClick={()=>setInboxFilter("mine")} style={{padding:"5px 12px",borderRadius:5,border:"none",background:"#F59E0B",color:"#fff",fontSize:11,cursor:"pointer"}}>View inbox</button></div>}
@@ -390,7 +390,7 @@ export default function Dashboard({userId, onNav, userName}) {
                 {inboxFilter==="team"&&<div style={{fontSize:10,color:"#aaa",marginTop:1}}>Assigned to {i.assignee}</div>}
               </div>
               <div style={{display:"flex",gap:4,flexShrink:0}}>
-                <button style={{padding:"3px 7px",borderRadius:4,border:"0.5px solid #e5e5e5",background:"transparent",fontSize:10,cursor:"pointer"}} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">File ↗</button>
+                <button style={{padding:"3px 7px",borderRadius:4,border:"0.5px solid #e5e5e5",background:"transparent",fontSize:10,cursor:"pointer"}} disabled title="Filing to the regulator's portal is not connected yet">File ↗</button>
               </div>
             </div>
           ))}
@@ -452,7 +452,7 @@ export default function Dashboard({userId, onNav, userName}) {
           {[{item:"Q3 retainer invoices",type:"Invoicing",count:7},{item:"Time entries — week 28",type:"Timesheets",count:4},{item:"North Star attrition",type:"Onboarding",count:1}].map((a,i)=>(
             <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"0.5px solid #e5e5e5",fontSize:12}}>
               <div><div style={{fontWeight:500}}>{a.item}</div><Bx label={a.type} colors={modColors[a.type]||{bg:"#eee",color:"#666"}}/></div>
-              <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontWeight:600,color:CY}}>{a.count} item{a.count>1?"s":""}</span><button style={{padding:"4px 10px",borderRadius:5,border:"none",background:CY,color:"#fff",fontSize:11,cursor:"pointer"}} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Open ↗</button></div>
+              <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontWeight:600,color:CY}}>{a.count} item{a.count>1?"s":""}</span><button style={{padding:"4px 10px",borderRadius:5,border:"none",background:CY,color:"#fff",fontSize:11,cursor:"pointer"}} disabled title="Needs a write function that is not built yet">Open ↗</button></div>
             </div>
           ))}
         </Card>}

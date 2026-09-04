@@ -145,8 +145,8 @@ export default function AffinityEntityChart() {
           <span style={{ color:"#8892b0", fontSize:13 }}>Entity Structure</span>
         </div>
         <div style={{ display:"flex", gap:6 }}>
-          <button style={{ ...nb, color:"#8892b0", borderColor:"#334" }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Entity Admin ↗</button>
-          <button style={nba} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Structure chart</button>
+          <button style={{ ...nb, color:"#8892b0", borderColor:"#334" }} disabled title="Needs a write function that is not built yet">Entity Admin ↗</button>
+          <button style={nba} disabled title="Needs a write function that is not built yet">Structure chart</button>
         </div>
       </div>
 
@@ -243,8 +243,8 @@ export default function AffinityEntityChart() {
                 )}
               </div>
               <div style={{ marginTop:14, display:"flex", flexDirection:"column", gap:6 }}>
-                <button style={nba} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Open in Entity Admin ↗</button>
-                <button style={nb} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">View documents ↗</button>
+                <button style={nba} disabled title="Needs a write function that is not built yet">Open in Entity Admin ↗</button>
+                <button style={nb} disabled title="Needs a write function that is not built yet">View documents ↗</button>
               </div>
             </div>
           )}

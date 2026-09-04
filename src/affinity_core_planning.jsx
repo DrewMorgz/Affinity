@@ -1287,7 +1287,7 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
           <div style={{ display:"flex", alignItems:"center", gap:9, marginBottom:11, flexWrap:"wrap" }}>
             <div style={{ fontSize:13, fontWeight:600, color:NAVY }}>Scenarios</div>
             <span style={{ fontSize:11, color:MUT }}>A scenario is a copy of an approved budget. Changing one never touches the approved figures.</span>
-            <button style={{ ...btnP, marginLeft:"auto" }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">＋ New scenario from approved budget</button>
+            <button style={{ ...btnP, marginLeft:"auto" }} disabled title="Needs a write function that is not built yet">＋ New scenario from approved budget</button>
           </div>
 
           <div style={{ background:CARD, border:`0.5px solid ${LINE}`, borderRadius:9, overflow:"hidden", marginBottom:18 }}>

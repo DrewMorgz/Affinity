@@ -196,7 +196,7 @@ export default function AffinityClientPortal() {
         {tab === "documents" && (<div style={card}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
             <div style={{ ...sectionTitle, marginBottom: 0 }}>Your documents ({c.documents.length})</div>
-            <button style={{ padding: "7px 14px", background: CY, color: "#fff", border: "none", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer" }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">⬆ Upload document</button>
+            <button style={{ padding: "7px 14px", background: CY, color: "#fff", border: "none", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer" }} disabled title="Needs a write function that is not built yet">⬆ Upload document</button>
           </div>
           {c.documents.map((d, i) => (
             <div key={d.id} style={{ padding: "12px 0", borderBottom: i < c.documents.length - 1 ? "0.5px solid #f0f0f0" : "none", display: "flex", gap: 12, alignItems: "center" }}>
@@ -205,7 +205,7 @@ export default function AffinityClientPortal() {
                 <div style={{ fontSize: 13, fontWeight: 600, color: NAVY }}>{d.name}</div>
                 <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>{d.entity} · {d.date} · {d.size}</div>
               </div>
-              <button style={{ padding: "6px 10px", background: "transparent", border: "0.5px solid #ddd", borderRadius: 6, fontSize: 11, color: "#666", cursor: "pointer", whiteSpace: "nowrap" }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">↓ Download</button>
+              <button style={{ padding: "6px 10px", background: "transparent", border: "0.5px solid #ddd", borderRadius: 6, fontSize: 11, color: "#666", cursor: "pointer", whiteSpace: "nowrap" }} disabled title="Needs the document generation engine, which is not built yet">↓ Download</button>
             </div>
           ))}
         </div>)}
@@ -243,7 +243,7 @@ export default function AffinityClientPortal() {
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: NAVY }}>{inv.amount}</div>
                 <span style={{ padding: "3px 9px", borderRadius: 12, fontSize: 10, fontWeight: 600, background: inv.status === "Paid" ? "#EAF3DE" : "#FAEEDA", color: inv.status === "Paid" ? "#27500A" : "#633806" }}>{inv.status}</span>
-                {inv.status === "Outstanding" && <button style={{ padding: "6px 12px", background: CY, color: "#fff", border: "none", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer" }} disabled title="Needs the write layer (Azure + Entra sign-in) before this can save anything">Pay now</button>}
+                {inv.status === "Outstanding" && <button style={{ padding: "6px 12px", background: CY, color: "#fff", border: "none", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer" }} disabled title="Needs a payment provider, which is not connected yet">Pay now</button>}
               </div>
             </div>
           ))}
