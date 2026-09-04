@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import * as DW from "./affinity_docs_onb_write_api";
 import EntitySearch from "./affinity_entity_search";
 import { isConfigured } from "./affinity_accounting_supabase";
 import { onboardingCases, attritionCases } from "./affinity_onboarding_api";
@@ -81,6 +82,42 @@ export default function AffinityOnboarding({ initialView , onNav }) {
   const visibleLabels = visibleViews.map(v => VLABELS[VIEWS.indexOf(v)]);
   const [sel, setSel]     = useState(null);
   const [modal, setModal] = useState(null);
+  const [f, setF]         = useState({});    // modal form values
+  const [busy, setBusy]   = useState(false);
+  const [err, setErr]     = useState("");
+  const setFv = (k,v) => setF(p=>({ ...p, [k]:v }));
+
+  const toISO = (v) => {
+    if (!v || !String(v).trim()) return null;
+    const t=String(v).trim();
+    const uk=t.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+    if (uk) return `${uk[3]}-${uk[2].padStart(2,"0")}-${uk[1].padStart(2,"0")}`;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+    return null;
+  };
+
+  const saveModal = async () => {
+    setBusy(true); setErr("");
+    let res;
+    if (modal === "newCase") {
+      res = await DW.onbCaseAdd({
+        clientName: f["Entity name"], entityName: f["Entity name"],
+        entityType: f["Entity type"], jurisdiction: f["Jurisdiction"],
+        office: f["Jurisdiction"], assignedTo: f["Administrator"],
+        source: f["Source"], targetDate: toISO(f["Target completion"]),
+      });
+    } else {
+      // Attrition and portal invitations have no write function yet; say so
+      // rather than closing the form as though something happened.
+      setBusy(false);
+      setErr("This form cannot be saved yet — the write function for it is not built.");
+      return;
+    }
+    setBusy(false);
+    if (res.ok) { setModal(null); setF({}); return; }
+    if (!res.live) { setErr("Not signed in — this cannot be saved yet."); return; }
+    setErr(res.error);
+  };
 
   const selCase = sel ? cases.find(c=>c.id===sel) : null;
   const nb  = { padding:"5px 12px", fontSize:11, borderRadius:5, border:"0.5px solid #e5e5e5", background:"transparent", color:"#666", cursor:"pointer" };
@@ -300,27 +337,34 @@ export default function AffinityOnboarding({ initialView , onNav }) {
             {modal==="newCase"&&[["Entity name","text"],["Entity type","select",["Company","Trust","Foundation","LLC"]],["Jurisdiction","select",["Isle of Man","Malta","Cayman Islands","United Kingdom","Miami","Cyprus"]],["Administrator","text"],["Source","select",["New business — direct","Transfer in","CRM referral"]],["Target completion","text"]].map(([l,t,opts])=>(
               <div key={l} style={{ display:"flex", flexDirection:"column", gap:3, marginBottom:10 }}>
                 <label style={{ fontSize:11, color:"#666" }}>{l}</label>
-                {t==="select"?<select style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)" }}>{(opts||[]).map(o=><option key={o}>{o}</option>)}</select>
-                :<input style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)" }} placeholder={l} />}
+                {t==="select"?<select value={f[l]||""} onChange={e=>setFv(l,e.target.value)} style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)" }}><option value="">—</option>{(opts||[]).map(o=><option key={o}>{o}</option>)}</select>
+                :<input value={f[l]||""} onChange={e=>setFv(l,e.target.value)} style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)" }} placeholder={l} />}
               </div>
             ))}
             {modal==="attrition"&&[["Entity name","text"],["Reason","select",["Voluntary resignation","Transfer out","Liquidation","Dissolution","Non-payment"]],["Lead director","text"],["Retention attempt","select",["Yes — retained","Yes — not retained","No — not applicable"]],["Final invoices outstanding","text"]].map(([l,t,opts])=>(
               <div key={l} style={{ display:"flex", flexDirection:"column", gap:3, marginBottom:10 }}>
                 <label style={{ fontSize:11, color:"#666" }}>{l}</label>
-                {t==="select"?<select style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)" }}>{(opts||[]).map(o=><option key={o}>{o}</option>)}</select>
-                :<input style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)" }} placeholder={l} />}
+                {t==="select"?<select value={f[l]||""} onChange={e=>setFv(l,e.target.value)} style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)" }}><option value="">—</option>{(opts||[]).map(o=><option key={o}>{o}</option>)}</select>
+                :<input value={f[l]||""} onChange={e=>setFv(l,e.target.value)} style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)" }} placeholder={l} />}
               </div>
             ))}
             {modal==="invite"&&[["Contact name","text"],["Email","text"],["Linked entity","text"],["Expiry","select",["7 days","14 days","30 days"]]].map(([l,t,opts])=>(
               <div key={l} style={{ display:"flex", flexDirection:"column", gap:3, marginBottom:10 }}>
                 <label style={{ fontSize:11, color:"#666" }}>{l}</label>
-                {t==="select"?<select style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)" }}>{(opts||[]).map(o=><option key={o}>{o}</option>)}</select>
-                :<input style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)" }} placeholder={l} />}
+                {t==="select"?<select value={f[l]||""} onChange={e=>setFv(l,e.target.value)} style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)" }}><option value="">—</option>{(opts||[]).map(o=><option key={o}>{o}</option>)}</select>
+                :<input value={f[l]||""} onChange={e=>setFv(l,e.target.value)} style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)" }} placeholder={l} />}
               </div>
             ))}
+            {err && (
+              <div style={{ fontSize:11.5, color:"#A32D2D", background:"#FCEBEB",
+                            border:"0.5px solid #f0c9c9", borderRadius:6,
+                            padding:"8px 10px", marginTop:10, lineHeight:1.6 }}>
+                {err}
+              </div>
+            )}
             <div style={{ display:"flex", gap:8, justifyContent:"flex-end", marginTop:4 }}>
               <button style={nb} onClick={()=>setModal(null)}>Cancel</button>
-              <button style={nba} onClick={()=>setModal(null)}>{modal==="newCase"?"Create case":modal==="attrition"?"Submit for approval":"Send invitation"}</button>
+              <button style={nba} onClick={saveModal} disabled={busy}>{busy?"Saving…":modal==="newCase"?"Create case":modal==="attrition"?"Submit for approval":"Send invitation"}</button>
             </div>
           </div>
         </div>

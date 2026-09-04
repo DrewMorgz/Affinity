@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
+import * as DW from "./affinity_docs_onb_write_api";
 import EntitySearch from "./affinity_entity_search";
 import { isConfigured } from "./affinity_accounting_supabase";
-import { documentList } from "./affinity_documents_api";
+import { documentList, entityLookup, categoryLookup } from "./affinity_documents_api";
 
 const CY = "#00C4CC";
 
@@ -64,15 +65,73 @@ export default function AffinityDMS() {
   const [sel,setSel]          = useState(null);
   const [tab,setTab]          = useState(0); // 0=DMS, 1=Expiring, 2=Approvals, 3=Generate
   const [liveDocs,setLiveDocs] = useState(null);
+  const [entMap,setEntMap]     = useState({});    // entity name -> database id
+  const [catMap,setCatMap]     = useState({});    // folder name -> dms_category code
 
   useEffect(()=>{
     if(!isConfigured) return;
     let ok=true;
     documentList().then(({data})=>{ if(ok && data && data.length) setLiveDocs(data); }).catch(()=>{});
+    entityLookup().then(({data})=>{
+      if(!ok||!data) return;
+      const m={}; data.forEach(r=>{ m[r.name]=r.id; m[r.ref]=r.id; });
+      setEntMap(m);
+    }).catch(()=>{});
+    categoryLookup().then(({data})=>{
+      if(!ok||!data) return;
+      const m={}; data.forEach(r=>{ m[r.name]=r.code; });
+      setCatMap(m);
+    }).catch(()=>{});
     return ()=>{ok=false;};
   },[]);
   const docs = liveDocs || DOCS;
   const [modal,setModal]      = useState(null);
+  const [up, setUp]           = useState({});      // upload form values
+  const [upBusy, setUpBusy]   = useState(false);
+  const [upErr, setUpErr]     = useState("");
+  const setU = (k,v) => setUp(p=>({ ...p, [k]:v }));
+
+  const toISO = (v) => {
+    if (!v || !String(v).trim()) return null;
+    const t=String(v).trim();
+    const uk=t.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+    if (uk) return `${uk[3]}-${uk[2].padStart(2,"0")}-${uk[1].padStart(2,"0")}`;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+    return null;
+  };
+
+  // Files a document against the entity and the selected folder. The folder is
+  // what drives retention, which is why it is taken from the selection rather
+  // than asked for again.
+  const doUpload = async () => {
+    setUpBusy(true); setUpErr("");
+    const filename = up["Document name"];
+    if (!filename || !String(filename).trim()) {
+      setUpBusy(false); setUpErr("Give the document a name."); return;
+    }
+    // Resolve the names the user sees into the ids the database needs, and say
+    // plainly which one is missing rather than failing obscurely.
+    const entityId = entMap[up["Entity"]] || entMap[entity];
+    const category = catMap[selFolder && selFolder.folder];
+    if (!entityId) {
+      setUpBusy(false);
+      setUpErr("That entity is not loaded from the database, so nothing can be filed against it yet.");
+      return;
+    }
+    if (category == null) {
+      setUpBusy(false);
+      setUpErr('The folder "' + (selFolder && selFolder.folder) + '" has no category in the database, so retention cannot be set. Pick another folder or ask a System Administrator.');
+      return;
+    }
+
+    const res = await DW.docFile(entityId, {
+      category, filename, ref: up["Reference"] || null,
+    });
+    setUpBusy(false);
+    if (res.ok) { setModal(null); setUp({}); return; }
+    if (!res.live) { setUpErr("Not signed in — this document cannot be filed yet."); return; }
+    setUpErr(res.error);
+  };
   const [dragOver,setDragOver] = useState(false);
   const [isAdmin]             = useState(true); // would come from user role
   const [showAll,setShowAll]  = useState(false); // folder tree shows only folders in use by default (everyone, incl. admins); toggle to reveal all for first-time filing
@@ -392,15 +451,29 @@ export default function AffinityDMS() {
               <div key={l} style={{display:"flex",flexDirection:"column",gap:3}}>
                 <label style={{fontSize:11,color:"#666"}}>{l}</label>
                 {t==="select"
-                  ?(t==="search"?<><input list={"dmsf-"+l} placeholder={"Search "+l.toLowerCase()+"…"} style={{fontSize:12,borderRadius:5,border:"0.5px solid #ccc",background:"#fff",padding:"0 8px",height:32,boxSizing:"border-box"}}/><datalist id={"dmsf-"+l}>{(Array.isArray(opts)?opts:[]).map(o=><option key={o} value={o}/>)}</datalist></>:<select style={{fontSize:12,borderRadius:5,border:"0.5px solid #ccc",background:"#fff",padding:"0 8px",height:32}}>{(Array.isArray(opts)?opts:[]).map(o=><option key={o}>{o}</option>)}</select>)
-                  :<input type="text" style={{fontSize:12,borderRadius:5,border:"0.5px solid #ccc",padding:"0 8px",height:32,background:"#fff"}} placeholder={typeof opts==="string"?opts:""}/>
+                  ?(t==="search"?<><input list={"dmsf-"+l} value={up[l]||""} onChange={e=>setU(l,e.target.value)} placeholder={"Search "+l.toLowerCase()+"…"} style={{fontSize:12,borderRadius:5,border:"0.5px solid #ccc",background:"#fff",padding:"0 8px",height:32,boxSizing:"border-box"}}/><datalist id={"dmsf-"+l}>{(Array.isArray(opts)?opts:[]).map(o=><option key={o} value={o}/>)}</datalist></>:<select style={{fontSize:12,borderRadius:5,border:"0.5px solid #ccc",background:"#fff",padding:"0 8px",height:32}}>{(Array.isArray(opts)?opts:[]).map(o=><option key={o}>{o}</option>)}</select>)
+                  :<input type="text" value={up[l]||""} onChange={e=>setU(l,e.target.value)} style={{fontSize:12,borderRadius:5,border:"0.5px solid #ccc",padding:"0 8px",height:32,background:"#fff"}} placeholder={typeof opts==="string"?opts:""}/>
                 }
               </div>
             ))}
           </div>
+          {upErr && (
+            <div style={{marginTop:12,fontSize:11.5,color:"#A32D2D",background:"#FCEBEB",
+                         border:"0.5px solid #f0c9c9",borderRadius:6,padding:"8px 10px",lineHeight:1.6}}>
+              {upErr}
+            </div>
+          )}
+          <div style={{marginTop:10,fontSize:10.5,color:"#7B4F1D",background:"#FDF4DC",
+                       border:"0.5px solid #E5CE9A",borderRadius:6,padding:"8px 10px",lineHeight:1.6}}>
+            The folder sets the retention period for this document, by category and
+            jurisdiction. Once filed it cannot be deleted before that period expires without
+            an explicit override, which is recorded.
+          </div>
           <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:12}}>
-            <Btn onClick={()=>setModal(null)}>Cancel</Btn>
-            <Btn primary onClick={()=>setModal(null)}>Upload &amp; classify</Btn>
+            <Btn onClick={()=>{setModal(null); setUpErr("");}} disabled={upBusy}>Cancel</Btn>
+            <Btn primary onClick={doUpload} disabled={upBusy}>
+              {upBusy ? "Filing…" : "Upload & classify"}
+            </Btn>
           </div>
         </Md>
       )}
