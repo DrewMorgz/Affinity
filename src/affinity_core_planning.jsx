@@ -193,7 +193,7 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
   const [staff, setStaff] = useState([
     { id:1, name:"Roxy Sheeley",   dept:"Corporate Services", role:"Managing Director", entity:"AFG-IOM",    annualSalary:96000, changes:[], bonuses:[{ month:11, amount:12000 }] },
     { id:2, name:"Neil Kelly",     dept:"Finance",            role:"CFO",               entity:"AFG-FL",     annualSalary:88000, changes:[], bonuses:[{ month:11, amount:10000 }], recharges:[{ entity:"AFG-000", pct:100 }] },
-    { id:3, name:"Colette Grisdale",dept:"Compliance",        role:"MLRO",              entity:"AFG-IOM",    annualSalary:72000, changes:[{ month:6, annualSalary:76000 }], bonuses:[], recharges:[{ entity:"AFG-MLT", pct:25 },{ entity:"AFG-CYM", pct:15 }] },
+    { id:3, name:"Colette Grisdale",dept:"Compliance",        role:"Group MLRO",        entity:"AFG-000",    annualSalary:72000, changes:[{ month:6, annualSalary:76000 }], bonuses:[], recharges:[{ entity:"AFG-IOM", pct:30 },{ entity:"AFG-MLT", pct:20 },{ entity:"AFG-CYM", pct:15 },{ entity:"AFG-UK", pct:15 }] },
     { id:4, name:"Joanne Fenech",  dept:"Corporate Services", role:"Director",          entity:"AFG-MLT",  annualSalary:68000, changes:[], bonuses:[] },
     { id:5, name:"Garry Crossan",  dept:"Corporate Services", role:"Director",          entity:"AFG-CYM", annualSalary:66000, changes:[], bonuses:[] },
     { id:6, name:"Administrator A",dept:"Corporate Services", role:"Administrator",     entity:"AFG-IOM",    annualSalary:34000, changes:[{ month:3, annualSalary:36000 }], bonuses:[] },

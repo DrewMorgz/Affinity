@@ -574,57 +574,68 @@ group("Budget model — the Florida case: recharge to group, then on to subsidia
 }
 
 
-group("Budget model — the group company retains no staff cost");
+group("Budget model — the group company keeps its own share");
 {
   const M = require(path.join(SRC, "affinity_budget_model.js"));
   const CCY = { "AFG-000":"GBP","AFG-IOM":"GBP","AFG-MLT":"EUR","AFG-CYM":"USD",
                 "AFG-UK":"GBP","AFG-CYP":"EUR","AFG-SD":"USD","AFG-FL":"USD" };
 
-  // someone employed directly BY the group, with no person-level recharge
-  const groupStaff = { name:"Group role", entity:"AFG-000", region:"IOM", annualSalary:90000 };
-  const rc = M.computeRecharges([groupStaff], CCY);
-  const cost = M.phaseStaffCost(groupStaff).total;
+  // Neil's example: group MLRO paid in full by AGL, spread across the operating
+  // companies, with a share retained at group because it is a group role.
+  const mlro = { name:"Group MLRO", entity:"AFG-000", region:"IOM", annualSalary:80000,
+                 recharges:[{ entity:"AFG-IOM", pct:30 }, { entity:"AFG-MLT", pct:20 },
+                            { entity:"AFG-CYM", pct:15 }, { entity:"AFG-UK", pct:15 }] };
+  const rc = M.computeRecharges([mlro], CCY);
+  const cost = M.phaseStaffCost(mlro).total[0];
+  const sum  = M.rechargeSummary(mlro);
 
-  ok("the group on-charges its own payroll out", rc["AFG-000"].groupOnChargeOut[0] > 0);
-  eq("all of its own staff cost goes out",
-     rc["AFG-000"].groupOnChargeOut[0], Math.round(cost[0] * 100) / 100);
-  eq("the group is left carrying nothing",
-     Math.round((cost[0] - rc["AFG-000"].groupOnChargeOut[0]) * 100) / 100, 0);
-  ok("the subsidiaries pick it up", rc["AFG-IOM"].groupOnChargeIn[0] > 0 && rc["AFG-MLT"].groupOnChargeIn[0] > 0);
+  eq("80% is recharged out", sum.pct, 80);
+  eq("20% is retained at group", sum.retained, 20);
+  eq("the recharge out is 80% of cost", rc["AFG-000"].rechargedOut[0], Math.round(cost * 0.8 * 100) / 100);
+  eq("group's own payroll is NOT automatically pushed out", rc["AFG-000"].groupOnChargeOut[0], 0);
+  eq("group therefore keeps 20% of the cost",
+     Math.round((cost - rc["AFG-000"].rechargedOut[0]) * 100) / 100,
+     Math.round(cost * 0.2 * 100) / 100);
+  ok("each operating company picks up its share",
+     rc["AFG-IOM"].rechargedIn[0] > 0 && rc["AFG-MLT"].rechargedIn[0] > 0 &&
+     rc["AFG-CYM"].rechargedIn[0] > 0 && rc["AFG-UK"].rechargedIn[0] > 0);
+  ok("the Isle of Man share is larger than Cayman's, per the percentages",
+     rc["AFG-IOM"].rechargedIn[0] > rc["AFG-CYM"].rechargedIn[0]);
 
-  // combined: group's own payroll AND a recharge received from Florida
+  // the Florida pass-through still works and is a separate mechanism
   const florida = { name:"CFO", entity:"AFG-FL", region:"US", annualSalary:120000,
                     recharges:[{ entity:"AFG-000", pct:100 }] };
-  const both = M.computeRecharges([groupStaff, florida], CCY);
-  ok("the group's on-charge covers both its own cost and what it received",
-     both["AFG-000"].groupOnChargeOut[0] > both["AFG-000"].rechargedIn[0]);
-  eq("group nets to nil overall",
-     Math.round((cost[0] + both["AFG-000"].rechargedIn[0] - both["AFG-000"].groupOnChargeOut[0]) * 100) / 100, 0);
+  const rc2 = M.computeRecharges([florida], CCY);
+  ok("a recharge routed through group is passed on", rc2["AFG-000"].groupOnChargeOut[0] > 0);
+  eq("and nothing of it sticks at group",
+     Math.round((rc2["AFG-000"].rechargedIn[0] - rc2["AFG-000"].groupOnChargeOut[0]) * 100) / 100, 0);
+  ok("the subsidiaries receive it", rc2["AFG-IOM"].groupOnChargeIn[0] > 0);
 
-  // and the whole thing still balances group-wide
+  // both together: group keeps its 20% of the MLRO and none of the CFO
+  const both = M.computeRecharges([mlro, florida], CCY);
+  eq("group keeps only its own retained share",
+     Math.round((cost - both["AFG-000"].rechargedOut[0]) * 100) / 100,
+     Math.round(cost * 0.2 * 100) / 100);
+
+  // recharge lines still net to nil group-wide
   const toGBP = (ref, series) => M.convert(series.reduce((a,b)=>a+b,0), CCY[ref], "GBP");
   let debits = 0, credits = 0;
   Object.keys(both).forEach((ref) => {
     debits  += toGBP(ref, both[ref].rechargedIn) + toGBP(ref, both[ref].groupOnChargeIn);
     credits += toGBP(ref, both[ref].rechargedOut) + toGBP(ref, both[ref].groupOnChargeOut);
   });
-  // The recharge lines themselves still net to nil: every on-charge out is
-  // matched by an on-charge in somewhere. The group's own payroll is a real
-  // cost and sits in the staff cost lines, not in these transfer lines — which
-  // is exactly why staff costs are shown gross and recharges separately.
-  eq("the recharge lines net to nil group-wide, both hops included",
-     Math.round((credits - debits) * 100) / 100, 0);
+  // 12 monthly figures across three currencies, each rounded to the penny, so a
+  // few pence of rounding is expected. A pound would not be.
+  ok("recharges still net to nil across the group",
+     Math.abs(debits - credits) < 1, "debits " + debits.toFixed(2) + " credits " + credits.toFixed(2));
+  ok("...and the rounding difference is pence, not pounds",
+     Math.abs(debits - credits) < 0.5);
 
-  // a group employee partly recharged directly: only the remainder is on-charged
-  const partly = { entity:"AFG-000", region:"IOM", annualSalary:60000,
-                   recharges:[{ entity:"AFG-IOM", pct:40 }] };
-  const rc3 = M.computeRecharges([partly], CCY);
-  const c3 = M.phaseStaffCost(partly).total[0];
-  eq("40% goes out directly", rc3["AFG-000"].rechargedOut[0], Math.round(c3 * 0.4 * 100) / 100);
-  eq("the remaining 60% goes out via the allocation basis",
-     rc3["AFG-000"].groupOnChargeOut[0], Math.round(c3 * 0.6 * 100) / 100);
-  eq("nothing is double counted",
-     Math.round((rc3["AFG-000"].rechargedOut[0] + rc3["AFG-000"].groupOnChargeOut[0] - c3) * 100) / 100, 0);
+  // group can be configured to retain part of what it receives, if ever wanted
+  const held = M.computeRecharges([florida], CCY, M.BUDGET_FX, { groupRetainOnReceived: 25 });
+  ok("group can optionally retain a share of a received recharge",
+     held["AFG-000"].groupOnChargeOut[0] < held["AFG-000"].rechargedIn[0]);
+  eq("default is to retain nothing of what it receives", M.GROUP_RETAIN_ON_RECEIVED, 0);
 }
 
 // ── report ─────────────────────────────────────────────────────────────────

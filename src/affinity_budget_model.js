@@ -425,6 +425,12 @@ export const GROUP_ALLOCATION = {
 
 export const GROUP_REF = "AFG-000";
 
+// Share of a RECEIVED recharge that the group keeps rather than passing on.
+// Zero by default: a recharge routed through group is a pass-through. The
+// group's own employees are a separate matter — their retained share is set by
+// their own recharge percentages, person by person.
+export const GROUP_RETAIN_ON_RECEIVED = 0;
+
 // Staff recharges, in two steps.
 //
 //   Step 1  person-level recharges, up to MAX_RECHARGE_TARGETS companies each.
@@ -468,35 +474,28 @@ export function computeRecharges(staff, entityCcy = {}, rates = BUDGET_FX, opts 
     });
   });
 
-  // ── Step 2: the group passes everything on ──────────────────────────────
-  // The group company retains no staff cost. Two things therefore go out:
-  //   a) what it received from other companies (the Florida case), and
-  //   b) the cost of the people it employs directly, less anything already
-  //      recharged out at person level.
-  // Missing (b) would leave the group carrying its own payroll, which is not
-  // how the group is meant to work.
-  const groupOwn = new Array(12).fill(0);
-  (staff || []).forEach((p) => {
-    if ((p.entity || "AFG-IOM") !== groupRef) return;
-    const cost = phaseStaffCost({ ...p, region: p.region }, opts).total;
-    const away = (p.recharges || []).slice(0, MAX_RECHARGE_TARGETS)
-      .reduce((sum, r) => sum + ((r && r.entity && r.entity !== groupRef) ? (Number(r.pct) || 0) : 0), 0);
-    const retained = Math.max(0, 100 - away) / 100;
-    for (let i = 0; i < 12; i++) groupOwn[i] += cost[i] * retained;
-  });
-
-  const hasGroupActivity = out[groupRef] || groupOwn.some((v) => v > 0);
-  if (hasGroupActivity) {
-    const grp = touch(groupRef);
+  // ── Step 2: the group passes on what it RECEIVED ────────────────────────
+  // Only amounts received from other companies are on-charged. The group's own
+  // employees are treated like anyone else's: their person-level percentages
+  // decide what goes out and the group KEEPS THE BALANCE. A group MLRO paid by
+  // AGL with 80% spread across the operating companies leaves 20% at group,
+  // which is correct — group carries a real share of a genuinely group role.
+  //
+  // The pass-through exists for the Florida case: someone paid by one company,
+  // recharged wholly to group, then spread to the companies that benefit.
+  const grp = out[groupRef];
+  if (grp) {
     const groupCcy = entityCcy[groupRef] || "GBP";
+    const retain = Math.max(0, Math.min(100, opts.groupRetainOnReceived != null
+      ? opts.groupRetainOnReceived : GROUP_RETAIN_ON_RECEIVED)) / 100;
     const receivers = Object.keys(allocation).filter((k) => k !== groupRef);
     const totalPct  = receivers.reduce((s, k) => s + (allocation[k] || 0), 0);
 
     if (totalPct > 0) {
       for (let i = 0; i < 12; i++) {
-        const pool = grp.rechargedIn[i] + groupOwn[i];
+        const pool = grp.rechargedIn[i] * (1 - retain);
         if (!pool) continue;
-        grp.groupOnChargeOut[i] += pool;                 // group keeps nothing
+        grp.groupOnChargeOut[i] += pool;
         receivers.forEach((ref) => {
           const share = pool * ((allocation[ref] || 0) / totalPct);
           if (!share) return;
