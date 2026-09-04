@@ -510,7 +510,13 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
   const entity = (det && det.profile)
     ? { ...baseEntity, regNo:det.profile.reg_no, yearEnd:det.profile.year_end, principalActivity:det.profile.business_activity,
         jur:det.profile.jurisdiction, type:det.profile.entity_type, incorporated:fmtD(det.profile.incorporation_date),
-        status:det.profile.admin_status, risk:det.profile.risk_rating, companiesAct:det.profile.incorporation_regime, regulator:det.profile.regulator, mlroOfficer:det.profile.mlro, regOffice:det.profile.registered_office, auditStatus:det.profile.audit_status, entityClass:baseEntity.entityClass }
+        status:det.profile.admin_status, risk:det.profile.risk_rating, companiesAct:det.profile.incorporation_regime, regulator:det.profile.regulator, mlroOfficer:det.profile.mlro, regOffice:det.profile.registered_office, auditStatus:det.profile.audit_status,
+        // Responsibility fields. These had no columns until db/064 and so only
+        // ever appeared in the demonstration data; real records showed blank.
+        administrator:det.profile.administrator, manager:det.profile.manager,
+        leadDirector:det.profile.lead_director, accountant:det.profile.accountant,
+        office:det.profile.office,
+        entityClass:baseEntity.entityClass }
     : baseEntity;
   const dirs     = det ? det.officers.map(o=>({ id:o.id, name:o.name, role:o.role, appointed:fmtD(o.appointed), resigned:fmtD(o.resigned), nationality:o.nationality, dob:fmtD(o.dob), address:o.address, tin:o.tin, taxResidence:o.tax_residence }))  : (ENTITY_DATA.directors[sel]||[]);
   const shares   = det ? det.shareholders.map(x=>({ id:x.id, name:x.name, type:"—", shares:x.shares, class:x.share_class, pct:(x.pct!=null?x.pct+"%":"—"), nominal:"—", paid:"—", regDate:fmtD(x.held_from) })) : (ENTITY_DATA.shareholders[sel]||[]);

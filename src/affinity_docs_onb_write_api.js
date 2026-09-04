@@ -244,3 +244,19 @@ export const tbImportRollback = (id, reason) =>
   call("tb_import_rollback", { p_id: id, p_reason: reason });
 export const tbImportList = (entityId) =>
   call("tb_import_list", { p_entity: entityId ?? null });
+
+// ── Entity responsibilities (db/064) ───────────────────────────────────────
+// Administrator, manager, lead director, accountant and office had no columns
+// until 064 — they existed only in the demonstration dataset, so live records
+// showed them blank.
+export const eaResponsibilitiesSet = (entityId, r) => call("ea_responsibilities_set", {
+  p_entity: entityId, p_administrator: r.administrator || null,
+  p_manager: r.manager || null, p_lead_director: r.leadDirector || null,
+  p_accountant: r.accountant || null, p_office: r.office || null,
+  p_mlro: r.mlro || null,
+});
+// Moves a whole caseload at once, for a joiner, leaver or handover. Doing this
+// one entity at a time is how entities get missed.
+export const eaReassignCaseload = (from, to, role) =>
+  call("ea_reassign_caseload", { p_from: from, p_to: to, p_role: role || "administrator" });
+export const eaCaseload = (role) => call("ea_caseload", { p_role: role || "administrator" });
