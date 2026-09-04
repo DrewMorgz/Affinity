@@ -1,0 +1,81 @@
+name: Deploy to Azure Static Web Apps
+ 
+# Mirrors what Netlify was doing: build on every push to main, and build a
+# preview for pull requests so a change can be looked at before it is merged.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    branches: [main]
+ 
+jobs:
+  build_and_deploy:
+    if: github.event_name == 'push' || github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    name: Build and deploy
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+ 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+ 
+      - name: Install dependencies
+        run: npm ci
+ 
+      - name: Run tests
+        # Deliberately blocking. A broken build should not reach staff, and the
+        # suite takes well under a minute.
+        run: node tests/run.cjs
+ 
+      - name: Build
+        # CRITICAL: Create React App reads REACT_APP_* at BUILD time and bakes
+        # the values into the bundle. Azure's own "Application settings" are
+        # runtime only and never reach this step, so these must be GitHub
+        # repository secrets. Without them the app deploys and looks fine but
+        # cannot reach the database — isConfigured is false and nobody can
+        # sign in.
+        env:
+          CI: false
+          NODE_OPTIONS: --openssl-legacy-provider
+          REACT_APP_SUPABASE_URL: ${{ secrets.REACT_APP_SUPABASE_URL }}
+          REACT_APP_SUPABASE_ANON_KEY: ${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}
+        run: npm run build
+ 
+      - name: Fail if the Supabase config did not reach the bundle
+        # Catches the mistake above before it is deployed rather than after
+        # someone reports that sign-in is broken.
+        run: |
+          if ! grep -rq "supabase.co" build/static/js/ 2>/dev/null; then
+            echo "::error::The built bundle contains no Supabase URL."
+            echo "Set REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY as"
+            echo "GitHub repository secrets (Settings -> Secrets and variables ->"
+            echo "Actions). Azure Application settings do NOT reach the build."
+            exit 1
+          fi
+          echo "Supabase configuration is present in the bundle."
+ 
+      - name: Deploy
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: upload
+          app_location: '/'
+          output_location: 'build'
+          skip_app_build: true          # already built above, with the env vars
+ 
+  close_pull_request:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    name: Close pull request preview
+    steps:
+      - name: Close
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          action: close
