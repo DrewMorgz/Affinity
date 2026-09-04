@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import * as OW from "./affinity_ops_write_api";
 import EntitySearch from "./affinity_entity_search";
 const ENTITY_NAMES = ["Meridian Holdings Ltd","Harrington Family Trust","Pacific Wealth Trust","Caledonian Ventures Ltd","North Star Holdings Ltd","Azure Mediterranean Foundation","Apex Growth Fund Ltd","Stonebridge Capital Ltd","Thornbury Asset Co Ltd","Bluewater Family Trust","Phoenix eGaming Ltd","Meridian Digital Ltd","Suncoast Ventures LLC"];
 import { tsEntries, isConfigured } from "./affinity_ops_api";
@@ -74,6 +75,40 @@ export default function AffinityTimesheets({ onNav }) {
     const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
     return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`;
   };
+  // Manual time entry. Controlled so what is typed is what is saved, and the
+  // narrative is required for billable time because it reaches the client.
+  const [entry, setEntry]       = useState({});
+  const [entrySaving, setSaving]= useState(false);
+  const [entryErr, setEntryErr] = useState("");
+  const setE = (k, v) => setEntry((p) => ({ ...p, [k]: v }));
+
+  const toISO = (v) => {
+    if (!v || !String(v).trim()) return null;
+    const t = String(v).trim();
+    const uk = t.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+    if (uk) return `${uk[3]}-${uk[2].padStart(2,"0")}-${uk[1].padStart(2,"0")}`;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+    return null;
+  };
+
+  const saveEntry = async () => {
+    setSaving(true); setEntryErr("");
+    const units = Number(entry["Units (10 min)"] || 0);
+    const res = await OW.timeAdd(Number(staffF) || 1, {
+      date: toISO(entry["Date"]) || new Date().toISOString().slice(0,10),
+      entity: entry["Entity"] || entitySearch || "",
+      matter: entry["Matter / service"] || null,
+      workType: entry["Work type"] || null,
+      hours: units ? Math.round((units / 6) * 100) / 100 : 0,   // 10-minute units
+      billable: !String(entry["Work type"] || "").startsWith("Internal"),
+      narrative: entry["Narrative"] || null,
+    });
+    setSaving(false);
+    if (res.ok) { setModal(null); setEntry({}); return; }
+    if (!res.live) { setEntryErr("Not signed in — this entry cannot be saved yet."); return; }
+    setEntryErr(res.error);
+  };
+
   const startTimer = () => {
     if (timerRunning) {
       if (timerRef) clearInterval(timerRef);
@@ -445,21 +480,29 @@ export default function AffinityTimesheets({ onNav }) {
                 <div key={l} style={{ display:"flex", flexDirection:"column", gap:3, gridColumn:full?"1/-1":"auto" }}>
                   <label style={{ fontSize:11, color:"#666" }}>{l}</label>
                   {(l==="Entity"||l==="Client")
-                    ?<><input list="tse-ent" placeholder={"Search "+l.toLowerCase()+"…"} style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", background:"var(--bg-primary,#fff)", padding:"0 8px", height:32, outline:"none" , boxSizing:"border-box" }} /><datalist id="tse-ent">{ENTITY_NAMES.map(o=><option key={o} value={o}/>)}</datalist></>
+                    ?<><input list="tse-ent" value={entry[l]||""} onChange={e=>setE(l, e.target.value)} placeholder={"Search "+l.toLowerCase()+"…"} style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", background:"var(--bg-primary,#fff)", padding:"0 8px", height:32, outline:"none" , boxSizing:"border-box" }} /><datalist id="tse-ent">{ENTITY_NAMES.map(o=><option key={o} value={o}/>)}</datalist></>
                     :t==="select"
-                    ?<select style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", background:"var(--bg-primary,#fff)", padding:"0 8px", height:32, outline:"none" }}>{(opts||[]).map(o=><option key={o}>{o}</option>)}</select>
-                    :<input type={t} style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)" }} placeholder={ph} />
+                    ?<select value={entry[l]||""} onChange={e=>setE(l, e.target.value)} style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", background:"var(--bg-primary,#fff)", padding:"0 8px", height:32, outline:"none" }}>{(opts||[]).map(o=><option key={o}>{o}</option>)}</select>
+                    :<input type={t} value={entry[l]||""} onChange={e=>setE(l, e.target.value)} style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"0 8px", height:32, outline:"none", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)" }} placeholder={ph} />
                   }
                 </div>
               ))}
               <div style={{ display:"flex", flexDirection:"column", gap:3, gridColumn:"1/-1" }}>
                 <label style={{ fontSize:11, color:"#666" }}>Narrative</label>
-                <textarea style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"6px 8px", height:60, outline:"none", resize:"none" }} placeholder="Brief description of work done" />
+                <textarea value={entry["Narrative"]||""} onChange={e=>setE("Narrative", e.target.value)} style={{ fontSize:12, borderRadius:5, border:"0.5px solid #ccc", padding:"6px 8px", height:60, outline:"none", resize:"none" }} placeholder="Brief description of work done" />
               </div>
             </div>
+            {entryErr && (
+              <div style={{ marginTop:12, fontSize:11.5, color:"#A32D2D", background:"#FCEBEB",
+                            border:"0.5px solid #f0c9c9", borderRadius:6, padding:"8px 10px", lineHeight:1.6 }}>
+                {entryErr}
+              </div>
+            )}
             <div style={{ display:"flex", gap:8, justifyContent:"flex-end", marginTop:14 }}>
-              <button style={nb} onClick={()=>setModal(null)}>Cancel</button>
-              <button style={nba} onClick={()=>setModal(null)}>Save entry</button>
+              <button style={nb} onClick={()=>{ setModal(null); setEntryErr(""); }} disabled={entrySaving}>Cancel</button>
+              <button style={nba} onClick={saveEntry} disabled={entrySaving}>
+                {entrySaving ? "Saving…" : "Save entry"}
+              </button>
             </div>
           </div>
         </div>

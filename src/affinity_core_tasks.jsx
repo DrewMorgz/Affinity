@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import * as OW from "./affinity_ops_write_api";
 import { isConfigured } from "./affinity_accounting_supabase";
 import { tasksList } from "./affinity_tasks_api";
 import { notificationsList } from "./affinity_ops_api";
@@ -147,19 +148,54 @@ export default function AffinityTasks({ userId, onNav, initialView }) {
 
   const selTask = tasks.find(t=>t.id===sel);
 
-  const addTask = () => {
-    if (!form.title) return;
-    setTasks(prev=>[...prev, {
-      ...form,
-      id: Date.now(),
-      status:"Open",
-      createdBy: CURRENT_USER.name,
-    }]);
-    setModal(null);
-    setForm({});
+  const [saveErr, setSaveErr] = useState("");
+  const [saving, setSaving]   = useState(false);
+
+  const addTask = async () => {
+    if (!form.title) { setSaveErr("A task needs a title."); return; }
+    setSaving(true); setSaveErr("");
+
+    // Persist first, then show it. Adding to the list before the write
+    // succeeds would leave a task on screen that does not exist.
+    const res = await OW.taskAdd({
+      title: form.title, category: form.category, entity: form.entity,
+      assignee: form.assignee, dueDate: form.due, priority: form.priority,
+      notes: form.notes,
+    });
+    setSaving(false);
+
+    if (res.ok && res.data) {
+      const row = Array.isArray(res.data) ? res.data[0] : res.data;
+      setTasks(prev=>[...prev, {
+        ...form, id: (row && row.id) || Date.now(),
+        status:"Open", createdBy: CURRENT_USER.name, saved:true,
+      }]);
+      setModal(null); setForm({});
+      return;
+    }
+
+    if (!res.live) {
+      // No database yet: keep it on screen for the session but say plainly
+      // that it will not survive a refresh, rather than implying it saved.
+      setTasks(prev=>[...prev, {
+        ...form, id: Date.now(), status:"Open", createdBy: CURRENT_USER.name, saved:false,
+      }]);
+      setModal(null); setForm({});
+      setSaveErr("");
+      return;
+    }
+    setSaveErr(res.error);
   };
 
-  const completeTask = (id) => setTasks(prev=>prev.map(t=>t.id===id?{...t,status:"Completed"}:t));
+  const completeTask = async (id) => {
+    setTasks(prev=>prev.map(t=>t.id===id?{...t,status:"Completed"}:t));
+    const res = await OW.taskSetStatus(id, "Complete");
+    if (res.live && !res.ok) {
+      // put it back rather than showing it complete when it is not
+      setTasks(prev=>prev.map(t=>t.id===id?{...t,status:"Open"}:t));
+      setSaveErr(res.error);
+    }
+  };
 
   const deleteTask = (id) => {
     if (!CURRENT_USER.isSystemManager) return;
