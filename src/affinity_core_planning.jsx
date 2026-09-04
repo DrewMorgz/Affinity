@@ -192,7 +192,7 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
   // ── Staff, imported from payroll then amended here ────────────────────────
   const [staff, setStaff] = useState([
     { id:1, name:"Roxy Sheeley",   dept:"Corporate Services", role:"Managing Director", entity:"AFG-IOM",    annualSalary:96000, changes:[], bonuses:[{ month:11, amount:12000 }] },
-    { id:2, name:"Neil Kelly",     dept:"Finance",            role:"CFO",               entity:"AFG-FL",     annualSalary:88000, changes:[], bonuses:[{ month:11, amount:10000 }], recharges:[{ entity:"AFG-000", pct:100 }] },
+    { id:2, name:"Neil Kelly",     dept:"Finance",            role:"CFO",               entity:"AFG-FL",     annualSalary:88000, changes:[], bonuses:[{ month:11, amount:10000 }], recharges:[{ entity:"AFG-000", pct:100, onward:true }] },
     { id:3, name:"Colette Grisdale",dept:"Compliance",        role:"Group MLRO",        entity:"AFG-000",    annualSalary:72000, changes:[{ month:6, annualSalary:76000 }], bonuses:[], recharges:[{ entity:"AFG-IOM", pct:30 },{ entity:"AFG-MLT", pct:20 },{ entity:"AFG-CYM", pct:15 },{ entity:"AFG-UK", pct:15 }] },
     { id:4, name:"Joanne Fenech",  dept:"Corporate Services", role:"Director",          entity:"AFG-MLT",  annualSalary:68000, changes:[], bonuses:[] },
     { id:5, name:"Garry Crossan",  dept:"Corporate Services", role:"Director",          entity:"AFG-CYM", annualSalary:66000, changes:[], bonuses:[] },
@@ -201,6 +201,8 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
     { id:8, name:"Trainee (planned)",dept:"Corporate Services",role:"Trainee",          entity:"AFG-FL",     annualSalary:24000, changes:[], bonuses:[], startMonth:8 },
     { id:9, name:"Group Financial Controller",dept:"Finance",   role:"Controller",        entity:"AFG-000",    annualSalary:64000, changes:[], bonuses:[] },
     { id:10,name:"Group IT Manager",dept:"IT",                  role:"IT Manager",        entity:"AFG-000",    annualSalary:58000, changes:[], bonuses:[] },
+    { id:11,name:"Senior Administrator",dept:"Corporate Services",role:"Senior Administrator",entity:"AFG-IOM", annualSalary:46000, changes:[], bonuses:[], recharges:[{ entity:"AFG-000", pct:20 }] },
+    { id:12,name:"Client Accountant", dept:"Finance",            role:"Accountant",        entity:"AFG-IOM",    annualSalary:42000, changes:[], bonuses:[], recharges:[{ entity:"AFG-000", pct:15 }] },
   ]);
 
   const [collectionDays, setCollectionDays] = useState(35);
@@ -982,13 +984,25 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
                                   onChange={(e)=>setRec(k,{ pct:Number(e.target.value)||0 })}
                                   style={{ ...selS, width:60, textAlign:"right" }} />
                                 <span style={{ fontSize:10.5, color:MUT }}>%</span>
+                                {rec.entity===GROUP_REF && (
+                                  <label style={{ display:"flex", alignItems:"center", gap:4, fontSize:10, color:MUT, cursor:"pointer", whiteSpace:"nowrap" }}
+                                    title="Tick only if the group is a conduit and should pass this on to the operating companies. Leave clear for a contribution to group costs, which stays at group.">
+                                    <input type="checkbox" checked={!!rec.onward}
+                                      onChange={()=>setRec(k,{ onward:!rec.onward })}
+                                      style={{ width:12, height:12, cursor:"pointer" }} />
+                                    pass on
+                                  </label>
+                                )}
                               </div>
                             ))}
                           </div>
                           <div style={{ fontSize:10.5, color:MUT, marginTop:9, lineHeight:1.6 }}>
-                            Recharging to <strong>Affinity Group Limited</strong> is a two-step charge: the group receives
-                            it, then passes it on to the operating companies using the group allocation basis. That is the
-                            case for anyone paid from one company but working across the whole group.
+                            A charge to <strong>Affinity Group Limited</strong> can mean two different things, so it is
+                            set per line. Left clear, it is a <strong>contribution to group</strong> and stays there —
+                            the usual case, such as an Isle of Man employee charging 20% across for group work. Ticked
+                            <strong> pass on</strong>, the group is a <strong>conduit</strong>: it receives the charge and
+                            spreads it to the operating companies on the allocation basis, which is the case for someone
+                            paid by one company but working across the whole group.
                           </div>
                         </td>
                       </tr>

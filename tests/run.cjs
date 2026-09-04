@@ -524,8 +524,9 @@ group("Budget model — the Florida case: recharge to group, then on to subsidia
      Object.values(M.GROUP_ALLOCATION).reduce((a,b)=>a+b,0), 100);
 
   // paid by Florida, wholly recharged to Group, which passes it on
+  // marked onward: this is a conduit through group, not a contribution to it
   const cfo = { name:"Group CFO", entity:"AFG-FL", region:"US", annualSalary:120000,
-                recharges:[{ entity:"AFG-000", pct:100 }] };
+                recharges:[{ entity:"AFG-000", pct:100, onward:true }] };
   const rc = M.computeRecharges([cfo], CCY);
 
   ok("Florida recharges the cost out", rc["AFG-FL"].rechargedOut[0] > 0);
@@ -604,7 +605,7 @@ group("Budget model — the group company keeps its own share");
 
   // the Florida pass-through still works and is a separate mechanism
   const florida = { name:"CFO", entity:"AFG-FL", region:"US", annualSalary:120000,
-                    recharges:[{ entity:"AFG-000", pct:100 }] };
+                    recharges:[{ entity:"AFG-000", pct:100, onward:true }] };
   const rc2 = M.computeRecharges([florida], CCY);
   ok("a recharge routed through group is passed on", rc2["AFG-000"].groupOnChargeOut[0] > 0);
   eq("and nothing of it sticks at group",
@@ -636,6 +637,59 @@ group("Budget model — the group company keeps its own share");
   ok("group can optionally retain a share of a received recharge",
      held["AFG-000"].groupOnChargeOut[0] < held["AFG-000"].rechargedIn[0]);
   eq("default is to retain nothing of what it receives", M.GROUP_RETAIN_ON_RECEIVED, 0);
+}
+
+
+group("Budget model — contribution to group vs conduit through it");
+{
+  const M = require(path.join(SRC, "affinity_budget_model.js"));
+  const CCY = { "AFG-000":"GBP","AFG-IOM":"GBP","AFG-MLT":"EUR","AFG-CYM":"USD",
+                "AFG-UK":"GBP","AFG-CYP":"EUR","AFG-SD":"USD","AFG-FL":"USD" };
+
+  // (a) Affinity's policy: paid by the Isle of Man, 20% charged to group for
+  //     the group functions performed. That 20% must STAY at group.
+  const contrib = { entity:"AFG-IOM", region:"IOM", annualSalary:60000,
+                    recharges:[{ entity:"AFG-000", pct:20 }] };
+  const a = M.computeRecharges([contrib], CCY);
+  const cost = M.phaseStaffCost(contrib).total[0];
+
+  eq("the Isle of Man charges 20% out", a["AFG-IOM"].rechargedOut[0], Math.round(cost*0.2*100)/100);
+  eq("group receives it", a["AFG-000"].rechargedIn[0], Math.round(cost*0.2*100)/100);
+  eq("group does NOT pass a contribution back out", a["AFG-000"].groupOnChargeOut[0], 0);
+  eq("group therefore keeps the 20%",
+     Math.round((a["AFG-000"].rechargedIn[0] - a["AFG-000"].groupOnChargeOut[0])*100)/100,
+     Math.round(cost*0.2*100)/100);
+  ok("and none of it is returned to the company that paid it",
+     (a["AFG-IOM"] ? a["AFG-IOM"].groupOnChargeIn[0] : 0) === 0);
+
+  // (b) the Florida conduit, explicitly marked onward
+  const conduit = { entity:"AFG-FL", region:"US", annualSalary:120000,
+                    recharges:[{ entity:"AFG-000", pct:100, onward:true }] };
+  const b = M.computeRecharges([conduit], CCY);
+  ok("a conduit IS passed on", b["AFG-000"].groupOnChargeOut[0] > 0);
+  eq("and nothing of it sticks at group",
+     Math.round((b["AFG-000"].rechargedIn[0] - b["AFG-000"].groupOnChargeOut[0])*100)/100, 0);
+  ok("the operating companies receive it", (b["AFG-IOM"]||{groupOnChargeIn:[0]}).groupOnChargeIn[0] > 0);
+
+  // both at once: group keeps the contribution and passes on the conduit
+  const both = M.computeRecharges([contrib, conduit], CCY);
+  const kept = both["AFG-000"].rechargedIn[0] - both["AFG-000"].groupOnChargeOut[0];
+  eq("group keeps exactly the contribution and no more",
+     Math.round(kept*100)/100, Math.round(cost*0.2*100)/100);
+
+  ok("the default is to keep, not to pass on — the safer assumption",
+     M.computeRecharges([{ entity:"AFG-IOM", annualSalary:50000,
+       recharges:[{ entity:"AFG-000", pct:50 }] }], CCY)["AFG-000"].groupOnChargeOut[0] === 0);
+
+  // netting still holds with both kinds present
+  const toGBP = (ref, series) => M.convert(series.reduce((x,y)=>x+y,0), CCY[ref], "GBP");
+  let debits = 0, credits = 0;
+  Object.keys(both).forEach((ref) => {
+    debits  += toGBP(ref, both[ref].rechargedIn) + toGBP(ref, both[ref].groupOnChargeIn);
+    credits += toGBP(ref, both[ref].rechargedOut) + toGBP(ref, both[ref].groupOnChargeOut);
+  });
+  ok("recharges net to nil with contributions and conduits mixed",
+     Math.abs(debits - credits) < 1, "debits " + debits.toFixed(2) + " credits " + credits.toFixed(2));
 }
 
 // ── report ─────────────────────────────────────────────────────────────────

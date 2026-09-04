@@ -451,6 +451,7 @@ export function computeRecharges(staff, entityCcy = {}, rates = BUDGET_FX, opts 
     if (!out[ref]) out[ref] = {
       rechargedIn: new Array(12).fill(0), rechargedOut: new Array(12).fill(0),
       groupOnChargeIn: new Array(12).fill(0), groupOnChargeOut: new Array(12).fill(0),
+      onwardPool: new Array(12).fill(0),   // received AND marked for passing on
     };
     return out[ref];
   };
@@ -469,20 +470,32 @@ export function computeRecharges(staff, entityCcy = {}, rates = BUDGET_FX, opts 
         const share = cost[i] * (Number(r.pct) / 100);
         if (!share) continue;
         touch(employer).rechargedOut[i] += share;
-        touch(r.entity).rechargedIn[i]  += convert(share, fromCcy, toCcy, rates);
+        const landed = convert(share, fromCcy, toCcy, rates);
+        touch(r.entity).rechargedIn[i] += landed;
+        // Only a recharge explicitly marked onward is passed further on by the
+        // group. See the note on step 2.
+        if (r.entity === groupRef && r.onward) touch(groupRef).onwardPool[i] += landed;
       }
     });
   });
 
-  // ── Step 2: the group passes on what it RECEIVED ────────────────────────
-  // Only amounts received from other companies are on-charged. The group's own
-  // employees are treated like anyone else's: their person-level percentages
-  // decide what goes out and the group KEEPS THE BALANCE. A group MLRO paid by
-  // AGL with 80% spread across the operating companies leaves 20% at group,
-  // which is correct — group carries a real share of a genuinely group role.
+  // ── Step 2: the group passes on only what is marked onward ──────────────
+  // "Recharge to group" means two opposite things, and treating them alike was
+  // wrong:
   //
-  // The pass-through exists for the Florida case: someone paid by one company,
-  // recharged wholly to group, then spread to the companies that benefit.
+  //   a) A CONTRIBUTION to group. Staff paid by, say, the Isle of Man with 20%
+  //      charged to group for the group functions they perform. That 20% is
+  //      meant to STAY at group. Passing it on would push it straight back out
+  //      to the operating companies, including returning part of it to the
+  //      company that just paid it.
+  //
+  //   b) A CONDUIT. Someone paid by one company but working across the group —
+  //      recharged wholly to group, which then spreads it to the companies that
+  //      benefit. This is the Florida case.
+  //
+  // Only (b) is passed on, and only when the recharge is marked `onward: true`.
+  // The default is (a), because a contribution that stays put is the safer
+  // assumption: it cannot silently redistribute cost nobody intended to move.
   const grp = out[groupRef];
   if (grp) {
     const groupCcy = entityCcy[groupRef] || "GBP";
@@ -493,7 +506,7 @@ export function computeRecharges(staff, entityCcy = {}, rates = BUDGET_FX, opts 
 
     if (totalPct > 0) {
       for (let i = 0; i < 12; i++) {
-        const pool = grp.rechargedIn[i] * (1 - retain);
+        const pool = grp.onwardPool[i] * (1 - retain);
         if (!pool) continue;
         grp.groupOnChargeOut[i] += pool;
         receivers.forEach((ref) => {
@@ -507,7 +520,7 @@ export function computeRecharges(staff, entityCcy = {}, rates = BUDGET_FX, opts 
   }
 
   Object.keys(out).forEach((k) => {
-    ["rechargedIn","rechargedOut","groupOnChargeIn","groupOnChargeOut"].forEach((f) => {
+    ["rechargedIn","rechargedOut","groupOnChargeIn","groupOnChargeOut","onwardPool"].forEach((f) => {
       out[k][f] = out[k][f].map(r2);
     });
   });
