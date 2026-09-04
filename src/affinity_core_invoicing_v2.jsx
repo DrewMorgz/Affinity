@@ -68,6 +68,23 @@ const FEE_SCHEDULES = [
 ];
 
 export default function AffinityInvoicing({ onNav }) {
+  // Escalating. There is no escalation policy recorded — who a matter goes to
+  // and after how long is Affinity's decision — so this raises a high-priority
+  // task carrying what it came from and why, rather than routing on a guess.
+  const doEscalate = async () => {
+    const reason = window.prompt("Why is this being escalated? (the person receiving it will ask first)");
+    if (!reason) { setWMsg("An escalation needs a reason."); return; }
+    const res = await DW.escalate({
+      what: window.prompt("What is being escalated?") || "Matter requiring attention",
+      module: "Invoicing",
+      entityLabel: (selInv && (selInv.client || selInv.entity)) || null,
+      reason,
+    });
+    if (res && res.ok) { setWMsg("Escalated — a high-priority task has been raised, due in two days."); return; }
+    if (res && res.live === false) { setWMsg("Not signed in — this cannot be escalated yet."); return; }
+    setWMsg((res && res.error) || "That could not be escalated.");
+  };
+
   // ── Output plumbing ───────────────────────────────────────────────────────
   const [outMsg, setOutMsg] = useState("");
   const outRun = (fn) => {
@@ -677,7 +694,7 @@ export default function AffinityInvoicing({ onNav }) {
                   <div style={{ fontSize:11, color:days>60?"#EF4444":"#F59E0B", marginTop:2 }}>{days} days overdue</div>
                   <div style={{ display:"flex", gap:6, marginTop:8, justifyContent:"flex-end" }}>
                     <button style={{ ...nb, fontSize:10 }} onClick={chaseInvoice}>Send reminder</button>
-                    {days>60&&<button style={{ fontSize:10, padding:"4px 10px", borderRadius:5, border:"0.5px solid #EF4444", color:"#EF4444", background:"transparent", cursor:"pointer" }} disabled title="Escalation routing is not configured yet — chase the owner directly for now">Escalate</button>}
+                    {days>60&&<button style={{ fontSize:10, padding:"4px 10px", borderRadius:5, border:"0.5px solid #EF4444", color:"#EF4444", background:"transparent", cursor:"pointer" }} title="Raise a high-priority escalation task" onClick={doEscalate}>Escalate</button>}
                   </div>
                 </div>
               </div>

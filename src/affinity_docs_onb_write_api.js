@@ -210,3 +210,37 @@ export const eaClassificationUpdate = (entityId, c) => call("ea_classification_u
 export const planningScenarioCreate = (sourceBudgetId, name, scenario) =>
   call("planning_scenario_create", { p_source_budget: sourceBudgetId, p_name: name,
                                      p_scenario: scenario || "scenario" });
+
+// ── Batch 6: billing WIP, escalation, imports ──────────────────────────────
+// Wrappers for db/063_write_billing_escalation.sql.
+
+// Turns approved billable time into a draft invoice, one line per matter, and
+// marks the time billed. Atomic in the database: half-billed WIP would mean
+// either work never invoiced or a client billed twice.
+export const billWipToInvoice = (entityId, entityLabel, invoiceDate, ccy) =>
+  call("bill_wip_to_invoice", { p_entity: entityId, p_entity_label: entityLabel || null,
+                                p_invoice_date: invoiceDate || null, p_ccy: ccy || "GBP" });
+export const wipAvailable = (entityLabel) =>
+  call("wip_available", { p_entity_label: entityLabel || null });
+
+// There is no escalation policy recorded, so this gives the mechanism rather
+// than guessing the routing: a high-priority task, due in two days, carrying
+// where it came from and why.
+export const escalate = (e) => call("escalate", {
+  p_what: e.what, p_source_module: e.module || null,
+  p_entity_label: e.entityLabel || null, p_entity_id: e.entityId ?? null,
+  p_assignee: e.assignee || null, p_reason: e.reason,
+});
+
+export const statFilingAdvance = (id, reference) =>
+  call("stat_filing_advance", { p_id: id, p_reference: reference || null });
+
+export const tbImportRecord = (entityId, period, rows, checksum, note) =>
+  call("tb_import_record", { p_entity: entityId, p_period: period, p_rows: rows,
+                             p_checksum: checksum || null, p_note: note || null });
+// Rolling back restores whichever import it superseded, so the period is never
+// left with nothing.
+export const tbImportRollback = (id, reason) =>
+  call("tb_import_rollback", { p_id: id, p_reason: reason });
+export const tbImportList = (entityId) =>
+  call("tb_import_list", { p_entity: entityId ?? null });

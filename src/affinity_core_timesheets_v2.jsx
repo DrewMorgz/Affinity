@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import * as DW from "./affinity_docs_onb_write_api";
 import * as OUT from "./affinity_output";
 import * as OW from "./affinity_ops_write_api";
 import EntitySearch from "./affinity_entity_search";
@@ -52,6 +53,40 @@ const VIEWS = ["entry","wip","utilisation","missing","approval","reports"];
 const VLABELS = ["Time entry","WIP by entity","Utilisation","Missing timesheets","Approval queue","Reports"];
 
 export default function AffinityTimesheets({ onNav }) {
+  // Escalating. There is no escalation policy recorded — who a matter goes to
+  // and after how long is Affinity's decision — so this raises a high-priority
+  // task carrying what it came from and why, rather than routing on a guess.
+  const doEscalate = async () => {
+    const reason = window.prompt("Why is this being escalated? (the person receiving it will ask first)");
+    if (!reason) { setWMsg("An escalation needs a reason."); return; }
+    const res = await DW.escalate({
+      what: window.prompt("What is being escalated?") || "Matter requiring attention",
+      module: "Timesheets",
+      entityLabel: (entitySearch) || null,
+      reason,
+    });
+    if (res && res.ok) { setWMsg("Escalated — a high-priority task has been raised, due in two days."); return; }
+    if (res && res.live === false) { setWMsg("Not signed in — this cannot be escalated yet."); return; }
+    setWMsg((res && res.error) || "That could not be escalated.");
+  };
+
+  // Billing approved time. The database refuses if there is nothing approved,
+  // and marks the time billed in the same transaction as the invoice.
+  const billWip = async () => {
+    const label = entitySearch || null;
+    if (!label) { setWMsg("Choose an entity first — billing applies to one client at a time."); return; }
+    const res = await DW.billWipToInvoice(null, label);
+    if (res && res.ok) {
+      const row = Array.isArray(res.data) ? res.data[0] : res.data;
+      setWMsg(row ? ("Draft invoice raised: " + row.line_count + " line(s), "
+                     + row.total_hours + " hours, " + row.total_value + ".")
+                  : "Draft invoice raised.");
+      return;
+    }
+    if (res && res.live === false) { setWMsg("Not signed in — time cannot be billed yet."); return; }
+    setWMsg((res && res.error) || "That could not be billed.");
+  };
+
   // ── Output plumbing ───────────────────────────────────────────────────────
   const [outMsg, setOutMsg] = useState("");
   const outRun = (fn) => {
@@ -397,7 +432,7 @@ export default function AffinityTimesheets({ onNav }) {
                   <td style={{ ...td, textAlign:"right", color:"#666" }}>{w.hours.toFixed(1)}</td>
                   <td style={{ ...td, textAlign:"right", fontWeight:600, color:CY }}>{fmt(w.value)}</td>
                   <td style={{ ...td, textAlign:"center" }}>{w.entries}</td>
-                  <td style={td}><button style={{ ...nb, fontSize:10, padding:"2px 8px" }} disabled title="Billing approved time to an invoice is not wired yet">Bill ↗</button></td>
+                  <td style={td}><button style={{ ...nb, fontSize:10, padding:"2px 8px" }} onClick={billWip}>Bill ↗</button></td>
                 </tr>
               ))}
             </tbody>
@@ -450,7 +485,7 @@ export default function AffinityTimesheets({ onNav }) {
               </div>
               <div style={{ display:"flex", gap:8 }}>
                 <button style={{ ...nb, fontSize:11 }} onClick={sendTimeReminder}>Send reminder</button>
-                <button style={{ color:"#EF4444", border:"0.5px solid #EF4444", padding:"5px 12px", borderRadius:5, background:"transparent", fontSize:11, cursor:"pointer" }} disabled title="Escalation routing is not configured yet — chase the owner directly for now">Escalate ↗</button>
+                <button style={{ color:"#EF4444", border:"0.5px solid #EF4444", padding:"5px 12px", borderRadius:5, background:"transparent", fontSize:11, cursor:"pointer" }} title="Raise a high-priority escalation task" onClick={doEscalate}>Escalate ↗</button>
               </div>
             </div>
           ))):(<div style={{ fontSize:12, color:"#4CAF7D", padding:"20px 0", textAlign:"center" }}>✓ All timesheets submitted for this week</div>)}

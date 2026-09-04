@@ -133,6 +133,11 @@ export default function AffinityStatutory() {
     } else if (what === "submit") {
       const ref = window.prompt("Submission reference from the registry (optional):") || null;
       await wRun(() => DW.statFilingSubmit(selFilingId, ref), "Submitted.");
+    } else if (what === "advance") {
+      // Advances by one stage from wherever it is; the database decides which
+      // step that is, so the button cannot skip preparation.
+      const ref = window.prompt("Reference (optional):") || null;
+      await wRun(() => DW.statFilingAdvance(selFilingId, ref), "Advanced.");
     } else if (what === "chase") {
       const note = window.prompt("Note for the chase (optional):") || null;
       await wRun(() => DW.statFilingChase(selFilingId, note), "Chased — recorded against the filing.");
@@ -426,7 +431,7 @@ export default function AffinityStatutory() {
                 </div>
                 <div style={{ display:"flex", gap:6 }}>
                   <button style={nb} disabled title="Needs a write function that is not built yet">View checklist ↗</button>
-                  <button style={nba} disabled title="Stage changes for statutory work are not wired yet">Advance stage</button>
+                  <button style={nba} onClick={()=>filingAction("advance")}>Advance stage</button>
                 </div>
               </div>
             ))}

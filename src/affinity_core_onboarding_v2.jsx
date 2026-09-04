@@ -53,6 +53,23 @@ const VIEWS = ["pipeline","active","transfer","attrition","portal"];
 const VLABELS = ["Overview","Active onboardings","Transfer-in","Attrition","Client portal"];
 
 export default function AffinityOnboarding({ initialView , onNav }) {
+  // Escalating. There is no escalation policy recorded — who a matter goes to
+  // and after how long is Affinity's decision — so this raises a high-priority
+  // task carrying what it came from and why, rather than routing on a guess.
+  const doEscalate = async () => {
+    const reason = window.prompt("Why is this being escalated? (the person receiving it will ask first)");
+    if (!reason) { setOutMsg("An escalation needs a reason."); return; }
+    const res = await DW.escalate({
+      what: window.prompt("What is being escalated?") || "Matter requiring attention",
+      module: "Onboarding",
+      entityLabel: (selCase && (selCase.client || selCase.entity)) || null,
+      reason,
+    });
+    if (res && res.ok) { setOutMsg("Escalated — a high-priority task has been raised, due in two days."); return; }
+    if (res && res.live === false) { setOutMsg("Not signed in — this cannot be escalated yet."); return; }
+    setOutMsg((res && res.error) || "That could not be escalated.");
+  };
+
   // ── Output plumbing ───────────────────────────────────────────────────────
   const [outMsg, setOutMsg] = useState("");
   const outRun = (fn) => {
@@ -316,7 +333,7 @@ export default function AffinityOnboarding({ initialView , onNav }) {
                   title="Move this case to the next stage. Sign-off is refused while CDD is outstanding or no risk rating is set.">
                   {advBusy ? "Working…" : "Advance stage ↗"}
                 </button>
-                {selCase.overdue&&<button style={{ fontSize:10, padding:"5px 8px", borderRadius:5, border:"0.5px solid #EF4444", color:"#EF4444", background:"transparent", cursor:"pointer" }} disabled title="Escalation routing is not configured yet — chase the owner directly for now">Escalate</button>}
+                {selCase.overdue&&<button style={{ fontSize:10, padding:"5px 8px", borderRadius:5, border:"0.5px solid #EF4444", color:"#EF4444", background:"transparent", cursor:"pointer" }} title="Raise a high-priority escalation task" onClick={doEscalate}>Escalate</button>}
               </div>
             </div>
           )}
