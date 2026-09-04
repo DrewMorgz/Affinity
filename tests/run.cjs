@@ -453,6 +453,64 @@ group("Cyprus office — present everywhere the other six are");
   ok("Cyprus appears in the jurisdiction list too", off.JURISDICTIONS.includes("Cyprus"));
 }
 
+
+group("Budget model — staff recharges across companies");
+{
+  const M = require(path.join(SRC, "affinity_budget_model.js"));
+  const CCY = { "AFG-IOM":"GBP", "AFG-MLT":"EUR", "AFG-CYM":"USD", "AFG-000":"GBP" };
+
+  // a group MLRO employed in the Isle of Man, half recharged to Malta
+  const mlro = { name:"Group MLRO", entity:"AFG-IOM", region:"IOM", annualSalary:72000,
+                 recharges:[{ entity:"AFG-MLT", pct:50 }] };
+  const rc = M.computeRecharges([mlro], CCY);
+
+  ok("the employing company shows a recharge out", rc["AFG-IOM"].rechargedOut[0] > 0);
+  ok("the receiving company shows a recharge in",  rc["AFG-MLT"].rechargedIn[0] > 0);
+  eq("the employing company has nothing recharged in", rc["AFG-IOM"].rechargedIn[0], 0);
+  eq("the receiving company has nothing recharged out", rc["AFG-MLT"].rechargedOut[0], 0);
+
+  // half the cost, and converted into the receiving company's currency
+  const full = M.phaseStaffCost(mlro).total[0];
+  eq("50% of the cost is recharged", rc["AFG-IOM"].rechargedOut[0], Math.round(full * 0.5 * 100) / 100);
+  ok("the recharge arrives in euro, not sterling",
+     Math.abs(rc["AFG-MLT"].rechargedIn[0] - rc["AFG-IOM"].rechargedOut[0]) > 0.01);
+  eq("converted at the planning rate",
+     rc["AFG-MLT"].rechargedIn[0],
+     Math.round(M.convert(full * 0.5, "GBP", "EUR") * 100) / 100);
+
+  // the group must not gain or lose money through a recharge
+  const outGBP = rc["AFG-IOM"].rechargedOut.reduce((a,b)=>a+b,0);
+  const inGBP  = M.convert(rc["AFG-MLT"].rechargedIn.reduce((a,b)=>a+b,0), "EUR", "GBP");
+  ok("recharges net to nil across the group once translated back",
+     Math.abs(outGBP - inGBP) < 0.05, "out " + outGBP.toFixed(2) + " vs in " + inGBP.toFixed(2));
+
+  // splitting across several companies
+  const shared = { name:"Shared", entity:"AFG-IOM", region:"IOM", annualSalary:60000,
+                   recharges:[{ entity:"AFG-MLT", pct:30 }, { entity:"AFG-CYM", pct:20 }] };
+  const rc2 = M.computeRecharges([shared], CCY);
+  const cost = M.phaseStaffCost(shared).total[0];
+  eq("a person can be split across several companies",
+     rc2["AFG-IOM"].rechargedOut[0], Math.round(cost * 0.5 * 100) / 100);
+  ok("Malta and Cayman each receive their own share",
+     rc2["AFG-MLT"].rechargedIn[0] > 0 && rc2["AFG-CYM"].rechargedIn[0] > 0);
+  ok("the Cayman share arrives in dollars",
+     Math.abs(rc2["AFG-CYM"].rechargedIn[0] - M.convert(cost*0.2, "GBP", "USD")) < 0.02);
+
+  // guards
+  eq("recharging to the employing company itself is ignored",
+     Object.keys(M.computeRecharges([{ entity:"AFG-IOM", annualSalary:50000, recharges:[{ entity:"AFG-IOM", pct:50 }] }], CCY)).length, 0);
+  const over = M.rechargeSummary({ recharges:[{ entity:"AFG-MLT", pct:70 }, { entity:"AFG-CYM", pct:60 }] });
+  ok("more than 100% recharged is flagged", !over.valid && !!over.warning);
+  const fully = M.rechargeSummary({ recharges:[{ entity:"AFG-MLT", pct:100 }] });
+  ok("fully recharged is allowed but noted", fully.valid && !!fully.warning);
+  eq("retained percentage is reported", M.rechargeSummary({ recharges:[{ entity:"AFG-MLT", pct:35 }] }).retained, 65);
+  eq("no recharges means the whole cost is retained", M.rechargeSummary({}).retained, 100);
+
+  // currency conversion basics
+  eq("converting to the same currency changes nothing", M.convert(100, "GBP", "GBP"), 100);
+  ok("an unknown currency is left alone rather than corrupted", M.convert(100, "XXX", "GBP") === 100);
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

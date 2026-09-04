@@ -382,6 +382,80 @@ export function phaseHeadcount(staff, opts) {
   return acc;
 }
 
+// ── Budget FX rates ─────────────────────────────────────────────────────────
+// A recharge crosses currencies: a Cayman person recharged to Malta is a USD
+// cost becoming a EUR one. Budgets use a fixed planning rate for the year, NOT
+// a spot rate, so the budget does not move every time the market does. Actuals
+// translate at the period rate from the fx_rate table; these are the planning
+// rates only.
+//
+// ⚠️ SET BY FINANCE each year. Expressed against GBP.
+export const BUDGET_FX = { GBP: 1, EUR: 1.18, USD: 1.27 };
+
+export function convert(amount, from, to, rates = BUDGET_FX) {
+  if (!amount) return 0;
+  if (from === to) return amount;
+  const f = rates[from], t = rates[to];
+  if (!f || !t) return amount;          // unknown currency: leave it alone rather than corrupt it
+  return (amount / f) * t;
+}
+
+// ── Staff recharges ─────────────────────────────────────────────────────────
+// Some people work across companies — a group MLRO covering several offices.
+// The employing company carries the full cost and recharges a percentage out;
+// the receiving company picks it up in its own budget currency.
+//
+// person.recharges: [{ entity:"AFG-MLT", pct:25 }, ...]
+//
+// Returns, per company reference:
+//   rechargedOut  a credit in the employing company, in its own currency
+//   rechargedIn   a debit in the receiving company, in ITS currency
+// Both are 12-month series.
+export function computeRecharges(staff, entityCcy = {}, rates = BUDGET_FX, opts = {}) {
+  const out = {};       // ref -> { rechargedIn:[12], rechargedOut:[12] }
+  const touch = (ref) => {
+    if (!out[ref]) out[ref] = { rechargedIn: new Array(12).fill(0), rechargedOut: new Array(12).fill(0) };
+    return out[ref];
+  };
+
+  (staff || []).forEach((p) => {
+    const employer = p.entity || "AFG-IOM";
+    const fromCcy  = entityCcy[employer] || "GBP";
+    const cost = phaseStaffCost({ ...p, region: p.region }, opts).total;
+
+    (p.recharges || []).forEach((r) => {
+      if (!r || !r.entity || !r.pct) return;
+      if (r.entity === employer) return;                  // recharging to itself is a no-op
+      const toCcy = entityCcy[r.entity] || "GBP";
+      for (let i = 0; i < 12; i++) {
+        const share = cost[i] * (Number(r.pct) / 100);
+        if (!share) continue;
+        touch(employer).rechargedOut[i] += share;                                  // employer's own currency
+        touch(r.entity).rechargedIn[i]  += convert(share, fromCcy, toCcy, rates);  // receiver's currency
+      }
+    });
+  });
+
+  Object.keys(out).forEach((k) => {
+    out[k].rechargedIn  = out[k].rechargedIn.map(r2);
+    out[k].rechargedOut = out[k].rechargedOut.map(r2);
+  });
+  return out;
+}
+
+// How much of a person is recharged away, and whether that is coherent.
+export function rechargeSummary(person) {
+  const total = (person.recharges || []).reduce((s, r) => s + (Number(r.pct) || 0), 0);
+  return {
+    pct: total,
+    retained: Math.max(0, 100 - total),
+    valid: total >= 0 && total <= 100,
+    warning: total > 100 ? "Recharges exceed 100% of this person's cost"
+           : total === 100 ? "Fully recharged — no cost retained by the employing company"
+           : null,
+  };
+}
+
 // ── Cost centre ownership ───────────────────────────────────────────────────
 // "Every income/cost centre needs to be allocated a business owner."
 export const COST_CENTRES = [
