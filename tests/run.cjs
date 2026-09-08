@@ -922,6 +922,50 @@ group("Wiring — the client lifecycle joins up");
   ok("the New entity form is wired to it", /modalSaves\.newEntity/.test(ea));
 }
 
+
+group("Accounting operations — the areas that had no interface");
+{
+  // The wiring audit found 77 unreachable functions. These areas had writers
+  // but no readers, which is why nobody built screens: you could post a client
+  // money receipt and have no way to see it.
+  const api = fs.readFileSync(path.join(SRC, "affinity_accounting_ops_api.js"), "utf8");
+  const ui  = fs.readFileSync(path.join(SRC, "affinity_core_accounting_ops.jsx"), "utf8");
+  const sh  = fs.readFileSync(path.join(SRC, "affinity_core_unified_v3.jsx"), "utf8");
+
+  ok("the module is reachable from the sidebar", /id:"accops"/.test(sh));
+  ok("...and has a route", /case "accops"/.test(sh));
+  ok("...and is in global search", /Accounting operations/.test(sh));
+
+  // Client money is the regulated one. The failure mode is specific: a pooled
+  // account balancing in total while one client is short.
+  ok("client money position is per client, not per account", /cmPosition/.test(api));
+  ok("shortfalls have their own function", /cmShortfalls/.test(api));
+  ok("the interface states why per-client matters",
+     /pooled account can balance in total/.test(ui));
+  ok("...and that remediation comes from the firm, never another client",
+     /never from another client/.test(ui));
+  ok("the client money tab carries a count so a shortfall cannot be missed",
+     /shortfalls\.length > 0/.test(ui));
+
+  // Auto-matching and preparing must not read as decisions.
+  ok("bank auto-match is described as proposing, not deciding",
+     /does not decide/.test(ui));
+  ok("preparing a VAT return is distinguished from posting it",
+     /Posting is a separate\s*\n?\s*act|posts nothing/.test(ui));
+
+  // A stalled schedule is the accrual nobody notices until the audit.
+  ok("stalled deferral schedules are flagged", /stalled/.test(ui));
+  ok("...with the reason stated", /misstatement/.test(ui));
+
+  // Every area must say why it is empty rather than showing a blank panel.
+  ok("empty states explain themselves", /Nothing to show/.test(ui));
+  ok("...and an empty ledger is not presented as a reconciled one",
+     /empty client money ledger is not the same/.test(ui));
+
+  ok("the module reports whether it is reading live data",
+     /Live data/.test(ui) && /No records returned/.test(ui));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

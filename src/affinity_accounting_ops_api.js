@@ -1,0 +1,129 @@
+// src/affinity_accounting_ops_api.js
+// ─────────────────────────────────────────────────────────────────────────────
+// ACCOUNTING OPERATIONS — client money, VAT, bank reconciliation, fixed
+// assets, accruals and prepayments.
+//
+// These areas had write functions in the database from the start but no read
+// functions and no interface, so nothing could reach them. db/066 added the
+// read layer; this exposes both halves to the application.
+//
+// Same { ok, data, error, live } contract as the other write modules.
+// ─────────────────────────────────────────────────────────────────────────────
+import { supabase, isConfigured } from "./affinity_accounting_supabase";
+
+async function call(fn, args) {
+  if (!isConfigured) {
+    return { ok: false, live: false, data: null,
+             error: "Not signed in — the database cannot be reached." };
+  }
+  try {
+    const { data, error } = await supabase.rpc(fn, args || {});
+    if (error) return { ok: false, live: true, data: null, error: clean(error.message) };
+    return { ok: true, live: true, data, error: null };
+  } catch (e) {
+    return { ok: false, live: false, data: null, error: String((e && e.message) || e) };
+  }
+}
+const clean = (m) => !m ? "That could not be completed."
+  : String(m).replace(/^ERROR:\s*/i, "").replace(/\s*CONTEXT:[\s\S]*$/i, "").trim();
+
+// ── Client money ────────────────────────────────────────────────────────────
+// The regulated one. A pooled account can balance in total while an individual
+// client is short — that is the breach, and it is what cmShortfalls finds.
+export const cmPosition   = (entityId) => call("cm_position", { p_entity: entityId ?? null });
+export const cmMovements  = (cmClientId, from, limit) =>
+  call("cm_movements", { p_cm_client: cmClientId ?? null, p_from: from || null,
+                         p_limit: limit || 200 });
+export const cmShortfalls = (entityId) => call("cm_shortfalls", { p_entity: entityId ?? null });
+export const cmBreaches   = (openOnly) => call("cm_breaches", { p_open_only: openOnly !== false });
+
+export const cmReceive = (r) => call("receive_client_money", {
+  p_cm_client: r.cmClientId, p_cm_account: r.accountId, p_date: r.date,
+  p_amount: r.amount, p_created_by: r.createdBy || null,
+});
+export const cmPay = (p) => call("pay_client_money", {
+  p_cm_client: p.cmClientId, p_cm_account: p.accountId, p_date: p.date,
+  p_amount: p.amount, p_desc: p.description || null, p_created_by: p.createdBy || null,
+});
+// Making good a shortfall from the firm's own money. This is the remedy a
+// regulator expects to see, and it must come from the firm's account, not
+// from another client's balance.
+export const cmRemediate = (r) => call("remediate_client_money_shortfall", {
+  p_recon_id: r.reconId, p_firm_entity: r.firmEntityId, p_firm_bank: r.firmBankId,
+  p_date: r.date, p_created_by: r.createdBy || null,
+});
+
+// ── VAT returns ─────────────────────────────────────────────────────────────
+export const vatReturnsList = (entityId, status) =>
+  call("vat_returns_list", { p_entity: entityId ?? null, p_status: status || null });
+// Prepares from the ledger for the period — it does not post anything.
+export const vatPrepare = (entityId, start, end) =>
+  call("prepare_vat_return", { p_entity_id: entityId, p_start: start, p_end: end });
+// Posting is separate, and is what commits the liability to the ledger.
+export const vatPost = (returnId, postDate, createdBy) =>
+  call("post_vat_return", { p_return_id: returnId, p_post_date: postDate,
+                            p_created_by: createdBy || null });
+
+// ── Bank reconciliation ─────────────────────────────────────────────────────
+export const bankStatementsList = (entityId) =>
+  call("bank_statements_list", { p_entity: entityId ?? null });
+export const bankUnmatched = (statementId) =>
+  call("bank_unmatched", { p_statement: statementId });
+// Auto-match proposes; it does not decide. Review the result before relying
+// on the reconciliation.
+export const bankAutoMatch = (statementId) =>
+  call("auto_match_statement", { p_statement_id: statementId });
+export const bankAutoMatchByRules = (statementId, createdBy) =>
+  call("auto_match_by_rules", { p_statement_id: statementId, p_created_by: createdBy || null });
+export const bankReconcile = (statementId) =>
+  call("bank_reconciliation", { p_statement_id: statementId });
+export const bankAddReconItem = (reconId, itemDate, description, amount) =>
+  call("add_recon_item", { p_recon_id: reconId, p_item_date: itemDate,
+                           p_description: description, p_amount: amount });
+
+// ── Fixed assets ────────────────────────────────────────────────────────────
+export const fixedAssetsList = (entityId, includeDisposed) =>
+  call("fixed_assets_list", { p_entity: entityId ?? null,
+                              p_include_disposed: !!includeDisposed });
+export const assetCapitalise = (a) => call("capitalise_asset", {
+  p_entity_id: a.entityId, p_description: a.description, p_category: a.category,
+  p_cost: a.cost, p_acquisition_date: a.acquisitionDate,
+  p_in_service_date: a.inServiceDate || a.acquisitionDate,
+  p_useful_life_months: a.usefulLifeMonths, p_created_by: a.createdBy || null,
+});
+export const assetDepreciation = (entityId, period) =>
+  call("run_depreciation", { p_entity_id: entityId, p_period: period });
+export const assetDispose = (assetId, disposalDate, proceeds, createdBy) =>
+  call("dispose_asset", { p_asset_id: assetId, p_disposal_date: disposalDate,
+                          p_proceeds: proceeds, p_created_by: createdBy || null });
+
+// ── Accruals, prepayments, deferred income ──────────────────────────────────
+export const deferralsList = (entityId, kind) =>
+  call("deferrals_list", { p_entity: entityId ?? null, p_kind: kind || null });
+export const createAccrual = (a) => call("create_accrual", {
+  p_entity: a.entityId, p_date: a.date, p_per_period: a.perPeriod,
+  p_expense_account: a.expenseAccountId, p_periods: a.periods,
+  p_created_by: a.createdBy || null,
+});
+export const createPrepayment = (p) => call("create_prepayment", {
+  p_entity: p.entityId, p_date: p.date, p_total: p.total,
+  p_expense_account: p.expenseAccountId, p_periods: p.periods,
+  p_created_by: p.createdBy || null,
+});
+export const runDeferredIncome = (entityId, period) =>
+  call("run_deferred_income", { p_entity_id: entityId, p_period: period });
+
+// ── The overview ────────────────────────────────────────────────────────────
+// What needs attention across every area, so the module opens on the work
+// rather than on a menu.
+export const accOpsOverview = (entityId) =>
+  call("acc_ops_overview", { p_entity: entityId ?? null });
+
+// Reference data the forms need.
+export const cmClients = () => call("cm_position", { p_entity: null });
+
+export const ASSET_CATEGORIES =
+  ["Office equipment", "Computer equipment", "Furniture and fittings",
+   "Leasehold improvements", "Motor vehicles", "Software"];
+export const DEFERRAL_KINDS = ["accrual", "prepayment", "deferred_income"];
+export const canWrite = () => isConfigured;

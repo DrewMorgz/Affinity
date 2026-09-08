@@ -3,6 +3,7 @@ import AffinityLoginPage from "./affinity_login_page";
 import { signOut as authSignOut } from "./affinity_auth";
 import Planning from "./affinity_core_planning";
 import Consolidation from "./affinity_core_consolidation";
+import AccountingOps from "./affinity_core_accounting_ops";
 import JurisdictionCompliance from "./affinity_core_jurisdiction_compliance";
 import Tasks from "./affinity_core_tasks";
 import Dashboard     from "./affinity_core_dashboard";
@@ -104,6 +105,7 @@ const NAV = [
     {id:"acc_assets",   label:"Assets & Groups", icon:"\uD83C\uDFE2",b:null},
     {id:"acc_report",   label:"Financial Reporting", icon:"\uD83D\uDCC8",b:null},
     {id:"planning",   label:"Planning",       icon:"\uD83D\uDCCA",b:null},
+    {id:"accops",     label:"Accounting ops", icon:"\u2696\uFE0F",b:null},
     {id:"consol",     label:"Consolidation",  icon:"\uD83C\uDFE2",b:null},
     {id:"acc_admin",    label:"Accounting admin",icon:"\u2699",b:null},
   ]},
@@ -284,6 +286,7 @@ const SEARCH_INDEX = [
   {type:"Module",  label:"Planning",                        sub:"Budget input, workflow, scenarios",mod:"planning"},
   {type:"Module",  label:"Consolidation",                   sub:"Group results, intercompany, runs",mod:"consol"},
   {type:"Module",  label:"Jurisdictions",                   sub:"Regulatory obligations by jurisdiction",mod:"jurisdiction"},
+  {type:"Module",  label:"Accounting operations",           sub:"Client money, VAT, bank rec, assets, accruals",mod:"accops"},
   {type:"Module",  label:"Reporting",                       sub:"MI & financial statements",       mod:"reporting"},
   {type:"Module",  label:"Procedures",                     sub:"Process library",                 mod:"procedures"},
   {type:"Module",  label:"Generate Document",              sub:"Templates & statutory forms",     mod:"generate"},
@@ -454,6 +457,7 @@ export default function AffinityCore(){
       case "budgeting":    return <Planning onNav={setMod} userName={user?.name||""}/>;  // Budgets retired into Planning
       case "reporting":    return <Reporting onNav={setMod} role={rbacRole} userName={user?.name||""}/>;
       case "planning":     return <Planning onNav={setMod} userName={user?.name||""}/>;
+      case "accops": return <AccountingOps onNav={setMod}/>;
       case "consol":       return <Consolidation onNav={setMod}/>;
       case "procedures":   return <Procedures/>;
       case "chatbot":      return <Chatbot/>;
