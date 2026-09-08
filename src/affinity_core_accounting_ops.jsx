@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import * as OPS from "./affinity_accounting_ops_api";
+import * as ME from "./affinity_monthend_api";
 import { isConfigured } from "./affinity_accounting_supabase";
 import EntitySearch from "./affinity_entity_search";
 
@@ -27,6 +28,7 @@ const TABS = [
   { id: "bank",      label: "Bank reconciliation" },
   { id: "assets",    label: "Fixed assets" },
   { id: "deferrals", label: "Accruals & prepayments" },
+  { id: "monthend",  label: "Month-end close" },
 ];
 
 const money = (v, ccy) => v == null || v === "" ? "—"
@@ -179,6 +181,11 @@ export default function AffinityAccountingOps({ onNav }) {
   const [statements, setStatements] = useState([]);
   const [assets, setAssets]       = useState([]);
   const [deferrals, setDeferrals] = useState([]);
+  const [checklist, setChecklist] = useState([]);
+  const [recons, setRecons]       = useState([]);
+  const [meEntity, setMeEntity]   = useState("");
+  const [mePeriod, setMePeriod]   = useState(new Date().toISOString().slice(0, 7));
+  const [meMsg, setMeMsg]         = useState("");
 
   // ── Load ──────────────────────────────────────────────────────────────────
   const load = async () => {
@@ -345,6 +352,190 @@ export default function AffinityAccountingOps({ onNav }) {
         { k: "periods",          label: "Release over (periods)", required: true },
         { k: "expenseAccountId", label: "Expense account id", required: true },
       ]},
+  };
+
+  const pill = (bg, fg) => ({ fontSize: 9.5, fontWeight: 600, padding: "2px 7px",
+                              borderRadius: 20, background: bg, color: fg,
+                              whiteSpace: "nowrap" });
+
+  // ── Month-end close ───────────────────────────────────────────────────────
+  // A checklist, not a dashboard. At month end the question is what has been
+  // done and what has not, and which of the outstanding items actually stops
+  // the period being closed.
+  const MonthEnd = () => {
+    const blocking = checklist.filter((c) => c.blocking && !c.done);
+    const todo     = checklist.filter((c) => !c.blocking && !c.done);
+    const selfSigned = recons.filter((r) => r.self_signed);
+
+    const loadMe = async () => {
+      if (!meEntity) { setMeMsg("Enter an entity id to run the checklist."); return; }
+      setMeMsg("");
+      const [cl, rc] = await Promise.all([
+        ME.monthEndChecklist(Number(meEntity), mePeriod),
+        ME.cmReconsList(null, 20),
+      ]);
+      if (!cl.live) {
+        setMeMsg("Not signed in — the checklist reads from the database and cannot be produced yet.");
+        return;
+      }
+      setChecklist(cl.data || []);
+      setRecons(rc.data || []);
+      if (!cl.ok) setMeMsg(cl.error);
+    };
+
+    return (
+      <div>
+        <div style={card}>
+          <div style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
+            <div>
+              <label style={{ display: "block", fontSize: 10.5, fontWeight: 600,
+                              color: "#555", marginBottom: 3 }}>Entity id</label>
+              <input value={meEntity} onChange={(e) => setMeEntity(e.target.value)}
+                     placeholder="e.g. 16"
+                     style={{ height: 32, width: 110, fontSize: 12, borderRadius: 6,
+                              border: "0.5px solid #ccc", padding: "0 8px" }} />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: 10.5, fontWeight: 600,
+                              color: "#555", marginBottom: 3 }}>Period</label>
+              <input type="month" value={mePeriod} onChange={(e) => setMePeriod(e.target.value)}
+                     style={{ height: 32, fontSize: 12, borderRadius: 6,
+                              border: "0.5px solid #ccc", padding: "0 8px" }} />
+            </div>
+            <button style={btn(true)} onClick={loadMe}>Run checklist</button>
+          </div>
+          {meMsg && (
+            <div style={{ marginTop: 12, padding: "9px 12px", borderRadius: 7, fontSize: 11.5,
+                          background: AMB_BG, border: "0.5px solid #E5CE9A", color: AMB }}>
+              {meMsg}
+            </div>
+          )}
+        </div>
+
+        {blocking.length > 0 && (
+          <div style={{ ...card, background: RED_BG, borderColor: "#f0c9c9" }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: RED, marginBottom: 8 }}>
+              THESE STOP THE PERIOD BEING CLOSED
+            </div>
+            {blocking.map((c, i) => (
+              <div key={i} style={{ fontSize: 12, color: RED, padding: "4px 0", lineHeight: 1.6 }}>
+                <strong>{c.step}</strong> — {c.detail}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {selfSigned.length > 0 && (
+          <div style={{ ...card, background: RED_BG, borderColor: "#f0c9c9" }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: RED, marginBottom: 6 }}>
+              {selfSigned.length} CLIENT MONEY RECONCILIATION(S) SIGNED OFF BY THEIR PREPARER
+            </div>
+            <div style={{ fontSize: 11.5, color: RED, lineHeight: 1.7 }}>
+              A reconciliation prepared and signed by the same person is the control a
+              regulator asks for evidence of. These predate the check now in place and need
+              reviewing.
+            </div>
+          </div>
+        )}
+
+        {checklist.length > 0 && (
+          <div style={card}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: MUT, marginBottom: 10,
+                          textTransform: "uppercase", letterSpacing: "0.4px" }}>
+              Checklist for {mePeriod}
+            </div>
+            <Table
+              cols={["", "Step", "Detail", "Outstanding"]}
+              rows={checklist}
+              render={(c, i) => (
+                <tr key={i} style={c.blocking && !c.done ? { background: RED_BG } : undefined}>
+                  <td style={td}>
+                    <span style={pill(c.done ? GRN_BG : c.blocking ? RED_BG : AMB_BG,
+                                      c.done ? GRN : c.blocking ? RED : AMB)}>
+                      {c.done ? "done" : c.blocking ? "blocks close" : "to do"}
+                    </span>
+                  </td>
+                  <td style={{ ...td, fontWeight: 600 }}>{c.step}</td>
+                  <td style={{ ...td, color: MUT, lineHeight: 1.5 }}>{c.detail}</td>
+                  <td style={num}>{c.due_count > 0 ? c.due_count : "—"}</td>
+                </tr>
+              )}
+            />
+            {todo.length === 0 && blocking.length === 0 && (
+              <div style={{ marginTop: 10, fontSize: 11.5, color: GRN, lineHeight: 1.7 }}>
+                Everything on the checklist is done. Note that this checks whether each step
+                has been RUN, not whether its output is right — a reconciliation that balances
+                is still worth reading.
+              </div>
+            )}
+          </div>
+        )}
+
+        <div style={card}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: MUT, marginBottom: 4,
+                        textTransform: "uppercase", letterSpacing: "0.4px" }}>
+            Client money reconciliations
+          </div>
+          <div style={{ fontSize: 11, color: MUT, marginBottom: 10, lineHeight: 1.7 }}>
+            Three differences, never merged into one. Internal is our book against the client
+            ledgers — our own records disagreeing. External is our book against the bank. A
+            shortfall means holding less than we owe, and is the reportable one. Sign-off is
+            refused to whoever prepared it, and refused outright while a shortfall stands.
+          </div>
+          <Table
+            cols={["Date", "Account", "Bank", "Book", "Client ledgers", "Internal diff",
+                   "External diff", "Shortfall", "Status", ""]}
+            rows={recons}
+            render={(r) => (
+              <tr key={r.id} style={Number(r.shortfall) > 0 ? { background: RED_BG }
+                                  : r.self_signed ? { background: AMB_BG } : undefined}>
+                <td style={td}>{fmtD(r.recon_date)}</td>
+                <td style={td}>{r.account_name || "—"}</td>
+                <td style={num}>{money(r.bank_balance)}</td>
+                <td style={num}>{money(r.book_balance)}</td>
+                <td style={num}>{money(r.client_ledger_total)}</td>
+                <td style={{ ...num, color: Number(r.internal_diff) !== 0 ? AMB : "#111" }}>
+                  {money(r.internal_diff)}
+                </td>
+                <td style={{ ...num, color: Number(r.external_diff) !== 0 ? AMB : "#111" }}>
+                  {money(r.external_diff)}
+                </td>
+                <td style={{ ...num, fontWeight: 700,
+                             color: Number(r.shortfall) > 0 ? RED : "#111" }}>
+                  {money(r.shortfall)}
+                </td>
+                <td style={td}>
+                  <span style={pill(r.status === "signed_off" ? GRN_BG : AMB_BG,
+                                    r.status === "signed_off" ? GRN : AMB)}>
+                    {r.status || "open"}
+                  </span>
+                  {r.self_signed && (
+                    <div style={{ ...pill(RED_BG, RED), marginTop: 3, display: "inline-block" }}>
+                      self-signed
+                    </div>
+                  )}
+                </td>
+                <td style={td}>
+                  {r.status !== "signed_off" && (
+                    <button style={btn(true)}
+                            title="Refused if you prepared it, or if a shortfall stands"
+                            onClick={async () => {
+                              const res = await ME.cmReconSignOff(r.id);
+                              if (res && res.ok) { loadMe(); return; }
+                              setMeMsg((res && res.error) || "That could not be signed off.");
+                            }}>
+                      Sign off
+                    </button>
+                  )}
+                </td>
+              </tr>
+            )}
+            empty={<Empty what="no client money reconciliations exist"
+                          why="A reconciliation compares the bank statement balance against the book balance and the sum of client ledgers." />}
+          />
+        </div>
+      </div>
+    );
   };
 
   // ── Shared styles ─────────────────────────────────────────────────────────
@@ -780,6 +971,7 @@ export default function AffinityAccountingOps({ onNav }) {
         {tab === "bank"        && <Bank />}
         {tab === "assets"      && <Assets />}
         {tab === "deferrals"   && <Deferrals />}
+        {tab === "monthend"    && <MonthEnd />}
       </div>
 
       <FormModal form={form} FORMS={FORMS} fv={fv} setF={setF} positions={positions}

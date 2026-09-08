@@ -1168,6 +1168,51 @@ group("Reports — ten engine functions that had no interface");
      /_id\$\|\^id\$/.test(ui));
 }
 
+
+group("Month-end close, and the client money sign-off control");
+{
+  const api = fs.readFileSync(path.join(SRC, "affinity_monthend_api.js"), "utf8");
+  const ui  = fs.readFileSync(path.join(SRC, "affinity_core_accounting_ops.jsx"), "utf8");
+  const sqlDir = path.join(SRC, "..", "db");
+  const sql = fs.readdirSync(sqlDir).filter((f) => f.endsWith(".sql"))
+    .map((f) => fs.readFileSync(path.join(sqlDir, f), "utf8")).join("\n");
+
+  ["month_end_checklist", "run_recurring_journals", "run_deferrals",
+   "run_fx_revaluation", "post_depreciation", "upsert_fx_rates",
+   "run_client_money_reconciliation", "cm_recons_list", "cm_recon_sign_off"]
+    .forEach((f) => ok(f + " is reachable", new RegExp('"' + f + '"').test(api)));
+
+  // sign_off_reconciliation refused an unremedied shortfall but let the
+  // preparer sign their own. Same gap as payment runs, on the regulated
+  // three-way reconciliation.
+  ok("a guarded sign-off wrapper exists",
+     /CREATE OR REPLACE FUNCTION cm_recon_sign_off/.test(sql));
+  ok("...refusing the preparer", /You prepared this reconciliation/.test(sql));
+  ok("...and the API points at the wrapper, not the engine's function",
+     /"cm_recon_sign_off"/.test(api) && !/"sign_off_reconciliation"/.test(api));
+  ok("reconciliations self-signed before the control are flagged",
+     /self_signed/.test(sql) && /self-signed/.test(ui));
+  ok("...with the reason stated", /regulator asks for/.test(ui));
+
+  // The three differences mean different things and must not be merged.
+  ok("internal, external and shortfall are separate columns",
+     /Internal diff/.test(ui) && /External diff/.test(ui) && /Shortfall/.test(ui));
+  ok("...and each is explained", /own records disagreeing/.test(ui));
+  ok("the bank balance is a parameter, not taken from our own books",
+     /comes from the statement/.test(api));
+
+  // The checklist distinguishes what blocks a close from what does not.
+  ok("blocking steps are separated from the rest",
+     /THESE STOP THE PERIOD BEING CLOSED/.test(ui));
+  ok("a locked period is blocking", /'Period open'::text/.test(sql));
+  ok("missing FX rates are blocking, since a revaluation cannot run",
+     /a revaluation cannot run/.test(sql));
+  ok("client money reconciliation is blocking where the entity holds it",
+     /client money account\(s\) with no signed-off reconciliation/.test(sql));
+  ok("an all-done checklist does not claim the output is correct",
+     /has been RUN, not whether its output is right/.test(ui));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
