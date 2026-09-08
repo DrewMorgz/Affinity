@@ -1127,6 +1127,47 @@ group("Consolidation — translation and non-controlling interests");
      && /functional currency differs/.test(ui));
 }
 
+
+group("Reports — ten engine functions that had no interface");
+{
+  const api = fs.readFileSync(path.join(SRC, "affinity_reports_api.js"), "utf8");
+  const ui  = fs.readFileSync(path.join(SRC, "affinity_core_reports.jsx"), "utf8");
+  const sh  = fs.readFileSync(path.join(SRC, "affinity_core_unified_v3.jsx"), "utf8");
+
+  ok("the module is reachable", /id:"reports"/.test(sh) && /case "reports"/.test(sh));
+
+  ["report_ar_aging", "report_ap_aging", "report_ar_overdue_interest",
+   "report_vat_by_jurisdiction", "report_dimension_pnl", "customer_statement_for",
+   "supplier_statement", "cash_flow_forecast", "rolling_forecast_summary",
+   "ic_overview"].forEach((f) =>
+    ok(f + " is called", new RegExp('"' + f + '"').test(api)));
+
+  // ic_overview was built in db/073 and left with no caller — my own orphan,
+  // the exact fault the wiring audit exists to find.
+  ok("the API records that ic_overview was an orphan", /my own orphan/.test(api));
+
+  // Reports must not run on mount: several need a date, rate or period, and
+  // figures produced from defaults nobody chose invite being believed.
+  ok("nothing runs automatically", !/useEffect\(\s*\(\)\s*=>\s*\{\s*run/.test(ui));
+  ok("the empty state explains why", /invite being believed/.test(ui));
+
+  // Caveats appear beside the parameters, before figures exist.
+  ok("overdue interest is framed as what could be charged",
+     /could<\/strong> be charged/.test(ui));
+  ok("...and not as a balance to collect", /balance to collect/.test(ui));
+  ok("the cash flow forecast states what it is built from",
+     /expected receipts and payments/.test(ui));
+  ok("the intercompany check states it cannot reconcile pair by pair",
+     /pair by pair/.test(ui));
+
+  // Money formatting is detected from the value, not a keyword list. A keyword
+  // list rendered a column called "total" as 8200 instead of 8,200.00.
+  ok("numeric columns are detected from the value",
+     /typeof sample\[k\] === "number"/.test(ui));
+  ok("...and ids are excluded so they are not formatted as money",
+     /_id\$\|\^id\$/.test(ui));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
