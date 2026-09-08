@@ -34,6 +34,136 @@ const money = (v, ccy) => v == null || v === "" ? "—"
       { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtD = (d) => d ? String(d).split("-").reverse().join("/") : "—";
 
+  // The form. One component for all of them, so every field is controlled and
+  // every refusal is surfaced the same way.
+// Declared at module level, NOT inside the component. Defined inside, every
+// keystroke created a new component type and React remounted the whole modal
+// subtree — the inputs appeared to work and the derived warning never updated.
+function FormModal({ form, FORMS, fv, setF, positions, formErr, saving,
+                   onCancel, onSubmit, wouldOverdraw, clientBalance, numOf, money,
+                   btn, NAVY, RED, RED_BG, GRN, GRN_BG, AMB, AMB_BG }) {
+  if (!form || !FORMS[form]) return null;
+  const def = FORMS[form];
+  const cmClients = positions.filter((p) => p.client_name);
+  const accounts  = positions.filter((p) => p.account_name)
+    .filter((p, i, a) => a.findIndex((x) => x.account_id === p.account_id) === i);
+  const overdraw = wouldOverdraw;
+  const bal = form === "cmPay" ? clientBalance(fv.cmClientId) : null;
+
+  return (
+    <div onClick={(e) => e.target === e.currentTarget && onCancel()}
+         style={{ position: "fixed", inset: 0, background: "rgba(0,18,66,0.45)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  zIndex: 1000, padding: 20 }}>
+      <div style={{ background: "#fff", borderRadius: 12, padding: "22px 24px",
+                    width: "min(560px, 100%)", maxHeight: "86vh", overflowY: "auto",
+                    boxShadow: "0 30px 60px rgba(0,0,0,0.25)" }}>
+        <div style={{ fontSize: 15, fontWeight: 600, color: NAVY, marginBottom: 16 }}>
+          {def.title}
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 14px" }}>
+          {def.fields.map((f) => (
+            <div key={f.k} style={{ gridColumn: f.full ? "1/-1" : "auto" }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 600,
+                              color: "#555", marginBottom: 4 }}>
+                {f.label}{f.required && <span style={{ color: RED }}> *</span>}
+              </label>
+              {f.type === "client" ? (
+                <select value={fv[f.k] || ""} onChange={(e) => setF(f.k, e.target.value)}
+                        style={{ width: "100%", height: 34, fontSize: 12.5, borderRadius: 6,
+                                 border: "0.5px solid #ccc", padding: "0 8px" }}>
+                  <option value="">Choose a client…</option>
+                  {cmClients.map((c) => (
+                    <option key={c.cm_client_id} value={c.cm_client_id}>
+                      {c.client_name} ({money(c.held, c.ccy)} held)
+                    </option>
+                  ))}
+                </select>
+              ) : f.type === "account" ? (
+                <select value={fv[f.k] || ""} onChange={(e) => setF(f.k, e.target.value)}
+                        style={{ width: "100%", height: 34, fontSize: 12.5, borderRadius: 6,
+                                 border: "0.5px solid #ccc", padding: "0 8px" }}>
+                  <option value="">Choose an account…</option>
+                  {accounts.map((a) => (
+                    <option key={a.account_id} value={a.account_id}>
+                      {a.account_name} ({a.ccy})
+                    </option>
+                  ))}
+                </select>
+              ) : f.type === "select" ? (
+                <select value={fv[f.k] || ""} onChange={(e) => setF(f.k, e.target.value)}
+                        style={{ width: "100%", height: 34, fontSize: 12.5, borderRadius: 6,
+                                 border: "0.5px solid #ccc", padding: "0 8px" }}>
+                  <option value="">—</option>
+                  {(f.opts || []).map((o) => <option key={o} value={o}>{o}</option>)}
+                </select>
+              ) : (
+                <input type={f.type === "date" ? "date" : "text"}
+                       value={fv[f.k] || ""} onChange={(e) => setF(f.k, e.target.value)}
+                       style={{ width: "100%", height: 34, fontSize: 12.5, borderRadius: 6,
+                                border: "0.5px solid #ccc", padding: "0 8px" }} />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* The balance this payment would leave. Overdrawing is allowed by
+            design and records a breach automatically — so the consequence is
+            stated BEFORE the payment, not discovered after it. */}
+        {form === "cmPay" && fv.cmClientId && (
+          <div style={{ marginTop: 14, padding: "10px 12px", borderRadius: 7, fontSize: 11.5,
+                        lineHeight: 1.7,
+                        background: overdraw ? RED_BG : GRN_BG,
+                        border: "0.5px solid " + (overdraw ? "#f0c9c9" : "#bfe0d2"),
+                        color: overdraw ? RED : GRN }}>
+            {bal != null && (
+              <div>Currently held for this client: <strong>{money(bal)}</strong></div>
+            )}
+            {overdraw ? (
+              <div style={{ marginTop: 5 }}>
+                <strong>This payment exceeds what is held for this client.</strong> It will
+                be recorded as a client money breach and will need remediating from the
+                firm's own money — not from another client's balance. Check you have the
+                right client before continuing.
+              </div>
+            ) : numOf(fv.amount) != null && (
+              <div style={{ marginTop: 5 }}>
+                Would leave <strong>{money(bal - numOf(fv.amount))}</strong> held.
+              </div>
+            )}
+          </div>
+        )}
+
+        {form === "vatPrepare" && (
+          <div style={{ marginTop: 14, padding: "10px 12px", borderRadius: 7, fontSize: 11.5,
+                        lineHeight: 1.7, background: AMB_BG, border: "0.5px solid #E5CE9A",
+                        color: AMB }}>
+            Preparing reads the ledger for the period and posts nothing. The return then has
+            to be posted separately, which is what commits the liability.
+          </div>
+        )}
+
+        {formErr && (
+          <div style={{ marginTop: 14, padding: "9px 12px", borderRadius: 7, fontSize: 11.5,
+                        lineHeight: 1.6, background: RED_BG, border: "0.5px solid #f0c9c9",
+                        color: RED }}>
+            {formErr}
+          </div>
+        )}
+
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 18 }}>
+          <button style={btn(false)} onClick={onCancel} disabled={saving}>Cancel</button>
+          <button style={{ ...btn(true), background: overdraw ? RED : CYAN }}
+                  onClick={onSubmit} disabled={saving}>
+            {saving ? "Saving…" : overdraw ? "Record anyway — creates a breach" : def.cta}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AffinityAccountingOps({ onNav }) {
   const [tab, setTab]       = useState("overview");
   const [entity, setEntity] = useState("");
@@ -78,6 +208,144 @@ export default function AffinityAccountingOps({ onNav }) {
   // Loads once on mount. load() is intentionally not a dependency — it is
   // recreated each render and would loop.
   useEffect(() => { load(); }, []);
+
+  // ── Entry forms ───────────────────────────────────────────────────────────
+  const [form, setForm]     = useState(null);   // which form is open
+  const [fv, setFv]         = useState({});     // its values
+  const [saving, setSaving] = useState(false);
+  const [formErr, setFormErr] = useState("");
+  const setF = (k, v) => setFv((p) => ({ ...p, [k]: v }));
+
+  const openForm = (id) => { setForm(id); setFv({}); setFormErr(""); };
+  const closeForm = () => { setForm(null); setFv({}); setFormErr(""); };
+
+  const today = () => new Date().toISOString().slice(0, 10);
+  const numOf = (v) => (v === "" || v == null ? null
+    : Number(String(v).replace(/[^0-9.\-]/g, "")) || null);
+
+  // The balance a client money payment would leave behind. Shown before the
+  // payment is made, because a payment that overdraws is allowed by design and
+  // records a breach — the person should know that before committing, not
+  // after.
+  const clientBalance = (cmClientId) => {
+    const p = positions.find((x) => String(x.cm_client_id) === String(cmClientId));
+    return p ? Number(p.held) : null;
+  };
+  const wouldOverdraw = () => {
+    if (form !== "cmPay") return false;
+    const bal = clientBalance(fv.cmClientId);
+    const amt = numOf(fv.amount);
+    return bal != null && amt != null && amt > bal;
+  };
+
+  const submitForm = async () => {
+    setSaving(true); setFormErr("");
+    let res;
+    try {
+      if (form === "cmReceive") {
+        res = await OPS.cmReceive({
+          cmClientId: fv.cmClientId, accountId: fv.accountId,
+          date: fv.date || today(), amount: numOf(fv.amount),
+        });
+      } else if (form === "cmPay") {
+        res = await OPS.cmPay({
+          cmClientId: fv.cmClientId, accountId: fv.accountId,
+          date: fv.date || today(), amount: numOf(fv.amount),
+          description: fv.description,
+        });
+      } else if (form === "assetCapitalise") {
+        res = await OPS.assetCapitalise({
+          entityId: numOf(fv.entityId), description: fv.description,
+          category: fv.category, cost: numOf(fv.cost),
+          acquisitionDate: fv.acquisitionDate || today(),
+          inServiceDate: fv.inServiceDate || fv.acquisitionDate || today(),
+          usefulLifeMonths: numOf(fv.usefulLifeMonths),
+        });
+      } else if (form === "assetDepreciation") {
+        res = await OPS.assetDepreciation(numOf(fv.entityId), fv.period);
+      } else if (form === "vatPrepare") {
+        res = await OPS.vatPrepare(numOf(fv.entityId), fv.periodStart, fv.periodEnd);
+      } else if (form === "accrual") {
+        res = await OPS.createAccrual({
+          entityId: numOf(fv.entityId), date: fv.date || today(),
+          perPeriod: numOf(fv.perPeriod), expenseAccountId: numOf(fv.expenseAccountId),
+          periods: numOf(fv.periods),
+        });
+      } else if (form === "prepayment") {
+        res = await OPS.createPrepayment({
+          entityId: numOf(fv.entityId), date: fv.date || today(),
+          total: numOf(fv.total), expenseAccountId: numOf(fv.expenseAccountId),
+          periods: numOf(fv.periods),
+        });
+      }
+    } catch (e) {
+      res = { ok: false, live: true, error: String((e && e.message) || e) };
+    }
+    setSaving(false);
+    if (res && res.ok) { closeForm(); load(); return; }
+    if (res && res.live === false) {
+      setFormErr("Not signed in — this cannot be saved yet.");
+      return;
+    }
+    setFormErr((res && res.error) || "That could not be saved.");
+  };
+
+  // Field definitions per form. Kept as data so every form gets the same
+  // controlled inputs and the same refusal handling.
+  const FORMS = {
+    cmReceive: { title: "Record a client money receipt", cta: "Record receipt",
+      fields: [
+        { k: "cmClientId", label: "Client", type: "client", required: true },
+        { k: "accountId",  label: "Client money account", type: "account", required: true },
+        { k: "date",       label: "Date received", type: "date" },
+        { k: "amount",     label: "Amount", required: true },
+      ]},
+    cmPay: { title: "Record a client money payment", cta: "Record payment",
+      fields: [
+        { k: "cmClientId",  label: "Client", type: "client", required: true },
+        { k: "accountId",   label: "Client money account", type: "account", required: true },
+        { k: "date",        label: "Date paid", type: "date" },
+        { k: "amount",      label: "Amount", required: true },
+        { k: "description", label: "What the payment is for", full: true, required: true },
+      ]},
+    assetCapitalise: { title: "Capitalise an asset", cta: "Capitalise",
+      fields: [
+        { k: "entityId",         label: "Entity id", required: true },
+        { k: "description",      label: "Description", full: true, required: true },
+        { k: "category",         label: "Category", type: "select", opts: OPS.ASSET_CATEGORIES },
+        { k: "cost",             label: "Cost", required: true },
+        { k: "acquisitionDate",  label: "Date acquired", type: "date" },
+        { k: "inServiceDate",    label: "In service from", type: "date" },
+        { k: "usefulLifeMonths", label: "Useful life (months)", required: true },
+      ]},
+    assetDepreciation: { title: "Run depreciation", cta: "Run",
+      fields: [
+        { k: "entityId", label: "Entity id", required: true },
+        { k: "period",   label: "Period (YYYY-MM)", required: true },
+      ]},
+    vatPrepare: { title: "Prepare a VAT return", cta: "Prepare",
+      fields: [
+        { k: "entityId",    label: "Entity id", required: true },
+        { k: "periodStart", label: "Period from", type: "date", required: true },
+        { k: "periodEnd",   label: "Period to", type: "date", required: true },
+      ]},
+    accrual: { title: "Create an accrual", cta: "Create",
+      fields: [
+        { k: "entityId",         label: "Entity id", required: true },
+        { k: "date",             label: "Start date", type: "date" },
+        { k: "perPeriod",        label: "Amount per period", required: true },
+        { k: "periods",          label: "Number of periods", required: true },
+        { k: "expenseAccountId", label: "Expense account id", required: true },
+      ]},
+    prepayment: { title: "Create a prepayment", cta: "Create",
+      fields: [
+        { k: "entityId",         label: "Entity id", required: true },
+        { k: "date",             label: "Start date", type: "date" },
+        { k: "total",            label: "Total amount", required: true },
+        { k: "periods",          label: "Release over (periods)", required: true },
+        { k: "expenseAccountId", label: "Expense account id", required: true },
+      ]},
+  };
 
   // ── Shared styles ─────────────────────────────────────────────────────────
   const th = { textAlign: "left", fontSize: 10, fontWeight: 600, color: "#fff",
@@ -220,9 +488,16 @@ export default function AffinityAccountingOps({ onNav }) {
       )}
 
       <div style={card}>
-        <div style={{ fontSize: 11, fontWeight: 600, color: MUT, marginBottom: 4,
-                      textTransform: "uppercase", letterSpacing: "0.4px" }}>
-          Position by client
+        <div style={{ display: "flex", justifyContent: "space-between",
+                      alignItems: "center", marginBottom: 4 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: MUT,
+                        textTransform: "uppercase", letterSpacing: "0.4px" }}>
+            Position by client
+          </div>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button style={btn(true)} onClick={() => openForm("cmReceive")}>＋ Receipt</button>
+            <button style={btn(false)} onClick={() => openForm("cmPay")}>＋ Payment</button>
+          </div>
         </div>
         <div style={{ fontSize: 11, color: MUT, marginBottom: 10, lineHeight: 1.6 }}>
           Per client, not per account. A pooled account can balance in total while an
@@ -282,8 +557,7 @@ export default function AffinityAccountingOps({ onNav }) {
                       textTransform: "uppercase", letterSpacing: "0.4px" }}>
           VAT returns
         </div>
-        <button style={btn(false)} disabled
-                title="Preparing a return needs the period and entity selecting first — wire the form before enabling">
+        <button style={btn(true)} onClick={() => openForm("vatPrepare")}>
           ＋ Prepare a return
         </button>
       </div>
@@ -348,9 +622,20 @@ export default function AffinityAccountingOps({ onNav }) {
   // ── Fixed assets ──────────────────────────────────────────────────────────
   const Assets = () => (
     <div style={card}>
-      <div style={{ fontSize: 11, fontWeight: 600, color: MUT, marginBottom: 10,
-                    textTransform: "uppercase", letterSpacing: "0.4px" }}>
-        Fixed asset register
+      <div style={{ display: "flex", justifyContent: "space-between",
+                    alignItems: "center", marginBottom: 10 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: MUT,
+                      textTransform: "uppercase", letterSpacing: "0.4px" }}>
+          Fixed asset register
+        </div>
+        <div style={{ display: "flex", gap: 6 }}>
+          <button style={btn(true)} onClick={() => openForm("assetCapitalise")}>
+            ＋ Capitalise an asset
+          </button>
+          <button style={btn(false)} onClick={() => openForm("assetDepreciation")}>
+            Run depreciation
+          </button>
+        </div>
       </div>
       <Table
         cols={["Entity", "Description", "Category", "Cost", "Depreciation", "Net book value",
@@ -392,9 +677,16 @@ export default function AffinityAccountingOps({ onNav }) {
           </div>
         )}
         <div style={card}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: MUT, marginBottom: 10,
-                        textTransform: "uppercase", letterSpacing: "0.4px" }}>
-            Accruals, prepayments and deferred income
+          <div style={{ display: "flex", justifyContent: "space-between",
+                        alignItems: "center", marginBottom: 10 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: MUT,
+                          textTransform: "uppercase", letterSpacing: "0.4px" }}>
+              Accruals, prepayments and deferred income
+            </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button style={btn(true)} onClick={() => openForm("accrual")}>＋ Accrual</button>
+              <button style={btn(false)} onClick={() => openForm("prepayment")}>＋ Prepayment</button>
+            </div>
           </div>
           <Table
             cols={["Entity", "Kind", "Description", "Total", "Per period", "Released",
@@ -489,6 +781,13 @@ export default function AffinityAccountingOps({ onNav }) {
         {tab === "assets"      && <Assets />}
         {tab === "deferrals"   && <Deferrals />}
       </div>
+
+      <FormModal form={form} FORMS={FORMS} fv={fv} setF={setF} positions={positions}
+                 formErr={formErr} saving={saving} onCancel={closeForm} onSubmit={submitForm}
+                 wouldOverdraw={wouldOverdraw()} clientBalance={clientBalance}
+                 numOf={numOf} money={money} btn={btn}
+                 NAVY={NAVY} RED={RED} RED_BG={RED_BG} GRN={GRN} GRN_BG={GRN_BG}
+                 AMB={AMB} AMB_BG={AMB_BG} />
     </div>
   );
 }

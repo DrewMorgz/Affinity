@@ -966,6 +966,43 @@ group("Accounting operations — the areas that had no interface");
      /Live data/.test(ui) && /No records returned/.test(ui));
 }
 
+
+group("Accounting operations — entry forms and the client money guard");
+{
+  const ui = fs.readFileSync(path.join(SRC, "affinity_core_accounting_ops.jsx"), "utf8");
+
+  // Forms exist for the write functions that had no way in.
+  ["cmReceive", "cmPay", "assetCapitalise", "assetDepreciation",
+   "vatPrepare", "accrual", "prepayment"].forEach((f) =>
+    ok("a form exists for " + f, new RegExp(f + ":\\s*\\{").test(ui)));
+
+  // The client money guard is the point of this module. Overdrawing is
+  // permitted by the database and records a breach automatically, so the form
+  // must state the consequence BEFORE the payment, not block it.
+  ok("the payment form shows what is currently held",
+     /Currently held for this client/.test(ui));
+  ok("...and the balance the payment would leave", /Would leave/.test(ui));
+  ok("an overdrawing payment is warned about", /exceeds what is held for this client/.test(ui));
+  ok("...says it will be recorded as a breach", /recorded as a client money breach/.test(ui));
+  ok("...names where remediation comes from", /firm's own money/.test(ui));
+  ok("...and warns against using another client's balance",
+     /not from another client/.test(ui));
+  ok("...and tells the user to check the client", /right client before continuing/.test(ui));
+  ok("the button changes to make the consequence explicit",
+     /Record anyway — creates a breach/.test(ui));
+  ok("but the payment is NOT blocked — the database allows it and records it",
+     !/disabled=\{overdraw/.test(ui));
+
+  // The client dropdown shows balances, so the wrong client is visibly wrong.
+  ok("the client list shows what each holds", /\(\{money\(c\.held, c\.ccy\)\} held\)/.test(ui));
+
+  // FormModal must stay at module level. Declared inside the component, every
+  // keystroke created a new component type, React remounted the subtree, and
+  // the derived warning never updated — which is exactly how this was broken.
+  ok("FormModal is declared at module level, not inside the component",
+     /^function FormModal\(/m.test(ui));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
