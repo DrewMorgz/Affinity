@@ -1369,6 +1369,71 @@ group("Demo data — kept, flagged, and manageable");
   ok("a summary reports demo against real", /demoDataSummary/.test(api));
 }
 
+
+group("Payroll rates and allocations — entered, locked, reopenable");
+{
+  const sqlDir = path.join(SRC, "..", "db");
+  const sql = fs.readdirSync(sqlDir).filter((f) => f.endsWith(".sql"))
+    .map((f) => fs.readFileSync(path.join(sqlDir, f), "utf8")).join("\n");
+
+  // Rates vary by jurisdiction and by year, so they are entered rather than
+  // derived — and effective-dated rather than edited, so a budget approved on
+  // one set of rates still produces those figures.
+  ok("rates are effective-dated", /effective_from\s+date NOT NULL/.test(sql));
+  ok("...and a locked rate cannot be edited in place",
+     /Enter a new rate effective from a later date/.test(sql));
+  ok("...with the reason: an approved budget must still produce its figures",
+     /must still produce them/.test(sql));
+  ok("the rate in force at a date is readable",
+     /CREATE OR REPLACE FUNCTION payroll_rate_at/.test(sql));
+
+  // The factor-of-100 trap. The old hardcoded values were FRACTIONS, so
+  // copying them across would make every payroll figure 100x too small — and a
+  // 0-to-100 range check does not catch 0.128, which is inside the range.
+  ok("a fraction entered as a percentage is caught",
+     /looks like a fraction rather than a percentage/.test(sql));
+  ok("...and a genuine nil rate is still allowed",
+     /If the rate really is nil, enter 0/.test(sql));
+  ok("a cap below the threshold is refused", /nothing would ever be due/.test(sql));
+
+  // Locking, and reopening with a reason.
+  ok("rates are agreed before they are locked",
+     /must be agreed before they are locked/.test(sql));
+  ok("reopening needs a reason", /Give a reason for reopening locked rates/.test(sql));
+  ok("...which is kept on the record", /Reopened ' \|\|/.test(sql));
+
+  // Allocations must total 100, or cost is lost or duplicated.
+  ok("an allocation short of 100% is refused at agreement",
+     /borne by nobody/.test(sql));
+  ok("...and one over 100% too", /charged twice/.test(sql));
+  ok("the running total is reported while building",
+     /is still unallocated/.test(sql));
+  ok("a locked allocation cannot be edited",
+     /Create a new one effective from a later date/.test(sql));
+  ok("jurisdictions with no rates at all are surfaced",
+     /CREATE OR REPLACE FUNCTION payroll_rate_gaps/.test(sql));
+}
+
+
+group("Jurisdiction compliance — regulator and licence");
+{
+  const j = fs.readFileSync(path.join(SRC, "affinity_core_jurisdiction_compliance.jsx"), "utf8");
+
+  // The regulator tile was hardcoded to CIMA or MFSA, from when only those two
+  // jurisdictions existed. IOM, Cyprus, UK and USA were added later, so Cyprus
+  // displayed "MFSA" — wrong, and wrong in a way that reads as authoritative.
+  ok("the regulator is read from the record, not hardcoded",
+     !/jur==="Cayman"\?"CIMA":"MFSA"/.test(j));
+  ok("...via a short form that never guesses", /shortRegulator/.test(j));
+
+  // Cyprus: Affinity is licensed by CySEC as an ASP for corporate services.
+  ok("the Cyprus CySEC licence is recorded",
+     /Licensed by CySEC as an Administrative Service Provider/.test(j));
+  ok("...and displayed rather than held as unused data", /Licence held/.test(j));
+  ok("the Cyprus obligation schedule is still marked outstanding",
+     /Obligation schedule still to be confirmed/.test(j));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

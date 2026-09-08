@@ -89,7 +89,12 @@ const JUR_INFO = {
     legislation: ["Companies Law Cap. 113", "Prevention and Suppression of Money Laundering Laws 2007-2021",
                   "Administrative Service Providers Law 2012", "Beneficial Ownership Register (Directive 2018/843)"],
     obligations: [],
-    pending: "New office. Obligation schedule and the ASP licensing position both need Compliance to confirm before this is relied on.",
+    // The ASP licensing position is now confirmed: Affinity is licensed by
+    // CySEC to provide corporate services, so the Cyprus office is a
+    // supervised Administrative Service Provider. The obligation schedule is
+    // still outstanding.
+    licence: "Licensed by CySEC as an Administrative Service Provider (corporate services)",
+    pending: "Obligation schedule still to be confirmed by Compliance. The CySEC ASP licence is confirmed.",
   },
   UK: {
     name: "United Kingdom",
@@ -133,6 +138,15 @@ export default function AffinityJurisdictionCompliance({ onNav }) {
   };
 
   const openPortal = () => outRun(() => OUT.openRegulatorPortal(data && data.name));
+
+  // The tile is narrow, so the acronym where the record gives one in brackets,
+  // otherwise the first part before a slash. Never a guess.
+  const shortRegulator = (full) => {
+    if (!full) return "—";
+    const m = full.match(/\(([A-Z]{3,8})\)/);
+    if (m) return m[1];
+    return full.split("/")[0].trim();
+  };
 
   const [liveJ,setLiveJ]=useState(null);
   useEffect(()=>{ if(!isConfigured) return; let ok=true; getDatasets("jur.").then(({data})=>{ if(ok&&data&&data.length){ const r=data.find(x=>x.dkey==="jur.info"); if(r)setLiveJ(r.data);} }).catch(()=>{}); return ()=>{ok=false;}; },[]);
@@ -209,7 +223,10 @@ export default function AffinityJurisdictionCompliance({ onNav }) {
                 { l:"Entities",         v:data.entities.length,                             c:CY },
                 { l:"Obligations overdue", v:obligations.filter(o=>o.status==="Overdue").length, c:"#EF4444" },
                 { l:"Issues flagged",   v:data.entities.reduce((s,e)=>s+e.issues,0),       c:"#F59E0B" },
-                { l:"Regulator",        v:jur==="Cayman"?"CIMA":"MFSA",                     c:"#666" },
+                // Read from the record, not hardcoded. This previously said
+                // CIMA or MFSA regardless, so Cyprus showed "MFSA" — wrong,
+                // and wrong in a way that reads as authoritative.
+                { l:"Regulator",        v:shortRegulator(data.regulator),                  c:"#666" },
               ].map(k=>(
                 <div key={k.l} style={{ background:"#f9f9f9", borderRadius:8, padding:"12px 14px" }}>
                   <div style={{ fontSize:10, color:"#666", marginBottom:4 }}>{k.l}</div>
@@ -217,6 +234,17 @@ export default function AffinityJurisdictionCompliance({ onNav }) {
                 </div>
               ))}
             </div>
+
+            {data.licence && (
+              <div style={{ background:"#E7F4EF", border:"0.5px solid #bfe0d2", borderRadius:8,
+                            padding:"10px 14px", marginBottom:16 }}>
+                <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase",
+                              letterSpacing:"0.4px", color:"#1F6F54", marginBottom:4 }}>
+                  Licence held
+                </div>
+                <div style={{ fontSize:12, color:"#1F6F54" }}>{data.licence}</div>
+              </div>
+            )}
 
             {overdueCount>0&&(
               <div style={{ background:"#FCEBEB22", border:"0.5px solid #EF4444", borderRadius:8, padding:"10px 14px", marginBottom:16 }}>

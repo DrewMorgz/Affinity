@@ -83,7 +83,7 @@ VALUES
                 'The Companies Act does not prescribe a framework. Accounts are commonly prepared under IFRS or US GAAP; the basis must be stated.'),
  ('CYPRUS-IFRS','IFRS as adopted by the EU (Cyprus)',
                 'European Union', 'Cypriot companies', false, NULL, true,
-                'Cyprus requires IFRS as adopted by the EU for all companies.'),
+                'Cyprus requires IFRS as adopted by the EU for all companies. Affinity is licensed by CySEC as an Administrative Service Provider, so the Cyprus office is under CySEC supervision for corporate services.'),
  ('US-GAAP',    'US GAAP',
                 'Financial Accounting Standards Board', 'US entities', false, NULL, true, NULL)
 ON CONFLICT (code) DO NOTHING;
