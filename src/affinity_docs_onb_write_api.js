@@ -260,3 +260,32 @@ export const eaResponsibilitiesSet = (entityId, r) => call("ea_responsibilities_
 export const eaReassignCaseload = (from, to, role) =>
   call("ea_reassign_caseload", { p_from: from, p_to: to, p_role: role || "administrator" });
 export const eaCaseload = (role) => call("ea_caseload", { p_role: role || "administrator" });
+
+// ── Entity creation and the onboarding handover (db/065) ───────────────────
+// Found by the wiring audit: there was NO way to create a client entity, and
+// an onboarding case could reach 'Live' without one ever existing.
+
+// Creates the entity and its profile row together — an entity without a
+// profile shows blank fields everywhere. Jurisdiction accepts either the name
+// ("Isle of Man") or the code ("IOM").
+export const eaEntityCreate = (e) => call("ea_entity_create", {
+  p_name: e.name, p_entity_class: e.entityClass || "client",
+  p_entity_type: e.entityType || "COMPANY", p_jurisdiction: e.jurisdiction || null,
+  p_ref: e.ref || null, p_ccy: e.ccy || "GBP", p_reg_no: e.regNo || null,
+  p_incorporation_date: e.incorporationDate || null, p_year_end: e.yearEnd || null,
+  p_business_activity: e.businessActivity || null, p_risk_rating: e.riskRating || null,
+  p_administrator: e.administrator || null, p_office: e.office || null,
+});
+
+// Not a delete: a client that has been administered leaves records that must
+// survive it. Refused while there is unbilled time, since closing then would
+// write off work already done.
+export const eaEntityClose = (entityId, reason, closedDate) =>
+  call("ea_entity_close", { p_entity: entityId, p_reason: reason,
+                            p_closed_date: closedDate || null });
+
+// Takes a signed-off case live: creates the entity, links the case to it, and
+// carries the verified CDD onto the client record. Still passes through the
+// CDD and risk-rating gates, so it cannot be used to go round them.
+export const onbCaseGoLive = (caseId, ref) =>
+  call("onb_case_go_live", { p_case: caseId, p_ref: ref || null });

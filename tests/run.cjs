@@ -886,6 +886,42 @@ group("There is a way to sign out");
   ok("it tells the service worker to drop its caches", /affinity-signed-out/.test(shell));
 }
 
+
+group("Wiring — the client lifecycle joins up");
+{
+  // A wiring audit found the most consequential gap so far: every register
+  // worked, but there was no way to create the entity they all hang off, and
+  // an onboarding case could reach 'Live' with no entity ever produced.
+  const sqlDir = path.join(SRC, "..", "db");
+  const sql = fs.readdirSync(sqlDir).filter((f) => f.endsWith(".sql"))
+    .map((f) => fs.readFileSync(path.join(sqlDir, f), "utf8")).join("\n");
+  const api = fs.readFileSync(path.join(SRC, "affinity_docs_onb_write_api.js"), "utf8");
+  const ea  = fs.readFileSync(path.join(SRC, "affinity_core_entity_admin.jsx"), "utf8");
+
+  ok("a client entity can be created", /CREATE OR REPLACE FUNCTION ea_entity_create/.test(sql));
+  ok("creating one also creates its profile row, so no field shows blank",
+     /ea_entity_create[\s\S]{0,4000}?INSERT INTO entity_profile/.test(sql));
+  ok("a duplicate name in the same jurisdiction is refused",
+     /already exists in %\. Check it is not a duplicate/.test(sql));
+  ok("an unknown jurisdiction names the valid options rather than failing on a foreign key",
+     /Unknown jurisdiction/.test(sql));
+  ok("onboarding going live creates the entity",
+     /onb_case_go_live[\s\S]{0,3000}?ea_entity_create/.test(sql));
+  ok("...links the case to it", /UPDATE onboarding_case SET entity_id/.test(sql));
+  ok("...carries the verified CDD onto the client record",
+     /onb_case_go_live[\s\S]{0,3000}?INSERT INTO entity_file_note/.test(sql));
+  ok("...and still passes through the CDD gates rather than going round them",
+     /onb_case_go_live[\s\S]{0,2000}?onb_case_advance/.test(sql));
+  ok("closing an entity is refused while time is unbilled",
+     /There is unbilled time against/.test(sql));
+  ok("an entity is closed rather than deleted, so its records survive",
+     /admin_status = 'Closed'/.test(sql) && !/DELETE FROM entity\b/.test(sql));
+
+  ok("the app exposes entity creation", /eaEntityCreate/.test(api));
+  ok("the app exposes the onboarding handover", /onbCaseGoLive/.test(api));
+  ok("the New entity form is wired to it", /modalSaves\.newEntity/.test(ea));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

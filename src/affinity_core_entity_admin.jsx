@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import * as DW from "./affinity_docs_onb_write_api";
 import * as OUT from "./affinity_output";
 import * as EW from "./affinity_entity_write_api";
 import { filterEntitiesByAccess } from "./affinity_core_rbac";
@@ -1251,6 +1252,23 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
   const entityDbId = (isConfigured && liveEnts && sel != null) ? sel : null;
 
   const modalSaves = {
+    // Creating a client. Found missing by the wiring audit: every register
+    // worked but nothing could create the entity they hang off.
+    // Creating a client. Found missing by the wiring audit: every register
+    // worked, but nothing could create the entity they all hang off.
+    newEntity: (v) => DW.eaEntityCreate({
+      name: v["Entity name"],
+      entityClass: "client",
+      entityType: v["Entity type"],
+      jurisdiction: v["Jurisdiction"],
+      regNo: v["Registration number"],
+      incorporationDate: toISO(v["Incorporated"] || v["Incorporation date"]),
+      yearEnd: v["Year end"],
+      businessActivity: v["Principal activity"] || v["Business activity"],
+      riskRating: v["Risk rating"],
+      administrator: v["Administrator"],
+      office: v["Office"],
+    }),
     director: (v) => EW.officerAdd(entityDbId, {
       name: v["Full legal name"], role: v["Role"],
       appointed: toISO(v["Date appointed"]), dob: toISO(v["Date of birth"]),
@@ -1596,6 +1614,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
             {label:"Year end",placeholder:"DD/MM"},
             {label:"Initial status",type:"select",opts:["Active","Pending incorporation","Dormant"]},
           ]}
+          onSave={modalSaves.newEntity}
           onClose={()=>setModal(null)}
         />
       )}
