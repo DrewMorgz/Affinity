@@ -5,6 +5,7 @@ import Planning from "./affinity_core_planning";
 import Consolidation from "./affinity_core_consolidation";
 import AccountingOps from "./affinity_core_accounting_ops";
 import Payables from "./affinity_core_payables";
+import Fiduciary from "./affinity_core_fiduciary";
 import JurisdictionCompliance from "./affinity_core_jurisdiction_compliance";
 import Tasks from "./affinity_core_tasks";
 import Dashboard     from "./affinity_core_dashboard";
@@ -108,6 +109,7 @@ const NAV = [
     {id:"planning",   label:"Planning",       icon:"\uD83D\uDCCA",b:null},
     {id:"accops",     label:"Accounting ops", icon:"\u2696\uFE0F",b:null},
     {id:"payables",   label:"Purchases & AR",  icon:"\uD83D\uDCE6",b:null},
+    {id:"fiduciary",  label:"Fiduciary reporting", icon:"\uD83C\uDFDB\uFE0F",b:null},
     {id:"consol",     label:"Consolidation",  icon:"\uD83C\uDFE2",b:null},
     {id:"acc_admin",    label:"Accounting admin",icon:"\u2699",b:null},
   ]},
@@ -290,6 +292,7 @@ const SEARCH_INDEX = [
   {type:"Module",  label:"Jurisdictions",                   sub:"Regulatory obligations by jurisdiction",mod:"jurisdiction"},
   {type:"Module",  label:"Accounting operations",           sub:"Client money, VAT, bank rec, assets, accruals",mod:"accops"},
   {type:"Module",  label:"Purchases & receivables",          sub:"Payment runs, expense claims, POs, credit control",mod:"payables"},
+  {type:"Module",  label:"Fiduciary reporting",              sub:"Trust accounting, statutory accounts, frameworks",mod:"fiduciary"},
   {type:"Module",  label:"Reporting",                       sub:"MI & financial statements",       mod:"reporting"},
   {type:"Module",  label:"Procedures",                     sub:"Process library",                 mod:"procedures"},
   {type:"Module",  label:"Generate Document",              sub:"Templates & statutory forms",     mod:"generate"},
@@ -462,6 +465,7 @@ export default function AffinityCore(){
       case "planning":     return <Planning onNav={setMod} userName={user?.name||""}/>;
       case "accops": return <AccountingOps onNav={setMod}/>;
       case "payables": return <Payables onNav={setMod}/>;
+      case "fiduciary": return <Fiduciary onNav={setMod}/>;
       case "consol":       return <Consolidation onNav={setMod}/>;
       case "procedures":   return <Procedures/>;
       case "chatbot":      return <Chatbot/>;

@@ -1041,6 +1041,51 @@ group("Purchases and receivables — controls made visible");
   ok("...with the reason stated", /should be a decision\s*\n?\s*rather than an oversight|decision rather than an oversight/.test(ui));
 }
 
+
+group("Fiduciary reporting — trust funds and statutory accounts");
+{
+  const api = fs.readFileSync(path.join(SRC, "affinity_fiduciary_api.js"), "utf8");
+  const ui  = fs.readFileSync(path.join(SRC, "affinity_core_fiduciary.jsx"), "utf8");
+  const sh  = fs.readFileSync(path.join(SRC, "affinity_core_unified_v3.jsx"), "utf8");
+
+  ok("the module is reachable from the sidebar", /id:"fiduciary"/.test(sh));
+  ok("...and has a route", /case "fiduciary"/.test(sh));
+
+  // TRUST: the income and capital funds must never be presented as one figure.
+  // A distribution from the wrong fund changes the beneficiary's entitlement.
+  ok("income and capital are separate columns",
+     /Income distributed/.test(ui) && /Capital distributed/.test(ui));
+  ok("the interface states they are never combined",
+     /two funds are never combined/.test(ui));
+  ok("...and why it matters", /determines each beneficiary's entitlement/.test(ui));
+  // the phrase wraps across a comment line, so the whitespace must be flexible
+  ok("a fund check per fund exists rather than a combined balance",
+     /trustFundCheck/.test(api) && /is there[\s\S]{0,12}enough in THAT fund/.test(api));
+  ok("beneficiary receipts are split by fund",
+     /income_received/.test(ui) && /capital_received/.test(ui));
+  ok("a missing apportionment is flagged", /not set/.test(ui));
+  ok("an unposted distribution is flagged", /not posted to the ledger/.test(ui));
+  ok("apportioning a shared expense is explicit, not defaulted",
+     /p_apportion: t\.apportion === true/.test(api));
+
+  // ACCOUNTS: the module must not present a finalisable set on an unverified
+  // basis, and must say why rather than appearing broken.
+  ok("the frameworks tab leads with what blocks filing",
+     /BEFORE ACCOUNTS CAN BE FILED/.test(ui));
+  ok("...and states that this is deliberate", /This is deliberate/.test(ui));
+  ok("...and why: directors sign a true and fair view",
+     /directors sign that they\s*\n?\s*give a true and fair view|give a true and fair view/.test(ui));
+  ok("frameworks with no presentation format are marked not filable",
+     /none — not filable/.test(ui));
+  ok("readiness is shown by category, not as one number",
+     /accountsReadiness/.test(api) && /g\.category/.test(ui));
+  ok("finalising is described as refused unless every gate passes",
+     /Refused unless every gate passes/.test(ui));
+  ok("approval requires naming the director", /p_director: director/.test(api));
+  ok("the API records that approval is refused to the preparer",
+     /Refused to the person who prepared/.test(api));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
