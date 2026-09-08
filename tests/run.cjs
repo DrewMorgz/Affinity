@@ -1003,6 +1003,44 @@ group("Accounting operations — entry forms and the client money guard");
      /^function FormModal\(/m.test(ui));
 }
 
+
+group("Purchases and receivables — controls made visible");
+{
+  const api = fs.readFileSync(path.join(SRC, "affinity_payables_api.js"), "utf8");
+  const ui  = fs.readFileSync(path.join(SRC, "affinity_core_payables.jsx"), "utf8");
+  const sh  = fs.readFileSync(path.join(SRC, "affinity_core_unified_v3.jsx"), "utf8");
+
+  ok("the module is reachable from the sidebar", /id:"payables"/.test(sh));
+  ok("...and has a route", /case "payables"/.test(sh));
+
+  // The wrappers exist because the engine's own approvals did not enforce
+  // segregation of duties. The API must point at the wrappers, never the
+  // engine's functions.
+  ok("approval goes through the guarded wrapper", /"pay_run_approve"/.test(api));
+  ok("...and expense claims too", /"expense_claim_approve"/.test(api));
+  ok("the engine's unguarded approvals are NOT called directly",
+     !/"approve_payment_run"/.test(api) && !/"approve_expense_claim"/.test(api));
+  ok("the API says why the wrappers exist", /did not enforce segregation/.test(api));
+
+  // Execution stays a separate act from approval.
+  ok("executing is separate from approving", /"pay_run_execute"/.test(api));
+  ok("the interface explains why they are separate",
+     /an approved run can still be\s*\n?\s*stopped|still be stopped before/.test(ui));
+  ok("executing asks for confirmation and states the amount",
+     /cannot be undone/.test(ui));
+
+  // Historic self-approvals must be surfaced, not hidden.
+  ok("self-approved runs are flagged in the row", /self-approved — review/.test(ui));
+  ok("...and claims approved by the claimant", /approved by the claimant — review/.test(ui));
+  ok("...and counted in the header", /self-approved to review/.test(ui));
+  ok("the reason is stated: closing the gate is not knowing what passed through",
+     /not the same as knowing what passed through/.test(ui));
+
+  // Credit control: over-limit is a decision, not an oversight.
+  ok("customers over their credit limit are flagged", /over limit/.test(ui));
+  ok("...with the reason stated", /should be a decision\s*\n?\s*rather than an oversight|decision rather than an oversight/.test(ui));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
