@@ -1263,6 +1263,60 @@ group("Fee transfers from client money, and intercompany writes");
      /TRANSFER PRICING EXPOSURE/.test(ui));
 }
 
+
+group("Accounts workflow, adjustments after approval, and approval thresholds");
+{
+  const sqlDir = path.join(SRC, "..", "db");
+  const sql = fs.readdirSync(sqlDir).filter((f) => f.endsWith(".sql"))
+    .map((f) => fs.readFileSync(path.join(sqlDir, f), "utf8")).join("\n");
+  const api = fs.readFileSync(path.join(SRC, "affinity_fiduciary_api.js"), "utf8");
+  const ui  = fs.readFileSync(path.join(SRC, "affinity_core_fiduciary.jsx"), "utf8");
+
+  // THE GAP: post_statutory_adjustment blocked a finalised set but not an
+  // APPROVED one, so a director could sign one set of figures and have
+  // different ones filed. Refusing outright would be wrong — audit adjustments
+  // genuinely arise after approval — so the adjustment withdraws the approval.
+  ok("an adjustment wrapper exists", /CREATE OR REPLACE FUNCTION accounts_adjust/.test(sql));
+  ok("...that withdraws an approval it invalidates",
+     /APPROVAL WITHDRAWN BY ADJUSTMENT/.test(sql));
+  ok("...returns the set to draft", /status = 'draft'/.test(sql));
+  ok("...regenerates the statements so they match the adjustment",
+     /accounts_set_generate_all\(p_set\)/.test(sql));
+  ok("...and requires a narrative", /an audit adjustment with no explanation/.test(sql));
+  ok("the interface warns before adjusting an approved set",
+     /will withdraw that approval/.test(ui));
+  ok("the API records why it does not simply refuse",
+     /genuinely arise\s*\n?\/\/ after approval|arise\s*\n?\/\/ after approval/.test(api)
+     || /audit adjustments genuinely arise/.test(api));
+
+  // The review step between preparing and approving.
+  ok("a submit-for-review step exists", /accounts_submit_for_review/.test(api));
+  ok("...and readiness is reported rather than enforced there",
+     /REPORTED here rather/.test(api));
+  ok("the interface offers it on a draft", /Submit for review/.test(ui));
+
+  // Year end: two gates the override cannot bypass.
+  ok("year end readiness is separate from closing",
+     /CREATE OR REPLACE FUNCTION year_end_readiness/.test(sql));
+  ok("draft journals block the close", /left out of the result rolled to reserves/.test(sql));
+  ok("client money shortfalls block the close",
+     /must be remediated before the year closes/.test(sql));
+  ok("...and the override cannot bypass those two",
+     /No draft journals in the year', 'No client money shortfalls'/.test(sql));
+  ok("advisory gates are distinguished from blocking ones",
+     /These are not blocking, but confirm before closing/.test(sql));
+
+  // Approval thresholds had no validation at all.
+  ok("a negative or null threshold is refused",
+     /The threshold must be zero or more/.test(sql));
+  ok("...saying what nil and null each mean",
+     /Zero means every journal needs approval/.test(sql));
+  ok("raising a threshold is audited as a loosening of control",
+     /APPROVAL THRESHOLD RAISED/.test(sql));
+  ok("entities with NO threshold are surfaced, not left blank",
+     /none_set/.test(sql) && /noneSet is surfaced/.test(api));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

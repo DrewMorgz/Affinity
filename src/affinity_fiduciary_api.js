@@ -186,3 +186,41 @@ export const cmFeeTransfer = (t) => call("cm_fee_transfer", {
   p_firm_entity: t.firmEntityId, p_firm_bank: t.firmBankId,
   p_invoice_id: t.invoiceId, p_date: t.date, p_amount: t.amount,
 });
+
+// ── Accounts workflow, adjustments and year end (db/077) ────────────────────
+
+// The step between preparing and approving. Readiness is REPORTED here rather
+// than enforced — a reviewer's job is partly to see what is outstanding.
+export const accountsSubmitForReview = (setId) =>
+  call("accounts_submit_for_review", { p_set: setId });
+
+// An audit adjustment. post_statutory_adjustment blocked a finalised set but
+// NOT an approved one, so a director could sign one set of figures and have
+// different ones filed.
+//
+// This does not refuse the adjustment — audit adjustments genuinely arise
+// after approval. It posts it, regenerates the statements, and WITHDRAWS THE
+// APPROVAL, so the director must see the adjusted accounts and approve those.
+// The returned note says so, and it is worth showing to the user verbatim.
+export const accountsAdjust = (setId, date, narrative, lines) =>
+  call("accounts_adjust", { p_set: setId, p_date: date, p_narrative: narrative,
+                            p_lines: lines });
+
+// ── Year end ────────────────────────────────────────────────────────────────
+export const yearEndReadiness = (entityId, fyStart, fyEnd) =>
+  call("year_end_readiness", { p_entity: entityId, p_fy_start: fyStart, p_fy_end: fyEnd });
+// Two gates are hard and the override cannot bypass them: draft journals in
+// the year, and client money shortfalls. The rest are advisory, because a year
+// can legitimately be closed before the accounts are signed.
+export const yearEndClose = (entityId, fyStart, fyEnd, override) =>
+  call("year_end_close", { p_entity: entityId, p_fy_start: fyStart, p_fy_end: fyEnd,
+                           p_override: override === true });
+
+// ── Journal approval thresholds ─────────────────────────────────────────────
+// An entity with no threshold recorded has no journal requiring approval at
+// all, which is why noneSet is surfaced rather than shown as a blank.
+export const approvalThresholdsList = () => call("approval_thresholds_list", {});
+// Refuses a negative or null threshold. Raising one is audited as a loosening
+// of control, because that is what it is.
+export const approvalThresholdSet = (entityId, threshold) =>
+  call("approval_threshold_set", { p_entity: entityId, p_threshold: threshold });

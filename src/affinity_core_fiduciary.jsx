@@ -329,6 +329,14 @@ export default function AffinityFiduciary({ onNav }) {
                     </button>
                   </>
                 )}
+                {selSet.status === "draft" && (
+                  <button style={btn(false)} disabled={busy}
+                          title="A reviewer sees the set before a director is asked to sign it"
+                          onClick={() => act(() => FID.accountsSubmitForReview(selSet.id),
+                                             "Submitted for review.")}>
+                    Submit for review
+                  </button>
+                )}
                 {selSet.status === "approved" && (
                   <button style={btn(true)} disabled={busy}
                           title="Locks the approved accounts"
@@ -340,6 +348,16 @@ export default function AffinityFiduciary({ onNav }) {
               </div>
             </div>
           </div>
+
+          {selSet.status === "approved" && (
+            <div style={{ ...card, background: AMB_BG, borderColor: "#E5CE9A" }}>
+              <div style={{ fontSize: 11.5, color: AMB, lineHeight: 1.7 }}>
+                <strong>Approved by {selSet.approved_by}.</strong> An audit adjustment posted
+                from here will withdraw that approval and return the set to draft — the
+                approval attaches to these figures, so changed figures need approving again.
+              </div>
+            </div>
+          )}
 
           {failed.length > 0 && (
             <div style={{ ...card, background: RED_BG, borderColor: "#f0c9c9" }}>
