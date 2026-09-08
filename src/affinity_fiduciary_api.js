@@ -84,19 +84,30 @@ export const accountsReadiness     = (setId) => call("accounts_set_readiness_ful
 export const accountMappingGaps    = (fsFramework, entityId) =>
   call("account_mapping_gaps", { p_fs_framework: fsFramework, p_entity: entityId ?? null });
 
-export const accountsSetCreate = (s) => call("accounts_set_create", {
+// db/074 consolidated two parallel accounts-production models onto
+// fs_accounts_set. These call the surviving functions; accounts_set_create,
+// accounts_set_finalise and accounts_set_approve were retired with the
+// duplicate table.
+//
+// THE WORKFLOW ORDER IS draft -> approved -> finalised. The directors approve
+// the accounts and finalisation locks them afterwards. Every readiness gate is
+// checked at APPROVAL, because a director should not be asked to sign a set
+// with outstanding disclosures.
+export const accountsSetOpen = (s) => call("accounts_set_open", {
   p_entity: s.entityId, p_framework: s.framework,
   p_period_start: s.periodStart, p_period_end: s.periodEnd,
   p_prior_start: s.priorStart || null, p_prior_end: s.priorEnd || null,
 });
 export const accountsGenerateAll = (setId) => call("accounts_set_generate_all", { p_set: setId });
 // Refused on any failed gate, and the message lists them all rather than the
-// first, so the remaining work can be planned.
-export const accountsFinalise    = (setId) => call("accounts_set_finalise", { p_set: setId });
-// Refused to the person who prepared the set. Requires naming the director,
-// because they are signing that the accounts give a true and fair view.
-export const accountsApprove     = (setId, director) =>
-  call("accounts_set_approve", { p_set: setId, p_director: director });
+// first, so the remaining work can be planned. Refused to the person who
+// prepared the set, and requires naming the director, because they are signing
+// that the accounts give a true and fair view.
+export const accountsApprove  = (setId, director) =>
+  call("accounts_approve", { p_set: setId, p_director: director });
+// Locks an approved set. Refused unless the set is approved and the trial
+// balance balances.
+export const accountsFinalise = (setId) => call("accounts_finalise", { p_set: setId });
 export const accountsNoteAdd = (n) => call("accounts_note_add", {
   p_set: n.setId, p_title: n.title, p_body: n.body || null,
   p_kind: n.kind || "note", p_note_number: n.noteNumber || null,

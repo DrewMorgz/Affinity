@@ -307,6 +307,10 @@ export default function AffinityFiduciary({ onNav }) {
                                 : selSet.status === "finalised" ? AMB : MUT)}>
                   {selSet.status}
                 </span>
+                {/* The order is draft -> approved -> finalised. The directors
+                    approve; finalisation locks afterwards. Every readiness gate
+                    is checked at APPROVAL, because a director should not be
+                    asked to sign a set with outstanding disclosures. */}
                 {selSet.status === "draft" && (
                   <>
                     <button style={btn(false)} disabled={busy}
@@ -315,12 +319,23 @@ export default function AffinityFiduciary({ onNav }) {
                       Regenerate
                     </button>
                     <button style={btn(true)} disabled={busy}
-                            title="Refused unless every gate passes"
-                            onClick={() => act(() => FID.accountsFinalise(selSet.id),
-                                               "Finalised.")}>
-                      Finalise
+                            title="Refused unless every gate passes, and refused if you prepared the set"
+                            onClick={() => {
+                              const d = window.prompt(
+                                "Which director is approving these accounts?\n\nThey are signing that the accounts give a true and fair view.");
+                              if (d) act(() => FID.accountsApprove(selSet.id, d), "Approved.");
+                            }}>
+                      Approve
                     </button>
                   </>
+                )}
+                {selSet.status === "approved" && (
+                  <button style={btn(true)} disabled={busy}
+                          title="Locks the approved accounts"
+                          onClick={() => act(() => FID.accountsFinalise(selSet.id),
+                                             "Finalised and locked.")}>
+                    Finalise
+                  </button>
                 )}
               </div>
             </div>

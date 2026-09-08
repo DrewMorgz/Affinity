@@ -1082,8 +1082,21 @@ group("Fiduciary reporting — trust funds and statutory accounts");
   ok("finalising is described as refused unless every gate passes",
      /Refused unless every gate passes/.test(ui));
   ok("approval requires naming the director", /p_director: director/.test(api));
-  ok("the API records that approval is refused to the preparer",
-     /Refused to the person who prepared/.test(api));
+  ok("approval names a director and goes through the guarded function",
+     /p_director: director/.test(api) && /accounts_approve/.test(api));
+  // db/074 consolidated two parallel accounts models whose workflows ran in
+  // OPPOSITE orders. The surviving order is approve then finalise; a
+  // regression to the other way round would let a director sign an unreviewed
+  // set, so it is asserted.
+  ok("the workflow order is approve then finalise",
+     /draft -> approved -> finalised/.test(api));
+  ok("...and the gates are checked at approval, not at finalisation",
+     /gates? is checked at APPROVAL|checked at APPROVAL/.test(api));
+  ok("the retired duplicate functions are not called",
+     !/"accounts_set_create"/.test(api) && !/"accounts_set_approve"/.test(api)
+     && !/"accounts_set_finalise"/.test(api));
+  ok("the interface only offers Finalise once approved",
+     /selSet\.status === "approved"[\s\S]{0,400}Finalise/.test(ui));
 }
 
 // ── report ─────────────────────────────────────────────────────────────────
