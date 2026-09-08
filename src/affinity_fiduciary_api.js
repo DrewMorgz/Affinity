@@ -150,3 +150,39 @@ export const NOTE_KINDS = [
 ];
 
 export const canWrite = () => isConfigured;
+
+
+// ── Intercompany and transfer pricing writes (db/076) ───────────────────────
+// Guarded wrappers. Each adds a check the engine's function lacks, and the
+// reason is in the refusal message rather than only in the code.
+export const icLoanDraw = (loanId, date, amount) =>
+  call("ic_loan_draw", { p_loan: loanId, p_date: date, p_amount: amount });
+export const icLoanRepay = (loanId, date, amount) =>
+  call("ic_loan_repay", { p_loan: loanId, p_date: date, p_amount: amount });
+// Refused on a nil-rate loan: a group loan at 0% is a transfer pricing
+// exposure, and accruing nothing on it silently keeps it invisible.
+export const icLoanAccrue = (loanId, date, days) =>
+  call("ic_loan_accrue", { p_loan: loanId, p_date: date, p_days: days });
+export const icSettle = (creditorId, debtorId, date, ccy, amount) =>
+  call("ic_settle", { p_creditor: creditorId, p_debtor: debtorId, p_date: date,
+                      p_ccy: ccy, p_amount: amount });
+// Refused where no policy records the markup — a charge with no documented
+// basis is the first thing asked for on a transfer pricing enquiry.
+export const tpChargePost = (fromId, toId, date, ccy, costBase, serviceType) =>
+  call("tp_charge_post", { p_from: fromId, p_to: toId, p_date: date, p_ccy: ccy,
+                           p_cost_base: costBase, p_service_type: serviceType });
+
+// ── Fee transfers from client money (db/076) ────────────────────────────────
+// What may be taken, before taking it: the lower of what the client holds and
+// what has been billed.
+export const cmFeeAvailable = (cmClientId, invoiceId) =>
+  call("cm_fee_available", { p_cm_client: cmClientId, p_invoice: invoiceId });
+// REFUSED, not merely recorded, where the client does not hold the money.
+// Unlike a payment the client instructed, a fee transfer is the firm helping
+// itself — taking more than is held means paying the firm out of another
+// client's money, and the bill can wait.
+export const cmFeeTransfer = (t) => call("cm_fee_transfer", {
+  p_cm_client: t.cmClientId, p_cm_account: t.accountId,
+  p_firm_entity: t.firmEntityId, p_firm_bank: t.firmBankId,
+  p_invoice_id: t.invoiceId, p_date: t.date, p_amount: t.amount,
+});

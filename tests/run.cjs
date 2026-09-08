@@ -1213,6 +1213,56 @@ group("Month-end close, and the client money sign-off control");
      /has been RUN, not whether its output is right/.test(ui));
 }
 
+
+group("Fee transfers from client money, and intercompany writes");
+{
+  const sqlDir = path.join(SRC, "..", "db");
+  const sql = fs.readdirSync(sqlDir).filter((f) => f.endsWith(".sql"))
+    .map((f) => fs.readFileSync(path.join(sqlDir, f), "utf8")).join("\n");
+  const fid = fs.readFileSync(path.join(SRC, "affinity_fiduciary_api.js"), "utf8");
+  const pay = fs.readFileSync(path.join(SRC, "affinity_payables_api.js"), "utf8");
+  const ui  = fs.readFileSync(path.join(SRC, "affinity_core_payables.jsx"), "utf8");
+
+  // THE KEY CONTROL. transfer_fee_from_client_money recorded a breach after the
+  // fact. For a fee transfer that is wrong: unlike a client-instructed payment,
+  // the firm is helping itself, and taking more than is held means paying the
+  // firm out of another client's money. It is REFUSED, not recorded.
+  ok("a guarded fee transfer exists", /CREATE OR REPLACE FUNCTION cm_fee_transfer/.test(sql));
+  ok("...refusing a transfer the client cannot cover",
+     /Cannot take % from %/.test(sql));
+  ok("...and saying whose money it would be",
+     /another client''s money/.test(sql));
+  ok("...and what to do instead", /Bill the client and wait for funds/.test(sql));
+  ok("what may be taken is readable before taking it",
+     /CREATE OR REPLACE FUNCTION cm_fee_available/.test(sql));
+  ok("...as the lower of held and billed", /LEAST\(/.test(sql));
+  ok("the API points at the guarded wrapper",
+     /"cm_fee_transfer"/.test(fid) && !/"transfer_fee_from_client_money"/.test(fid));
+
+  // Intercompany writes, each adding a check the engine lacked.
+  ok("drawing beyond the facility is refused", /against a facility of/.test(sql));
+  ok("...with the reason: the agreement would not describe what happened",
+     /will not describe what happened/.test(sql));
+  ok("accruing on a nil-rate group loan is refused",
+     /nothing to accrue/.test(sql));
+  ok("...naming it as a transfer pricing exposure",
+     /transfer pricing exposure/.test(sql));
+  ok("an entity cannot settle with itself", /cannot settle with itself/.test(sql));
+  ok("a TP charge with no policy is refused",
+     /no transfer pricing policy for/.test(sql));
+  ok("...because an undocumented basis is what an enquiry asks for",
+     /transfer pricing enquiry/.test(sql));
+
+  // The group total is the only valid reconciliation on this schema.
+  ok("the interface shows the group total", /GROUP INTERCOMPANY TOTAL/.test(ui));
+  ok("...and says a non-nil total breaks consolidation",
+     /consolidation will not eliminate/.test(ui));
+  ok("...and records why pair-by-pair is impossible here",
+     /no\s*\n?\s*counterparty|records no counterparty/.test(pay));
+  ok("nil-rate loans and nil markups are surfaced as exposure",
+     /TRANSFER PRICING EXPOSURE/.test(ui));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

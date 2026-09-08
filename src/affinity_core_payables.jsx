@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import * as OPS from "./affinity_accounting_ops_api";
 import * as PAY from "./affinity_payables_api";
+import * as FID from "./affinity_fiduciary_api";
 import { isConfigured } from "./affinity_accounting_supabase";
 import EntitySearch from "./affinity_entity_search";
 
@@ -27,6 +28,7 @@ const TABS = [
   { id: "claims",    label: "Expense claims" },
   { id: "orders",    label: "Purchase orders" },
   { id: "credit",    label: "Credit control" },
+  { id: "interco",   label: "Intercompany" },
 ];
 
 const money = (v, ccy) => v == null || v === "" ? "—"
@@ -47,6 +49,10 @@ export default function AffinityPayables({ onNav }) {
   const [claims, setClaims]     = useState([]);
   const [orders, setOrders]     = useState([]);
   const [credit, setCredit]     = useState([]);
+  const [icBal, setIcBal]       = useState([]);
+  const [icLoans, setIcLoans]   = useState([]);
+  const [tpPol, setTpPol]       = useState([]);
+  const [icMsg, setIcMsg]       = useState("");
 
   const load = async () => {
     setBusy(true); setMsg("");
@@ -124,6 +130,128 @@ export default function AffinityPayables({ onNav }) {
   );
 
   const selfApproved = [...runs, ...claims].filter((x) => x.self_approved);
+
+  // ── Intercompany ──────────────────────────────────────────────────────────
+  // The read layer was added in db/073 and the writes in db/076. The check
+  // that matters is the group total: intercompany balances must eliminate to
+  // nil, and a non-nil total means something is posted on one side only.
+  // This cannot reconcile pair by pair, because postings record no
+  // counterparty — that is a schema gap, not a display choice.
+  const Intercompany = () => {
+    const total = icBal.find((b) => b.is_group_total);
+    const nilRate = icLoans.filter((l) => l.no_interest_rate);
+    const noMarkup = tpPol.filter((p) => p.no_markup);
+
+    const loadIc = async () => {
+      setIcMsg("");
+      // No defensive guards on these calls. A missing function would make the
+      // feature silently inert, which is harder to notice than an error.
+      const [b, l, p] = await Promise.all([
+        PAY.icBalances(null), PAY.icLoansList(null), PAY.tpPoliciesList(null),
+      ]);
+      if (!b.live && !l.live && !p.live) {
+        setIcMsg("Not signed in — these figures come from the database and cannot be read yet.");
+        return;
+      }
+      setIcBal(b.data || []); setIcLoans(l.data || []); setTpPol(p.data || []);
+    };
+
+    return (
+      <div>
+        <div style={card}>
+          <button style={btn(true)} onClick={loadIc}>Load intercompany position</button>
+          {icMsg && (
+            <div style={{ marginTop: 12, padding: "9px 12px", borderRadius: 7, fontSize: 11.5,
+                          background: AMB_BG, border: "0.5px solid #E5CE9A", color: AMB }}>
+              {icMsg}
+            </div>
+          )}
+        </div>
+
+        {total && (
+          <div style={{ ...card,
+                        background: Number(total.ic_balance) === 0 ? GRN_BG : RED_BG,
+                        borderColor: Number(total.ic_balance) === 0 ? "#bfe0d2" : "#f0c9c9" }}>
+            <div style={{ fontSize: 12, fontWeight: 700,
+                          color: Number(total.ic_balance) === 0 ? GRN : RED, marginBottom: 6 }}>
+              GROUP INTERCOMPANY TOTAL: {money(total.ic_balance)}
+            </div>
+            <div style={{ fontSize: 11.5, lineHeight: 1.7,
+                          color: Number(total.ic_balance) === 0 ? GRN : RED }}>
+              {Number(total.ic_balance) === 0
+                ? "Balances eliminate to nil, as they must."
+                : "This must be nil. A non-nil total means something is posted on one side and not the other, and consolidation will not eliminate it."}
+            </div>
+          </div>
+        )}
+
+        {(nilRate.length > 0 || noMarkup.length > 0) && (
+          <div style={{ ...card, background: AMB_BG, borderColor: "#E5CE9A" }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: AMB, marginBottom: 6 }}>
+              TRANSFER PRICING EXPOSURE
+            </div>
+            <div style={{ fontSize: 11.5, color: AMB, lineHeight: 1.8 }}>
+              {nilRate.length > 0 && (
+                <div>{nilRate.length} group loan(s) carry no interest rate — a tax authority
+                will impute one.</div>
+              )}
+              {noMarkup.length > 0 && (
+                <div>{noMarkup.length} policy(ies) apply no markup, which is not what an
+                independent party would charge.</div>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div style={card}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: MUT, marginBottom: 10,
+                        textTransform: "uppercase", letterSpacing: "0.4px" }}>
+            Balances by entity
+          </div>
+          <Table
+            cols={["Entity", "Intercompany balance", "Postings"]}
+            rows={icBal.filter((b) => !b.is_group_total)}
+            render={(b, i) => (
+              <tr key={i}>
+                <td style={{ ...td, fontWeight: 600 }}>{b.entity_name}</td>
+                <td style={num}>{money(b.ic_balance, b.ccy)}</td>
+                <td style={num}>{b.postings}</td>
+              </tr>
+            )}
+            empty={<Empty what="nothing loaded yet"
+                          why="Press Load to read the intercompany position from the ledger." />}
+          />
+        </div>
+
+        <div style={card}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: MUT, marginBottom: 10,
+                        textTransform: "uppercase", letterSpacing: "0.4px" }}>
+            Intercompany loans
+          </div>
+          <Table
+            cols={["Lender", "Borrower", "Facility", "Drawn", "Headroom", "Rate", "Interest accrued"]}
+            rows={icLoans}
+            render={(l) => (
+              <tr key={l.id} style={l.no_interest_rate ? { background: AMB_BG } : undefined}>
+                <td style={td}>{l.lender}</td>
+                <td style={td}>{l.borrower}</td>
+                <td style={num}>{money(l.facility, l.ccy)}</td>
+                <td style={num}>{money(l.drawn)}</td>
+                <td style={num}>{money(l.headroom)}</td>
+                <td style={num}>
+                  {l.no_interest_rate
+                    ? <span style={pill(AMB_BG, AMB)}>no rate</span>
+                    : Number(l.interest_rate).toFixed(2) + "%"}
+                </td>
+                <td style={num}>{money(l.interest_accrued)}</td>
+              </tr>
+            )}
+            empty={<Empty what="no intercompany loans exist" />}
+          />
+        </div>
+      </div>
+    );
+  };
 
   // ── Attention ─────────────────────────────────────────────────────────────
   const Overview = () => {
@@ -448,6 +576,7 @@ export default function AffinityPayables({ onNav }) {
         {tab === "claims"   && <Claims />}
         {tab === "orders"   && <Orders />}
         {tab === "credit"   && <Credit />}
+        {tab === "interco" && <Intercompany />}
       </div>
     </div>
   );

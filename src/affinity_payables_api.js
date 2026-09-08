@@ -78,3 +78,15 @@ export const collectionActionLog = (a) => call("log_collection_action", {
 });
 
 export const canWrite = () => isConfigured;
+
+// ── Intercompany (db/073 read layer, db/076 writes) ────────────────────────
+// The group total is the check that matters: intercompany balances must
+// eliminate to nil. This cannot reconcile pair by pair because postings record
+// no counterparty, which is a schema gap rather than a display choice.
+export const icBalances = (asAt) => call("ic_balances", { p_as_at: asAt ?? null });
+export const icLoansList = (entityId) => call("ic_loans_list", { p_entity: entityId ?? null });
+export const tpPoliciesList = (entityId) => call("tp_policies_list", { p_entity: entityId ?? null });
+export const icSettlementsList = (entityId, limit) =>
+  call("ic_settlements_list", { p_entity: entityId ?? null, p_limit: limit || 100 });
+export const tpUndocumentedCharges = (entityId) =>
+  call("tp_undocumented_charges", { p_entity: entityId ?? null });
