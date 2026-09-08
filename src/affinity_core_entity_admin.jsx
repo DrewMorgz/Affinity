@@ -452,7 +452,10 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
       if (!ok || !data || !data.length) return;
       const mapped = data.map((r) => {
         const demo = ENTITIES.find((e) => e.ref === r.ref) || {};
-        return { ...demo, id: r.id, ref: r.ref, name: r.name, type: r.entity_type, jur: r.jurisdiction,
+        // is_demo comes from the DATABASE, not from whether a bundled record
+        // happens to share the reference — a real client migrated under a
+        // reference the sample set also used must not inherit the flag.
+        return { ...demo, is_demo: r.is_demo, id: r.id, ref: r.ref, name: r.name, type: r.entity_type, jur: r.jurisdiction,
                  status: r.admin_status, risk: r.risk_rating, incorporated: fmtD(r.incorporation_date), entityClass: r.entity_class };
       });
       setLiveEnts(mapped);
@@ -507,6 +510,12 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
     const k=(e.entityClass||"client")==="group"?"group":"client"; a[k]=(a[k]||0)+1; return a;
   },{client:0,group:0}),[ents]);
 
+  // Anything from the bundled ENTITIES constant is the preview dataset, which
+  // is sample data by definition. Flagged here so the badge shows in preview
+  // too — previously preview and live records looked identical on screen.
+  // A bundled record has no is_demo from the database, and everything in the
+  // bundled set IS sample data — so absent means demo rather than unknown.
+  // Defaulting the other way would show preview records as real clients.
   const baseEntity = ents.find(e=>e.id===sel);
   const entity = (det && det.profile)
     ? { ...baseEntity, regNo:det.profile.reg_no, yearEnd:det.profile.year_end, principalActivity:det.profile.business_activity,
@@ -1490,6 +1499,15 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
                   <div>
                     <div style={{ fontSize:16, fontWeight:600, marginBottom:4 }}>{entity.name}</div>
                     <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                      {/* First in the row deliberately. Demo records sit in the
+                          same register as real clients, and the realistic
+                          failure is a real filing or real time recorded against
+                          sample data — so this has to be read before anything
+                          else on the entity. */}
+                      {(entity.is_demo || !liveEnts || !liveEnts.length) && (
+                        <Badge label="DEMO DATA — NOT A REAL CLIENT"
+                               colors={{ bg:"#FDF4DC", color:"#7B4F1D" }} />
+                      )}
                       <Badge label={entity.ref} colors={{ bg:"var(--bg-secondary,#f9f9f9)", color:"var(--text-secondary,#666)" }} />
                       {(entity.entityClass||"client")==="group"
                         ? <Badge label="Internal — Affinity Group" colors={{ bg:"#EAF0FB", color:"#274690" }} />

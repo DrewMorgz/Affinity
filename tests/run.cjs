@@ -914,8 +914,14 @@ group("Wiring — the client lifecycle joins up");
      /onb_case_go_live[\s\S]{0,2000}?onb_case_advance/.test(sql));
   ok("closing an entity is refused while time is unbilled",
      /There is unbilled time against/.test(sql));
-  ok("an entity is closed rather than deleted, so its records survive",
-     /admin_status = 'Closed'/.test(sql) && !/DELETE FROM entity\b/.test(sql));
+  // db/078 does delete DEMO entities, guarded by the is_demo flag. The
+  // principle here is about REAL clients: they are closed, not deleted,
+  // because the records must survive the relationship. Narrowed to that.
+  ok("a real entity is closed rather than deleted, so its records survive",
+     /admin_status = 'Closed'/.test(sql));
+  ok("...and the only entity delete is the demo-guarded one",
+     (sql.match(/DELETE FROM entity WHERE/g) || []).length === 1
+     && /is not flagged as demo data/.test(sql));
 
   ok("the app exposes entity creation", /eaEntityCreate/.test(api));
   ok("the app exposes the onboarding handover", /onbCaseGoLive/.test(api));
@@ -1315,6 +1321,52 @@ group("Accounts workflow, adjustments after approval, and approval thresholds");
      /APPROVAL THRESHOLD RAISED/.test(sql));
   ok("entities with NO threshold are surfaced, not left blank",
      /none_set/.test(sql) && /noneSet is surfaced/.test(api));
+}
+
+
+group("Demo data — kept, flagged, and manageable");
+{
+  const sqlDir = path.join(SRC, "..", "db");
+  const sql = fs.readdirSync(sqlDir).filter((f) => f.endsWith(".sql"))
+    .map((f) => fs.readFileSync(path.join(sqlDir, f), "utf8")).join("\n");
+  const api = fs.readFileSync(path.join(SRC, "affinity_entity_write_api.js"), "utf8");
+  const ea  = fs.readFileSync(path.join(SRC, "affinity_core_entity_admin.jsx"), "utf8");
+
+  // The sample entities stay so the system can be shown, but they sit in the
+  // same register as real clients. The realistic failure is a real filing or
+  // real time recorded against sample data.
+  ok("entities carry a demo flag", /ADD COLUMN IF NOT EXISTS is_demo/.test(sql));
+  ok("the flag is visible on the entity", /DEMO DATA — NOT A REAL CLIENT/.test(ea));
+  ok("...and the preview dataset is flagged too, since it is sample data",
+     /!liveEnts \|\| !liveEnts\.length/.test(ea));
+  ok("demo names are prefixed, for exports that do not know about the flag",
+     /\[DEMO\] /.test(sql));
+
+  // Removal is only safe if it cannot reach a real record.
+  ok("removal refuses anything not flagged as demo",
+     /is not flagged as demo data/.test(sql));
+  ok("...and says to close a real client rather than delete it",
+     /close it rather than delete it/.test(sql));
+  ok("the table list is derived from the schema, not hand-written",
+     /column_name = 'entity_id'/.test(sql));
+  ok("posted journals are left alone", /would unbalance the ledger/.test(sql));
+  ok("onboarding cases survive the entity they produced",
+     /SET entity_id = NULL WHERE entity_id = p_entity/.test(sql));
+
+  // Flagging a real entity AS demo makes it deletable — the dangerous
+  // direction.
+  ok("flagging an entity with work against it as demo is refused",
+     /flagging it would make it deletable/.test(sql));
+
+  // Clearing everything takes a typed phrase, not a boolean.
+  ok("clearing all demo data needs an exact confirmation",
+     /REMOVE DEMO DATA/.test(sql));
+  ok("...and the reason is stated", /misplaced word/.test(sql));
+
+  ok("the API exposes add, remove, clear and flag",
+     /demoEntityAdd/.test(api) && /demoEntityRemove/.test(api)
+     && /demoDataClear/.test(api) && /demoFlagSet/.test(api));
+  ok("a summary reports demo against real", /demoDataSummary/.test(api));
 }
 
 // ── report ─────────────────────────────────────────────────────────────────

@@ -146,3 +146,33 @@ export const WRITABLE_REGISTERS = [
   "assets", "dividends", "meetings", "addresses", "notes", "safe", "services",
 ];
 export const canWrite = (register) => isConfigured && WRITABLE_REGISTERS.includes(register);
+
+// ── Demo data (db/078) ──────────────────────────────────────────────────────
+// The sample entities stay so the system can be shown and staff can practise,
+// but they sit in the same register as real client records. Every demo record
+// carries a flag AND a "[DEMO]" name prefix — the flag for anything that reads
+// it, the prefix for any export or report that does not.
+//
+// The realistic failure this guards against is not abstract confusion. It is a
+// real return filed against a demo entity, or real time recorded against one,
+// or a client told a figure that came from sample data.
+export const demoDataSummary = () => call("demo_data_summary", {});
+export const demoEntityAdd = (d) => call("demo_entity_add", {
+  p_name: d.name, p_jurisdiction: d.jurisdiction || "IOM",
+  p_entity_type: d.entityType || "COMPANY", p_risk_rating: d.riskRating || "Medium",
+  p_administrator: d.administrator || null,
+});
+// Refuses anything not flagged as demo. That is the safety property: a
+// function that deletes client entities is only safe if it cannot reach a
+// real one, and it checks the flag rather than the name.
+export const demoEntityRemove = (entityId) =>
+  call("demo_entity_remove", { p_entity: entityId });
+// Requires the exact phrase "REMOVE DEMO DATA" — a typed confirmation rather
+// than a boolean, because this deletes a register and a misplaced true is
+// easier than a misplaced phrase.
+export const demoDataClear = (confirmation) =>
+  call("demo_data_clear", { p_confirm: confirmation });
+// Flagging a real entity AS demo makes it deletable, so it is refused where
+// there is time, invoices or posted journals against it.
+export const demoFlagSet = (entityId, isDemo) =>
+  call("demo_flag_set", { p_entity: entityId, p_is_demo: isDemo });
