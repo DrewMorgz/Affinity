@@ -23,6 +23,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { useState, useMemo, useEffect } from "react";
 import { groupList, mappingList, mappingSet, runList, runRecord } from "./affinity_planning_api";
+// consolidated_cta and consolidated_nci were unreachable: this module's header
+// said it covered them and the code never called them.
+import { consolidatedCta, consolidatedNci } from "./affinity_consolidation_fx_api";
 
 const NAVY = "#001242", CY = "#00C4CC";
 const INK  = "var(--text-primary,#111)";
@@ -140,6 +143,9 @@ export default function AffinityConsolidation({ onNav }) {
   const [running, setRunning] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [live, setLive] = useState(false);
+  const [ctaRows, setCtaRows] = useState([]);
+  const [nciRows, setNciRows] = useState([]);
+  const [fxMsg, setFxMsg]     = useState("");
   const [groupId, setGroupId] = useState(null);
 
   // Live group members and run register when the database is available.
@@ -231,7 +237,7 @@ export default function AffinityConsolidation({ onNav }) {
       <div style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 22px", background:CARD, borderBottom:`0.5px solid ${LINE}`, flexWrap:"wrap" }}>
         <h2 style={{ margin:0, fontSize:18, fontWeight:500, color:NAVY }}>Consolidation</h2>
         <div style={{ display:"flex", border:`0.5px solid ${LINE}`, borderRadius:6, overflow:"hidden" }}>
-          {[["cockpit","Cockpit"],["data","Data collection"],["mapping","Mapping"],["ic","Intercompany"],["runs","Runs"]].map(([v,l])=>(
+          {[["cockpit","Cockpit"],["data","Data collection"],["mapping","Mapping"],["ic","Intercompany"],["fx","Translation & NCI"],["runs","Runs"]].map(([v,l])=>(
             <button key={v} onClick={()=>setView(v)}
               style={{ border:"none", cursor:"pointer", fontSize:11.5, padding:"6px 13px", fontWeight:view===v?600:400,
                        background:view===v?CY:CARD, color:view===v?"#fff":MUT }}>
@@ -501,6 +507,156 @@ export default function AffinityConsolidation({ onNav }) {
 
           <div style={{ fontSize:11, color:MUT, lineHeight:1.7 }}>
             Differences within tolerance are flagged rather than hidden, and still appear in the elimination journal. Anything outside tolerance blocks the run until an adjustment is posted and approved.
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════ TRANSLATION & NCI ══════════════ */}
+      {view === "fx" && (
+        <div style={{ padding:"16px 22px 60px" }}>
+          <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:14 }}>
+            <button style={{ padding:"6px 13px", borderRadius:6, fontSize:11.5, border:"none",
+                             background:CY, color:"#fff", cursor:"pointer" }}
+                    onClick={async () => {
+                      if (!groupId) { setFxMsg("Choose a group first."); return; }
+                      setFxMsg("");
+                      const y = String(period).slice(-4);
+                      const [c, n] = await Promise.all([
+                        consolidatedCta(groupId, (Number(y)-1)+"-12-31", y+"-12-31"),
+                        consolidatedNci(groupId, y+"-12-31"),
+                      ]);
+                      if (!c.live && !n.live) {
+                        setFxMsg("Not signed in — these figures come from the consolidation engine and cannot be read yet.");
+                        return;
+                      }
+                      setCtaRows(c.data || []); setNciRows(n.data || []);
+                      if (!c.ok) setFxMsg(c.error); else if (!n.ok) setFxMsg(n.error);
+                    }}>
+              Calculate for {period}
+            </button>
+            <span style={{ fontSize:11, color:"#5B6B7B" }}>
+              Read from the consolidation engine — nothing is recalculated here.
+            </span>
+          </div>
+
+          {fxMsg && (
+            <div style={{ padding:"9px 12px", borderRadius:7, fontSize:11.5, marginBottom:14,
+                          background:"#FDF4DC", border:"0.5px solid #E5CE9A", color:"#7B4F1D" }}>
+              {fxMsg}
+            </div>
+          )}
+
+          <div style={{ background:"#fff", border:"0.5px solid #D9DEE5", borderRadius:10,
+                        padding:"14px 16px", marginBottom:14 }}>
+            <div style={{ fontSize:11, fontWeight:600, color:"#5B6B7B", marginBottom:4,
+                          textTransform:"uppercase", letterSpacing:"0.4px" }}>
+              Cumulative translation adjustment
+            </div>
+            <div style={{ fontSize:11, color:"#5B6B7B", marginBottom:10, lineHeight:1.7 }}>
+              The movement arising purely from retranslating each subsidiary's net assets at a
+              different rate. It is not a trading profit or loss and must not be read as one,
+              so the opening and closing rates are shown beside it.
+            </div>
+            {ctaRows.length ? (
+              <div style={{ overflowX:"auto" }}>
+                <table style={{ width:"100%", borderCollapse:"collapse" }}>
+                  <thead><tr>
+                    {["Entity","Currency","Net assets (functional)","Opening rate","Closing rate","CTA"]
+                      .map((h,i) => (
+                        <th key={h} style={{ textAlign:i>1?"right":"left", fontSize:10, fontWeight:600,
+                                             color:"#fff", background:NAVY, padding:"8px 10px",
+                                             textTransform:"uppercase", letterSpacing:"0.4px" }}>{h}</th>
+                      ))}
+                  </tr></thead>
+                  <tbody>
+                    {ctaRows.map((r,i) => (
+                      <tr key={i}>
+                        <td style={{ padding:"8px 10px", fontSize:12, borderBottom:"0.5px solid #D9DEE5",
+                                     fontWeight:600 }}>{r.entity_name}</td>
+                        <td style={{ padding:"8px 10px", fontSize:12, borderBottom:"0.5px solid #D9DEE5",
+                                     color:"#5B6B7B" }}>{r.functional_ccy}</td>
+                        {[r.net_assets_func, r.opening_rate, r.closing_rate, r.cta].map((v,k) => (
+                          <td key={k} style={{ padding:"8px 10px", fontSize:12, textAlign:"right",
+                                               borderBottom:"0.5px solid #D9DEE5",
+                                               fontVariantNumeric:"tabular-nums",
+                                               fontWeight: k===3 ? 700 : 400,
+                                               color: k===3 && Number(v) < 0 ? "#A32D2D" : "#111" }}>
+                            {v == null ? "—" : Number(v).toLocaleString("en-GB",
+                              { minimumFractionDigits: k===1||k===2 ? 4 : 2,
+                                maximumFractionDigits: k===1||k===2 ? 4 : 2 })}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div style={{ padding:"22px 12px", textAlign:"center", color:"#5B6B7B",
+                            fontSize:12.5, lineHeight:1.7 }}>
+                Nothing calculated yet — choose a group and press Calculate. An entity only
+                shows a translation adjustment where its functional currency differs from the
+                group's reporting currency.
+              </div>
+            )}
+          </div>
+
+          <div style={{ background:"#fff", border:"0.5px solid #D9DEE5", borderRadius:10,
+                        padding:"14px 16px" }}>
+            <div style={{ fontSize:11, fontWeight:600, color:"#5B6B7B", marginBottom:4,
+                          textTransform:"uppercase", letterSpacing:"0.4px" }}>
+              Non-controlling interests
+            </div>
+            <div style={{ fontSize:11, color:"#5B6B7B", marginBottom:10, lineHeight:1.7 }}>
+              The share of net assets not owned by the group. Reporting a group figure without
+              splitting out the minority share overstates what belongs to the parent.
+            </div>
+            {nciRows.length ? (
+              <div style={{ overflowX:"auto" }}>
+                <table style={{ width:"100%", borderCollapse:"collapse" }}>
+                  <thead><tr>
+                    {["Entity","Currency","Owned","Net assets (functional)","Rate",
+                      "Net assets (reporting)","Group share","NCI share"].map((h,i) => (
+                        <th key={h} style={{ textAlign:i>1?"right":"left", fontSize:10, fontWeight:600,
+                                             color:"#fff", background:NAVY, padding:"8px 10px",
+                                             textTransform:"uppercase", letterSpacing:"0.4px" }}>{h}</th>
+                      ))}
+                  </tr></thead>
+                  <tbody>
+                    {nciRows.map((r,i) => (
+                      <tr key={i}>
+                        <td style={{ padding:"8px 10px", fontSize:12, borderBottom:"0.5px solid #D9DEE5",
+                                     fontWeight:600 }}>{r.entity_name}</td>
+                        <td style={{ padding:"8px 10px", fontSize:12, borderBottom:"0.5px solid #D9DEE5",
+                                     color:"#5B6B7B" }}>{r.functional_ccy}</td>
+                        <td style={{ padding:"8px 10px", fontSize:12, textAlign:"right",
+                                     borderBottom:"0.5px solid #D9DEE5",
+                                     fontVariantNumeric:"tabular-nums" }}>
+                          {r.effective_pct == null ? "—" : Number(r.effective_pct).toFixed(1) + "%"}
+                        </td>
+                        {[r.net_assets_func, r.rate, r.net_assets_reporting,
+                          r.group_share, r.nci_share].map((v,k) => (
+                          <td key={k} style={{ padding:"8px 10px", fontSize:12, textAlign:"right",
+                                               borderBottom:"0.5px solid #D9DEE5",
+                                               fontVariantNumeric:"tabular-nums",
+                                               fontWeight: k>=3 ? 700 : 400 }}>
+                            {v == null ? "—" : Number(v).toLocaleString("en-GB",
+                              { minimumFractionDigits: k===1 ? 4 : 2,
+                                maximumFractionDigits: k===1 ? 4 : 2 })}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div style={{ padding:"22px 12px", textAlign:"center", color:"#5B6B7B",
+                            fontSize:12.5, lineHeight:1.7 }}>
+                Nothing calculated yet. An entity only shows a non-controlling interest where
+                the group owns less than 100% of it.
+              </div>
+            )}
           </div>
         </div>
       )}

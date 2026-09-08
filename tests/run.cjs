@@ -1099,6 +1099,34 @@ group("Fiduciary reporting — trust funds and statutory accounts");
      /selSet\.status === "approved"[\s\S]{0,400}Finalise/.test(ui));
 }
 
+
+group("Consolidation — translation and non-controlling interests");
+{
+  // consolidated_cta and consolidated_nci already existed in the engine, and
+  // this module's own header claimed to cover them while the code never
+  // called them. Added to the existing module rather than building a new one.
+  const api = fs.readFileSync(path.join(SRC, "affinity_consolidation_fx_api.js"), "utf8");
+  const ui  = fs.readFileSync(path.join(SRC, "affinity_core_consolidation.jsx"), "utf8");
+
+  ok("the engine's CTA function is called", /"consolidated_cta"/.test(api));
+  ok("the engine's NCI function is called", /"consolidated_nci"/.test(api));
+  ok("nothing is recalculated in the front end",
+     !/net_assets_func\s*\*/.test(api) && !/nci_share\s*=/.test(api));
+
+  ok("the module has a Translation & NCI view", /Translation & NCI/.test(ui));
+  ok("CTA takes an opening AND closing date, because it is a movement",
+     /p_opening_date/.test(api) && /p_closing_date/.test(api));
+  ok("the interface states CTA is not a trading profit or loss",
+     /not a trading profit or loss/.test(ui));
+  ok("...and shows the rates beside it so it can be checked",
+     /Opening rate/.test(ui) && /Closing rate/.test(ui));
+  ok("the interface states why NCI must be split out",
+     /overstates what belongs to the parent/.test(ui));
+  ok("empty states say why there is nothing rather than showing a blank table",
+     /Nothing calculated yet/.test(ui)
+     && /functional currency differs/.test(ui));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
