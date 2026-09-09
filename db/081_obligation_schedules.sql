@@ -358,11 +358,12 @@ $$;
 --
 -- Guarded so re-running the file does not duplicate them.
 --
--- NOTE: these are PERFORM, not SELECT. Inside a DO block a bare SELECT is
--- rejected with "query has no destination for result data". My own test of
--- this file passed only because the guard below was already false — the data
--- was in from an earlier run, so the branch never executed. Testing the
--- re-run path is not testing the first-run path.
+-- NOTE: these are PERFORM, not SELECT. Inside a PL/pgSQL block a bare SELECT
+-- has nowhere to put its result and fails with "query has no destination for
+-- result data". My own test of this file passed because the guard below was
+-- already false on the second run, so the statements never executed — the
+-- re-run reported OK while skipping the code path entirely.
+
 DO $mig$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM jurisdiction_obligation) THEN
