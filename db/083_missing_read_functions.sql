@@ -99,7 +99,11 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
    ORDER BY e.name;
 $$;
 
-CREATE OR REPLACE FUNCTION ap_vendors(p_active_only boolean DEFAULT true)
+-- Takes an entity filter: the accounting screen shows vendors in the context
+-- of one entity, and passing the filter is the right intent — so the function
+-- accepts it rather than the caller dropping it.
+CREATE OR REPLACE FUNCTION ap_vendors(p_entity bigint DEFAULT NULL,
+                                      p_active_only boolean DEFAULT true)
 RETURNS TABLE(id bigint, name text, vendor_code text, default_ccy char(3),
               payment_terms_days integer, vat_no text, email text,
               on_hold boolean, wht_rate numeric, is_active boolean,
@@ -111,7 +115,12 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
          round(coalesce(sum(si.outstanding), 0), 2)
     FROM supplier s
     LEFT JOIN supplier_invoice si ON si.supplier_id = s.id
-   WHERE NOT p_active_only OR coalesce(s.is_active, true)
+         AND (p_entity IS NULL OR si.entity_id = p_entity)
+   WHERE (NOT p_active_only OR coalesce(s.is_active, true))
+     -- With an entity filter, only vendors that entity actually deals with.
+     AND (p_entity IS NULL
+          OR EXISTS (SELECT 1 FROM supplier_invoice x
+                      WHERE x.supplier_id = s.id AND x.entity_id = p_entity))
    GROUP BY s.id, s.name, s.vendor_code, s.default_ccy, s.payment_terms_days,
             s.vat_no, s.email, s.on_hold, s.wht_rate, s.is_active
    ORDER BY s.name;

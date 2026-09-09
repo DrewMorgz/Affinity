@@ -19,7 +19,7 @@ Each check reports one of:
 """
 import pgserver, pathlib, re, sys, json
 
-db = pgserver.get_server(pathlib.Path("/home/claude/pgAudit4"))
+db = pgserver.get_server(pathlib.Path("/home/claude/pgFinal"))
 results = []
 
 

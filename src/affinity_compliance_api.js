@@ -7,15 +7,32 @@ export async function compRegObligations() { if (!isConfigured) return off(); re
 export async function compBreaches()       { if (!isConfigured) return off(); return supabase.rpc("comp_breaches", {}); }
 export async function compTraining()       { if (!isConfigured) return off(); return supabase.rpc("comp_training", {}); }
 
-// Periodic client reviews: there is NO TABLE for this in the database, so there is nothing to
-// read. The RPC "comp_reviews" was called here and did not exist — the call failed
-// silently and the screen fell back to bundled demo data, which looked
-// populated and correct.
+
+// ── Periodic client reviews (db/084) ────────────────────────────────────────
+// These had no table at all until db/084; the RPC was called, failed, and the
+// screen fell back to demo data. The store now exists.
 //
-// Returning an explicit not-built result instead, so the screen can say so.
-// Showing sample data where a real store is missing is the more dangerous of
-// the two, because someone acts on it.
-export const NOT_BUILT_comp_reviews = {
-  ok: false, live: false, notBuilt: true, data: [],
-  error: "Periodic client reviews are not built yet — there is no store for them in the database, so nothing is being hidden or lost. Data entered elsewhere is unaffected.",
-};
+// Every client appears in comp_reviews, whether reviewed or not — a client
+// that has NEVER been reviewed is the one that matters, and it would be
+// invisible in a list of reviews.
+//
+// The review interval comes from what Compliance recorded per risk rating, not
+// a hardcoded period. Where no interval is recorded, no due date can be
+// calculated and the row says so rather than showing a made-up date.
+export const reviewFrequencySet = (risk, months, location, note) =>
+  call("review_frequency_set", { p_risk: risk, p_months: months,
+                                 p_location: location || null, p_note: note || null });
+export const reviewStart = (entityId, reviewDate) =>
+  call("review_start", { p_entity: entityId, p_review_date: reviewDate || null });
+// Sanctions and PEP screening are both required, and a review that refreshed
+// neither the CDD nor the source of wealth is refused — a partial review on
+// file reads as a completed one.
+export const reviewComplete = (r) => call("review_complete", {
+  p_id: r.id, p_cdd: !!r.cdd, p_sow: !!r.sourceOfWealth,
+  p_sanctions: !!r.sanctions, p_pep: !!r.pep,
+  p_structure: !!r.structure, p_activity: !!r.activity,
+  p_risk_after: r.riskAfter, p_findings: r.findings || null,
+  p_actions: r.actions || null,
+});
+// Refused to whoever carried out the review.
+export const reviewApprove = (id) => call("review_approve", { p_id: id });

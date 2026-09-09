@@ -1571,16 +1571,17 @@ group("Pre-Azure audit — every RPC the API calls exists");
     ok(f + " is defined in SQL",
        new RegExp("CREATE OR REPLACE FUNCTION " + f + "\\s*\\(").test(sql)));
 
-  // The four with no store must be MARKED, not silently failing.
+  // The four that had no store were briefly marked not-built. db/084 built
+  // them, so the marks are gone and the real functions must be present —
+  // asserted in that direction now, because a lingering stub would mean a
+  // screen still showing "not built" over a working store.
   const comp = fs.readFileSync(path.join(SRC, "affinity_compliance_api.js"), "utf8");
   const crm  = fs.readFileSync(path.join(SRC, "affinity_crm_api.js"), "utf8");
   const onb  = fs.readFileSync(path.join(SRC, "affinity_onboarding_api.js"), "utf8");
-  ok("comp_reviews is marked not built", /NOT_BUILT_comp_reviews/.test(comp));
-  ok("crm_prospects is marked not built", /NOT_BUILT_crm_prospects/.test(crm));
-  ok("crm_interactions is marked not built", /NOT_BUILT_crm_interactions/.test(crm));
-  ok("attrition_cases is marked not built", /NOT_BUILT_attrition_cases/.test(onb));
-  ok("...and each says nothing is being hidden or lost",
-     /nothing is being hidden or lost/.test(comp));
+  ok("no not-built stubs remain", !/NOT_BUILT_/.test(comp + crm + onb));
+  ["comp_reviews", "crm_prospects", "crm_interactions", "attrition_cases"]
+    .forEach((f) => ok(f + " is now defined in SQL",
+      new RegExp("CREATE OR REPLACE FUNCTION " + f + "\\s*\\(").test(sql)));
 
   // The two silent no-ops from db/082.
   ok("approving unsubmitted time is refused rather than doing nothing",
@@ -1589,6 +1590,61 @@ group("Pre-Azure audit — every RPC the API calls exists");
      /nothing was added to the run/.test(sql));
   ok("a standing check for the same pattern exists",
      /CREATE OR REPLACE FUNCTION silent_noop_candidates/.test(sql));
+}
+
+
+group("The four stores that did not exist");
+{
+  const sqlDir = path.join(SRC, "..", "db");
+  const sql = fs.readdirSync(sqlDir).filter((f) => f.endsWith(".sql"))
+    .map((f) => fs.readFileSync(path.join(sqlDir, f), "utf8")).join("\n");
+  const comp = fs.readFileSync(path.join(SRC, "affinity_compliance_api.js"), "utf8");
+  const crm  = fs.readFileSync(path.join(SRC, "affinity_crm_api.js"), "utf8");
+  const onb  = fs.readFileSync(path.join(SRC, "affinity_onboarding_api.js"), "utf8");
+
+  ["periodic_review", "crm_prospect", "crm_interaction", "attrition_case"]
+    .forEach((t) => ok(t + " now has a table",
+      new RegExp("CREATE TABLE IF NOT EXISTS " + t + "\\s*\\(").test(sql)));
+  ok("the not-built stubs are gone", !/NOT_BUILT_/.test(comp + crm + onb));
+
+  // Reviews fall due on RISK RATING, and the intervals are entered by
+  // Compliance rather than hardcoded — a made-up interval would silently put
+  // high-risk clients on the wrong cycle.
+  ok("review intervals are entered, not hardcoded",
+     /CREATE OR REPLACE FUNCTION review_frequency_set/.test(sql));
+  ok("...and can be group-wide or per jurisdiction",
+     /coalesce\(location_code, '\*'\)/.test(sql));
+  ok("a review with no sanctions or PEP screening is refused",
+     /Sanctions and PEP screening are both required/.test(sql));
+  ok("...and one that refreshed nothing", /has not reviewed anything/.test(sql));
+  ok("a risk conclusion is required even if unchanged",
+     /the conclusion is the point of the review/.test(sql));
+  ok("a review cannot be approved by whoever did it",
+     /You carried out this review/.test(sql));
+  ok("clients never reviewed appear in the list", /never_reviewed/.test(sql));
+  ok("...and a missing interval is distinguished from a missing review",
+     /no_interval_set/.test(sql));
+
+  // Attrition: Manager, MD, then Group CEO OR COO.
+  ok("the final stage accepts either Group CEO or COO",
+     /'Group CEO','CEO','Group COO','COO'/.test(sql));
+  ok("...and the reason is recorded: a named-person rule stalls",
+     /stalls whenever they are away/.test(sql));
+  ok("approvals run in sequence", /Approvals run in sequence/.test(sql));
+  ok("one person cannot satisfy two stages",
+     /each stage needs a different person/.test(sql));
+  ok("unbilled time is captured at opening",
+     /hardest one to bill afterwards/.test(sql));
+
+  // CRM stages are validated, and a lost prospect needs a reason.
+  ok("pipeline stages are validated against a list", /CREATE TABLE IF NOT EXISTS crm_stage/.test(sql));
+  ok("marking a prospect lost requires a reason",
+     /why we lost it is the useful part/.test(sql));
+  ok("a won prospect converts to an onboarding case",
+     /CREATE OR REPLACE FUNCTION crm_prospect_convert/.test(sql));
+  ok("...and cannot be converted twice", /has already been converted/.test(sql));
+  ok("the API exposes all four", /reviewComplete/.test(comp) && /crmProspectConvert/.test(crm)
+     && /attritionApprove/.test(onb) && /attritionCases/.test(onb));
 }
 
 // ── report ─────────────────────────────────────────────────────────────────
