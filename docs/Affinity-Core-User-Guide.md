@@ -562,8 +562,8 @@ Who has not submitted for a period. **Send reminder** notifies them.
 
 Operational reports on entities, clients and portfolios.
 
-Distinct from **Reports** (2.20), which covers financial reporting, and from
-**Financial Reporting** (2.17), which produces statutory figures. Three
+Distinct from **Reports** (3.10), which covers financial reporting, and from
+**Financial Reporting** (3.6), which produces statutory figures. Three
 differently named things: this one is about entities and administration.
 
 ### What is here
@@ -982,8 +982,7 @@ date.
 
 ---
 
-*Part 3 covers the accounting modules. Part 4 covers reference data, month-end
-and year-end. Part 5 is for administrators.*
+*Part 3 covers the accounting modules.*
 
 
 ---
@@ -996,6 +995,8 @@ Reports, Planning, Consolidation.**
 Continues from Part 2.
 
 ---
+
+# Part 3 — The accounting modules
 
 ## Before you start: which accounting module do I want?
 
@@ -1019,7 +1020,7 @@ client, or for Affinity?*
 
 ---
 
-## 2.13 Bookkeeping
+## 3.1 Bookkeeping
 
 Day-to-day double-entry accounting for client entities.
 
@@ -1096,7 +1097,7 @@ currently set, so nothing requires approval.
 
 ---
 
-## 2.14 WIP
+## 3.2 WIP
 
 Approved, unbilled time by client. The bridge between Timesheets and Invoicing.
 
@@ -1111,7 +1112,7 @@ raised the time is marked Billed automatically.
 
 ---
 
-## 2.15 Invoicing
+## 3.3 Invoicing
 
 Client fees.
 
@@ -1162,7 +1163,7 @@ by hand each quarter.
 
 ---
 
-## 2.16 Transactions
+## 3.4 Transactions
 
 Transaction-level detail across client entities: bank lines, matched and
 unmatched items, and reconciliation status.
@@ -1172,7 +1173,7 @@ it.
 
 ---
 
-## 2.17 Assets & Groups
+## 3.5 Assets & Groups
 
 Fixed asset registers for client entities, and group structures for
 consolidation.
@@ -1189,17 +1190,17 @@ would overstate the group's share of the lower tiers.
 
 ---
 
-## 2.18 Financial Reporting
+## 3.6 Financial Reporting
 
 Statutory figures for client entities: trial balance, profit and loss, balance
 sheet, and the statement assembly that turns them into formatted accounts.
 
 For trusts and for the full statutory accounts workflow, see **Fiduciary
-reporting** (2.21).
+reporting** (3.9).
 
 ---
 
-## 2.19 Accounting ops
+## 3.7 Accounting ops
 
 Operational accounting for the Affinity group. Client money lives here, and it
 is the most tightly controlled part of Core.
@@ -1328,7 +1329,7 @@ Covered in Part 4.
 
 ---
 
-## 2.20 Purchases & AR
+## 3.8 Purchases & AR
 
 Group payables and receivables.
 
@@ -1386,7 +1387,7 @@ party would charge).
 
 ---
 
-## 2.21 Fiduciary reporting
+## 3.9 Fiduciary reporting
 
 Trust accounting and statutory accounts.
 
@@ -1496,7 +1497,7 @@ finalised yet. The tab shows what each one needs.
 
 ---
 
-## 2.22 Reports
+## 3.10 Reports
 
 Read-only reporting. Nothing here writes.
 
@@ -1532,7 +1533,7 @@ appear.
 
 ---
 
-## 2.23 Planning
+## 3.11 Planning
 
 Budgeting and forecasting for the Affinity group.
 
@@ -1581,7 +1582,7 @@ explanation is the useful part at a board meeting.
 
 ---
 
-## 2.24 Consolidation
+## 3.12 Consolidation
 
 Group accounts across the Affinity companies.
 
@@ -1618,8 +1619,7 @@ A consolidation run and its result, with the trial balance and summary.
 
 ---
 
-*Part 4 covers reference data, month-end and year-end. Part 5 is for
-administrators and covers what does not work yet.*
+*Part 4 covers reference data and the periodic work.*
 
 
 ---
@@ -1632,6 +1632,8 @@ daily. If you are an administrator recording client work, you do not need this
 part.
 
 ---
+
+# Part 4 — Reference data and periodic work
 
 ## 4.1 Reference data — who owns what
 
@@ -2025,6 +2027,8 @@ close is the single least reversible thing in Core.
 **Administration, demo data, what does not work yet, and getting help.**
 
 ---
+
+# Part 5 — Administration
 
 ## 5.1 System admin
 
