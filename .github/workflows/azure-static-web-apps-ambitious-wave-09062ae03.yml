@@ -1,6 +1,5 @@
-
 name: Azure Static Web Apps CI/CD
- 
+
 # This is AZURE'S OWN generated workflow, with one addition: the Supabase
 # configuration is passed to the build.
 #
@@ -19,7 +18,7 @@ name: Azure Static Web Apps CI/CD
 # as a separate job once deployment is settled - a broken deployment is a worse
 # problem than an untested one, and mixing the two is what made the last three
 # failures hard to read.
- 
+
 on:
   push:
     branches:
@@ -28,7 +27,7 @@ on:
     types: [opened, synchronize, reopened, closed]
     branches:
       - main
- 
+
 jobs:
   build_and_deploy_job:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
@@ -42,10 +41,10 @@ jobs:
         with:
           submodules: true
           lfs: false
- 
+
       - name: Install OIDC Client from Core Package
         run: npm install @actions/core@1.6.0 @actions/http-client
- 
+
       - name: Get Id Token
         uses: actions/github-script@v6
         id: idtoken
@@ -54,7 +53,7 @@ jobs:
             const coredemo = require('@actions/core')
             return await coredemo.getIDToken()
           result-encoding: string
- 
+
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -80,7 +79,7 @@ jobs:
           # Warnings are not failures. CRA treats them as errors when CI is set,
           # and a deprecation notice in a dependency should not stop a deploy.
           CI: false
- 
+
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
@@ -91,8 +90,4 @@ jobs:
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_AMBITIOUS_WAVE_09062AE03 }}
-          action: "close"
- 
-        with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_AMBITIOUS_WAVE_09062AE03 }}
-          action: close
+          action: "close"        
