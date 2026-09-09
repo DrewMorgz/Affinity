@@ -1434,6 +1434,61 @@ group("Jurisdiction compliance — regulator and licence");
      /Obligation schedule still to be confirmed/.test(j));
 }
 
+
+group("Authoring formats and checklists inside Core");
+{
+  const sqlDir = path.join(SRC, "..", "db");
+  const sql = fs.readdirSync(sqlDir).filter((f) => f.endsWith(".sql"))
+    .map((f) => fs.readFileSync(path.join(sqlDir, f), "utf8")).join("\n");
+  const api = fs.readFileSync(path.join(SRC, "affinity_fiduciary_api.js"), "utf8");
+  const ui  = fs.readFileSync(path.join(SRC, "affinity_core_fiduciary.jsx"), "utf8");
+
+  // Points 7, 8, 9: accountants enter the content. The system authors none of
+  // it, because a caption set that looked statutory but was subtly wrong would
+  // end up in filed accounts.
+  ok("a caption can be added", /CREATE OR REPLACE FUNCTION fs_caption_add/.test(sql));
+  ok("a presentation format can be created", /CREATE OR REPLACE FUNCTION fs_framework_add/.test(sql));
+  ok("...and linked to a regulatory framework", /framework_format_link/.test(sql));
+  ok("the interface says why the content is not authored by the system",
+     /would end up in filed accounts/.test(ui));
+
+  // A caption needs a code, because that is what accounts map to.
+  ok("a caption without a code is refused", /a caption without one cannot be mapped/.test(sql));
+  ok("an unknown statement code is refused", /would produce a statement nothing renders/.test(sql));
+  ok("a caption cannot be added to a framework that does not exist",
+     /create it before adding captions/.test(sql));
+  ok("a mapped caption cannot be deleted",
+     /deleting the caption would leave those balances out/.test(sql));
+
+  // THE ONE I ALMOST GOT WRONG. account_fs_map's key includes caption_code, so
+  // an account CAN map to several captions — and one already does, correctly:
+  // a trust expense split across income and capital by fund_filter. A unique
+  // constraint on (account, framework) would have broken trust accounting.
+  ok("the mapping records why multiple captions are legitimate",
+     /THAT WOULD HAVE BROKEN TRUST ACCOUNTING/.test(sql));
+  ok("a second caption with the SAME fund treatment is refused",
+     /count its balance twice/.test(sql));
+  ok("...while a different fund filter is allowed",
+     /if this is a trust apportionment/.test(sql));
+  ok("genuine double-counting is reported separately from fund splits",
+     /count\(\*\) > count\(DISTINCT coalesce\(c\.fund_filter/.test(sql));
+
+  // Format readiness: captions on one statement only is worse than none.
+  ok("a format with no balance sheet captions is flagged",
+     /empty balance sheet/.test(sql));
+  ok("...and no profit and loss", /no profit and loss/.test(sql));
+
+  // One list with the next step per framework.
+  ok("the outstanding work is listed with a single next step each",
+     /CREATE OR REPLACE FUNCTION authoring_outstanding/.test(sql));
+  ok("...ready means openable AND finalisable", /Nothing outstanding/.test(sql));
+  ok("the API exposes the authoring functions",
+     /fsCaptionAdd/.test(api) && /fsFrameworkAdd/.test(api)
+     && /authoringOutstanding/.test(api) && /fsFormatReadiness/.test(api));
+  ok("verification still requires a named edition",
+     /Name the edition/.test(ui));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

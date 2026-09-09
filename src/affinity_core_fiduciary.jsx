@@ -93,6 +93,15 @@ export default function AffinityFiduciary({ onNav }) {
   const [selSet, setSelSet]   = useState(null);
   const [readiness, setReadiness]   = useState([]);
   const [statements, setStatements] = useState({});
+  // Authoring: the outstanding list, plus whichever framework is being worked on
+  const [authoring, setAuthoring] = useState([]);
+  const [authFw, setAuthFw]       = useState(null);
+  const [captions, setCaptions]   = useState([]);
+  const [fmtReady, setFmtReady]   = useState([]);
+  const [discl, setDiscl]         = useState([]);
+  const [authForm, setAuthForm]   = useState(null);
+  const [af, setAf]               = useState({});
+  const [authMsg, setAuthMsg]     = useState("");
 
   const load = async () => {
     setBusy(true); setMsg("");
@@ -117,6 +126,42 @@ export default function AffinityFiduciary({ onNav }) {
   };
 
   useEffect(() => { load(); }, []);
+  useEffect(() => { if (tab === "frameworks") loadAuthoring(); }, [tab]);
+
+  const loadAuthoring = async () => {
+    const r = await FID.authoringOutstanding();
+    if (!r.live) { setAuthMsg("Not signed in — this reads from the database."); return; }
+    setAuthoring(r.data || []);
+    if (!r.ok) setAuthMsg(r.error);
+  };
+
+  const openFramework = async (f) => {
+    setAuthFw(f); setAuthMsg(""); setCaptions([]); setFmtReady([]); setDiscl([]);
+    const calls = [FID.accountsDisclosures ? Promise.resolve({ ok: true, live: true, data: [] })
+                                           : Promise.resolve({ ok: true, live: true, data: [] })];
+    if (f.has_format || f.captions > 0) {
+      const [c, rd] = await Promise.all([
+        FID.fsCaptionsList(f.fs_framework_code || f.framework),
+        FID.fsFormatReadiness(f.fs_framework_code || f.framework),
+      ]);
+      setCaptions(c.data || []); setFmtReady(rd.data || []);
+    }
+    await calls[0];
+  };
+
+  const authAct = async (fn, okMsg) => {
+    setAuthMsg("");
+    const res = await fn();
+    if (res && res.ok) {
+      setAuthMsg(okMsg || "Saved.");
+      setAuthForm(null); setAf({});
+      await loadAuthoring();
+      if (authFw) await openFramework(authFw);
+      return;
+    }
+    if (res && res.live === false) { setAuthMsg("Not signed in — this cannot be saved yet."); return; }
+    setAuthMsg((res && res.error) || "That could not be saved.");
+  };
 
   const openSet = async (s) => {
     setSelSet(s); setBusy(true);
@@ -468,7 +513,380 @@ export default function AffinityFiduciary({ onNav }) {
   };
 
   // ── Frameworks ────────────────────────────────────────────────────────────
+  // ── The authoring forms ───────────────────────────────────────────────────
+  // Declared at module level would be cleaner, but these need the framework in
+  // scope. Each field is controlled and every refusal from the database is
+  // shown verbatim, because the refusals say exactly what is wrong.
+  const AUTH_FORMS = {
+    newFormat: { title: "Create a presentation format", cta: "Create",
+      note: "A format holds the captions the accounts print. Give it a short code — it is referenced by the account mapping.",
+      fields: [
+        { k: "code", label: "Format code", ph: "e.g. FRS105", required: true },
+        { k: "name", label: "Name", ph: "FRS 105 Micro-entities", full: true, required: true },
+      ],
+      save: () => authAct(async () => {
+        const a = await FID.fsFrameworkAdd(af.code, af.name);
+        if (!a.ok) return a;
+        return FID.frameworkFormatLink(authFw.framework, (af.code || "").toUpperCase());
+      }, "Format created and linked.") },
+
+    newCaption: { title: "Add a caption", cta: "Add",
+      note: "Enter the caption exactly as it must appear in the accounts. The code is what accounts map to and stays stable if the wording changes later.",
+      fields: [
+        { k: "statement", label: "Statement", type: "select",
+          opts: FID.STATEMENT_CODES.map((x) => x.id + " — " + x.label), required: true },
+        { k: "code", label: "Code", ph: "TANG_FA", required: true },
+        { k: "caption", label: "Caption as printed", ph: "Tangible fixed assets",
+          full: true, required: true },
+        { k: "sortOrder", label: "Order", ph: "10", required: true },
+        { k: "noteNo", label: "Note number", ph: "optional" },
+        { k: "isSubtotal", label: "Is a subtotal", type: "select", opts: ["no", "yes"] },
+        { k: "fundFilter", label: "Fund (trusts only)", type: "select",
+          opts: ["", "INC — income", "CAP — capital"] },
+      ],
+      save: () => authAct(() => FID.fsCaptionAdd({
+        framework: authFw.fs_framework_code,
+        statement: (af.statement || "").split(" ")[0],
+        code: af.code, caption: af.caption,
+        sortOrder: Number(af.sortOrder) || 0,
+        isSubtotal: af.isSubtotal === "yes",
+        noteNo: af.noteNo ? Number(af.noteNo) : null,
+        fundFilter: af.fundFilter ? af.fundFilter.split(" ")[0] : null,
+      }), "Caption added.") },
+
+    newDisclosure: { title: "Add a disclosure requirement", cta: "Add",
+      note: "The reference in the standard matters: it is how the requirement is traced back, and how a reviewer checks the list is current.",
+      fields: [
+        { k: "ref", label: "Reference in the standard", ph: "FRS 102 1AC.12", required: true },
+        { k: "title", label: "Requirement", full: true, required: true },
+        { k: "detail", label: "What must be disclosed", full: true },
+        { k: "appliesWhen", label: "Applies when", ph: "e.g. only where fixed assets are held", full: true },
+        { k: "mandatory", label: "Mandatory", type: "select", opts: ["yes", "no"] },
+        { k: "sortOrder", label: "Order", ph: "10" },
+      ],
+      save: () => authAct(() => FID.disclosureRequirementAdd({
+        framework: authFw.framework, ref: af.ref, title: af.title,
+        detail: af.detail, appliesWhen: af.appliesWhen,
+        mandatory: af.mandatory !== "no", sortOrder: Number(af.sortOrder) || 0,
+      }), "Requirement added. The checklist verification has been withdrawn — re-verify when the list is complete.") },
+
+    verify: { title: "Verify the disclosure checklist", cta: "Verify",
+      note: "Name the edition. A verification with no edition means nothing once the standard is amended, and FRS 102 was materially amended in 2024.",
+      fields: [
+        { k: "edition", label: "Edition verified",
+          ph: "FRS 102 (2024 amendments)", full: true, required: true },
+      ],
+      save: () => authAct(() => FID.frameworkChecklistVerify(authFw.framework, af.edition),
+                          "Checklist verified.") },
+
+    newDocument: { title: "Add a required document", cta: "Add",
+      note: "Which documents a filed set needs varies by jurisdiction and entity size, so it is recorded rather than assumed.",
+      fields: [
+        { k: "docKind", label: "Kind", type: "select",
+          opts: ["directors_report", "other"], required: true },
+        { k: "title", label: "Document", ph: "Directors report", full: true, required: true },
+        { k: "guidance", label: "Guidance", full: true },
+        { k: "mandatory", label: "Mandatory", type: "select", opts: ["yes", "no"] },
+        { k: "sortOrder", label: "Order", ph: "10" },
+      ],
+      save: () => authAct(() => FID.requiredDocumentAdd({
+        framework: authFw.framework, docKind: af.docKind, title: af.title,
+        guidance: af.guidance, mandatory: af.mandatory !== "no",
+        sortOrder: Number(af.sortOrder) || 0,
+      }), "Document recorded.") },
+  };
+
+  const AuthForm = () => {
+    if (!authForm || !AUTH_FORMS[authForm]) return null;
+    const d = AUTH_FORMS[authForm];
+    return (
+      <div onClick={(e) => e.target === e.currentTarget && (setAuthForm(null), setAf({}))}
+           style={{ position: "fixed", inset: 0, background: "rgba(0,18,66,0.45)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    zIndex: 1000, padding: 20 }}>
+        <div style={{ background: "#fff", borderRadius: 12, padding: "22px 24px",
+                      width: "min(620px, 100%)", maxHeight: "86vh", overflowY: "auto" }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: NAVY, marginBottom: 6 }}>
+            {d.title}
+          </div>
+          {d.note && (
+            <div style={{ fontSize: 11.5, color: MUT, lineHeight: 1.7, marginBottom: 14 }}>
+              {d.note}
+            </div>
+          )}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 14px" }}>
+            {d.fields.map((f) => (
+              <div key={f.k} style={{ gridColumn: f.full ? "1/-1" : "auto" }}>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 600,
+                                color: "#555", marginBottom: 4 }}>
+                  {f.label}{f.required && <span style={{ color: RED }}> *</span>}
+                </label>
+                {f.type === "select" ? (
+                  <select value={af[f.k] || ""}
+                          onChange={(e) => setAf({ ...af, [f.k]: e.target.value })}
+                          style={{ width: "100%", height: 34, fontSize: 12.5, borderRadius: 6,
+                                   border: "0.5px solid #ccc", padding: "0 8px" }}>
+                    <option value="">—</option>
+                    {f.opts.map((o) => <option key={o} value={o}>{o || "(none)"}</option>)}
+                  </select>
+                ) : (
+                  <input value={af[f.k] || ""} placeholder={f.ph || ""}
+                         onChange={(e) => setAf({ ...af, [f.k]: e.target.value })}
+                         style={{ width: "100%", height: 34, fontSize: 12.5, borderRadius: 6,
+                                  border: "0.5px solid #ccc", padding: "0 8px" }} />
+                )}
+              </div>
+            ))}
+          </div>
+          {authMsg && (
+            <div style={{ marginTop: 14, padding: "9px 12px", borderRadius: 7, fontSize: 11.5,
+                          lineHeight: 1.6, background: RED_BG,
+                          border: "0.5px solid #f0c9c9", color: RED }}>
+              {authMsg}
+            </div>
+          )}
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 18 }}>
+            <button style={btn(false)} onClick={() => { setAuthForm(null); setAf({}); }}>
+              Cancel
+            </button>
+            <button style={btn(true)} onClick={d.save}>{d.cta}</button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ── Frameworks: the authoring workspace ───────────────────────────────────
+  // Points 7, 8 and 9. The disclosure requirements, required documents and
+  // presentation formats are entered here by accountants.
+  //
+  // Nothing in this content is authored by the system. A caption set that
+  // looked like the Companies Act format but was subtly wrong, or a disclosure
+  // list that looked complete and had gaps, would end up in filed accounts.
   const Frameworks = () => {
+    if (authFw) {
+      const failed = fmtReady.filter((g) => !g.passed);
+      return (
+        <div>
+          <button style={{ ...btn(false), marginBottom: 12 }} onClick={() => setAuthFw(null)}>
+            ← All frameworks
+          </button>
+
+          <div style={card}>
+            <div style={{ fontSize: 15, fontWeight: 600, color: NAVY }}>
+              {authFw.framework_name}
+            </div>
+            <div style={{ fontSize: 12, color: MUT, marginTop: 3 }}>
+              {authFw.framework}
+              {authFw.jurisdictions && " · accepted in " + authFw.jurisdictions}
+            </div>
+            <div style={{ marginTop: 10, padding: "9px 12px", borderRadius: 7, fontSize: 11.5,
+                          lineHeight: 1.7,
+                          background: authFw.ready ? GRN_BG : AMB_BG,
+                          border: "0.5px solid " + (authFw.ready ? "#bfe0d2" : "#E5CE9A"),
+                          color: authFw.ready ? GRN : AMB }}>
+              <strong>Next:</strong> {authFw.next_step}
+            </div>
+          </div>
+
+          {/* 9 — presentation format */}
+          <div style={card}>
+            <div style={{ display: "flex", justifyContent: "space-between",
+                          alignItems: "center", marginBottom: 8 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: MUT,
+                            textTransform: "uppercase", letterSpacing: "0.4px" }}>
+                Presentation format — the captions the accounts print
+              </div>
+              <div style={{ display: "flex", gap: 6 }}>
+                {!authFw.fs_framework_code && (
+                  <button style={btn(true)} onClick={() => { setAuthForm("newFormat"); setAf({}); }}>
+                    ＋ Create the format
+                  </button>
+                )}
+                {authFw.fs_framework_code && (
+                  <button style={btn(true)} onClick={() => { setAuthForm("newCaption"); setAf({}); }}>
+                    ＋ Add a caption
+                  </button>
+                )}
+              </div>
+            </div>
+            <div style={{ fontSize: 11, color: MUT, marginBottom: 10, lineHeight: 1.7 }}>
+              Statutory accounts use prescribed captions in a prescribed order. Enter them as
+              they must appear. The short code is what accounts map to and stays stable if the
+              caption text is later edited.
+            </div>
+
+            {failed.length > 0 && (
+              <div style={{ padding: "9px 12px", borderRadius: 7, fontSize: 11.5,
+                            marginBottom: 10, background: AMB_BG,
+                            border: "0.5px solid #E5CE9A", color: AMB, lineHeight: 1.7 }}>
+                {failed.map((g, i) => (
+                  <div key={i}><strong>{g.gate}</strong> — {g.detail}</div>
+                ))}
+              </div>
+            )}
+
+            <Table
+              cols={["Statement", "Code", "Caption", "Order", "Note", "Accounts mapped", ""]}
+              rows={captions}
+              render={(c) => (
+                <tr key={c.id} style={c.is_subtotal ? { fontWeight: 600 } : undefined}>
+                  <td style={td}>{c.statement}</td>
+                  <td style={{ ...td, fontFamily: "monospace", fontSize: 11 }}>{c.code}</td>
+                  <td style={td}>
+                    {c.caption}
+                    {c.is_subtotal && (
+                      <span style={{ ...pill("#F1F3F7", MUT), marginLeft: 6 }}>subtotal</span>
+                    )}
+                  </td>
+                  <td style={num}>{c.sort_order}</td>
+                  <td style={num}>{c.note_no ?? "—"}</td>
+                  <td style={num}>{c.accounts_mapped}</td>
+                  <td style={td}>
+                    <button style={btn(false)}
+                            title={Number(c.accounts_mapped) > 0
+                              ? "Refused while accounts map to it — those balances would leave the accounts"
+                              : "Remove this caption"}
+                            onClick={() => authAct(
+                              () => FID.fsCaptionRemove(authFw.fs_framework_code, c.code),
+                              "Caption removed.")}>
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+              )}
+              empty={<Empty what="no captions defined"
+                            why="Until captions exist, a set opened on this framework would print an empty balance sheet." />}
+            />
+          </div>
+
+          {/* 7 — disclosure checklist */}
+          <div style={card}>
+            <div style={{ display: "flex", justifyContent: "space-between",
+                          alignItems: "center", marginBottom: 8 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: MUT,
+                            textTransform: "uppercase", letterSpacing: "0.4px" }}>
+                Disclosure checklist — {authFw.disclosures} requirement(s)
+              </div>
+              <div style={{ display: "flex", gap: 6 }}>
+                <button style={btn(true)} onClick={() => { setAuthForm("newDisclosure"); setAf({}); }}>
+                  ＋ Add a requirement
+                </button>
+                <button style={btn(false)}
+                        title="Requires naming the edition — a verification with no edition means nothing once the standard changes"
+                        onClick={() => { setAuthForm("verify"); setAf({}); }}>
+                  Verify the checklist
+                </button>
+              </div>
+            </div>
+            <div style={{ fontSize: 11, color: MUT, lineHeight: 1.7 }}>
+              {authFw.checklist_verified ? (
+                <span style={{ color: GRN }}>
+                  Verified against <strong>{authFw.checklist_edition}</strong>. Adding or
+                  amending a requirement withdraws that verification, because whoever signed
+                  it off signed off a different list.
+                </span>
+              ) : (
+                <>Accounts cannot be finalised on this framework until the requirements are
+                entered and verified against a named edition. Each requirement needs its
+                reference in the standard, so it can be traced.</>
+              )}
+            </div>
+          </div>
+
+          {/* 8 — required documents */}
+          <div style={card}>
+            <div style={{ display: "flex", justifyContent: "space-between",
+                          alignItems: "center", marginBottom: 8 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: MUT,
+                            textTransform: "uppercase", letterSpacing: "0.4px" }}>
+                Required documents — {authFw.documents} recorded
+              </div>
+              <button style={btn(true)} onClick={() => { setAuthForm("newDocument"); setAf({}); }}>
+                ＋ Add a document
+              </button>
+            </div>
+            <div style={{ fontSize: 11, color: MUT, lineHeight: 1.7 }}>
+              Filed accounts are not only the statements. A directors report, a statement of
+              directors responsibilities and the approval wording are usually required, and
+              which apply varies by jurisdiction and entity size.
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const notReady = authoring.filter((f) => !f.ready);
+    return (
+      <div>
+        <div style={{ ...card, background: AMB_BG, borderColor: "#E5CE9A" }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: AMB, marginBottom: 8 }}>
+            {notReady.length} OF {authoring.length} FRAMEWORKS ARE NOT YET READY FOR FILING
+          </div>
+          <div style={{ fontSize: 11.5, color: AMB, lineHeight: 1.8 }}>
+            A framework is ready when it has a presentation format, a verified disclosure
+            checklist and a recorded document list. Accounts cannot be finalised on one that
+            is not.
+            <div style={{ marginTop: 6 }}>
+              None of this content is written by the system, deliberately. A caption set that
+              looked like the statutory format but was subtly wrong, or a disclosure list
+              that looked complete and had gaps, would end up in filed accounts that a
+              director had signed.
+            </div>
+          </div>
+        </div>
+
+        {authMsg && (
+          <div style={{ padding: "9px 12px", borderRadius: 7, fontSize: 11.5, marginBottom: 14,
+                        background: AMB_BG, border: "0.5px solid #E5CE9A", color: AMB,
+                        whiteSpace: "pre-wrap" }}>
+            {authMsg}
+          </div>
+        )}
+
+        <div style={card}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: MUT, marginBottom: 10,
+                        textTransform: "uppercase", letterSpacing: "0.4px" }}>
+            Frameworks, and the next step for each
+          </div>
+          <Table
+            cols={["Framework", "Jurisdictions", "Captions", "Disclosures", "Checklist",
+                   "Documents", "Next step", ""]}
+            rows={authoring}
+            render={(f, i) => (
+              <tr key={i} style={f.ready ? { background: GRN_BG } : undefined}>
+                <td style={{ ...td, fontWeight: 600 }}>
+                  {f.framework_name}
+                  <div style={{ fontSize: 10.5, color: MUT }}>{f.framework}</div>
+                </td>
+                <td style={{ ...td, color: MUT, fontSize: 11 }}>{f.jurisdictions || "—"}</td>
+                <td style={{ ...num, color: f.has_format ? GRN : RED, fontWeight: 600 }}>
+                  {f.captions}
+                </td>
+                <td style={num}>{f.disclosures}</td>
+                <td style={td}>
+                  {f.checklist_verified
+                    ? <span style={pill(GRN_BG, GRN)}>{f.checklist_edition}</span>
+                    : <span style={pill(AMB_BG, AMB)}>not verified</span>}
+                </td>
+                <td style={num}>{f.documents}</td>
+                <td style={{ ...td, fontSize: 11, lineHeight: 1.5,
+                             color: f.ready ? GRN : AMB }}>
+                  {f.next_step}
+                </td>
+                <td style={td}>
+                  <button style={btn(false)} onClick={() => openFramework(f)}>Open</button>
+                </td>
+              </tr>
+            )}
+            empty={<Empty what="no frameworks are registered" />}
+          />
+        </div>
+      </div>
+    );
+  };
+
+  const Frameworks_old = () => {
     const noFormat = frameworks.filter((f) => !f.has_format);
     const unverified = frameworks.filter((f) => !f.checklist_verified);
     return (
@@ -586,6 +1004,8 @@ export default function AffinityFiduciary({ onNav }) {
         {tab === "accounts"   && <Accounts />}
         {tab === "frameworks" && <Frameworks />}
       </div>
+
+      <AuthForm />
     </div>
   );
 }

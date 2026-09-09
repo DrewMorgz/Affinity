@@ -224,3 +224,54 @@ export const approvalThresholdsList = () => call("approval_thresholds_list", {})
 // of control, because that is what it is.
 export const approvalThresholdSet = (entityId, threshold) =>
   call("approval_threshold_set", { p_entity: entityId, p_threshold: threshold });
+
+// ── Authoring formats and checklists (db/080) ───────────────────────────────
+// Points 7, 8 and 9: accountants enter the disclosure requirements, the
+// required document lists, and the presentation formats for the frameworks
+// that have none — all inside Core.
+//
+// I did not author any of this content. A caption set I invented would look
+// like the Companies Act format and be subtly wrong; a disclosure list I
+// reconstructed would look complete and have gaps. Both would be filed.
+
+// One list with the single next step per framework, so the work can be planned
+// rather than discovered framework by framework.
+export const authoringOutstanding = () => call("authoring_outstanding", {});
+
+// Presentation formats.
+export const fsFrameworkAdd = (code, name) =>
+  call("fs_framework_add", { p_code: code, p_name: name });
+export const frameworkFormatLink = (reportingCode, fsCode) =>
+  call("framework_format_link", { p_reporting_code: reportingCode, p_fs_code: fsCode });
+export const fsCaptionsList = (fsFramework) =>
+  call("fs_captions_list", { p_framework: fsFramework });
+// The code is what accounts map to, so it must be given and stays stable when
+// the caption text is edited.
+export const fsCaptionAdd = (c) => call("fs_caption_add", {
+  p_framework: c.framework, p_statement: c.statement, p_code: c.code,
+  p_caption: c.caption, p_sort_order: c.sortOrder,
+  p_is_subtotal: c.isSubtotal === true, p_note_no: c.noteNo ?? null,
+  p_fund_filter: c.fundFilter || null,
+});
+// Refused where accounts still map to it: deleting would leave those balances
+// out of the accounts while the statements still balanced.
+export const fsCaptionRemove = (fsFramework, code) =>
+  call("fs_caption_remove", { p_framework: fsFramework, p_code: code });
+export const fsFormatReadiness = (fsFramework) =>
+  call("fs_format_readiness", { p_fs_framework: fsFramework });
+
+// Account mapping. One account may map to SEVERAL captions where they have
+// different fund filters — that is the trust income/capital apportionment and
+// is correct. Two with the same fund treatment would double-count, and are
+// refused.
+export const accountMappingDuplicates = (fsFramework) =>
+  call("account_mapping_duplicates", { p_fs_framework: fsFramework });
+
+export const STATEMENT_CODES = [
+  { id: "BS", label: "Balance sheet" },
+  { id: "PL", label: "Profit and loss" },
+  { id: "IC", label: "Income and capital (trusts)" },
+  { id: "AL", label: "Assets and liabilities" },
+  { id: "CF", label: "Cash flow" },
+  { id: "EQ", label: "Changes in equity" },
+];
