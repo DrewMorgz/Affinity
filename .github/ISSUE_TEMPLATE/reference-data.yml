@@ -1,0 +1,47 @@
+name: Reference data to enter
+description: Something Compliance, Accounts or Finance needs to populate
+title: "[Data] "
+labels: ["reference-data"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For the content only your team can supply — obligation deadlines,
+        disclosure requirements, payroll rates. These are not software changes
+        and do not need a developer; they are entered in Core directly.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which set of data?
+      options:
+        - Obligation schedule for a jurisdiction (Compliance)
+        - Disclosure checklist for a framework (Accounts)
+        - Required documents for a framework (Accounts)
+        - Presentation format / captions for a framework (Accounts)
+        - Payroll rates for a jurisdiction (Finance)
+        - Group allocation percentages (Finance)
+        - Periodic review intervals by risk rating (Compliance)
+        - Journal approval thresholds (Finance)
+    validations:
+      required: true
+
+  - type: input
+    id: owner
+    attributes:
+      label: Who is entering it?
+    validations:
+      required: true
+
+  - type: textarea
+    id: source
+    attributes:
+      label: What is the source?
+      description: |
+        For anything with a legal or regulatory basis, the reference matters as
+        much as the value. A deadline nobody can trace back cannot be checked
+        by anyone else, and Core refuses to mark an obligation confirmed
+        without one.
+      placeholder: "e.g. Companies Act 2006 s.120; FRS 102 (2024 amendments) section 1A"
+    validations:
+      required: true

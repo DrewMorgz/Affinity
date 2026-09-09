@@ -1,0 +1,80 @@
+name: Tester feedback
+description: Something is wrong, confusing, or missing
+title: "[Feedback] "
+labels: ["feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        One issue per thing please, even if you found several at once. Separate
+        issues can be fixed, closed and released independently; a list of six
+        things in one issue stays open until the last one is done.
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of thing is this?
+      options:
+        - Something is broken — it errors or does nothing
+        - Something is wrong — it works but the answer is incorrect
+        - Something is confusing — I could not work out how to do it
+        - Something is missing — I needed it and it is not there
+        - A suggestion — it works, but this would be better
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Could this cause a real problem if it went unnoticed?
+      description: |
+        Be honest rather than polite. A wrong figure on a client statement and
+        a misaligned button are not the same thing, and treating them the same
+        means the important one waits.
+      options:
+        - "Yes — a wrong figure, a missed deadline, or client data at risk"
+        - "Possibly — it would mislead someone but they would probably catch it"
+        - "No — it is awkward or ugly but nothing depends on it"
+    validations:
+      required: true
+
+  - type: input
+    id: where
+    attributes:
+      label: Where in Core?
+      placeholder: "e.g. Entity Admin, share register tab"
+    validations:
+      required: true
+
+  - type: textarea
+    id: what_happened
+    attributes:
+      label: What did you do, and what happened?
+      description: |
+        The steps matter more than the description. "I clicked Save and nothing
+        happened" is far more useful than "saving is broken", because it can be
+        reproduced.
+      placeholder: |
+        1. Opened Entity Admin and chose Meridian Holdings
+        2. Went to the share register tab
+        3. Clicked Add shareholder, filled it in, pressed Save
+        4. The panel closed but the new shareholder was not in the list
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect instead?
+    validations:
+      required: true
+
+  - type: input
+    id: entity
+    attributes:
+      label: Which entity or record were you on?
+      description: |
+        Nearly every client entity in Core is currently DEMO DATA and badged as
+        such. If the record you were using was a demo one, that is worth
+        knowing — it may explain what you saw.
+      placeholder: "e.g. [DEMO] Meridian Holdings Ltd"
