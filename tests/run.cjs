@@ -1489,6 +1489,60 @@ group("Authoring formats and checklists inside Core");
      /Name the edition/.test(ui));
 }
 
+
+group("Obligation schedules — entered by Compliance, not pre-filled");
+{
+  const sqlDir = path.join(SRC, "..", "db");
+  const sql = fs.readdirSync(sqlDir).filter((f) => f.endsWith(".sql"))
+    .map((f) => fs.readFileSync(path.join(sqlDir, f), "utf8")).join("\n");
+  const api = fs.readFileSync(path.join(SRC, "affinity_obligations_api.js"), "utf8");
+  const ui  = fs.readFileSync(path.join(SRC, "affinity_core_jurisdiction_compliance.jsx"), "utf8");
+
+  // They were hardcoded in the JSX, so Malta and Cayman could not be corrected
+  // and the other four could not be filled in at all.
+  ok("obligations live in the database", /CREATE TABLE IF NOT EXISTS jurisdiction_obligation/.test(sql));
+  ok("...and the module reads them live", /OBL\.obligationsList/.test(ui));
+  ok("...rather than the old constant", /obligations arrays are no longer read/.test(ui));
+
+  // The trigger is the commonest way a compliance date goes wrong.
+  ok("a deadline with no trigger detail is refused",
+     /the date cannot be calculated for any entity/.test(sql));
+  ok("days and months together are refused", /they would conflict/.test(sql));
+  ok("the trigger is asked for separately in the form", /Deadline runs from/.test(ui));
+
+  // Confirming requires a source and an owner.
+  ok("confirming needs a legislation reference",
+     /cannot be checked by anyone else/.test(sql));
+  ok("...and a named owner", /an obligation nobody owns is one nobody does/.test(sql));
+  ok("the form asks for both", /required before confirming/.test(ui) && /Who does it/.test(ui));
+  ok("amending a confirmed obligation withdraws the confirmation",
+     /CONFIRMATION WITHDRAWN/.test(sql));
+
+  // Unconfirmed must not read as checked.
+  ok("unconfirmed obligations are flagged", /not yet confirmed/.test(ui));
+  ok("...and described as a draft, not a deadline",
+     /a draft rather than a deadline/.test(ui));
+  ok("an empty schedule says nothing will fall due",
+     /nothing here will\s*\n?\s*fall due|nothing here will/.test(ui));
+  ok("...and why it is not pre-filled",
+     /worse than a visibly empty one/.test(ui));
+
+  // Removal keeps the history.
+  ok("removal needs a reason", /should be on the record/.test(sql));
+  ok("...and deactivates rather than deletes",
+     /part of the compliance history/.test(sql));
+
+  // Migration of the two schedules that existed.
+  ok("Malta and Cayman were migrated but NOT marked confirmed",
+     /NOT\s*\n?-- marked confirmed|NOT marked confirmed/.test(sql));
+  ok("...and the migration cannot duplicate on re-run",
+     /IF NOT EXISTS \(SELECT 1 FROM jurisdiction_obligation\)/.test(sql));
+
+  ok("the API exposes add, update, confirm, remove and coverage",
+     /obligationAdd/.test(api) && /obligationConfirm/.test(api)
+     && /obligationRemove/.test(api) && /obligationCoverage/.test(api));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

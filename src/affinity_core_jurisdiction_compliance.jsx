@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import * as OBL from "./affinity_obligations_api";
 import * as OUT from "./affinity_output";
 import { flagFor } from "./affinity_offices";
 import { getDatasets, isConfigured } from "./affinity_ops_api";
@@ -13,6 +14,15 @@ const Badge = ({ label, colors }) => (
 const FLAGS = { IOM: flagFor("Isle of Man"), Malta: flagFor("Malta"),
                 Cayman: flagFor("Cayman Islands"), Cyprus: flagFor("Cyprus"),
                 UK: flagFor("United Kingdom"), USA: flagFor("United States") };
+
+// Obligations now come from the DATABASE (db/081), not from this constant.
+// They were hardcoded here, which meant Malta and Cayman's schedules could not
+// be corrected and the other four jurisdictions could not be filled in at all.
+// JUR_INFO keeps the regulator, legislation and licence — those are stable
+// reference data — and the obligations arrays are no longer read.
+// The module keys jurisdictions by name; the database keys them by code.
+const LOC_CODE = { IOM:"IOM", Cayman:"CYM", Malta:"MALTA", Cyprus:"CYPRUS",
+                   UK:"UK", USA:"USA" };
 
 const JUR_INFO = {
   IOM: {
@@ -164,7 +174,32 @@ export default function AffinityJurisdictionCompliance({ onNav }) {
   // entities or AML matrix yet. Default every list so the page renders rather
   // than throwing on the first missing one.
   const data = { obligations: [], entities: [], amlKey: [], legislation: [], ...raw };
-  const obligations = data.obligations || [];
+  // Live from the database, falling back to nothing rather than to the old
+  // constant — a stale hardcoded deadline is exactly what this replaced.
+  const [liveObs, setLiveObs] = useState(null);
+  const [obsMsg, setObsMsg]   = useState("");
+  const [obForm, setObForm]   = useState(false);
+  const [ob, setOb]           = useState({});
+
+  const loadObs = async () => {
+    setObsMsg("");
+    const r = await OBL.obligationsList(LOC_CODE[jur] || null, false);
+    if (!r.live) { setObsMsg("Not signed in — obligations are read from the database."); return; }
+    setLiveObs(r.data || []);
+    if (!r.ok) setObsMsg(r.error);
+  };
+  useEffect(() => { loadObs(); }, [jur]);   // eslint-disable-line
+
+  const obligations = (liveObs || []).map((o) => ({
+    id: o.id, area: o.area_name, title: o.title,
+    freq: o.frequency || o.due_description,
+    due: o.due_description, owner: o.owner || "—",
+    // Nothing is called "On track" unless Compliance has confirmed it. An
+    // unconfirmed deadline came from a migration or a first draft and should
+    // not read as something anyone has checked.
+    status: o.confirmed ? "On track" : "Unconfirmed",
+    confirmed: o.confirmed, legislation: o.legislation_ref, route: o.filing_route,
+  }));
   const overdueCount = obligations.filter(o=>o.status==="Overdue").length;
 
   return (
@@ -234,6 +269,56 @@ export default function AffinityJurisdictionCompliance({ onNav }) {
                 </div>
               ))}
             </div>
+
+            {/* Unconfirmed obligations came from the migration or a first
+                draft. They are shown, because a visible unconfirmed deadline
+                is more use than none — but they must not read as checked. */}
+            {obligations.filter(x=>!x.confirmed).length>0 && (
+              <div style={{ background:"#FDF4DC", border:"0.5px solid #E5CE9A", borderRadius:8,
+                            padding:"10px 14px", marginBottom:16 }}>
+                <div style={{ fontSize:12, fontWeight:700, color:"#7B4F1D", marginBottom:4 }}>
+                  {obligations.filter(x=>!x.confirmed).length} obligation(s) not yet confirmed
+                </div>
+                <div style={{ fontSize:11, color:"#7B4F1D", lineHeight:1.7 }}>
+                  These are recorded but nobody has checked them against the legislation.
+                  Confirming one requires its source and an owner. Until then, treat the
+                  dates as a draft rather than a deadline.
+                </div>
+              </div>
+            )}
+
+            {obligations.length===0 && (
+              <div style={{ background:"#FDF4DC", border:"0.5px solid #E5CE9A", borderRadius:8,
+                            padding:"10px 14px", marginBottom:16 }}>
+                <div style={{ fontSize:12, fontWeight:700, color:"#7B4F1D", marginBottom:4 }}>
+                  No obligations recorded for {data.name}
+                </div>
+                <div style={{ fontSize:11, color:"#7B4F1D", lineHeight:1.7 }}>
+                  The tracker shows no deadlines for this jurisdiction, so nothing here will
+                  fall due or be chased. Deadlines are deliberately not pre-filled: a wrong
+                  date in a compliance tracker is worse than a visibly empty one.
+                </div>
+                <button style={{ ...nb, marginTop:8 }} onClick={()=>{setObForm(true);setOb({});}}>
+                  ＋ Add an obligation
+                </button>
+              </div>
+            )}
+
+            {obligations.length>0 && (
+              <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:10 }}>
+                <button style={nb} onClick={()=>{setObForm(true);setOb({});}}>
+                  ＋ Add an obligation
+                </button>
+              </div>
+            )}
+
+            {obsMsg && (
+              <div style={{ background:"#FCEBEB", border:"0.5px solid #f0c9c9", borderRadius:8,
+                            padding:"9px 12px", marginBottom:14, fontSize:11.5, color:"#A32D2D",
+                            whiteSpace:"pre-wrap" }}>
+                {obsMsg}
+              </div>
+            )}
 
             {data.licence && (
               <div style={{ background:"#E7F4EF", border:"0.5px solid #bfe0d2", borderRadius:8,
@@ -429,6 +514,91 @@ export default function AffinityJurisdictionCompliance({ onNav }) {
               </div>
             ))}
             <button onClick={()=>setModal(null)} style={{ width:"100%", background:CY, color:"#fff", border:"none", borderRadius:8, padding:10, fontSize:13, fontWeight:600, cursor:"pointer" }}>Save</button>
+          </div>
+        </div>
+      )}
+
+      {/* Entering an obligation. The trigger is asked for separately from the
+          deadline, because "30 days" recorded without saying 30 days from what
+          is the commonest way a compliance date goes wrong. */}
+      {obForm && (
+        <div onClick={(e)=>e.target===e.currentTarget&&(setObForm(false),setOb({}))}
+             style={{ position:"fixed", inset:0, background:"rgba(0,18,66,0.45)",
+                      display:"flex", alignItems:"center", justifyContent:"center",
+                      zIndex:1000, padding:20 }}>
+          <div style={{ background:"#fff", borderRadius:12, padding:"22px 24px",
+                        width:"min(640px,100%)", maxHeight:"86vh", overflowY:"auto" }}>
+            <div style={{ fontSize:15, fontWeight:600, color:"#001242", marginBottom:6 }}>
+              Add an obligation — {data.name}
+            </div>
+            <div style={{ fontSize:11.5, color:"#5B6B7B", lineHeight:1.7, marginBottom:14 }}>
+              The trigger and the deadline are separate: the same "30 days" means a different
+              date depending on what it runs from. Record the legislation and an owner too —
+              both are required before the obligation can be confirmed.
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px 14px" }}>
+              {[
+                { k:"area",  label:"Area", type:"select", opts:OBL.AREAS.map(a=>a.id+" — "+a.label), req:true },
+                { k:"title", label:"Obligation", full:true, req:true, ph:"Annual return — Companies Registry" },
+                { k:"triggerType", label:"Deadline runs from", type:"select",
+                  opts:OBL.TRIGGER_TYPES.map(t=>t.id+" — "+t.label), req:true },
+                { k:"triggerDetail", label:"Trigger detail", ph:"e.g. incorporation date" },
+                { k:"dueDays",   label:"Days after" },
+                { k:"dueMonths", label:"or Months after" },
+                { k:"fixedMonth",label:"Fixed month (1-12)" },
+                { k:"fixedDay",  label:"Fixed day (1-31)" },
+                { k:"frequency", label:"Frequency", ph:"Annual" },
+                { k:"owner",     label:"Owner", ph:"Who does it" },
+                { k:"legislationRef", label:"Legislation or rule", full:true,
+                  ph:"Companies Act 2006 s.120 — required before confirming" },
+                { k:"filingRoute", label:"How it is filed", full:true, ph:"Portal, form number or agent" },
+                { k:"appliesTo", label:"Applies to", full:true, ph:"Which entities" },
+              ].map(f=>(
+                <div key={f.k} style={{ gridColumn:f.full?"1/-1":"auto" }}>
+                  <label style={{ display:"block", fontSize:11, fontWeight:600, color:"#555",
+                                  marginBottom:4 }}>
+                    {f.label}{f.req&&<span style={{ color:"#A32D2D" }}> *</span>}
+                  </label>
+                  {f.type==="select" ? (
+                    <select value={ob[f.k]||""} onChange={e=>setOb({...ob,[f.k]:e.target.value})}
+                            style={{ width:"100%", height:34, fontSize:12.5, borderRadius:6,
+                                     border:"0.5px solid #ccc", padding:"0 8px" }}>
+                      <option value="">—</option>
+                      {f.opts.map(x=><option key={x} value={x}>{x}</option>)}
+                    </select>
+                  ) : (
+                    <input value={ob[f.k]||""} placeholder={f.ph||""}
+                           onChange={e=>setOb({...ob,[f.k]:e.target.value})}
+                           style={{ width:"100%", height:34, fontSize:12.5, borderRadius:6,
+                                    border:"0.5px solid #ccc", padding:"0 8px" }} />
+                  )}
+                </div>
+              ))}
+            </div>
+            <div style={{ display:"flex", gap:8, justifyContent:"flex-end", marginTop:18 }}>
+              <button style={nb} onClick={()=>{setObForm(false);setOb({});}}>Cancel</button>
+              <button style={{ ...nb, background:CY, color:"#fff", border:"none" }}
+                      onClick={async()=>{
+                        const res = await OBL.obligationAdd({
+                          location: LOC_CODE[jur], area:(ob.area||"").split(" ")[0],
+                          title: ob.title,
+                          triggerType:(ob.triggerType||"").split(" ")[0],
+                          triggerDetail: ob.triggerDetail,
+                          dueDays: ob.dueDays?Number(ob.dueDays):null,
+                          dueMonths: ob.dueMonths?Number(ob.dueMonths):null,
+                          fixedMonth: ob.fixedMonth?Number(ob.fixedMonth):null,
+                          fixedDay: ob.fixedDay?Number(ob.fixedDay):null,
+                          frequency: ob.frequency, appliesTo: ob.appliesTo,
+                          filingRoute: ob.filingRoute, legislationRef: ob.legislationRef,
+                          owner: ob.owner,
+                        });
+                        if (res && res.ok) { setObForm(false); setOb({}); loadObs(); return; }
+                        if (res && res.live===false) { setObsMsg("Not signed in — this cannot be saved yet."); return; }
+                        setObsMsg((res&&res.error)||"That could not be saved.");
+                      }}>
+                Add
+              </button>
+            </div>
           </div>
         </div>
       )}
