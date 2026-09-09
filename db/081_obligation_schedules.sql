@@ -357,24 +357,30 @@ $$;
 -- tracker is worse than a visibly empty one.
 --
 -- Guarded so re-running the file does not duplicate them.
+--
+-- NOTE: these are PERFORM, not SELECT. Inside a DO block a bare SELECT is
+-- rejected with "query has no destination for result data". My own test of
+-- this file passed only because the guard below was already false — the data
+-- was in from an earlier run, so the branch never executed. Testing the
+-- re-run path is not testing the first-run path.
 DO $mig$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM jurisdiction_obligation) THEN
-    SELECT obligation_add('CYM','AML','AML policies & procedures','fixed_date',NULL,NULL,NULL,12,31,'Annual review',NULL,NULL,NULL,'Colette Grisdale','Migrated from the hardcoded schedule — deadline to be re-confirmed against the legislation.');
-    SELECT obligation_add('CYM','AML','Risk assessment — ML/TF','fixed_date',NULL,NULL,NULL,12,31,'Annual',NULL,NULL,NULL,'Colette Grisdale','Migrated from the hardcoded schedule — deadline to be re-confirmed against the legislation.');
-    SELECT obligation_add('CYM','AEOI','FATCA return — CIMA portal','fixed_date',NULL,NULL,NULL,7,31,'Annual',NULL,NULL,NULL,'Garry Crossan','Migrated from the hardcoded schedule — deadline to be re-confirmed against the legislation.');
-    SELECT obligation_add('CYM','AEOI','CRS return — CIMA portal','fixed_date',NULL,NULL,NULL,7,31,'Annual',NULL,NULL,NULL,'Garry Crossan','Migrated from the hardcoded schedule — deadline to be re-confirmed against the legislation.');
-    SELECT obligation_add('CYM','SUBSTANCE','ESR return — all in-scope entities','ongoing',NULL,NULL,NULL,NULL,NULL,'Annual',NULL,NULL,NULL,'Garry Crossan','Migrated from the hardcoded schedule — deadline to be re-confirmed against the legislation.');
-    SELECT obligation_add('CYM','BO','Beneficial ownership register — CIMA','on_change',NULL,NULL,NULL,NULL,NULL,'On change',NULL,NULL,NULL,'Garry Crossan','Migrated from the hardcoded schedule — deadline to be re-confirmed against the legislation.');
-    SELECT obligation_add('CYM','ANNUAL','Annual returns — Registrar of Companies','fixed_date',NULL,NULL,NULL,1,31,'Annual',NULL,NULL,NULL,'Garry Crossan','Migrated from the hardcoded schedule — deadline to be re-confirmed against the legislation.');
-    SELECT obligation_add('CYM','SECTOR','Mutual Fund annual return','fixed_date',NULL,NULL,NULL,6,30,'Annual',NULL,NULL,NULL,'Garry Crossan','Migrated from the hardcoded schedule — deadline to be re-confirmed against the legislation.');
-    SELECT obligation_add('MALTA','LICENCE','Authorisation as Trustee / Administrator','ongoing',NULL,NULL,NULL,NULL,NULL,'Ongoing',NULL,NULL,NULL,'Joanne Fenech','Migrated from the hardcoded schedule — deadline to be re-confirmed against the legislation.');
-    SELECT obligation_add('MALTA','AML','Business risk assessment','fixed_date',NULL,NULL,NULL,12,31,'Annual',NULL,NULL,NULL,'Colette Grisdale','Migrated from the hardcoded schedule — deadline to be re-confirmed against the legislation.');
-    SELECT obligation_add('MALTA','AML','FIAU sectoral risk assessment update','fixed_date',NULL,NULL,NULL,12,31,'Annual',NULL,NULL,NULL,'Colette Grisdale','Migrated from the hardcoded schedule — deadline to be re-confirmed against the legislation.');
-    SELECT obligation_add('MALTA','AEOI','CRS/FATCA return — MFSA portal','fixed_date',NULL,NULL,NULL,7,31,'Annual',NULL,NULL,NULL,'Joanne Fenech','Migrated from the hardcoded schedule — deadline to be re-confirmed against the legislation.');
-    SELECT obligation_add('MALTA','BO','Beneficial ownership register — MFSA BROS','on_change',NULL,NULL,NULL,NULL,NULL,'On change',NULL,NULL,NULL,'Joanne Fenech','Migrated from the hardcoded schedule — deadline to be re-confirmed against the legislation.');
-    SELECT obligation_add('MALTA','ANNUAL','Annual returns — Malta Business Registry','ongoing',NULL,NULL,NULL,NULL,NULL,'Annual',NULL,NULL,NULL,'Joanne Fenech','Migrated from the hardcoded schedule — deadline to be re-confirmed against the legislation.');
-    SELECT obligation_add('MALTA','LICENCE','FIAU supervision annual report','fixed_date',NULL,NULL,NULL,4,30,'Annual',NULL,NULL,NULL,'Colette Grisdale','Migrated from the hardcoded schedule — deadline to be re-confirmed against the legislation.');
+    PERFORM obligation_add('CYM','AML','AML policies & procedures','fixed_date',NULL,NULL,NULL,12,31,'Annual review',NULL,NULL,NULL,'Colette Grisdale','Migrated from the hardcoded schedule — deadline to be re-confirmed against the legislation.');
+    PERFORM obligation_add('CYM','AML','Risk assessment — ML/TF','fixed_date',NULL,NULL,NULL,12,31,'Annual',NULL,NULL,NULL,'Colette Grisdale','Migrated from the hardcoded schedule — deadline to be re-confirmed against the legislation.');
+    PERFORM obligation_add('CYM','AEOI','FATCA return — CIMA portal','fixed_date',NULL,NULL,NULL,7,31,'Annual',NULL,NULL,NULL,'Garry Crossan','Migrated from the hardcoded schedule — deadline to be re-confirmed against the legislation.');
+    PERFORM obligation_add('CYM','AEOI','CRS return — CIMA portal','fixed_date',NULL,NULL,NULL,7,31,'Annual',NULL,NULL,NULL,'Garry Crossan','Migrated from the hardcoded schedule — deadline to be re-confirmed against the legislation.');
+    PERFORM obligation_add('CYM','SUBSTANCE','ESR return — all in-scope entities','ongoing',NULL,NULL,NULL,NULL,NULL,'Annual',NULL,NULL,NULL,'Garry Crossan','Migrated from the hardcoded schedule — deadline to be re-confirmed against the legislation.');
+    PERFORM obligation_add('CYM','BO','Beneficial ownership register — CIMA','on_change',NULL,NULL,NULL,NULL,NULL,'On change',NULL,NULL,NULL,'Garry Crossan','Migrated from the hardcoded schedule — deadline to be re-confirmed against the legislation.');
+    PERFORM obligation_add('CYM','ANNUAL','Annual returns — Registrar of Companies','fixed_date',NULL,NULL,NULL,1,31,'Annual',NULL,NULL,NULL,'Garry Crossan','Migrated from the hardcoded schedule — deadline to be re-confirmed against the legislation.');
+    PERFORM obligation_add('CYM','SECTOR','Mutual Fund annual return','fixed_date',NULL,NULL,NULL,6,30,'Annual',NULL,NULL,NULL,'Garry Crossan','Migrated from the hardcoded schedule — deadline to be re-confirmed against the legislation.');
+    PERFORM obligation_add('MALTA','LICENCE','Authorisation as Trustee / Administrator','ongoing',NULL,NULL,NULL,NULL,NULL,'Ongoing',NULL,NULL,NULL,'Joanne Fenech','Migrated from the hardcoded schedule — deadline to be re-confirmed against the legislation.');
+    PERFORM obligation_add('MALTA','AML','Business risk assessment','fixed_date',NULL,NULL,NULL,12,31,'Annual',NULL,NULL,NULL,'Colette Grisdale','Migrated from the hardcoded schedule — deadline to be re-confirmed against the legislation.');
+    PERFORM obligation_add('MALTA','AML','FIAU sectoral risk assessment update','fixed_date',NULL,NULL,NULL,12,31,'Annual',NULL,NULL,NULL,'Colette Grisdale','Migrated from the hardcoded schedule — deadline to be re-confirmed against the legislation.');
+    PERFORM obligation_add('MALTA','AEOI','CRS/FATCA return — MFSA portal','fixed_date',NULL,NULL,NULL,7,31,'Annual',NULL,NULL,NULL,'Joanne Fenech','Migrated from the hardcoded schedule — deadline to be re-confirmed against the legislation.');
+    PERFORM obligation_add('MALTA','BO','Beneficial ownership register — MFSA BROS','on_change',NULL,NULL,NULL,NULL,NULL,'On change',NULL,NULL,NULL,'Joanne Fenech','Migrated from the hardcoded schedule — deadline to be re-confirmed against the legislation.');
+    PERFORM obligation_add('MALTA','ANNUAL','Annual returns — Malta Business Registry','ongoing',NULL,NULL,NULL,NULL,NULL,'Annual',NULL,NULL,NULL,'Joanne Fenech','Migrated from the hardcoded schedule — deadline to be re-confirmed against the legislation.');
+    PERFORM obligation_add('MALTA','LICENCE','FIAU supervision annual report','fixed_date',NULL,NULL,NULL,4,30,'Annual',NULL,NULL,NULL,'Colette Grisdale','Migrated from the hardcoded schedule — deadline to be re-confirmed against the legislation.');
   END IF;
 END $mig$;
 
