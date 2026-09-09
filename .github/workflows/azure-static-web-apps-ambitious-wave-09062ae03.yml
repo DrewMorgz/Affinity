@@ -32,7 +32,7 @@ jobs:
  
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
           cache: 'npm'
  
       - name: Install dependencies
@@ -52,7 +52,6 @@ jobs:
         # sign in.
         env:
           CI: false
-          NODE_OPTIONS: --openssl-legacy-provider
           REACT_APP_SUPABASE_URL: ${{ secrets.REACT_APP_SUPABASE_URL }}
           REACT_APP_SUPABASE_ANON_KEY: ${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}
         run: npm run build
