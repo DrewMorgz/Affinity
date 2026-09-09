@@ -1543,6 +1543,54 @@ group("Obligation schedules — entered by Compliance, not pre-filled");
      && /obligationRemove/.test(api) && /obligationCoverage/.test(api));
 }
 
+
+group("Pre-Azure audit — every RPC the API calls exists");
+{
+  // THE FINDING THIS GUARDS AGAINST. A live audit against a real database
+  // found 33 read functions that the API called and that DID NOT EXIST. The
+  // calls failed, the screens fell back to bundled sample data, and eleven
+  // screens looked populated while showing demo data. Writes worked; reads
+  // did not.
+  //
+  // Source-level checks could never catch it: the calls are present and the
+  // wrappers are exported, so the code lines up perfectly. Only executing
+  // them shows the functions are absent.
+  const sqlDir = path.join(SRC, "..", "db");
+  const sql = fs.readdirSync(sqlDir).filter((f) => f.endsWith(".sql"))
+    .map((f) => fs.readFileSync(path.join(sqlDir, f), "utf8")).join("\n");
+
+  // The 29 that were built. Each must be defined in SQL somewhere.
+  ["trial_balance", "recent_journals", "pnl_by_entity", "ap_vendors", "ap_aging",
+   "ap_purchase_orders", "budget_vs_actual_for_entity", "ic_loans_for_entity",
+   "bank_accounts_for_entity", "fx_rates_latest", "fx_positions", "vat_boxes_ytd",
+   "control_checks", "group_consolidated_summary", "group_effective_ownership",
+   "comp_reg_obligations", "comp_breaches", "comp_training", "stat_annual_returns",
+   "stat_bo_registers", "stat_cogs_list", "stat_officer_changes", "stat_dissolutions",
+   "tasks_list", "onboarding_cases", "fee_invoices", "document_list",
+   "eg_licences", "eg_log"].forEach((f) =>
+    ok(f + " is defined in SQL",
+       new RegExp("CREATE OR REPLACE FUNCTION " + f + "\\s*\\(").test(sql)));
+
+  // The four with no store must be MARKED, not silently failing.
+  const comp = fs.readFileSync(path.join(SRC, "affinity_compliance_api.js"), "utf8");
+  const crm  = fs.readFileSync(path.join(SRC, "affinity_crm_api.js"), "utf8");
+  const onb  = fs.readFileSync(path.join(SRC, "affinity_onboarding_api.js"), "utf8");
+  ok("comp_reviews is marked not built", /NOT_BUILT_comp_reviews/.test(comp));
+  ok("crm_prospects is marked not built", /NOT_BUILT_crm_prospects/.test(crm));
+  ok("crm_interactions is marked not built", /NOT_BUILT_crm_interactions/.test(crm));
+  ok("attrition_cases is marked not built", /NOT_BUILT_attrition_cases/.test(onb));
+  ok("...and each says nothing is being hidden or lost",
+     /nothing is being hidden or lost/.test(comp));
+
+  // The two silent no-ops from db/082.
+  ok("approving unsubmitted time is refused rather than doing nothing",
+     /Only submitted time can be approved/.test(sql));
+  ok("an empty payment run assembly is refused",
+     /nothing was added to the run/.test(sql));
+  ok("a standing check for the same pattern exists",
+     /CREATE OR REPLACE FUNCTION silent_noop_candidates/.test(sql));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
