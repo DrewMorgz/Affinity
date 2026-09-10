@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { appUsers, isConfigured } from "./affinity_ops_api";
 import { ROLES, ROLE_LABELS, permsFor, INTERNAL_ENTITIES, INTERNAL_ACCESS } from "./affinity_core_rbac";
 import { FOLDER_TREE } from "./affinity_core_documents_v2";
+import * as DEMO from "./affinity_demo_api";
 
 const CY = "#00C4CC";
 
@@ -92,8 +93,8 @@ const GROUP_ENTITIES = [
   "Affinity (Cayman) Limited","Affinity (UK) Limited","Affinity South Dakota, LLC","Affinity South Florida, LLC",
 ];
 
-const VIEWS = ["users","roles","matrix","docperms","fields","content","audit","config"];
-const VIEW_LABELS = ["Users","Roles & permissions","Permission matrix","Document permissions","Custom fields & lists","Procedures & templates","Audit log","System config"];
+const VIEWS = ["users","roles","matrix","docperms","fields","content","audit","demo","config"];
+const VIEW_LABELS = ["Users","Roles & permissions","Permission matrix","Document permissions","Custom fields & lists","Procedures & templates","Audit log","Demo data","System config"];
 
 // Editable dropdown lists used across the system. Super Admin owns these — the
 // alternative is a developer change every time a sector or work type is added.
@@ -252,6 +253,22 @@ export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false })
   useEffect(()=>{ if(!isConfigured) return; let ok=true; appUsers().then(({data})=>{ if(ok&&data&&data.length) setLiveU(data); }).catch(()=>{}); return ()=>{ok=false;}; },[]);
   const users = liveU || usersData;
   const [view, setView] = useState("users");
+  // Demo data management. Andy asked for the sample entities to stay visible
+  // but be addable and removable; db/078 built the functions and the flag and
+  // there was no screen, so the one thing asked for could not be done.
+  const [dSum, setDSum]   = useState([]);
+  const [dForm, setDForm] = useState(null);
+  const [dF, setDF]       = useState({});
+  const [dMsg, setDMsg]   = useState("");
+  const [dBusy, setDBusy] = useState(false);
+  const loadDemo = async () => {
+    setDMsg("");
+    const r = await DEMO.demoDataSummary();
+    if (!r.live) { setDMsg("Not signed in — the register cannot be read."); return; }
+    setDSum(r.data || []);
+    if (!r.ok) setDMsg(r.error);
+  };
+  useEffect(() => { if (view === "demo") loadDemo(); }, [view]);   // eslint-disable-line
   const [matrixOpen, setMatrixOpen] = useState({ entities:true });
   const [folderOpen, setFolderOpen] = useState({});
   const [folderQ, setFolderQ] = useState("");
@@ -505,6 +522,206 @@ export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false })
       )}
 
       {/* ── SYSTEM CONFIG ── */}
+      {view === "demo" && (
+        <div style={{ padding:"4px 0 40px" }}>
+          {dMsg && (
+            <div style={{ padding:"9px 12px", borderRadius:7, fontSize:11.5, marginBottom:14,
+                          background:"#FDF4DC", border:"0.5px solid #E5CE9A",
+                          color:"#7B4F1D", whiteSpace:"pre-wrap" }}>{dMsg}</div>
+          )}
+
+          <div style={{ background:"#FDF4DC", border:"0.5px solid #E5CE9A", borderRadius:8,
+                        padding:"11px 14px", marginBottom:16 }}>
+            <div style={{ fontSize:12, fontWeight:700, color:"#7B4F1D", marginBottom:5 }}>
+              THE SAMPLE ENTITIES SIT IN THE SAME REGISTER AS REAL CLIENTS
+            </div>
+            <div style={{ fontSize:11.5, color:"#7B4F1D", lineHeight:1.8 }}>
+              They read exactly like real clients: plausible names, real-looking registration
+              numbers, real jurisdictions. That is what makes them useful for training and
+              dangerous in a live register.
+              <div style={{ marginTop:6 }}>
+                The realistic failure is not confusing them in the abstract. It is a real
+                return filed against a demo entity, real time recorded against one, or a
+                client told a figure that came from sample data. Every demo record carries a
+                flag and a "[DEMO]" name prefix — the flag for anything that reads it, the
+                prefix for any report or export that does not.
+              </div>
+            </div>
+          </div>
+
+          <div style={{ background:"#fff", border:"0.5px solid #D9DEE5", borderRadius:10,
+                        padding:"14px 16px", marginBottom:14 }}>
+            <div style={{ display:"flex", justifyContent:"space-between",
+                          alignItems:"center", marginBottom:10 }}>
+              <div style={{ fontSize:11, fontWeight:600, color:"#5B6B7B",
+                            textTransform:"uppercase", letterSpacing:"0.4px" }}>
+                Demo against real
+              </div>
+              <div style={{ display:"flex", gap:6 }}>
+                <button style={nb} onClick={loadDemo}>Refresh</button>
+                <button style={nb}
+                        onClick={()=>{ setDForm("add"); setDF({}); setDMsg(""); }}>
+                  ＋ Add a demo entity
+                </button>
+                <button style={nb}
+                        onClick={()=>{ setDForm("remove"); setDF({}); setDMsg(""); }}>
+                  Remove one
+                </button>
+                <button style={{ ...nb, color:"#A32D2D", borderColor:"#f0c9c9" }}
+                        onClick={()=>{ setDForm("clear"); setDF({}); setDMsg(""); }}>
+                  Clear all demo data
+                </button>
+              </div>
+            </div>
+            <table style={{ width:"100%", borderCollapse:"collapse" }}>
+              <thead><tr>
+                {["Category","Demo","Real","Note"].map(h=>(
+                  <th key={h} style={{ textAlign:h==="Demo"||h==="Real"?"right":"left",
+                        fontSize:10, fontWeight:600, color:"#fff", background:"#001242",
+                        padding:"8px 10px", textTransform:"uppercase",
+                        letterSpacing:"0.4px" }}>{h}</th>))}
+              </tr></thead>
+              <tbody>
+                {dSum.map((r,i2)=>(
+                  <tr key={i2} style={Number(r.demo_count)>0 && /error worth catching|never be billed/.test(r.note||"")
+                        ? { background:"#FDF4DC" } : undefined}>
+                    <td style={{ padding:"8px 10px", fontSize:12, fontWeight:600,
+                                 borderBottom:"0.5px solid #D9DEE5" }}>{r.category}</td>
+                    <td style={{ padding:"8px 10px", fontSize:12, textAlign:"right",
+                                 fontVariantNumeric:"tabular-nums",
+                                 borderBottom:"0.5px solid #D9DEE5" }}>{r.demo_count}</td>
+                    <td style={{ padding:"8px 10px", fontSize:12, textAlign:"right",
+                                 fontVariantNumeric:"tabular-nums",
+                                 borderBottom:"0.5px solid #D9DEE5" }}>{r.real_count}</td>
+                    <td style={{ padding:"8px 10px", fontSize:11.5, color:"#5B6B7B",
+                                 lineHeight:1.5, borderBottom:"0.5px solid #D9DEE5" }}>
+                      {r.note}
+                    </td>
+                  </tr>
+                ))}
+                {!dSum.length && (
+                  <tr><td colSpan={4} style={{ padding:"24px 10px", textAlign:"center",
+                        fontSize:12.5, color:"#5B6B7B" }}>
+                    Press Refresh to read the register.
+                  </td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {dForm && (
+            <div onClick={(e)=>e.target===e.currentTarget&&(setDForm(null),setDF({}),setDMsg(""))}
+                 style={{ position:"fixed", inset:0, background:"rgba(0,18,66,0.45)",
+                          display:"flex", alignItems:"center", justifyContent:"center",
+                          zIndex:1000, padding:20 }}>
+              <div style={{ background:"#fff", borderRadius:12, padding:"22px 24px",
+                            width:"min(600px,100%)", maxHeight:"86vh", overflowY:"auto" }}>
+                {dForm === "add" && (<>
+                  <div style={{ fontSize:15, fontWeight:600, color:"#001242", marginBottom:6 }}>
+                    Add a demo entity
+                  </div>
+                  <div style={{ fontSize:11.5, color:"#5B6B7B", lineHeight:1.7, marginBottom:14 }}>
+                    Built through the same path a real entity uses, so it exercises the same
+                    duplicate and jurisdiction checks — a record created another way would be
+                    a poor rehearsal. The name is prefixed "[DEMO]" automatically.
+                  </div>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px 14px" }}>
+                    {[["name","Name",true,"Blackthorn Trading Ltd"],
+                      ["jurisdiction","Jurisdiction code",false,"IOM"],
+                      ["entityType","Entity type",false,"COMPANY"],
+                      ["riskRating","Risk rating",false,"Medium"],
+                      ["administrator","Administrator",false,""]].map(([k,lab,req,ph])=>(
+                      <div key={k} style={{ gridColumn: k==="name"?"1/-1":"auto" }}>
+                        <label style={{ display:"block", fontSize:11, fontWeight:600,
+                                        color:"#555", marginBottom:4 }}>
+                          {lab}{req&&<span style={{ color:"#A32D2D" }}> *</span>}
+                        </label>
+                        <input value={dF[k]||""} placeholder={ph}
+                               onChange={e=>setDF({...dF,[k]:e.target.value})}
+                               style={{ width:"100%", height:34, fontSize:12.5,
+                                        borderRadius:6, border:"0.5px solid #ccc",
+                                        padding:"0 8px" }} />
+                      </div>
+                    ))}
+                  </div>
+                </>)}
+
+                {dForm === "remove" && (<>
+                  <div style={{ fontSize:15, fontWeight:600, color:"#001242", marginBottom:6 }}>
+                    Remove a demo entity
+                  </div>
+                  <div style={{ fontSize:11.5, color:"#5B6B7B", lineHeight:1.7, marginBottom:14 }}>
+                    Refused unless the entity is flagged as demo. That is the whole safety
+                    property: a function that deletes client entities is only safe if it
+                    cannot reach a real one, and it checks the flag rather than the name. A
+                    real client is <strong>closed</strong>, never deleted — the records must
+                    survive the relationship.
+                  </div>
+                  <div>
+                    <label style={{ display:"block", fontSize:11, fontWeight:600,
+                                    color:"#555", marginBottom:4 }}>Entity id *</label>
+                    <input value={dF.entityId||""}
+                           onChange={e=>setDF({...dF,entityId:e.target.value})}
+                           style={{ width:"100%", height:34, fontSize:12.5, borderRadius:6,
+                                    border:"0.5px solid #ccc", padding:"0 8px" }} />
+                  </div>
+                </>)}
+
+                {dForm === "clear" && (<>
+                  <div style={{ fontSize:15, fontWeight:600, color:"#A32D2D", marginBottom:6 }}>
+                    Clear all demo data
+                  </div>
+                  <div style={{ fontSize:11.5, color:"#A32D2D", lineHeight:1.7, marginBottom:14 }}>
+                    This deletes every entity flagged as demo, and the registers under them.
+                    Real client records are not touched — the flag is what this works from,
+                    not the names. Posted journals are left alone, because deleting one would
+                    unbalance the ledger.
+                    <div style={{ marginTop:6 }}>
+                      Type <strong>{DEMO.CLEAR_PHRASE}</strong> to confirm. A typed phrase
+                      rather than a tick box, because this deletes a register and a misplaced
+                      tick is easier than a misplaced phrase.
+                    </div>
+                  </div>
+                  <input value={dF.confirm||""} placeholder={DEMO.CLEAR_PHRASE}
+                         onChange={e=>setDF({...dF,confirm:e.target.value})}
+                         style={{ width:"100%", height:34, fontSize:12.5, borderRadius:6,
+                                  border:"0.5px solid #ccc", padding:"0 8px" }} />
+                </>)}
+
+                {dMsg && (
+                  <div style={{ marginTop:14, padding:"9px 12px", borderRadius:7,
+                                fontSize:11.5, lineHeight:1.6, background:"#FCEBEB",
+                                border:"0.5px solid #f0c9c9", color:"#A32D2D",
+                                whiteSpace:"pre-wrap" }}>{dMsg}</div>
+                )}
+
+                <div style={{ display:"flex", gap:8, justifyContent:"flex-end", marginTop:18 }}>
+                  <button style={nb} onClick={()=>{setDForm(null);setDF({});setDMsg("");}}>
+                    Cancel
+                  </button>
+                  <button style={nbActive} disabled={dBusy}
+                          onClick={async()=>{
+                            setDBusy(true); setDMsg("");
+                            let r;
+                            if (dForm === "add") r = await DEMO.demoEntityAdd(dF);
+                            if (dForm === "remove") r = await DEMO.demoEntityRemove(Number(dF.entityId));
+                            if (dForm === "clear") r = await DEMO.demoDataClear(dF.confirm);
+                            setDBusy(false);
+                            if (r && r.ok) { setDForm(null); setDF({}); loadDemo(); return; }
+                            if (r && r.live === false) { setDMsg("Not signed in."); return; }
+                            setDMsg((r && r.error) || "That could not be completed.");
+                          }}>
+                    {dForm === "add" ? "Create the demo entity"
+                      : dForm === "remove" ? "Remove it"
+                      : "Clear the demo data"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {view === "config" && (
         <div style={s.pad}>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>

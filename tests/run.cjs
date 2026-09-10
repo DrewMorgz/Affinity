@@ -1893,6 +1893,45 @@ group("Fee transfers from client money — now reachable");
      !/await ME\.cmFeeAvailable\s*\?/.test(ui));
 }
 
+
+group("Demo data management — the thing that was actually asked for");
+{
+  const api = fs.readFileSync(path.join(SRC, "affinity_demo_api.js"), "utf8");
+  const ui  = fs.readFileSync(path.join(SRC, "affinity_core_system_admin.jsx"), "utf8");
+
+  // db/078 built the flag and the functions after Andy asked to keep the
+  // sample entities visible but be able to add and remove them. There was no
+  // screen, so the one thing he asked for could not be done.
+  ok("a Demo data tab exists", /"Demo data"/.test(ui));
+  ["demoDataSummary", "demoEntityAdd", "demoEntityRemove", "demoDataClear"]
+    .forEach((w) => ok(w + " is called by the screen",
+      new RegExp("DEMO\\." + w + "\\s*\\(").test(ui)));
+
+  // The screen states the realistic failure rather than a vague warning.
+  ok("it says demo records sit in the same register as real clients",
+     /SAME REGISTER AS REAL CLIENTS/.test(ui));
+  ok("...and names the actual risk", /filed against a demo entity/.test(ui));
+  ok("...and why there is both a flag and a name prefix",
+     /prefix for any report/.test(ui));
+
+  // Removal is only safe because it cannot reach a real record.
+  ok("removal is described as checking the flag, not the name",
+     /checks the flag rather than the name/.test(api));
+  ok("...and says a real client is closed rather than deleted",
+     /survive the relationship/.test(ui));
+
+  // A typed phrase rather than a tick box.
+  ok("clearing everything needs the exact phrase",
+     /CLEAR_PHRASE = "REMOVE DEMO DATA"/.test(api));
+  ok("...and the reason is on the screen", /misplaced phrase/.test(ui));
+  ok("posted journals are left alone", /unbalance the ledger/.test(ui));
+
+  // Time or filings recorded against a demo entity is the error worth
+  // catching, so the summary reports it rather than only counting entities.
+  ok("the summary covers work recorded against demo entities",
+     /error worth catching|never be billed/.test(api) || /demo_data_summary/.test(api));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
