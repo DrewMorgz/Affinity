@@ -9,6 +9,7 @@ import Fiduciary from "./affinity_core_fiduciary";
 import Reports from "./affinity_core_reports";
 import DMS from "./affinity_core_dms";
 import OnboardingLive from "./affinity_core_onboarding_live";
+import CRMLive from "./affinity_core_crm_live";
 import JurisdictionCompliance from "./affinity_core_jurisdiction_compliance";
 import Tasks from "./affinity_core_tasks";
 import Dashboard     from "./affinity_core_dashboard";
@@ -460,7 +461,7 @@ export default function AffinityCore(){
       case "jurisdiction": return <JurisdictionCompliance onNav={setMod}/>;
       case "compliance":   return <Compliance/>;
       case "statutory":    return <Statutory/>;
-      case "crm":          return <CRM/>;
+      case "crm": return <CRMLive/>;
       case "documents":    return <Documents/>;
       case "onboarding": return <OnboardingLive onNav={setMod}/>;
       case "attrition":    return <Onboarding initialView="attrition" onNav={setMod}/>;

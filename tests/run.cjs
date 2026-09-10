@@ -1758,6 +1758,55 @@ group("Onboarding — the mockup replaced with a live module");
      && /cta: "Record the approval"/.test(ui));
 }
 
+
+group("CRM — the mockup replaced with a live module");
+{
+  const ui  = fs.readFileSync(path.join(SRC, "affinity_core_crm_live.jsx"), "utf8");
+  const sh  = fs.readFileSync(path.join(SRC, "affinity_core_unified_v3.jsx"), "utf8");
+  const old = fs.readFileSync(path.join(SRC, "affinity_core_crm.jsx"), "utf8");
+
+  // Third module found in this state, after Documents and Onboarding: it
+  // imported affinity_crm_api and called none of it. A prospect could be typed
+  // in, appear in the pipeline, and be gone on reload.
+  ok("the shell uses the live module", /case "crm": return <CRMLive/.test(sh));
+  ok("the old module was a mockup", !/CRM\.\w+\s*\(/.test(old));
+
+  ["crmProspects", "crmInteractions", "crmProspectAdd", "crmStageSet",
+   "crmInteractionAdd", "crmProspectConvert"].forEach((w) =>
+    ok(w + " is called by the screen", new RegExp("CRM\\." + w + "\\s*\\(").test(ui)));
+
+  // First-year value is the sum, not the annual fee — that is what a pipeline
+  // is judged on.
+  ok("first-year value is explained as the sum of all three fees",
+     /annual fee plus the setup fee plus twelve months/.test(ui));
+
+  // A prospect nobody has contacted is not in the pipeline in any real sense.
+  ok("prospects going cold are surfaced", /GOING COLD/.test(ui));
+  ok("...and why that matters is stated",
+     /not in the pipeline in any\s*\n?\s*meaningful sense/.test(ui));
+
+  // An agreed next step with a passed date is worse than none.
+  ok("overdue next actions are flagged separately",
+     /NEXT ACTION\(S\) OVERDUE/.test(ui));
+  ok("...with the reason", /the prospect is expecting it/.test(ui));
+
+  // Why we lost is the useful part of a lost prospect.
+  ok("the lost-reason requirement is explained",
+     /only one of them is about price/.test(ui));
+
+  // Converting links the two records rather than duplicating the client.
+  ok("conversion is explained as linking, not duplicating",
+     /one story rather than two records/.test(ui));
+  ok("...and that it does NOT make the client live",
+     /does NOT make the client live/.test(ui));
+
+  // Same button-label fault as the other two modules.
+  ok("form submit labels are distinct from row buttons",
+     /cta: "Record the contact"/.test(ui)
+     && /cta: "Create the onboarding case"/.test(ui)
+     && /cta: "Add to the pipeline"/.test(ui));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
