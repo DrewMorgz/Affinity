@@ -71,3 +71,26 @@ export const cmReconSignOff = (reconId) =>
   call("cm_recon_sign_off", { p_recon_id: reconId });
 
 export const canWrite = () => isConfigured;
+
+// ── Fee transfers from client money (db/076) ────────────────────────────────
+// These wrappers also exist in affinity_fiduciary_api, which is where they
+// were first written. The Accounting ops module imports from this file, so
+// they are here too rather than adding a second import to the module for two
+// functions.
+//
+// The control they carry is the reason this matters: a fee transfer larger
+// than the client holds is REFUSED, not recorded as a breach. Unlike a payment
+// the client instructed, a fee transfer is entirely the firm's own decision,
+// and taking more than is held means paying the firm out of another client's
+// money. The bill can wait.
+
+// What may be taken, before taking it: the lower of what the client holds and
+// what has been billed.
+export const cmFeeAvailable = (cmClientId, invoiceId) =>
+  call("cm_fee_available", { p_cm_client: cmClientId, p_invoice: invoiceId });
+
+export const cmFeeTransfer = (t) => call("cm_fee_transfer", {
+  p_cm_client: t.cmClientId, p_cm_account: t.accountId,
+  p_firm_entity: t.firmEntityId, p_firm_bank: t.firmBankId,
+  p_invoice_id: t.invoiceId, p_date: t.date, p_amount: t.amount,
+});

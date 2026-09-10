@@ -166,6 +166,138 @@ function FormModal({ form, FORMS, fv, setF, positions, formErr, saving,
   );
 }
 
+// ── Taking Affinity's fee from client money ───────────────────────────────
+// cm_fee_transfer and cm_fee_available were built in db/076 and had no
+// screen. So the control that refuses a fee larger than the client holds
+// existed and could not be reached, and the fee would have been taken some
+// other way — which is the situation the control was written to prevent.
+// AT MODULE LEVEL, deliberately. Defined inside the parent component this was
+// a new function on every render, so React unmounted and remounted it on each
+// keystroke: the DOM value changed, onChange never reached the parent's state,
+// and the submit button stayed disabled. The same fault was fixed earlier in
+// this build for FormModal and reintroduced here.
+function FeeTransfer({ feeForm, setFeeForm, fee, setFee, feeAvail, setFeeAvail,
+                     feeMsg, setFeeMsg, setMsg, load, ME, money,
+                     NAVY, MUT, RED, RED_BG, GRN, GRN_BG, btn }) {
+  if (!feeForm) return null;
+  const short = feeAvail && Number(fee.amount || 0) > Number(feeAvail.available_to_take || 0);
+  return (
+    <div onClick={(e) => e.target === e.currentTarget && (setFeeForm(false), setFee({}), setFeeAvail(null), setFeeMsg(""))}
+         style={{ position: "fixed", inset: 0, background: "rgba(0,18,66,0.45)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  zIndex: 1000, padding: 20 }}>
+      <div style={{ background: "#fff", borderRadius: 12, padding: "22px 24px",
+                    width: "min(620px,100%)", maxHeight: "86vh", overflowY: "auto" }}>
+        <div style={{ fontSize: 15, fontWeight: 600, color: NAVY, marginBottom: 6 }}>
+          Take a fee from client money
+        </div>
+        <div style={{ fontSize: 11.5, color: MUT, lineHeight: 1.7, marginBottom: 14 }}>
+          This is treated differently from a payment the client instructed. A fee transfer
+          is entirely Affinity's own decision, and taking a fee from a client who does not
+          have the money means the firm has used <strong>another client's money to pay
+          itself</strong>. It is refused rather than recorded as a breach — the bill can wait.
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 14px" }}>
+          {[["cmClientId", "Client money client id", true],
+            ["accountId", "Client money account id", true],
+            ["invoiceId", "Invoice id", true],
+            ["firmEntityId", "Firm entity id", true],
+            ["firmBankId", "Firm bank account id", true],
+            ["date", "Date", false],
+            ["amount", "Fee to take", true]].map(([k, lab, req]) => (
+            <div key={k}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 600,
+                              color: "#555", marginBottom: 4 }}>
+                {lab}{req && <span style={{ color: RED }}> *</span>}
+              </label>
+              <input value={fee[k] || ""}
+                     onChange={(e) => setFee({ ...fee, [k]: e.target.value })}
+                     style={{ width: "100%", height: 34, fontSize: 12.5, borderRadius: 6,
+                              border: "0.5px solid #ccc", padding: "0 8px" }} />
+            </div>
+          ))}
+        </div>
+
+        <button style={{ ...btn(false), marginTop: 12 }}
+                disabled={!fee.cmClientId || !fee.invoiceId}
+                onClick={async () => {
+                  setFeeMsg("");
+                  // No defensive ternary here. `await X ? await X(...) : ...`
+                  // is a precedence trap — it awaits the function reference,
+                  // which is always truthy, so the guard never fires and only
+                  // obscures a real failure.
+                  const r = await ME.cmFeeAvailable(Number(fee.cmClientId),
+                                                    Number(fee.invoiceId));
+                  if (!r.live) { setFeeMsg("Not signed in — this cannot be checked."); return; }
+                  const row = Array.isArray(r.data) ? r.data[0] : r.data;
+                  setFeeAvail(row || null);
+                  if (!r.ok) setFeeMsg(r.error);
+                }}>
+          Check what may be taken
+        </button>
+
+        {feeAvail && (
+          <div style={{ marginTop: 12, padding: "11px 14px", borderRadius: 8,
+                        fontSize: 11.5, lineHeight: 1.8,
+                        background: short ? RED_BG : GRN_BG,
+                        border: "0.5px solid " + (short ? "#f0c9c9" : "#bfe0d2"),
+                        color: short ? RED : GRN }}>
+            <div><strong>{feeAvail.client_name}</strong></div>
+            <div>Held for that client: {money(feeAvail.held)}</div>
+            <div>Invoice outstanding: {money(feeAvail.invoice_outstanding)}</div>
+            <div><strong>May be taken: {money(feeAvail.available_to_take)}</strong> — the
+              lower of the two, because you cannot take more than the client holds nor more
+              than has been billed.</div>
+            {short && (
+              <div style={{ marginTop: 6 }}>
+                <strong>This would take more than is held and will be refused.</strong> Bill
+                the client and wait for funds, or transfer only the amount held.
+              </div>
+            )}
+          </div>
+        )}
+
+        {feeMsg && (
+          <div style={{ marginTop: 12, padding: "9px 12px", borderRadius: 7, fontSize: 11.5,
+                        lineHeight: 1.6, background: RED_BG,
+                        border: "0.5px solid #f0c9c9", color: RED, whiteSpace: "pre-wrap" }}>
+            {feeMsg}
+          </div>
+        )}
+
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 18 }}>
+          <button style={btn(false)}
+                  onClick={() => { setFeeForm(false); setFee({}); setFeeAvail(null); setFeeMsg(""); }}>
+            Cancel
+          </button>
+          <button style={btn(true)}
+                  onClick={async () => {
+                    setFeeMsg("");
+                    const r = await ME.cmFeeTransfer({
+                      cmClientId: Number(fee.cmClientId), accountId: Number(fee.accountId),
+                      firmEntityId: Number(fee.firmEntityId), firmBankId: Number(fee.firmBankId),
+                      invoiceId: Number(fee.invoiceId),
+                      date: fee.date || new Date().toISOString().slice(0, 10),
+                      amount: Number(fee.amount),
+                    });
+                    if (r && r.ok) {
+                      setFeeForm(false); setFee({}); setFeeAvail(null);
+                      setMsg("Fee taken from client money and recorded in the audit trail.");
+                      load();
+                      return;
+                    }
+                    if (r && r.live === false) { setFeeMsg("Not signed in."); return; }
+                    setFeeMsg((r && r.error) || "That could not be completed.");
+                  }}>
+            Take the fee
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AffinityAccountingOps({ onNav }) {
   const [tab, setTab]       = useState("overview");
   const [entity, setEntity] = useState("");
@@ -186,6 +318,10 @@ export default function AffinityAccountingOps({ onNav }) {
   const [meEntity, setMeEntity]   = useState("");
   const [mePeriod, setMePeriod]   = useState(new Date().toISOString().slice(0, 7));
   const [meMsg, setMeMsg]         = useState("");
+  const [feeForm, setFeeForm]     = useState(false);
+  const [fee, setFee]             = useState({});
+  const [feeAvail, setFeeAvail]   = useState(null);
+  const [feeMsg, setFeeMsg]       = useState("");
 
   // ── Load ──────────────────────────────────────────────────────────────────
   const load = async () => {
@@ -688,6 +824,11 @@ export default function AffinityAccountingOps({ onNav }) {
           <div style={{ display: "flex", gap: 6 }}>
             <button style={btn(true)} onClick={() => openForm("cmReceive")}>＋ Receipt</button>
             <button style={btn(false)} onClick={() => openForm("cmPay")}>＋ Payment</button>
+            <button style={btn(false)}
+                    title="Refused if the client does not hold the money — a fee transfer is the firm helping itself, not a client instruction"
+                    onClick={() => { setFeeForm(true); setFee({}); setFeeAvail(null); setFeeMsg(""); }}>
+              Take a fee
+            </button>
           </div>
         </div>
         <div style={{ fontSize: 11, color: MUT, marginBottom: 10, lineHeight: 1.6 }}>
@@ -973,6 +1114,13 @@ export default function AffinityAccountingOps({ onNav }) {
         {tab === "deferrals"   && <Deferrals />}
         {tab === "monthend"    && <MonthEnd />}
       </div>
+
+      <FeeTransfer feeForm={feeForm} setFeeForm={setFeeForm} fee={fee} setFee={setFee}
+                   feeAvail={feeAvail} setFeeAvail={setFeeAvail}
+                   feeMsg={feeMsg} setFeeMsg={setFeeMsg} setMsg={setMsg}
+                   load={load} ME={ME} money={money}
+                   NAVY={NAVY} MUT={MUT} RED={RED} RED_BG={RED_BG}
+                   GRN={GRN} GRN_BG={GRN_BG} btn={btn} />
 
       <FormModal form={form} FORMS={FORMS} fv={fv} setF={setF} positions={positions}
                  formErr={formErr} saving={saving} onCancel={closeForm} onSubmit={submitForm}

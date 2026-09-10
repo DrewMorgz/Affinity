@@ -1850,6 +1850,49 @@ group("Periodic reviews — the workflow now has a screen");
   ok("...and the reason is recorded", /not keyboard-reachable/.test(ui));
 }
 
+
+group("Fee transfers from client money — now reachable");
+{
+  const ui  = fs.readFileSync(path.join(SRC, "affinity_core_accounting_ops.jsx"), "utf8");
+  const api = fs.readFileSync(path.join(SRC, "affinity_monthend_api.js"), "utf8");
+
+  // cm_fee_transfer and cm_fee_available were built in db/076 with the control
+  // that refuses a fee larger than the client holds — and had no screen. So
+  // the control existed and could not be reached, and the fee would have been
+  // taken some other way. Which is the situation the control was written to
+  // prevent.
+  ok("the fee transfer is reachable", /Take a fee/.test(ui));
+  ok("cm_fee_available is wrapped", /"cm_fee_available"/.test(api));
+  ok("cm_fee_transfer is wrapped", /"cm_fee_transfer"/.test(api));
+  ok("both are called by the screen",
+     /ME\.cmFeeAvailable\s*\(/.test(ui) && /ME\.cmFeeTransfer\s*\(/.test(ui));
+
+  // Why a fee transfer differs from a client-instructed payment.
+  ok("the screen says it is the firm helping itself",
+     /another client's money to pay/.test(ui));
+  ok("...and that it is refused rather than recorded as a breach",
+     /refused rather than recorded as a breach/.test(ui));
+  ok("what may be taken is shown before taking it",
+     /lower of the two/.test(ui));
+  ok("...and an over-limit amount warns before submitting",
+     /will be refused/.test(ui));
+
+  // THE BUG THIS GUARDS AGAINST, which was fixed once in this build and then
+  // reintroduced. A component defined INSIDE another component is a new
+  // function on every render, so React unmounts and remounts it on each
+  // keystroke: the DOM value changes, onChange never reaches the parent state,
+  // and the form appears frozen.
+  ok("FeeTransfer is declared at module level, not inside the component",
+     /^function FeeTransfer\(/m.test(ui));
+  ok("...and the reason is recorded so it is not reintroduced again",
+     /new function on every render/.test(ui));
+
+  // A precedence trap I wrote and removed: `await X ? await X(...) : ...`
+  // awaits the function reference, which is always truthy.
+  ok("no defensive await-ternary around the availability call",
+     !/await ME\.cmFeeAvailable\s*\?/.test(ui));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
