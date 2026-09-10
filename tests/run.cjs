@@ -1647,6 +1647,70 @@ group("The four stores that did not exist");
      && /attritionApprove/.test(onb) && /attritionCases/.test(onb));
 }
 
+
+group("Document management — the DMS is wired");
+{
+  const api = fs.readFileSync(path.join(SRC, "affinity_dms_api.js"), "utf8");
+  const ui  = fs.readFileSync(path.join(SRC, "affinity_core_dms.jsx"), "utf8");
+  const sh  = fs.readFileSync(path.join(SRC, "affinity_core_unified_v3.jsx"), "utf8");
+
+  // THE FAILURE THIS GUARDS AGAINST. Core IS a document management system —
+  // 17 folders, a retention policy per folder, and retention rules that vary
+  // by data class and jurisdiction. All of it was built in the database and
+  // almost none had a screen: filing worked, and search, reclassify,
+  // delete-with-retention and folder management did not.
+  //
+  // It was found because the user guide claimed Core was not a DMS. Checking
+  // that claim exposed the gap, and a reachability audit that traced
+  // database -> API -> SCREEN rather than database -> API found 190 functions
+  // in the same state.
+  ok("the DMS module is reachable", /id:"dms"/.test(sh) && /case "dms"/.test(sh));
+
+  ["doc_file", "doc_delete", "doc_reclassify", "dms_category_add",
+   "get_object_documents", "search_documents", "document_list"].forEach((f) =>
+    ok(f + " is called by the API", new RegExp('"' + f + '"').test(api)));
+
+  // doc_list is deliberately NOT wrapped: it duplicates document_list, which
+  // also resolves the folder name and the retention state. An unused wrapper
+  // is how this whole class of problem began — a function with an API wrapper
+  // and no caller looks wired and is not.
+  ok("doc_list is deliberately not wrapped, and the reason is recorded",
+     !/"doc_list"/.test(api) && /doc_list is NOT wrapped/.test(api));
+
+  ["documentList", "objectDocuments", "searchDocuments", "docFile",
+   "docReclassify", "docDelete", "dmsCategoryAdd"].forEach((w) =>
+    ok(w + " is called by the screen", new RegExp("DMS\\." + w + "\\s*\\(").test(ui)));
+
+  // Retention is a consequence of the folder, not a typed field.
+  ok("the screen states retention follows the folder",
+     /consequence of the folder/i.test(ui));
+  ok("reclassifying requires a reason, because it changes the retention",
+     /changes how long it must be kept/.test(ui));
+  ok("deleting inside retention is called a records decision",
+     /records decision/.test(ui));
+  ok("a folder without a retention policy is flagged",
+     /nobody knows when to destroy/.test(ui));
+
+  // Three retention states, distinguished.
+  ok("within retention is distinguished from past it and from unrecorded",
+     /within_retention/.test(ui) && /No retention date recorded/.test(ui));
+  ok("...and the risk of each is stated",
+     /data protection exposure/.test(ui) && /records breach/.test(ui));
+
+  // Documents attached to a specific record must be retrievable from it.
+  ok("documents attached to an object can be retrieved",
+     /get_object_documents/.test(api));
+
+  // The remaining honest gap.
+  ok("the API records that file storage is still missing",
+     /no upload, no storage/.test(api));
+
+  // The tab and the submit button were both "Search", which is ambiguous on
+  // screen as well as in a test.
+  ok("the search submit button is distinct from the tab",
+     /Search documents/.test(ui));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
