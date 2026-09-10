@@ -1807,6 +1807,49 @@ group("CRM — the mockup replaced with a live module");
      && /cta: "Add to the pipeline"/.test(ui));
 }
 
+
+group("Periodic reviews — the workflow now has a screen");
+{
+  const api = fs.readFileSync(path.join(SRC, "affinity_compliance_api.js"), "utf8");
+  const ui  = fs.readFileSync(path.join(SRC, "affinity_core_compliance.jsx"), "utf8");
+
+  // Compliance READ the review list, so you could see a review was due. Doing
+  // one had no screen: review_start, review_complete, review_approve and
+  // review_frequency_set were all built, wrapped and unreachable.
+  ok("a Periodic reviews tab exists", /"Periodic reviews"/.test(ui));
+  ["reviewStart", "reviewComplete", "reviewApprove", "reviewFrequencySet"]
+    .forEach((w) => ok(w + " is called by the screen",
+      new RegExp("(?<![\\w.])" + w + "\\s*\\(").test(ui)));
+
+  // A COLUMN MAPPING BUG that made the call succeed and the rows render blank.
+  // The mapping was written against a comp_reviews that did not exist yet —
+  // r.name, r.ref, r.risk. The real function returns entity_name,
+  // company_code, risk_rating.
+  ok("the review mapping uses the real column names",
+     /r\.entity_name/.test(ui) && /r\.company_code/.test(ui) && /r\.risk_rating/.test(ui));
+  ok("...and the earlier mismatch is recorded", /rendered blank/.test(ui));
+
+  // Without an interval no next-due date can be calculated, so the cycle never
+  // starts. That is a gap in the setup, not in the client's file.
+  ok("clients with no interval for their rating are flagged",
+     /NO REVIEW INTERVAL FOR THEIR RISK RATING/.test(ui));
+  ok("...and the consequence is stated", /review cycle never starts/.test(ui));
+
+  ok("the two mandatory checks are marked on the form",
+     /required: true/.test(api) && /REVIEW_CHECKS/.test(api));
+  ok("the screen warns a partial review reads as a completed one",
+     /partial review on file reads as a completed one/.test(ui));
+  ok("approval independence is stated on the screen",
+     /is not independent/.test(ui));
+
+  // The sidebar tabs were clickable divs: not keyboard-reachable, not
+  // announced as controls, and unclickable by an automated check — which is
+  // how it was noticed.
+  ok("the sidebar tabs are real buttons",
+     /const SideBtn[\s\S]{0,400}<button type="button"/.test(ui));
+  ok("...and the reason is recorded", /not keyboard-reachable/.test(ui));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

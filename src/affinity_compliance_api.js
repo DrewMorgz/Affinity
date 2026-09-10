@@ -36,3 +36,17 @@ export const reviewComplete = (r) => call("review_complete", {
 });
 // Refused to whoever carried out the review.
 export const reviewApprove = (id) => call("review_approve", { p_id: id });
+
+
+// The wrappers above already existed from db/084 and were simply unreachable —
+// no screen called them. Only this constant is new: the checks a review must
+// record, with the two that are mandatory marked, so the screen and the
+// database agree about which they are.
+export const REVIEW_CHECKS = [
+  { k: "cdd",           label: "CDD refreshed" },
+  { k: "sourceOfWealth", label: "Source of wealth revisited" },
+  { k: "sanctions",     label: "Sanctions screened", required: true },
+  { k: "pep",           label: "PEP screened", required: true },
+  { k: "structure",     label: "Structure confirmed" },
+  { k: "activity",      label: "Activity consistent with expectations" },
+];

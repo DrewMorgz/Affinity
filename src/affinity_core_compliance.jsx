@@ -1,12 +1,26 @@
 import { useState, useEffect } from "react";
 import EntitySearch from "./affinity_entity_search";
 import { isConfigured } from "./affinity_accounting_supabase";
-import { compReviews, compRegObligations, compBreaches, compTraining } from "./affinity_compliance_api";
+import { compReviews, compRegObligations, compBreaches, compTraining,
+         reviewStart, reviewComplete, reviewApprove, reviewFrequencySet,
+         REVIEW_CHECKS } from "./affinity_compliance_api";
 import { cpdList } from "./affinity_cpd_api";
 import { cregList, cregAdd } from "./affinity_creg_api";
 const CY = "#00C4CC";
+// A real button rather than a clickable div. A div is not keyboard-reachable
+// and is not announced as a control, so the whole sidebar was unusable without
+// a mouse. It also meant an automated check could not click the tabs, which is
+// how this was noticed.
 const SideBtn = ({ active, onClick, children }) => (
-  <div onClick={onClick} style={{ padding:"7px 10px", fontSize:12, borderRadius:6, cursor:"pointer", marginBottom:1, background:active?"#E6F7FB":"transparent", color:active?"#0077A8":"#444", fontWeight:active?600:400 }}>{children}</div>
+  <button type="button" onClick={onClick}
+    style={{ display:"block", width:"100%", textAlign:"left", border:"none",
+             padding:"7px 10px", fontSize:12, borderRadius:6, cursor:"pointer",
+             marginBottom:1, fontFamily:"inherit",
+             background: active ? "#EAF0FB" : "transparent",
+             color: active ? "#274690" : "#333",
+             fontWeight: active ? 600 : 400 }}>
+    {children}
+  </button>
 );
 const Badge = ({ label, colors }) => (
   <span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:600, background:colors?.bg||"#eee", color:colors?.color||"#333", whiteSpace:"nowrap" }}>{label}</span>
@@ -18,8 +32,8 @@ const td  = { padding:"9px 14px", fontSize:12, overflow:"hidden", textOverflow:"
 const sc  = { background:"var(--bg-secondary,#f9f9f9)", borderRadius:6, padding:"10px 14px" };
 const card = { background:"var(--bg-primary,#fff)", border:"0.5px solid #e5e5e5", borderRadius:10, padding:16, marginBottom:14 };
 
-const VIEWS = ["overview","csp","aml","reporting","training"];
-const VLABELS = ["Overview","CSP licence","AML/CFT framework","Regulatory reporting","Staff training"];
+const VIEWS = ["overview","reviews","csp","aml","reporting","training"];
+const VLABELS = ["Overview","Periodic reviews","CSP licence","AML/CFT framework","Regulatory reporting","Staff training"];
 
 const entities = [
   { id:1, name:"Meridian Holdings Ltd",    ref:"AC-2024-001", type:"Company", risk:"Medium", reviewer:"Roxy Sheeley",   nextReview:"14/09/2025", status:"Due this month", jurisdiction:"Isle of Man" },
@@ -120,6 +134,10 @@ export default function AffinityIOMCompliance() {
   const [view, setView] = useState("overview");
   const [modal, setModal] = useState(null);
   const [live, setLive] = useState(null);
+  const [rvForm, setRvForm] = useState(null);   // review workflow modal
+  const [rv, setRv] = useState({});
+  const [rvMsg, setRvMsg] = useState("");
+  const [rvBusy, setRvBusy] = useState(false);
   const [jur, setJur] = useState("Isle of Man");
   const [cpdRows, setCpdRows] = useState(null);
   const [liveReg, setLiveReg] = useState({});   // register id -> array of live row-arrays
@@ -161,7 +179,20 @@ export default function AffinityIOMCompliance() {
       .then(([rv, ob, br, tr]) => {
         if (!ok) return;
         setLive({
-          revs: (rv.data || []).map(r => ({ id:r.id, name:r.name, ref:r.ref, type:r.type, risk:r.risk, reviewer:r.reviewer, nextReview:r.next_review, status:r.status, jurisdiction:r.jurisdiction })),
+          // The mapping was written against a comp_reviews that did not exist yet —
+          // r.name, r.ref, r.risk, r.next_review. The real function returns
+          // entity_name, company_code, risk_rating, next_due. So the call
+          // succeeded and every row rendered blank, which looks like "no data"
+          // rather than a bug. Mapped against the real columns now.
+          revs: (rv.data || []).map(r => ({
+            id: r.entity_id, name: r.entity_name, ref: r.company_code,
+            risk: r.risk_rating, jurisdiction: r.jurisdiction,
+            reviewer: r.reviewed_by, approvedBy: r.approved_by,
+            lastReview: r.last_review, lastStatus: r.last_status,
+            nextReview: r.next_due, daysOverdue: r.days_overdue,
+            neverReviewed: r.never_reviewed, overdue: r.overdue,
+            noInterval: r.no_interval_set,
+          })),
           obs: ob.data || [],
           breaches: br.data || [],
           trg: (tr.data || []).map(t => ({ name:t.name, role:t.role, aml:t.aml, csp:t.csp, refreshDue:t.refresh_due, status:t.status })),
@@ -263,6 +294,307 @@ export default function AffinityIOMCompliance() {
           </div>
         </div>
       )}
+
+      {/* ═════════ PERIODIC REVIEWS ═════════ */}
+      {view === "reviews" && (() => {
+        // The module already computes revs at the top with a demo fallback,
+        // so preview mode shows sample rows like every other tab. Declaring a
+        // local one here shadowed it with an empty array, and this view alone
+        // showed nothing while the rest of the module looked populated.
+        // Using the outer one.
+        const never   = revs.filter(r => r.neverReviewed);
+        const overdue = revs.filter(r => r.overdue);
+        const noInt   = revs.filter(r => r.noInterval);
+        const rvAct = async (fn, okMsg) => {
+          setRvBusy(true);
+          const res = await fn();
+          setRvBusy(false);
+          if (res && res.ok) { setRvMsg(okMsg); setRvForm(null); setRv({}); return; }
+          if (res && res.live === false) { setRvMsg("Not signed in — that cannot be saved."); return; }
+          setRvMsg((res && res.error) || "That could not be completed.");
+        };
+        return (
+        <div style={{ padding:"16px 22px 60px" }}>
+          {rvMsg && (
+            <div style={{ padding:"9px 12px", borderRadius:7, fontSize:11.5, marginBottom:14,
+                          background:"#FDF4DC", border:"0.5px solid #E5CE9A", color:"#7B4F1D",
+                          whiteSpace:"pre-wrap" }}>{rvMsg}</div>
+          )}
+
+          {/* The gap that stops the whole cycle starting. */}
+          {noInt.length > 0 && (
+            <div style={{ background:"#FCEBEB", border:"0.5px solid #f0c9c9", borderRadius:8,
+                          padding:"11px 14px", marginBottom:16 }}>
+              <div style={{ fontSize:12, fontWeight:700, color:"#A32D2D", marginBottom:5 }}>
+                {noInt.length} CLIENT(S) WITH NO REVIEW INTERVAL FOR THEIR RISK RATING
+              </div>
+              <div style={{ fontSize:11.5, color:"#A32D2D", lineHeight:1.7 }}>
+                No interval is recorded for that rating, so no next-due date can be
+                calculated and the review cycle never starts. This is a gap in the compliance
+                setup rather than in the client's file — set the intervals below.
+              </div>
+              <button style={{ ...nb, marginTop:8 }}
+                      onClick={()=>{ setRvForm("frequency"); setRv({}); setRvMsg(""); }}>
+                Set review intervals
+              </button>
+            </div>
+          )}
+
+          <div style={{ display:"flex", gap:12, flexWrap:"wrap", marginBottom:16 }}>
+            {[
+              { n:never.length,   label:"Never reviewed", crit:true },
+              { n:overdue.length, label:"Review overdue", crit:overdue.length>0 },
+              { n:revs.length,    label:"Clients in scope", crit:false },
+            ].map(s2=>(
+              <div key={s2.label} style={{ flex:1, minWidth:170,
+                    background:s2.crit&&s2.n>0?"#FCEBEB":"#fff",
+                    border:"0.5px solid #D9DEE5", borderRadius:10, padding:"12px 14px" }}>
+                <div style={{ fontSize:24, fontWeight:700,
+                              color:s2.crit&&s2.n>0?"#A32D2D":"#001242" }}>{s2.n}</div>
+                <div style={{ fontSize:11, color:"#5B6B7B" }}>{s2.label}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ background:"#fff", border:"0.5px solid #D9DEE5", borderRadius:10,
+                        padding:"14px 16px", marginBottom:14 }}>
+            <div style={{ fontSize:11, color:"#5B6B7B", lineHeight:1.7, marginBottom:10 }}>
+              Every client appears here, reviewed or not. A client that has <strong>never</strong>
+              been reviewed is the one that matters, and it would be invisible in a list of
+              reviews. Sanctions and PEP screening are both required before a review can be
+              completed, and approval is refused to whoever carried it out.
+            </div>
+            <div style={{ overflowX:"auto" }}>
+            <table style={{ width:"100%", borderCollapse:"collapse" }}>
+              <thead><tr>
+                {["Client","Ref","Jurisdiction","Risk","Last review","Status",
+                  "Reviewed by","Approved by","Next due",""].map(h=>(
+                  <th key={h} style={{ textAlign:"left", fontSize:10, fontWeight:600,
+                        color:"#fff", background:"#001242", padding:"8px 10px",
+                        textTransform:"uppercase", letterSpacing:"0.4px",
+                        whiteSpace:"nowrap" }}>{h}</th>))}
+              </tr></thead>
+              <tbody>
+                {revs.map(r=>(
+                  <tr key={r.id} style={r.neverReviewed?{background:"#FCEBEB"}
+                                       :r.overdue?{background:"#FDF4DC"}:undefined}>
+                    <td style={{ padding:"8px 10px", fontSize:12, fontWeight:600,
+                                 borderBottom:"0.5px solid #D9DEE5" }}>{r.name}</td>
+                    <td style={{ padding:"8px 10px", fontSize:11.5, color:"#5B6B7B",
+                                 borderBottom:"0.5px solid #D9DEE5" }}>{r.ref}</td>
+                    <td style={{ padding:"8px 10px", fontSize:11.5, color:"#5B6B7B",
+                                 borderBottom:"0.5px solid #D9DEE5" }}>{r.jurisdiction||"—"}</td>
+                    <td style={{ padding:"8px 10px", fontSize:12,
+                                 borderBottom:"0.5px solid #D9DEE5" }}>{r.risk||"—"}</td>
+                    <td style={{ padding:"8px 10px", fontSize:12,
+                                 borderBottom:"0.5px solid #D9DEE5" }}>
+                      {r.neverReviewed
+                        ? <span style={{ fontSize:9.5, fontWeight:600, padding:"2px 7px",
+                              borderRadius:20, background:"#FCEBEB", color:"#A32D2D" }}>never</span>
+                        : (r.lastReview||"—")}
+                    </td>
+                    <td style={{ padding:"8px 10px", fontSize:12,
+                                 borderBottom:"0.5px solid #D9DEE5" }}>{r.lastStatus||"—"}</td>
+                    <td style={{ padding:"8px 10px", fontSize:11.5, color:"#5B6B7B",
+                                 borderBottom:"0.5px solid #D9DEE5" }}>{r.reviewer||"—"}</td>
+                    <td style={{ padding:"8px 10px", fontSize:11.5, color:"#5B6B7B",
+                                 borderBottom:"0.5px solid #D9DEE5" }}>{r.approvedBy||"—"}</td>
+                    <td style={{ padding:"8px 10px", fontSize:12,
+                                 borderBottom:"0.5px solid #D9DEE5" }}>
+                      {r.noInterval
+                        ? <span style={{ fontSize:9.5, fontWeight:600, padding:"2px 7px",
+                              borderRadius:20, background:"#FCEBEB", color:"#A32D2D" }}>no interval set</span>
+                        : (r.nextReview||"—")}
+                      {r.overdue && r.daysOverdue!=null && (
+                        <div style={{ fontSize:9.5, fontWeight:600, marginTop:3,
+                              display:"inline-block", padding:"2px 7px", borderRadius:20,
+                              background:"#FDF4DC", color:"#7B4F1D" }}>
+                          {r.daysOverdue} days overdue
+                        </div>
+                      )}
+                    </td>
+                    <td style={{ padding:"8px 10px", borderBottom:"0.5px solid #D9DEE5",
+                                 whiteSpace:"nowrap" }}>
+                      <button style={{ ...nb, marginRight:4 }}
+                              onClick={()=>{ setRvForm("start"); setRv({ entityId:r.id, name:r.name, risk:r.risk }); setRvMsg(""); }}>
+                        Start review
+                      </button>
+                      {r.lastStatus === "completed" && (
+                        <button style={nb}
+                                title="Refused to whoever carried the review out"
+                                onClick={()=>{ setRvForm("approve"); setRv({ name:r.name }); setRvMsg(""); }}>
+                          Approve
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {!revs.length && (
+                  <tr><td colSpan={10} style={{ padding:"26px 10px", textAlign:"center",
+                        fontSize:12.5, color:"#5B6B7B", lineHeight:1.7 }}>
+                    No clients in scope. Every client entity appears here once records exist.
+                  </td></tr>
+                )}
+              </tbody>
+            </table>
+            </div>
+          </div>
+
+          <div style={{ display:"flex", gap:8 }}>
+            <button style={nb} onClick={()=>{ setRvForm("frequency"); setRv({}); setRvMsg(""); }}>
+              Set review intervals
+            </button>
+          </div>
+
+          {/* ── the review workflow modal ── */}
+          {rvForm && (
+            <div onClick={(e)=>e.target===e.currentTarget&&(setRvForm(null),setRv({}),setRvMsg(""))}
+                 style={{ position:"fixed", inset:0, background:"rgba(0,18,66,0.45)",
+                          display:"flex", alignItems:"center", justifyContent:"center",
+                          zIndex:1000, padding:20 }}>
+              <div style={{ background:"#fff", borderRadius:12, padding:"22px 24px",
+                            width:"min(640px,100%)", maxHeight:"86vh", overflowY:"auto" }}>
+                {rvForm === "frequency" && (<>
+                  <div style={{ fontSize:15, fontWeight:600, color:"#001242", marginBottom:6 }}>
+                    Set a review interval
+                  </div>
+                  <div style={{ fontSize:11.5, color:"#5B6B7B", lineHeight:1.7, marginBottom:14 }}>
+                    How often a rating falls due. High annually and low every three years is
+                    the common shape, but it varies by jurisdiction and it is a compliance
+                    judgement — which is why Core does not assume it. Leave the jurisdiction
+                    blank to apply it everywhere; a jurisdiction-specific interval overrides
+                    the group-wide one.
+                  </div>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px 14px" }}>
+                    {[["risk","Risk rating","High / Medium / Low"],
+                      ["months","Interval in months","12"],
+                      ["location","Jurisdiction code","blank = everywhere"],
+                      ["note","Note",""]].map(([k,lab,ph])=>(
+                      <div key={k}>
+                        <label style={{ display:"block", fontSize:11, fontWeight:600,
+                                        color:"#555", marginBottom:4 }}>{lab}</label>
+                        <input value={rv[k]||""} placeholder={ph}
+                               onChange={e=>setRv({...rv,[k]:e.target.value})}
+                               style={{ width:"100%", height:34, fontSize:12.5, borderRadius:6,
+                                        border:"0.5px solid #ccc", padding:"0 8px" }} />
+                      </div>
+                    ))}
+                  </div>
+                </>)}
+
+                {rvForm === "start" && (<>
+                  <div style={{ fontSize:15, fontWeight:600, color:"#001242", marginBottom:6 }}>
+                    Carry out a periodic review
+                  </div>
+                  <div style={{ fontSize:12, color:"#5B6B7B", marginBottom:8 }}>
+                    {rv.name} · risk at review: {rv.risk||"not rated"}
+                  </div>
+                  <div style={{ fontSize:11.5, color:"#5B6B7B", lineHeight:1.7, marginBottom:14 }}>
+                    Record what was actually done. Sanctions and PEP screening are both
+                    required — if either could not be done, leave the review in draft and say
+                    why in the findings. A partial review on file reads as a completed one.
+                  </div>
+                  <div style={{ marginBottom:14 }}>
+                    {REVIEW_CHECKS.map(c=>(
+                      <label key={c.k} style={{ display:"flex", alignItems:"center", gap:8,
+                                                fontSize:12, padding:"5px 0", cursor:"pointer" }}>
+                        <input type="checkbox" checked={!!rv[c.k]}
+                               onChange={e=>setRv({...rv,[c.k]:e.target.checked})} />
+                        <span>{c.label}</span>
+                        {c.required && <span style={{ fontSize:9.5, fontWeight:600,
+                              padding:"2px 7px", borderRadius:20, background:"#FCEBEB",
+                              color:"#A32D2D" }}>required</span>}
+                      </label>
+                    ))}
+                  </div>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px 14px" }}>
+                    {[["riskAfter","Risk rating after the review","required even if unchanged"],
+                      ["findings","Findings",""],
+                      ["actions","Actions",""]].map(([k,lab,ph])=>(
+                      <div key={k} style={{ gridColumn: k==="riskAfter"?"auto":"1/-1" }}>
+                        <label style={{ display:"block", fontSize:11, fontWeight:600,
+                                        color:"#555", marginBottom:4 }}>{lab}</label>
+                        <input value={rv[k]||""} placeholder={ph}
+                               onChange={e=>setRv({...rv,[k]:e.target.value})}
+                               style={{ width:"100%", height:34, fontSize:12.5, borderRadius:6,
+                                        border:"0.5px solid #ccc", padding:"0 8px" }} />
+                      </div>
+                    ))}
+                  </div>
+                </>)}
+
+                {rvForm === "approve" && (<>
+                  <div style={{ fontSize:15, fontWeight:600, color:"#001242", marginBottom:6 }}>
+                    Approve a completed review
+                  </div>
+                  <div style={{ fontSize:12, color:"#5B6B7B", marginBottom:8 }}>{rv.name}</div>
+                  <div style={{ fontSize:11.5, color:"#5B6B7B", lineHeight:1.7, marginBottom:14 }}>
+                    Refused to whoever carried the review out. A review checked by the person
+                    who did it is not independent, and that is the point of the check.
+                  </div>
+                  <div>
+                    <label style={{ display:"block", fontSize:11, fontWeight:600,
+                                    color:"#555", marginBottom:4 }}>Review id</label>
+                    <input value={rv.id||""} placeholder="the review to approve"
+                           onChange={e=>setRv({...rv,id:e.target.value})}
+                           style={{ width:"100%", height:34, fontSize:12.5, borderRadius:6,
+                                    border:"0.5px solid #ccc", padding:"0 8px" }} />
+                  </div>
+                </>)}
+
+                {rvMsg && (
+                  <div style={{ marginTop:14, padding:"9px 12px", borderRadius:7,
+                                fontSize:11.5, lineHeight:1.6, background:"#FCEBEB",
+                                border:"0.5px solid #f0c9c9", color:"#A32D2D",
+                                whiteSpace:"pre-wrap" }}>{rvMsg}</div>
+                )}
+
+                <div style={{ display:"flex", gap:8, justifyContent:"flex-end", marginTop:18 }}>
+                  <button style={nb} onClick={()=>{setRvForm(null);setRv({});setRvMsg("");}}>
+                    Cancel
+                  </button>
+                  {rvForm === "frequency" && (
+                    <button style={nba} disabled={rvBusy}
+                            onClick={()=>rvAct(()=>reviewFrequencySet(rv.risk, Number(rv.months),
+                                                rv.location||null, rv.note),
+                                               "Interval recorded.")}>
+                      Record the interval
+                    </button>
+                  )}
+                  {rvForm === "start" && (
+                    <button style={nba} disabled={rvBusy}
+                            onClick={async()=>{
+                              setRvBusy(true); setRvMsg("");
+                              const st = await reviewStart(Number(rv.entityId), null);
+                              if (!st.ok) { setRvBusy(false);
+                                setRvMsg(st.error || "The review could not be started."); return; }
+                              const id = st.data && (st.data.id || (st.data[0] && st.data[0].id));
+                              const done = await reviewComplete({
+                                id, cdd:rv.cdd, sourceOfWealth:rv.sourceOfWealth,
+                                sanctions:rv.sanctions, pep:rv.pep,
+                                structure:rv.structure, activity:rv.activity,
+                                riskAfter:rv.riskAfter, findings:rv.findings, actions:rv.actions });
+                              setRvBusy(false);
+                              if (done.ok) { setRvMsg("Review completed. It now needs approving by someone else."); setRvForm(null); setRv({}); }
+                              else setRvMsg(done.error || "The review could not be completed.");
+                            }}>
+                      Complete the review
+                    </button>
+                  )}
+                  {rvForm === "approve" && (
+                    <button style={nba} disabled={rvBusy}
+                            onClick={()=>rvAct(()=>reviewApprove(Number(rv.id)),
+                                               "Review approved.")}>
+                      Record the approval
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        );
+      })()}
 
       {view==="csp"&&(
         <div style={{ padding:"16px 20px" }}>
