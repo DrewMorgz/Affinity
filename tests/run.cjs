@@ -1932,6 +1932,58 @@ group("Demo data management — the thing that was actually asked for");
      /error worth catching|never be billed/.test(api) || /demo_data_summary/.test(api));
 }
 
+
+group("Rates and allocations — the reference data Andy asked to enter");
+{
+  const api = fs.readFileSync(path.join(SRC, "affinity_rates_api.js"), "utf8");
+  const ui  = fs.readFileSync(path.join(SRC, "affinity_core_rates.jsx"), "utf8");
+  const sh  = fs.readFileSync(path.join(SRC, "affinity_core_unified_v3.jsx"), "utf8");
+
+  // db/079 built the tables, the effective dating, the lock and reopen and the
+  // validation. There was no screen, so budgets computed staff costs on
+  // nothing and nobody could enter the figures.
+  ok("the module is reachable", /id:"rates"/.test(sh) && /case "rates"/.test(sh));
+  ["payrollRatesList", "payrollRateGaps", "payrollRateSet", "payrollRateAgree",
+   "payrollRateLock", "payrollRateReopen", "allocationsList", "allocationLines",
+   "allocationSetCreate", "allocationLineSet", "allocationSetAgree",
+   "allocationSetLock", "allocationSetReopen"].forEach((w) =>
+    ok(w + " is called by the screen", new RegExp("R\\." + w + "\\s*\\(").test(ui)));
+
+  // Effective dating rather than editing in place.
+  ok("the screen explains rates are never edited in place",
+     /never edited in place/.test(ui));
+  ok("...and the API records why", /silently rewrites history/.test(api));
+  ok("the in-force rate is distinguished from superseded ones",
+     /in force/.test(ui) && /superseded_from/.test(ui));
+
+  // The factor-of-100 trap.
+  ok("the form warns percentages are not fractions", /not 0\.128/.test(ui));
+  ok("...and the API records the reason",
+     /hundred times too small/.test(api));
+
+  // Jurisdictions with no rates at all.
+  ok("jurisdictions with no rates are flagged",
+     /NO PAYROLL RATES AT ALL/.test(ui));
+  ok("...and the consequence stated", /staff costs on nothing/.test(ui));
+
+  // Allocations must total 100.
+  ok("unbalanced allocations are flagged", /DO NOT TOTAL 100%/.test(ui));
+  ok("...both directions explained",
+     /borne by nobody/.test(ui) && /charged\s*\n?\s*twice/.test(ui));
+  ok("the running total is reported rather than enforced per line",
+     /would be unbuildable/.test(api));
+
+  // A ROW-BUTTON FAILURE THAT SHOWED NOWHERE. The error went into the modal's
+  // message state, which only renders inside the modal — so pressing Agree on
+  // an unbalanced allocation appeared to do nothing at all.
+  ok("row-button failures route to the visible message",
+     /const show = form \? setFMsg : setMsg/.test(ui));
+  ok("...and the reason is recorded", /showed\s*\n?\s*\/\/ nowhere|showed\s+nowhere/.test(ui));
+
+  // The modal is at module level, as the earlier remount bug requires.
+  ok("RateForm is declared at module level", /^function RateForm\(/m.test(ui));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

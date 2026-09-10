@@ -10,6 +10,7 @@ import Reports from "./affinity_core_reports";
 import DMS from "./affinity_core_dms";
 import OnboardingLive from "./affinity_core_onboarding_live";
 import CRMLive from "./affinity_core_crm_live";
+import Rates from "./affinity_core_rates";
 import JurisdictionCompliance from "./affinity_core_jurisdiction_compliance";
 import Tasks from "./affinity_core_tasks";
 import Dashboard     from "./affinity_core_dashboard";
@@ -116,6 +117,7 @@ const NAV = [
     {id:"fiduciary",  label:"Fiduciary reporting", icon:"\uD83C\uDFDB\uFE0F",b:null},
     {id:"reports",    label:"Reports",         icon:"\uD83D\uDCC8",b:null},
     {id:"dms",        label:"Documents (DMS)", icon:"\uD83D\uDDC2\uFE0F",b:null},
+    {id:"rates",      label:"Rates & allocations",icon:"\uD83D\uDCC9",b:null},
     {id:"consol",     label:"Consolidation",  icon:"\uD83C\uDFE2",b:null},
     {id:"acc_admin",    label:"Accounting admin",icon:"\u2699",b:null},
   ]},
@@ -301,6 +303,7 @@ const SEARCH_INDEX = [
   {type:"Module",  label:"Fiduciary reporting",              sub:"Trust accounting, statutory accounts, frameworks",mod:"fiduciary"},
   {type:"Module",  label:"Reports",                         sub:"Aged debt, aged creditors, VAT, forecasts",mod:"reports"},
   {type:"Module",  label:"Documents (DMS)",                  sub:"Filing, search, retention, folders",mod:"dms"},
+  {type:"Module",  label:"Rates & allocations",               sub:"Payroll rates, group allocations",mod:"rates"},
   {type:"Module",  label:"Reporting",                       sub:"MI & financial statements",       mod:"reporting"},
   {type:"Module",  label:"Procedures",                     sub:"Process library",                 mod:"procedures"},
   {type:"Module",  label:"Generate Document",              sub:"Templates & statutory forms",     mod:"generate"},
@@ -476,6 +479,7 @@ export default function AffinityCore(){
       case "fiduciary": return <Fiduciary onNav={setMod}/>;
       case "reports": return <Reports onNav={setMod}/>;
       case "dms": return <DMS onNav={setMod}/>;
+      case "rates": return <Rates onNav={setMod}/>;
       case "consol":       return <Consolidation onNav={setMod}/>;
       case "procedures":   return <Procedures/>;
       case "chatbot":      return <Chatbot/>;
