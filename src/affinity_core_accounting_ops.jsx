@@ -539,6 +539,23 @@ export default function AffinityAccountingOps({ onNav }) {
                               border: "0.5px solid #ccc", padding: "0 8px" }} />
             </div>
             <button style={btn(true)} onClick={loadMe}>Run checklist</button>
+            <button style={btn(false)}
+                    title="Reopening a closed period needs a reason, because anything already reported on it may change"
+                    onClick={async () => {
+                      if (!meEntity) { setMeMsg("Enter an entity id first."); return; }
+                      const why = window.prompt(
+                        "Why is " + mePeriod + " being reopened?\n\n" +
+                        "Anything already reported on this period may change, so the reason " +
+                        "is kept on the record rather than being a formality.");
+                      if (!why) return;
+                      setMeMsg("");
+                      const r = await ME.periodReopen(Number(meEntity), mePeriod, why);
+                      if (r && r.ok) { setMeMsg("Period reopened."); loadMe(); return; }
+                      if (r && r.live === false) { setMeMsg("Not signed in."); return; }
+                      setMeMsg((r && r.error) || "The period could not be reopened.");
+                    }}>
+              Reopen the period
+            </button>
           </div>
           {meMsg && (
             <div style={{ marginTop: 12, padding: "9px 12px", borderRadius: 7, fontSize: 11.5,
@@ -581,21 +598,66 @@ export default function AffinityAccountingOps({ onNav }) {
               Checklist for {mePeriod}
             </div>
             <Table
-              cols={["", "Step", "Detail", "Outstanding"]}
+              cols={["", "Step", "Detail", "Outstanding", ""]}
               rows={checklist}
-              render={(c, i) => (
-                <tr key={i} style={c.blocking && !c.done ? { background: RED_BG } : undefined}>
-                  <td style={td}>
-                    <span style={pill(c.done ? GRN_BG : c.blocking ? RED_BG : AMB_BG,
-                                      c.done ? GRN : c.blocking ? RED : AMB)}>
-                      {c.done ? "done" : c.blocking ? "blocks close" : "to do"}
-                    </span>
-                  </td>
-                  <td style={{ ...td, fontWeight: 600 }}>{c.step}</td>
-                  <td style={{ ...td, color: MUT, lineHeight: 1.5 }}>{c.detail}</td>
-                  <td style={num}>{c.due_count > 0 ? c.due_count : "—"}</td>
-                </tr>
-              )}
+              render={(c, i) => {
+                // Each step that CAN be run gets a button. Previously the
+                // checklist reported what was outstanding and offered no way
+                // to do any of it — a checklist you can read and not act on.
+                const runners = {
+                  "Period open": {
+                    label: "Open the period",
+                    fn: () => ME.periodOpen(Number(meEntity), mePeriod),
+                    ok: "Period opened.",
+                  },
+                  "FX rates loaded": {
+                    label: "Revalue at period end",
+                    fn: () => ME.runFxRevaluation(Number(meEntity), mePeriod),
+                    ok: "FX revaluation posted.",
+                    note: "Needs rates at the period end date first.",
+                  },
+                  "Recurring journals posted": {
+                    label: "Post them",
+                    fn: () => ME.runRecurringJournals(mePeriod + "-01"),
+                    ok: "Recurring journals posted.",
+                  },
+                  "Deferrals released": {
+                    label: "Release them",
+                    fn: () => ME.runDeferrals(Number(meEntity), mePeriod + "-01"),
+                    ok: "Deferrals released.",
+                  },
+                };
+                const r = runners[c.step];
+                return (
+                  <tr key={i} style={c.blocking && !c.done ? { background: RED_BG } : undefined}>
+                    <td style={td}>
+                      <span style={pill(c.done ? GRN_BG : c.blocking ? RED_BG : AMB_BG,
+                                        c.done ? GRN : c.blocking ? RED : AMB)}>
+                        {c.done ? "done" : c.blocking ? "blocks close" : "to do"}
+                      </span>
+                    </td>
+                    <td style={{ ...td, fontWeight: 600 }}>{c.step}</td>
+                    <td style={{ ...td, color: MUT, lineHeight: 1.5 }}>{c.detail}</td>
+                    <td style={num}>{c.due_count > 0 ? c.due_count : "—"}</td>
+                    <td style={td}>
+                      {r && !c.done && (
+                        <button style={btn(c.blocking)} title={r.note || ""}
+                                onClick={async () => {
+                                  setMeMsg("");
+                                  const res = await r.fn();
+                                  if (res && res.ok) { setMeMsg(r.ok); loadMe(); return; }
+                                  if (res && res.live === false) {
+                                    setMeMsg("Not signed in — that cannot be run."); return;
+                                  }
+                                  setMeMsg((res && res.error) || "That could not be run.");
+                                }}>
+                          {r.label}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              }}
             />
             {todo.length === 0 && blocking.length === 0 && (
               <div style={{ marginTop: 10, fontSize: 11.5, color: GRN, lineHeight: 1.7 }}>

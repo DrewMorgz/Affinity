@@ -1984,6 +1984,41 @@ group("Rates and allocations — the reference data Andy asked to enter");
   ok("RateForm is declared at module level", /^function RateForm\(/m.test(ui));
 }
 
+
+group("Month-end steps and procedure runs — actionable rather than only reported");
+{
+  const api  = fs.readFileSync(path.join(SRC, "affinity_monthend_api.js"), "utf8");
+  const ops  = fs.readFileSync(path.join(SRC, "affinity_core_accounting_ops.jsx"), "utf8");
+  const proc = fs.readFileSync(path.join(SRC, "affinity_core_procedures_v2.jsx"), "utf8");
+
+  // The month-end checklist reported what was outstanding and offered no way
+  // to do any of it — a checklist you can read and not act on.
+  ok("checklist steps now carry a run button", /const runners = \{/.test(ops));
+  ok("...and the reason is recorded", /read and not act on/.test(ops));
+  ["periodOpen", "periodReopen", "runFxRevaluation", "runRecurringJournals",
+   "runDeferrals"].forEach((w) =>
+    ok(w + " is called by the screen", new RegExp("ME\\." + w + "\\s*\\(").test(ops)));
+
+  // Period control, previously unreachable.
+  ok("period_open is wrapped", /"period_open"/.test(api));
+  ok("period_reopen requires a reason and says why",
+     /part of the record rather than a\s*\n?\/\/ formality|part of the record/.test(api));
+  ok("run_deferred_income is wrapped", /"run_deferred_income"/.test(api));
+  ok("...with the reason an unreleased deferral matters",
+     /fails quietly/.test(api));
+  ok("post_vat_return is wrapped, separate from preparing",
+     /"post_vat_return"/.test(api) && /checked before it hits the accounts/.test(api));
+
+  // A procedure run could be STARTED and never finished: procStart was wired,
+  // advance, complete and abandon were not, so a run sat in Active for ever.
+  ok("procAdvance is called by the screen", /OW\.procAdvance\s*\(/.test(proc));
+  ok("procComplete is called by the screen", /OW\.procComplete\s*\(/.test(proc));
+  ok("procAbandon is called by the screen", /OW\.procAbandon\s*\(/.test(proc));
+  ok("...and abandoning asks for a reason", /Why is this run being abandoned/.test(proc));
+  ok("the reason it was missing is recorded", /never finished/.test(proc));
+  ok("run actions report their result", /setRunMsg/.test(proc));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

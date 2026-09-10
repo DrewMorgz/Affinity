@@ -65,6 +65,17 @@ export default function AffinityProcedures() {
   // ── Write layer plumbing ──────────────────────────────────────────────────
   const [wBusy, setWBusy] = useState(false);
   const [wMsg, setWMsg]   = useState("");
+  // Advancing, completing and abandoning a run. procStart was wired and these
+  // three were not, so a procedure could be started and never finished — the
+  // run would sit in Active for ever with nothing to move it on.
+  const [runMsg, setRunMsg] = useState("");
+  const runAct = async (fn, okMsg) => {
+    setRunMsg("");
+    const r = await fn();
+    if (r && r.ok) { setRunMsg(okMsg); return; }
+    if (r && r.live === false) { setRunMsg("Not signed in — that cannot be recorded."); return; }
+    setRunMsg((r && r.error) || "That could not be recorded.");
+  };
   const wRun = async (fn, okText) => {
     setWBusy(true); setWMsg("");
     try {
@@ -237,6 +248,11 @@ export default function AffinityProcedures() {
         {view==="active"&&(
           <div>
             <div style={{ fontSize:12, fontWeight:500, marginBottom:14 }}>Active procedure runs ({runsLive.length})</div>
+            {runMsg && (
+              <div style={{ padding:"9px 12px", borderRadius:7, fontSize:11.5, marginBottom:14,
+                            background:"#FDF4DC", border:"0.5px solid #E5CE9A",
+                            color:"#7B4F1D", whiteSpace:"pre-wrap" }}>{runMsg}</div>
+            )}
             {runsLive.map(r => (
               <div key={r.id} style={{ background:"#fff", border:"0.5px solid #e5e5e5", borderRadius:10, padding:16, marginBottom:12 }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:12 }}>
@@ -246,6 +262,22 @@ export default function AffinityProcedures() {
                   </div>
                   <div style={{ display:"flex", gap:8, alignItems:"center" }}>
                     <span style={{ fontSize:11, color:"#aaa" }}>{r.assignee}</span>
+                    <button style={{ ...nb, fontSize:10 }} title="Record the next step as done"
+                            onClick={()=>runAct(()=>OW.procAdvance(r.id, null), "Step recorded.")}>
+                      Advance
+                    </button>
+                    <button style={{ ...nb, fontSize:10 }} title="Mark the whole run finished"
+                            onClick={()=>runAct(()=>OW.procComplete(r.id, "Completed"), "Run completed.")}>
+                      Complete
+                    </button>
+                    <button style={{ ...nb, fontSize:10, color:"#A32D2D", borderColor:"#f0c9c9" }}
+                            title="Abandon this run — a reason is required and kept on the record"
+                            onClick={()=>{
+                              const why = window.prompt("Why is this run being abandoned?");
+                              if (why) runAct(()=>OW.procAbandon(r.id, why), "Run abandoned.");
+                            }}>
+                      Abandon
+                    </button>
                     <button style={{ ...nba, fontSize:10 }} title="Open this run" onClick={()=>{ if(typeof setSelRun==="function") setSelRun(r); else if(typeof setView==="function") setView("runs"); }}>Open ↗</button>
                   </div>
                 </div>

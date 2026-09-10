@@ -94,3 +94,34 @@ export const cmFeeTransfer = (t) => call("cm_fee_transfer", {
   p_firm_entity: t.firmEntityId, p_firm_bank: t.firmBankId,
   p_invoice_id: t.invoiceId, p_date: t.date, p_amount: t.amount,
 });
+
+// ── Period control and the remaining month-end routines ─────────────────────
+// The checklist showed what was outstanding and gave no way to run any of it,
+// which is a checklist you can read and not act on. These were all built and
+// unreachable.
+
+// A locked period cannot be posted into, so opening one is the first blocking
+// item on the checklist.
+export const periodOpen = (entityId, period) =>
+  call("period_open", { p_entity: entityId, p_period: period });
+
+// Reopening a closed period needs a reason. Anything already reported on that
+// period may change, so the reason is part of the record rather than a
+// formality.
+export const periodReopen = (entityId, period, reason) =>
+  call("period_reopen", { p_entity: entityId, p_period: period, p_reason: reason });
+
+export const periodStatus = (entityId, date) =>
+  call("period_status", { p_entity: entityId, p_date: date });
+
+// Deferred income released for the period. An unreleased deferral is a
+// misstatement, and it fails quietly — the figures simply stay wrong.
+export const runDeferredIncome = (entityId, period) =>
+  call("run_deferred_income", { p_entity_id: entityId, p_period: period,
+                                p_created_by: null });
+
+// Posting a prepared VAT return to the ledger. Preparing and posting are
+// separate: a prepared return can be checked before it hits the accounts.
+export const postVatReturn = (returnId, postDate) =>
+  call("post_vat_return", { p_return_id: returnId, p_post_date: postDate,
+                            p_created_by: null });
