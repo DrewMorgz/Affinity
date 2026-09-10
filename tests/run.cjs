@@ -1711,6 +1711,53 @@ group("Document management — the DMS is wired");
      /Search documents/.test(ui));
 }
 
+
+group("Onboarding — the mockup replaced with a live module");
+{
+  const ui  = fs.readFileSync(path.join(SRC, "affinity_core_onboarding_live.jsx"), "utf8");
+  const sh  = fs.readFileSync(path.join(SRC, "affinity_core_unified_v3.jsx"), "utf8");
+  const old = fs.readFileSync(path.join(SRC, "affinity_core_onboarding_v2.jsx"), "utf8");
+
+  // WHAT WAS WRONG. The previous module imported the API layer and called none
+  // of it — it ran entirely on two constants, CASES and ATTRITION. Every screen
+  // looked populated and nothing an administrator did was recorded. The user
+  // guide described the CDD workflow, the go-live gate and the three-stage
+  // attrition approval in detail, and none of it was reachable.
+  ok("the shell now uses the live module", /case "onboarding": return <OnboardingLive/.test(sh));
+  ok("the old module was a mockup with no live calls",
+     !/OW\.\w+\s*\(/.test(old) && /const CASES/.test(old));
+
+  ["onbCaseList", "onbCaseAdd", "cddItemList", "cddItemAdd", "cddItemVerify",
+   "onbCaseGoLive"].forEach((w) =>
+    ok(w + " is called by the screen", new RegExp("OW\\." + w + "\\s*\\(").test(ui)));
+  ["attritionCases", "attritionOpen", "attritionApprove"].forEach((w) =>
+    ok(w + " is called by the screen", new RegExp("ONB\\." + w + "\\s*\\(").test(ui)));
+
+  // The go-live gate is in the database, and the screen says so rather than
+  // implying it enforces it. A screen-level check can be bypassed by a screen.
+  ok("the CDD gate is stated before the button, not after a refusal",
+     /CANNOT GO LIVE/.test(ui));
+  ok("...and the screen says the gate is in the database",
+     /enforced in the database/.test(ui));
+  ok("...and why it matters", /breach that closes firms/.test(ui));
+  ok("verified CDD carrying onto the client record is explained",
+     /evidence sits with the client/.test(ui));
+
+  // Attrition: the alternate on the final stage, and the unbilled-time trap.
+  ok("the CEO-or-COO alternate is explained on screen",
+     /Group CEO <strong>or<\/strong> Group COO/.test(ui));
+  ok("unbilled time is flagged as a write-off risk", /writes it off/.test(ui));
+  ok("...and why it is captured at opening",
+     /hardest one to bill afterwards/.test(ui));
+
+  // Row buttons and form submit buttons had the same labels — ambiguous on
+  // screen as well as in a test, which is how it was found.
+  ok("form submit labels are distinct from the row buttons",
+     /cta: "Create the client entity"/.test(ui)
+     && /cta: "Record the verification"/.test(ui)
+     && /cta: "Record the approval"/.test(ui));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
