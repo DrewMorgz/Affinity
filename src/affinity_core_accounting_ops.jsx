@@ -176,6 +176,82 @@ function FormModal({ form, FORMS, fv, setF, positions, formErr, saving,
 // keystroke: the DOM value changed, onChange never reached the parent's state,
 // and the submit button stayed disabled. The same fault was fixed earlier in
 // this build for FormModal and reintroduced here.
+// ─────────────────────────────────────────────────────────────────────────────
+// An asset could be capitalised and depreciated and nothing else. It could not
+// be disposed of, revalued or impaired — so an asset sold years ago stayed on
+// the register at its written-down value and the balance sheet carried
+// something the firm no longer owned.
+// ─────────────────────────────────────────────────────────────────────────────
+const ASSET_FORMS = {
+  dispose: {
+    title: "Dispose of an asset",
+    note: "The proceeds are asked for because disposal calculates the profit or loss against the written-down value. Removing the asset without them would lose that figure, and it is the part the accounts need.",
+    cta: "Record the disposal",
+    fields: [["assetId", "Asset id", true, ""],
+             ["date", "Disposal date", true, "YYYY-MM-DD"],
+             ["proceeds", "Proceeds", true, "0 if scrapped"]],
+  },
+  impair: {
+    title: "Impair an asset",
+    note: "An impairment is a write-down that is not depreciation: it reflects a fall in value rather than the passage of time. Conflating them misstates both the charge and the remaining life.",
+    cta: "Record the impairment",
+    fields: [["assetId", "Asset id", true, ""], ["date", "Date", true, "YYYY-MM-DD"],
+             ["impairment", "Amount written down", true, ""]],
+  },
+  depreciateOne: {
+    title: "Depreciate a single asset",
+    note: "For one asset over a number of months, as distinct from the period run that does every asset at once.",
+    cta: "Post the charge",
+    fields: [["assetId", "Asset id", true, ""], ["date", "Date", true, "YYYY-MM-DD"],
+             ["months", "Months", true, "1"]],
+  },
+};
+
+function AssetForm({ kind, f, setF, msg, busy, onCancel, onSave, btn }) {
+  if (!kind) return null;
+  const d = ASSET_FORMS[kind];
+  if (!d) return null;
+  return (
+    <div onClick={(e) => e.target === e.currentTarget && onCancel()}
+         style={{ position: "fixed", inset: 0, background: "rgba(0,18,66,0.45)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  zIndex: 1200, padding: 20 }}>
+      <div style={{ background: "#fff", borderRadius: 12, padding: "22px 24px",
+                    width: "min(600px,100%)" }}>
+        <div style={{ fontSize: 15, fontWeight: 600, color: "#001242", marginBottom: 6 }}>
+          {d.title}
+        </div>
+        <div style={{ fontSize: 11.5, color: "#5B6B7B", lineHeight: 1.7, marginBottom: 14 }}>
+          {d.note}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 14px" }}>
+          {d.fields.map(([k, lab, req, ph]) => (
+            <div key={k}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 600,
+                              color: "#555", marginBottom: 4 }}>
+                {lab}{req && <span style={{ color: "#A32D2D" }}> *</span>}
+              </label>
+              <input value={f[k] || ""} placeholder={ph}
+                     onChange={(e) => setF({ ...f, [k]: e.target.value })}
+                     style={{ width: "100%", height: 34, fontSize: 12.5, borderRadius: 6,
+                              border: "0.5px solid #ccc", padding: "0 8px" }} />
+            </div>
+          ))}
+        </div>
+        {msg && (
+          <div style={{ marginTop: 14, padding: "9px 12px", borderRadius: 7, fontSize: 11.5,
+                        lineHeight: 1.6, background: "#FCEBEB", border: "0.5px solid #f0c9c9",
+                        color: "#A32D2D", whiteSpace: "pre-wrap" }}>{msg}</div>
+        )}
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 18 }}>
+          <button style={btn(false)} onClick={onCancel}>Cancel</button>
+          <button style={btn(true)} onClick={onSave} disabled={busy}>{d.cta}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function FeeTransfer({ feeForm, setFeeForm, fee, setFee, feeAvail, setFeeAvail,
                      feeMsg, setFeeMsg, setMsg, load, ME, money,
                      NAVY, MUT, RED, RED_BG, GRN, GRN_BG, btn }) {
@@ -318,6 +394,10 @@ export default function AffinityAccountingOps({ onNav }) {
   const [meEntity, setMeEntity]   = useState("");
   const [mePeriod, setMePeriod]   = useState(new Date().toISOString().slice(0, 7));
   const [meMsg, setMeMsg]         = useState("");
+  const [aForm, setAForm]         = useState(null);
+  const [aF, setAF]               = useState({});
+  const [aMsg, setAMsg]           = useState("");
+  const [aBusy, setABusy]         = useState(false);
   const [feeForm, setFeeForm]     = useState(false);
   const [fee, setFee]             = useState({});
   const [feeAvail, setFeeAvail]   = useState(null);
@@ -488,6 +568,26 @@ export default function AffinityAccountingOps({ onNav }) {
         { k: "periods",          label: "Release over (periods)", required: true },
         { k: "expenseAccountId", label: "Expense account id", required: true },
       ]},
+  };
+
+  const runAsset = async () => {
+    setABusy(true); setAMsg("");
+    const v = aF; const n = (x) => (x === "" || x == null ? null : Number(x));
+    let r;
+    try {
+      if (aForm === "dispose")
+        r = await OPS.assetDispose(n(v.assetId), v.date, n(v.proceeds));
+      if (aForm === "impair")
+        r = await OPS.assetImpair(n(v.assetId), v.date, n(v.impairment));
+      if (aForm === "depreciateOne")
+        r = await OPS.assetDepreciate(n(v.assetId), v.date, n(v.months));
+    } catch (e) {
+      r = { ok: false, live: true, error: String((e && e.message) || e) };
+    }
+    setABusy(false);
+    if (r && r.ok) { setAForm(null); setAF({}); setAMsg(""); load(); return; }
+    if (r && r.live === false) { setAMsg("Not signed in — that cannot be recorded."); return; }
+    setAMsg((r && r.error) || "That could not be recorded.");
   };
 
   const pill = (bg, fg) => ({ fontSize: 9.5, fontWeight: 600, padding: "2px 7px",
@@ -1016,6 +1116,22 @@ export default function AffinityAccountingOps({ onNav }) {
   // ── Fixed assets ──────────────────────────────────────────────────────────
   const Assets = () => (
     <div style={card}>
+      <div style={{ display:"flex", gap:6, marginBottom:12, flexWrap:"wrap" }}>
+        <button style={btn(false)}
+                title="Calculates the profit or loss against the written-down value"
+                onClick={()=>{ setAForm("dispose"); setAF({}); setAMsg(""); }}>
+          Dispose of an asset
+        </button>
+        <button style={btn(false)}
+                title="A write-down that is not depreciation"
+                onClick={()=>{ setAForm("impair"); setAF({}); setAMsg(""); }}>
+          Impair an asset
+        </button>
+        <button style={btn(false)}
+                onClick={()=>{ setAForm("depreciateOne"); setAF({}); setAMsg(""); }}>
+          Depreciate one asset
+        </button>
+      </div>
       <div style={{ display: "flex", justifyContent: "space-between",
                     alignItems: "center", marginBottom: 10 }}>
         <div style={{ fontSize: 11, fontWeight: 600, color: MUT,
@@ -1176,6 +1292,10 @@ export default function AffinityAccountingOps({ onNav }) {
         {tab === "deferrals"   && <Deferrals />}
         {tab === "monthend"    && <MonthEnd />}
       </div>
+
+      <AssetForm kind={aForm} f={aF} setF={setAF} msg={aMsg} busy={aBusy} btn={btn}
+                 onCancel={()=>{ setAForm(null); setAF({}); setAMsg(""); }}
+                 onSave={runAsset} />
 
       <FeeTransfer feeForm={feeForm} setFeeForm={setFeeForm} fee={fee} setFee={setFee}
                    feeAvail={feeAvail} setFeeAvail={setFeeAvail}

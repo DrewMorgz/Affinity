@@ -143,3 +143,29 @@ export const disbursementRecord = (d) => call("record_disbursement", {
 export const disbursementsRecharge = (entityId, date) =>
   call("recharge_disbursements", { p_entity_id: entityId, p_date: date,
                                    p_created_by: null });
+
+// ── Intercompany loans and settlement ───────────────────────────────────────
+// The Intercompany tab listed the loans, the balances and the transfer pricing
+// policies, and none of them could be moved. So a group loan could be seen and
+// never drawn, repaid, accrued or settled — which is why the module could
+// report an undocumented charge and offer nothing to do about it.
+
+// Drawing down on an existing facility.
+export const icLoanDraw = (loanId, date, amount) =>
+  call("ic_loan_draw", { p_loan: loanId, p_date: date, p_amount: amount });
+
+export const icLoanRepay = (loanId, date, amount) =>
+  call("ic_loan_repay", { p_loan: loanId, p_date: date, p_amount: amount });
+
+// Interest for a number of days. A group loan with no interest rate is flagged
+// elsewhere because a tax authority will impute one — accruing nothing is not
+// the same as there being nothing to accrue.
+export const icLoanAccrue = (loanId, date, days) =>
+  call("ic_loan_accrue", { p_loan: loanId, p_date: date, p_days: days });
+
+// Settling a balance between two group companies. The group total must
+// eliminate to nil; a balance that sits unsettled is one consolidation has to
+// keep eliminating.
+export const icSettle = (creditorId, debtorId, date, ccy, amount) =>
+  call("ic_settle", { p_creditor: creditorId, p_debtor: debtorId, p_date: date,
+                      p_ccy: ccy, p_amount: amount });

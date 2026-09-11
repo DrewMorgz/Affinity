@@ -98,6 +98,25 @@ const PAY_FORMS = {
     fields: [["date", "Date", true, "YYYY-MM-DD"],
              ["bankAccountId", "Bank account id", true, ""]],
   },
+  icLoan: {
+    title: "Move a group loan",
+    note: "A group loan that is listed and never drawn, repaid or accrued is a balance consolidation has to keep eliminating. Accruing nothing is not the same as there being nothing to accrue — a loan with no interest rate is flagged separately, because a tax authority will impute one.",
+    cta: "Record the movement",
+    fields: [["loanId", "Loan id", true, ""],
+             ["action", "Draw, repay or accrue", true, "draw / repay / accrue"],
+             ["date", "Date", true, "YYYY-MM-DD"],
+             ["amount", "Amount (draw or repay)", false, ""],
+             ["days", "Days (accrue)", false, ""]],
+  },
+  icSettle: {
+    title: "Settle an intercompany balance",
+    note: "The group total must eliminate to nil. A balance that sits unsettled is one consolidation has to keep eliminating, and the longer it sits the harder it is to establish what it was for.",
+    cta: "Settle",
+    fields: [["creditorId", "Creditor entity id", true, ""],
+             ["debtorId", "Debtor entity id", true, ""],
+             ["date", "Date", true, "YYYY-MM-DD"],
+             ["ccy", "Currency", true, "GBP"], ["amount", "Amount", true, ""]],
+  },
   creditNote: {
     title: "Raise a credit note",
     note: "A credit note is not a negative invoice. It is its own document with its own number, because reversing an invoice by editing it destroys the audit trail.",
@@ -207,6 +226,17 @@ export default function AffinityPayables({ onNav }) {
       if (pForm === "reimburse")
         r = await PAY.expenseClaimReimburse(Number(pId), v.date,
                                             Number(v.bankAccountId));
+      if (pForm === "icLoan") {
+        const a = (v.action || "").toLowerCase();
+        if (a === "draw")   r = await PAY.icLoanDraw(Number(v.loanId), v.date, Number(v.amount));
+        if (a === "repay")  r = await PAY.icLoanRepay(Number(v.loanId), v.date, Number(v.amount));
+        if (a === "accrue") r = await PAY.icLoanAccrue(Number(v.loanId), v.date, Number(v.days));
+        if (!r) r = { ok: false, live: true,
+                      error: "Choose draw, repay or accrue." };
+      }
+      if (pForm === "icSettle")
+        r = await PAY.icSettle(Number(v.creditorId), Number(v.debtorId), v.date,
+                               v.ccy, Number(v.amount));
       if (pForm === "creditNote") {
         const common = { entityId: Number(v.entityId), date: v.date, ccy: v.ccy,
                          lines: jsonOr(v.lines, null), reason: v.reason };
@@ -342,7 +372,16 @@ export default function AffinityPayables({ onNav }) {
     return (
       <div>
         <div style={card}>
-          <button style={btn(true)} onClick={loadIc}>Load intercompany position</button>
+          <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+            <button style={btn(true)} onClick={loadIc}>Load intercompany position</button>
+            <button style={btn(false)} onClick={()=>openPForm("icLoan")}>
+              Move a group loan
+            </button>
+            <button style={btn(false)} title="The group total must eliminate to nil"
+                    onClick={()=>openPForm("icSettle")}>
+              Settle a balance
+            </button>
+          </div>
           {icMsg && (
             <div style={{ marginTop: 12, padding: "9px 12px", borderRadius: 7, fontSize: 11.5,
                           background: AMB_BG, border: "0.5px solid #E5CE9A", color: AMB }}>

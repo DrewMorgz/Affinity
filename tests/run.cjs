@@ -2145,6 +2145,48 @@ group("Trust transactions — the fiduciary side could read and not record");
   ok("TrustForm is at module level", /^function TrustForm\(/m.test(ui));
 }
 
+
+group("Intercompany loans and fixed asset events");
+{
+  const pay  = fs.readFileSync(path.join(SRC, "affinity_payables_api.js"), "utf8");
+  const payU = fs.readFileSync(path.join(SRC, "affinity_core_payables.jsx"), "utf8");
+  const ops  = fs.readFileSync(path.join(SRC, "affinity_accounting_ops_api.js"), "utf8");
+  const opsU = fs.readFileSync(path.join(SRC, "affinity_core_accounting_ops.jsx"), "utf8");
+
+  // The Intercompany tab listed loans, balances and transfer pricing policies
+  // and none of them could be moved. So a group loan could be seen and never
+  // drawn, repaid, accrued or settled — the module reported an undocumented
+  // charge and offered nothing to do about it.
+  ["icLoanDraw", "icLoanRepay", "icLoanAccrue", "icSettle"].forEach((w) =>
+    ok(w + " is wrapped", new RegExp("export const " + w + "\\s*=").test(pay)));
+  ["icLoanDraw", "icLoanRepay", "icLoanAccrue", "icSettle"].forEach((w) =>
+    ok(w + " is called by the screen", new RegExp("PAY\\." + w + "\\s*\\(").test(payU)));
+  ok("settling explains the elimination requirement",
+     /keep eliminating/.test(pay));
+  ok("accruing explains that nothing is not the same as no rate",
+     /nothing to accrue/.test(pay));
+
+  // An asset could be capitalised and depreciated and nothing else, so one
+  // sold years ago stayed on the register at its written-down value and the
+  // balance sheet carried something the firm no longer owned.
+  ["assetImpair", "assetDepreciate"].forEach((w) =>
+    ok(w + " is wrapped", new RegExp("export const " + w + "\\s*=").test(ops)));
+  ["assetDispose", "assetImpair", "assetDepreciate"].forEach((w) =>
+    ok(w + " is called by the screen", new RegExp("OPS\\." + w + "\\s*\\(").test(opsU)));
+  ok("disposal explains why proceeds are required",
+     /written-down value/.test(opsU));
+  ok("impairment is distinguished from depreciation",
+     /not depreciation/.test(opsU));
+  ok("...with the consequence of conflating them", /misstates both/.test(opsU));
+
+  ok("AssetForm is at module level", /^function AssetForm\(/m.test(opsU));
+
+  // assetDispose already existed and simply had no button — a missing wrapper
+  // and a missing button are different faults and were both present here.
+  ok("the pre-existing assetDispose was not duplicated",
+     (ops.match(/export const assetDispose/g) || []).length === 1);
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

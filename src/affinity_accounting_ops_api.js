@@ -127,3 +127,24 @@ export const ASSET_CATEGORIES =
    "Leasehold improvements", "Motor vehicles", "Software"];
 export const DEFERRAL_KINDS = ["accrual", "prepayment", "deferred_income"];
 export const canWrite = () => isConfigured;
+
+// ── Fixed asset events after capitalisation ─────────────────────────────────
+// An asset could be capitalised and depreciation run, and nothing else. It
+// could not be disposed of, revalued or impaired — so an asset sold years ago
+// stayed on the register at its written-down value, and the balance sheet
+// carried something the firm no longer owned.
+
+// assetDispose already exists above — it was wrapped and had no button, which
+// is the same fault as everything else here rather than a missing wrapper.
+
+// Impairment is a write-down that is not depreciation: it reflects a fall in
+// value rather than the passage of time, and conflating them misstates both.
+export const assetImpair = (assetId, date, impairment) =>
+  call("impair_asset", { p_asset: assetId, p_date: date,
+                         p_impairment: impairment, p_created_by: null });
+
+// Depreciation for a specific asset over a number of months, as distinct from
+// the period run that does every asset at once.
+export const assetDepreciate = (assetId, date, months) =>
+  call("post_depreciation", { p_asset: assetId, p_date: date, p_months: months,
+                              p_created_by: null });
