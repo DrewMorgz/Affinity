@@ -4,6 +4,7 @@ import * as PAY from "./affinity_payables_api";
 import * as FID from "./affinity_fiduciary_api";
 import { isConfigured } from "./affinity_accounting_supabase";
 import EntitySearch from "./affinity_entity_search";
+import * as OW from "./affinity_ops_write_api";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PURCHASES AND RECEIVABLES
@@ -742,6 +743,26 @@ export default function AffinityPayables({ onNav }) {
                   load();
                 }}>
           Record a disbursement
+        </button>
+        <button style={btn(false)}
+                title="The chase count is the useful part — three chases with no response is a different conversation from one"
+                onClick={async()=>{
+                  const cust = window.prompt("Customer?");
+                  if (!cust) return;
+                  const inv = window.prompt("Invoice id (optional)?");
+                  const d = window.prompt("Date (YYYY-MM-DD)?");
+                  if (!d) return;
+                  const lvl = window.prompt("Level? e.g. reminder, first chase, final notice");
+                  if (!lvl) return;
+                  const note = window.prompt("Note?");
+                  const r = await OW.collectionActionLog({
+                    customer: cust, invoiceId: inv ? Number(inv) : null,
+                    date: d, level: lvl, note });
+                  window.alert(r && r.ok ? "Chase recorded."
+                    : (r && r.error) || "That could not be recorded.");
+                  load();
+                }}>
+          Log a chase
         </button>
         <button style={btn(false)}
                 title="Recharges outstanding disbursements to the clients they were incurred for"

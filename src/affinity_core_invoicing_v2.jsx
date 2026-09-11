@@ -394,6 +394,20 @@ export default function AffinityInvoicing({ onNav }) {
                   }}>
             Run billing from WIP
           </button>
+          <button style={nb}
+                  title="A credit note is its own document against the invoice — editing an invoice to reverse it destroys the audit trail"
+                  onClick={async()=>{
+                    const id = window.prompt("Invoice id to credit?");
+                    if (!id) return;
+                    const why = window.prompt(
+                      "Reason for the credit note?\n\nIt appears on the client's account and is what a later query is answered with.");
+                    if (!why) return;
+                    const r = await OW.invCreditNote(Number(id), why);
+                    window.alert(r && r.ok ? "Credit note raised."
+                      : (r && r.error) || "That could not be raised.");
+                  }}>
+            Credit an invoice
+          </button>
           <button style={nba} onClick={()=>setModal("newInvoice")}>＋ New invoice</button>
         </div>
 

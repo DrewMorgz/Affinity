@@ -57,6 +57,7 @@ function eq(desc, actual, expected) {
 }
 
 const SRC = path.join(__dirname, "..", "src");
+const DB  = path.join(__dirname, "..", "db");
 
 // ── 1. Entity access — who can see Affinity's own companies ────────────────
 group("Entity access (internal vs client segregation)");
@@ -2416,6 +2417,39 @@ group("Opening a statutory accounts set, and the last Entity Admin gaps");
   ok("closing an account explains the same", /comes up later/.test(ea));
   ok("a revaluation records its date", /current or stale/.test(ea));
   ok("services are tied to billing", /nobody invoices for/.test(ea));
+}
+
+
+group("A duplicate function that bypassed its own controls");
+{
+  const sql = fs.readFileSync(path.join(DB, "085_deprecate_bare_threshold_setter.sql"), "utf8");
+  const ow  = fs.readFileSync(path.join(SRC, "affinity_ops_write_api.js"), "utf8");
+  const inv = fs.readFileSync(path.join(SRC, "affinity_core_invoicing_v2.jsx"), "utf8");
+  const pay = fs.readFileSync(path.join(SRC, "affinity_core_payables.jsx"), "utf8");
+
+  // FOUND BY THE AUDIT. Two functions with identical signatures both wrote to
+  // journal_approval_rule: approval_threshold_set at 3,766 characters, which
+  // validates and writes an audit event, and set_approval_threshold at 182,
+  // which wrote straight to the table.
+  //
+  // Raising a threshold means fewer journals get a second pair of eyes. That
+  // is exactly the change that should leave a trace, and one of the two paths
+  // left none.
+  ok("the bare setter now delegates to the guarded one",
+     /PERFORM approval_threshold_set/.test(sql));
+  ok("...rather than being dropped, so existing callers keep working",
+     !/DROP FUNCTION/.test(sql));
+  ok("...and it is marked deprecated", /DEPRECATED/.test(sql));
+  ok("the reason is recorded in the file", /bypasses every check/.test(sql));
+
+  // A credit note is its own document raised against an invoice.
+  ok("crediting an invoice is reachable", /OW\.invCreditNote\s*\(/.test(inv));
+  ok("...and editing an invoice instead is called out",
+     /destroys the audit trail/.test(ow));
+
+  // The chase count is the useful part.
+  ok("logging a chase is reachable", /OW\.collectionActionLog\s*\(/.test(pay));
+  ok("...with the reason", /every chase starts from nothing/.test(ow));
 }
 
 // ── report ─────────────────────────────────────────────────────────────────

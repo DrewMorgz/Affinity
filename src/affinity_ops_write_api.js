@@ -129,3 +129,18 @@ export const runBilling = (entityId, upTo) =>
 export const tsEntryUpdate = (id, hours, matter, narrative, billable) =>
   call("ts_entry_update", { p_id: id, p_hours: hours, p_matter: matter,
                             p_narrative: narrative, p_billable: billable });
+
+// ── Crediting an invoice, and chasing ───────────────────────────────────────
+// A credit note is its own document raised AGAINST an invoice. Editing an
+// invoice to reverse it destroys the audit trail, and the client's account
+// then shows a figure that never existed.
+export const invCreditNote = (invoiceId, reason) =>
+  call("inv_credit_note", { p_invoice: invoiceId, p_reason: reason });
+
+// Recording that a debt was chased. The count is the useful part: three
+// chases with no response is a different conversation from one, and without a
+// record every chase starts from nothing.
+export const collectionActionLog = (c) => call("log_collection_action", {
+  p_customer: c.customer, p_invoice: c.invoiceId ?? null, p_date: c.date,
+  p_level: c.level, p_note: c.note || null, p_user: null,
+});
