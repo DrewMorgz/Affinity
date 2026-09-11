@@ -577,6 +577,27 @@ export default function AffinityPayables({ onNav }) {
                 onClick={()=>openPForm("addPayables")}>
           Add open payables
         </button>
+        <button style={btn(false)}
+                title="Pays everything due up to a date, with NO approval step in front of it — use a payment run for anything that should be approved"
+                onClick={async()=>{
+                  const e=window.prompt("Entity id?"); if(!e) return;
+                  const d=window.prompt("Payment date (YYYY-MM-DD)?"); if(!d) return;
+                  const up=window.prompt("Pay everything due up to which date (YYYY-MM-DD)?");
+                  if(!up) return;
+                  if(!window.confirm(
+                    "Pay everything due up to "+up+"?\n\n" +
+                    "This has NO approval step in front of it. It is for payables that are " +
+                    "not contentious, where the assemble-approve-execute sequence is more " +
+                    "process than the payment warrants.\n\n" +
+                    "Anything that should be approved by a second person should go through a " +
+                    "payment run instead.")) return;
+                  const r=await PAY.paymentsRunDueUpTo(Number(e), d, up);
+                  window.alert(r&&r.ok?"Payments posted."
+                    :(r&&r.error)||"That could not be run.");
+                  load();
+                }}>
+          Pay everything due
+        </button>
       </div>
       <div style={{ fontSize: 11, fontWeight: 600, color: MUT, marginBottom: 4,
                     textTransform: "uppercase", letterSpacing: "0.4px" }}>

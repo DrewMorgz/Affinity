@@ -169,3 +169,16 @@ export const icLoanAccrue = (loanId, date, days) =>
 export const icSettle = (creditorId, debtorId, date, ccy, amount) =>
   call("ic_settle", { p_creditor: creditorId, p_debtor: debtorId, p_date: date,
                       p_ccy: ccy, p_amount: amount });
+
+// ── Executing a payment ─────────────────────────────────────────────────────
+// run_payment pays everything due up to a date for an entity, as distinct from
+// payRunExecute which releases a run somebody already assembled and approved.
+//
+// This one has no approval step in front of it, which is why it is separate
+// and why the screen says so: it is for the case where the payables are not
+// contentious and the run-approve-execute ceremony is more process than the
+// payment warrants. Anything that should go through approval should go through
+// a payment run instead.
+export const paymentsRunDueUpTo = (entityId, paymentDate, upToDue) =>
+  call("run_payment", { p_entity_id: entityId, p_payment_date: paymentDate,
+                        p_up_to_due: upToDue });

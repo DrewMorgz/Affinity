@@ -2901,6 +2901,42 @@ group("Obligation coverage, live tasks, and a default that assigned everything t
   ok("the recorded task list can be read", /await taskList\(/.test(tk));
 }
 
+
+group("Paying what is due, and mapping accounts without a batch");
+{
+  const pay  = fs.readFileSync(path.join(SRC, "affinity_payables_api.js"), "utf8");
+  const payU = fs.readFileSync(path.join(SRC, "affinity_core_payables.jsx"), "utf8");
+  const fid  = fs.readFileSync(path.join(SRC, "affinity_core_fiduciary.jsx"), "utf8");
+  const con  = fs.readFileSync(path.join(SRC, "affinity_core_consolidation.jsx"), "utf8");
+
+  // run_payment pays everything due up to a date, as distinct from executing a
+  // run somebody assembled and approved. It has NO approval step in front of
+  // it, which is exactly why it needs saying rather than hiding.
+  ok("paying what is due is reachable", /PAY\.paymentsRunDueUpTo\s*\(/.test(payU));
+  ok("...and the screen says there is no approval step",
+     /NO approval step in front of it/.test(payU));
+  ok("...and points at a payment run for anything that should be approved",
+     /should go through a/.test(payU));
+
+  // An unmapped account with a balance is absent from the statements, and they
+  // still balance without it.
+  ok("the account mapping can be inspected", /FID\.accountMapList\s*\(/.test(fid));
+  ok("...and the unmapped ones are what it highlights", /unmapped/.test(fid));
+  ok("...with the consequence stated",
+     /still balance without it/.test(fid));
+  ok("a single account can be mapped", /FID\.accountFsMapSet\s*\(/.test(fid));
+
+  // The row-by-row dropdown does one at a time, which across a chart of
+  // accounts is how one gets missed.
+  ok("codes can be mapped to a group line in bulk", /mapToGroup\(t, g/.test(con));
+  ok("...with the reason a batch matters", /how one gets missed/.test(con));
+
+  // The button used a style constant this module does not define, so it would
+  // have rendered unstyled.
+  ok("the bulk-map button does not use an undefined style",
+     !/\{ \.\.\.nb, marginRight:8 \}/.test(con));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

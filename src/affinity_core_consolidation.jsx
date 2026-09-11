@@ -26,6 +26,7 @@ import { groupList, mappingList, mappingSet, runList, runRecord } from "./affini
 // consolidated_cta and consolidated_nci were unreachable: this module's header
 // said it covered them and the code never called them.
 import { consolidatedCta, consolidatedNci, consolidatedSummary } from "./affinity_consolidation_fx_api";
+import { mapToGroup } from "./affinity_fiduciary_api";
 
 const NAVY = "#001242", CY = "#00C4CC";
 const INK  = "var(--text-primary,#111)";
@@ -252,6 +253,23 @@ export default function AffinityConsolidation({ onNav }) {
             </button>
           ))}
         </div>
+        <button style={{ marginRight:8, padding:"4px 10px", fontSize:11,
+                         borderRadius:6, cursor:"pointer",
+                         border:"0.5px solid #D9DEE5", background:"transparent",
+                         color:INK }}
+                title="Maps several codes to a group line at once — the row-by-row dropdown below does one at a time, which across a chart of accounts is how one gets missed"
+                onClick={async()=>{
+                  const t=window.prompt("Template code?"); if(!t) return;
+                  const g=window.prompt("Group line to map to?"); if(!g) return;
+                  const codes=window.prompt("Account codes, comma separated?");
+                  if(!codes) return;
+                  const r=await mapToGroup(t, g,
+                    codes.split(",").map(x=>x.trim()).filter(Boolean));
+                  window.alert(r&&r.ok?"Mapped to the group line."
+                    :(r&&r.error)||"That could not be mapped.");
+                }}>
+          Map codes in bulk
+        </button>
         <span style={{ fontSize:10.5, borderRadius:20, padding:"3px 10px",
           color: live?"#1F6F54":"#B08A3E", background: live?"#E7F4EF":"#FDF4DC" }}>
           {live ? "Live data" : "Preview data"}

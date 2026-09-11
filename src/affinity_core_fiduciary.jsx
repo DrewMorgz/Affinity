@@ -613,6 +613,34 @@ export default function AffinityFiduciary({ onNav }) {
                       Map accounts to a caption
                     </button>
                     <button style={btn(false)} disabled={busy}
+                            title="What each account currently maps to — the gaps are the accounts that would be missing from the statements"
+                            onClick={async()=>{
+                              const e=window.prompt("Entity id?"); if(!e) return;
+                              const r=await FID.accountMapList(Number(e));
+                              if(!r||!r.live){ setMsg("Not signed in."); return; }
+                              const rows=r.data||[];
+                              const unmapped=rows.filter(x=>!x.caption_code);
+                              setMsg(rows.length
+                                ? rows.length+" account(s), "+unmapped.length+" unmapped"
+                                  + (unmapped.length
+                                      ? ":\n"+unmapped.slice(0,15).map(x=>`  ${x.local_code} ${x.local_name||""}`).join("\n")
+                                        + "\n\nAn unmapped account with a balance is absent from the statements, and they still balance without it."
+                                      : ". Every account maps to a caption.")
+                                : "No accounts found for that entity.");
+                            }}>
+                      Show account mapping
+                    </button>
+                    <button style={btn(false)} disabled={busy}
+                            title="One account to one caption, for correcting a single mapping rather than a batch"
+                            onClick={async()=>{
+                              const a=window.prompt("Account id?"); if(!a) return;
+                              const fw=window.prompt("Framework code?"); if(!fw) return;
+                              const cap=window.prompt("Caption code?"); if(!cap) return;
+                              act(()=>FID.accountFsMapSet(Number(a), fw, cap), "Account mapped.");
+                            }}>
+                      Map one account
+                    </button>
+                    <button style={btn(false)} disabled={busy}
                             title="Two captions with the same fund treatment would double-count"
                             onClick={async()=>{
                               const fw=window.prompt("Framework code?"); if(!fw) return;
