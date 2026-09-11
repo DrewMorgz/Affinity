@@ -3200,6 +3200,41 @@ group("Document generation and the export button that did nothing");
      bad.length === 0, bad.slice(0, 4).join("; "));
 }
 
+
+group("db/091 and 092 — the anonymous key, and writes nobody could trace");
+{
+  const a = fs.readFileSync(path.join(DB, "091_revoke_anon_execute.sql"), "utf8");
+  const b = fs.readFileSync(path.join(DB, "092_audit_the_records_that_get_disputed.sql"), "utf8");
+
+  // THE MOST SERIOUS FINDING OF THE AUDIT. The anonymous key ships in the
+  // browser bundle. It could execute 270 functions, 101 of which both WRITE and
+  // are SECURITY DEFINER — so they run as the owner and ignore the caller's
+  // table permissions entirely. Among them: approve_journal, close_year,
+  // cdd_item_verify, apply_receipt.
+  ok("execute is revoked from anon across the schema",
+     /REVOKE ALL ON FUNCTION %s FROM anon/.test(a));
+  ok("...and from PUBLIC, which includes anon",
+     /FROM PUBLIC/.test(a));
+  ok("...by rule over every function rather than a list",
+     /FROM pg_proc p/.test(a));
+  ok("default privileges stop the next file reopening it",
+     /ALTER DEFAULT PRIVILEGES/.test(a));
+  ok("the exposure is recorded so nobody reintroduces it",
+     /ships in the browser bundle/.test(a));
+
+  // 86 functions wrote without recording anything, there were no audit
+  // triggers, and the whole audit_event table held 19 rows. Approvals with no
+  // record of who approved them is the gap an auditor asks about.
+  ok("a row-level audit trigger exists", /CREATE OR REPLACE FUNCTION audit_row_change/.test(b));
+  ok("...applied to the registers", /entity_officer/.test(b) && /entity_ubo/.test(b));
+  ok("...the money", /journal/.test(b) && /client_money_movement/.test(b));
+  ok("...and the approvals", /fs_accounts_set/.test(b) && /app_user_role/.test(b));
+  ok("an update records which fields changed, not the whole row",
+     /changed: /.test(b));
+  ok("the reason for a trigger over 86 edits is recorded",
+     /86 chances to miss one/.test(b));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
