@@ -337,6 +337,20 @@ export default function AffinityTimesheets({ onNav }) {
                   }}>
             Correct an entry
           </button>
+          <button style={nb}
+                  title="Approved, unbilled time for one client — what a billing run would actually pick up"
+                  onClick={async()=>{
+                    const e = window.prompt("Entity name? (as it appears on time entries)");
+                    if (!e) return;
+                    const r = await wipAvailable(e);
+                    if (!r || !r.live) { window.alert("Not signed in."); return; }
+                    const rows = r.data || [];
+                    window.alert(rows.length
+                      ? rows.map(x=>`${x.entity_label}: ${x.entries} entries, ${x.hours} hours, value ${x.value}`).join("\n")
+                      : "No approved, unbilled time for that entity.");
+                  }}>
+            Available WIP
+          </button>
           <button style={nb} onClick={()=>setModal("entry")}>＋ Manual entry</button>
           <button style={nba} onClick={submitTimesheet}>Submit timesheet ↗</button>
         </div>

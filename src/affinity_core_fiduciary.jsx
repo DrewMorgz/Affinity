@@ -374,6 +374,26 @@ export default function AffinityFiduciary({ onNav }) {
                 onClick={()=>{ setTForm("distribute"); setTF({}); setTMsg(""); }}>
           ＋ Distribution
         </button>
+        <button style={btn(false)}
+                title="What is available in each fund, before attempting a distribution rather than after being refused"
+                onClick={async()=>{
+                  const id = window.prompt("Trust entity id?");
+                  if (!id) return;
+                  setTMsg("");
+                  const r = await FID.trustFundCheck(Number(id));
+                  if (!r || !r.live) { setTMsg("Not signed in."); return; }
+                  const rows = r.data || [];
+                  setTMsg(rows.length
+                    ? "Available by fund — income belongs to the life tenant, capital to "
+                      + "the remaindermen, and they are never summed:\n"
+                      + rows.map(x =>
+                          `  ${x.fund}: received ${x.received}, expensed ${x.expensed}, `
+                          + `distributed ${x.distributed}, AVAILABLE ${x.available} ${x.ccy || ""}`
+                        ).join("\n")
+                    : "Nothing recorded for that trust yet.");
+                }}>
+          Check the funds
+        </button>
       </div>
       {critical.length > 0 && (
         <div style={{ ...card, background: RED_BG, borderColor: "#f0c9c9" }}>

@@ -6,6 +6,7 @@ import { ROLES, ROLE_LABELS, permsFor, INTERNAL_ENTITIES, INTERNAL_ACCESS } from
 import { FOLDER_TREE } from "./affinity_core_documents_v2";
 import * as DEMO from "./affinity_demo_api";
 import { approvalThresholdSet, approvalThresholdsList } from "./affinity_fiduciary_api";
+import { silentNoopCandidates, caseload } from "./affinity_ops_api";
 
 const CY = "#00C4CC";
 
@@ -767,6 +768,49 @@ export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false })
           {/* Journal approval thresholds. The mechanism was built and no
               threshold could be set, so the policy of not requiring approval
               was not a choice — it was the only available state. */}
+          {/* STANDING CHECKS. Two functions were found in this build that
+              reported success and did nothing — approving DRAFT time, and
+              adding payables to a run with none open. Both said "done". These
+              queries find the shape of that fault by looking, rather than
+              waiting for someone to notice a figure that never moved. */}
+          <div style={{ ...s.card, marginBottom:16 }}>
+            <div style={s.cardT}>Standing checks</div>
+            <div style={{ fontSize:11.5, color:"#5B6B7B", lineHeight:1.8, marginBottom:10 }}>
+              A function that can return zero rows without raising is one that can report
+              success and do nothing. Two were found in this build by hand — approving time
+              that was still in draft, and adding payables to a run with none open — and both
+              said "done". This finds the shape of that fault rather than waiting for someone
+              to notice a figure that never moved.
+            </div>
+            <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+              <button style={nb} onClick={async()=>{
+                const r = await silentNoopCandidates();
+                if (!r || !r.live) { setWMsg("Not signed in."); return; }
+                const rows = r.data || [];
+                setWMsg(rows.length
+                  ? rows.length + " function(s) can return nothing without raising:\n" +
+                    rows.map(x=>`  ${x.function_name} — ${x.note}`).join("\n")
+                  : "No function can silently return nothing. Every one either raises or "
+                    + "reports what it did.");
+              }}>
+                Find silent no-ops
+              </button>
+              <button style={nb} onClick={async()=>{
+                const role = window.prompt("Which role? e.g. administrator, manager", "administrator");
+                if (!role) return;
+                const r = await caseload(role);
+                if (!r || !r.live) { setWMsg("Not signed in."); return; }
+                const rows = r.data || [];
+                setWMsg(rows.length
+                  ? "Caseload by " + role + ":\n" +
+                    rows.map(x=>`  ${x.person || "(nobody)"}: ${x.entities}`).join("\n")
+                  : "Nothing recorded for that role.");
+              }}>
+                Show the caseload
+              </button>
+            </div>
+          </div>
+
           <div style={{ ...s.card, marginBottom:16 }}>
             <div style={s.cardT}>Journal approval threshold</div>
             <div style={{ fontSize:11.5, color:"#5B6B7B", lineHeight:1.8, marginBottom:10 }}>

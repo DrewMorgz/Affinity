@@ -2702,6 +2702,40 @@ group("Journal rejection, demo flagging, disclosures, transfer pricing");
      /comes from the policy/.test(pay));
 }
 
+
+group("Standing checks, caseload, fund availability, WIP");
+{
+  const api = fs.readFileSync(path.join(SRC, "affinity_ops_api.js"), "utf8");
+  const adm = fs.readFileSync(path.join(SRC, "affinity_core_system_admin.jsx"), "utf8");
+  const fid = fs.readFileSync(path.join(SRC, "affinity_core_fiduciary.jsx"), "utf8");
+  const ts  = fs.readFileSync(path.join(SRC, "affinity_core_timesheets_v2.jsx"), "utf8");
+
+  // THE STANDING CHECK FOR THE FAULT THIS BUILD KEEPS FINDING. A function that
+  // can return zero rows without raising is one that can report success and do
+  // nothing. Two were found by hand — approving DRAFT time, and adding
+  // payables to a run with none open — and both said "done".
+  ok("silentNoopCandidates is wrapped",
+     /export const silentNoopCandidates\s*=/.test(api));
+  ok("...and reachable from System admin",
+     /silentNoopCandidates\(\)/.test(adm));
+  ok("...with the two known instances named",
+     /still in draft/.test(adm));
+
+  // A caseload nobody has looked at is how an entity ends up with no
+  // administrator at all.
+  ok("the caseload view is reachable", /caseload\(role\)/.test(adm));
+  ok("...with the reason it matters", /no administrator at all/.test(api));
+
+  // The fund position could only be discovered by attempting a distribution
+  // and being refused.
+  ok("checking trust funds is reachable", /FID\.trustFundCheck\s*\(/.test(fid));
+  ok("...and shows each fund separately, never summed",
+     /never summed/.test(fid));
+
+  // What a billing run would actually pick up.
+  ok("available WIP is reachable", /await wipAvailable\(/.test(ts));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
