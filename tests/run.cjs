@@ -2674,8 +2674,11 @@ group("Journal rejection, demo flagging, disclosures, transfer pricing");
   // Flagging a REAL entity as demo is the dangerous direction — it is what
   // makes it deletable.
   ok("setting the demo flag is reachable", /DEMO\.demoFlagSet\s*\(/.test(adm));
-  ok("...and warns about the dangerous direction",
-     /what makes it deletable/.test(adm));
+  // 094 made the flag one-way, so the screen no longer offers the dangerous
+  // direction at all — there is nothing left to warn about, which is better
+  // than warning well.
+  ok("...and the dangerous direction is no longer offered",
+     /cannot be\s*/.test(adm) || /Remove the demo flag/.test(adm));
 
   // A DEAD TERNARY. Both branches returned an empty array, so
   // accountsDisclosures was never called and the list was always empty
@@ -3326,6 +3329,40 @@ group("Column mismatches, and role access verified against the real module ids")
   // apportionment. Reading it beats leaving the person to infer it.
   ok("the duplicate check reports which duplications are actually wrong",
      /x\.double_counted/.test(fid));
+}
+
+
+group("094 and 095 — demo data one-way, and a missing rate that was read as zero");
+{
+  const d = fs.readFileSync(path.join(DB, "094_demo_flag_one_way.sql"), "utf8");
+  const f = fs.readFileSync(path.join(DB, "095_missing_fx_rate_is_not_zero.sql"), "utf8");
+
+  // The demo-data clear correctly refuses an unflagged entity and demands the
+  // phrase typed in full. The gap was one step earlier: flagging a real entity
+  // AS demo was allowed wherever it had no time, invoices or posted journals
+  // against it — which describes all eight of Affinity's own companies, and any
+  // client onboarded today.
+  ok("flagging a real entity as demo is refused",
+     /is a real record and cannot be turned into demo data/.test(d));
+  ok("...and removing the flag stays allowed", /demo flag removed/.test(d));
+  ok("the asymmetry is explained", /harder to delete, not easier/.test(d)
+     || /safe direction/.test(d));
+
+  // THE QUIETEST ERROR IN THE SYSTEM. consolidated_cta computed
+  // round(net_assets * (COALESCE(closing,0) - COALESCE(opening,0)), 2).
+  // A missing rate became zero, so the translation adjustment came out as net
+  // assets times the negative of the other rate — on a million dollars at 0.79
+  // and 0.81, a correct CTA of 20,000 became -790,000. Right shape, wrong
+  // value, no warning, straight into consolidated reserves.
+  ok("a missing opening rate refuses", /which is the opening date/.test(f));
+  ok("a missing closing rate refuses", /which is the closing date/.test(f));
+  ok("...naming the currency, the date and the entity",
+     /No % to % rate for %/.test(f));
+  ok("...and saying what the wrong figure would have been",
+     /would report roughly/.test(f));
+  ok("the COALESCE to zero is gone", !/COALESCE\(v_c,0\)-COALESCE\(v_o,0\)/.test(f));
+  ok("why it is worse than a failure is recorded",
+     /a failure gets investigated/.test(f));
 }
 
 // ── report ─────────────────────────────────────────────────────────────────

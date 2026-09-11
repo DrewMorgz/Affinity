@@ -612,20 +612,28 @@ export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false })
                   Remove one
                 </button>
                 <button style={nb}
-                        title="Flagging a REAL entity as demo makes it deletable — refused where there is time, invoices or posted journals against it"
+                        title="Removes the demo flag, making an entity a real record. The reverse is refused: a real entity cannot be turned into demo data."
                         onClick={async()=>{
                           const id = window.prompt("Entity id?");
                           if (!id) return;
-                          const on = window.confirm(
-                            "Flag this entity AS demo data?\n\nOK = flag it as demo. Cancel = unflag it.\n\n" +
-                            "Flagging a real entity as demo is what makes it deletable, so it is refused where there is time, invoices or posted journals against it.");
+                          // The flag is one-way. Setting it is refused outright,
+                          // because an entity with no work recorded yet — a new
+                          // client, or one of Affinity's own companies — would
+                          // otherwise be one click from the demo-data clear.
+                          if (!window.confirm(
+                            "Remove the demo flag from this entity?\n\n" +
+                            "This makes it a real record, which makes it HARDER to delete — " +
+                            "the demo-data clear will no longer touch it.\n\n" +
+                            "Going the other way is not possible: a real entity cannot be " +
+                            "turned into demo data. Demo entities are created as demo.")) return;
+                          const on = false;
                           const r = await DEMO.demoFlagSet(Number(id), on);
                           setDMsg(r && r.ok
-                            ? (on ? "Flagged as demo data." : "Demo flag removed.")
+                            ? "Demo flag removed — it is now treated as a real record."
                             : (r && r.error) || "That could not be changed.");
                           loadDemo();
                         }}>
-                  Set the demo flag
+                  Remove the demo flag
                 </button>
                 <button style={{ ...nb, color:"#A32D2D", borderColor:"#f0c9c9" }}
                         onClick={()=>{ setDForm("clear"); setDF({}); setDMsg(""); }}>
