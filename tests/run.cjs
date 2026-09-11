@@ -3456,6 +3456,33 @@ group("Confirming which entity before writing to it");
      /not a substitute for a proper entity picker/.test(h));
 }
 
+
+group("098 — a draft set of accounts could be finalised as the filed figures");
+{
+  const f = fs.readFileSync(path.join(DB, "098_finalising_requires_approval.sql"), "utf8");
+
+  // FOUND BY TRYING TO DO STEP FIVE WITHOUT STEP FOUR. accounts_approve is the
+  // serious gate: it refuses self-approval and refuses unless every readiness
+  // gate passes — nine of them failed on the test set, including no verified
+  // disclosure checklist, no primary statements, no going concern assessment
+  // and no cash flow statement.
+  //
+  // accounts_finalise checked none of it. Calling it directly on a DRAFT set
+  // locked it as finalised, with locked = true, having passed nothing.
+  ok("finalising requires approved status", /<> 'approved'/.test(f));
+  ok("...and says what the approval step is for",
+     /cannot be skipped by coming straight here/.test(f));
+  ok("an already-locked set cannot be finalised again",
+     /already finalised and locked/.test(f));
+  ok("the self-approval check from 093 survives", /you cannot finalise it/.test(f));
+
+  // I ADDED THE SELF-APPROVAL CHECK TO THIS FUNCTION IN 093 AND NOT THE STATUS
+  // CHECK, having written in that same file that finalising "makes these the
+  // filed figures". Recorded so the habit is visible, not just the fix.
+  ok("the half-fix in 093 is acknowledged",
+     /did not add a\s*\n?-- status check|left the larger one open/.test(f));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

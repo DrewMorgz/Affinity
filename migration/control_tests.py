@@ -115,6 +115,28 @@ def run(db):
     check("clearing demo data without the phrase is refused",
           refused(db, "SELECT demo_data_clear('yes');"))
 
+    print("stage order")
+    # VERIFIED BY STATE, not by the return value. A multi-statement psql call
+    # returns the first statement's output, so a refusal in the second looks
+    # like a success — the same detection trap as dbq.py, one level deeper.
+    def as_user(email, sql):
+        return db.psql("SELECT set_config('affinity.app_user','%s',false); %s" % (email, sql))
+    ent = one(db, "SELECT id FROM entity WHERE entity_class='client' LIMIT 1;")
+    fw  = one(db, "SELECT code FROM reporting_framework WHERE code IN (SELECT DISTINCT framework_code FROM fs_caption) LIMIT 1;")
+    if ent and fw:
+        db.psql("DELETE FROM fs_accounts_set WHERE entity_id=%s AND period_start='2025-01-01';" % ent)
+        as_user('probe.alice@affinityco.com',
+                "SELECT accounts_set_open(%s,'%s','2025-01-01','2025-12-31');" % (ent, fw))
+        sid = one(db, "SELECT id FROM fs_accounts_set WHERE entity_id=%s ORDER BY id DESC LIMIT 1;" % ent)
+        as_user('probe.bob@affinityco.com', "SELECT accounts_finalise(%s);" % sid)
+        st = (one(db, "SELECT status FROM fs_accounts_set WHERE id=%s;" % sid) or '').strip()
+        check("a draft set cannot be finalised", st == 'draft')
+        as_user('probe.alice@affinityco.com', "SELECT accounts_submit_for_review(%s);" % sid)
+        as_user('probe.bob@affinityco.com', "SELECT accounts_finalise(%s);" % sid)
+        st2 = (one(db, "SELECT status FROM fs_accounts_set WHERE id=%s;" % sid) or '').strip()
+        check("an in-review set cannot be finalised without approval", st2 == 'in_review')
+        db.psql("DELETE FROM fs_accounts_set WHERE id=%s;" % sid)
+
     print("integrity")
     for label, sql in [
         ("posted journals balance to nil",
