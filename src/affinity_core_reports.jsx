@@ -57,6 +57,10 @@ const REPORTS = [
   // which invoices, which is what a query is actually about.
   { id: "cust",   label: "Customer statement",  needs: ["entity", "asAt"] },
   { id: "supp",   label: "Supplier statement",  needs: ["entity", "asAt"] },
+  // Actuals to date plus budget for the rest of the year, which is a different
+  // question from the budget as set — and the one asked in the second half of
+  // a year when the budget has stopped resembling what is happening.
+  { id: "roll",   label: "Rolling forecast",    needs: ["budget", "period"] },
 ];
 
 export default function AffinityReports({ onNav }) {
@@ -73,6 +77,7 @@ export default function AffinityReports({ onNav }) {
   const [to, setTo]           = useState(today());
   const [rate, setRate]       = useState("8");
   const [entityId, setEntityId] = useState("");
+  const [budgetId, setBudgetId] = useState("");
   const [dimType, setDimType] = useState("office");
   const [buckets, setBuckets] = useState("6");
 
@@ -88,6 +93,7 @@ export default function AffinityReports({ onNav }) {
     if (rpt === "dim") res = await RPT.dimensionPnl(Number(entityId) || null, dimType, from, to);
     if (rpt === "cf")  res = await RPT.cashFlowForecast(Number(entityId) || null, asAt,
                                                         Number(buckets) || 6, 30);
+    if (rpt === "roll") res = await RPT.rollingForecast(Number(budgetId), period);
     if (rpt === "cust") res = await RPT.customerStatement(Number(ent), asAt);
     if (rpt === "supp") res = await RPT.supplierStatement(Number(ent), asAt);
     if (rpt === "ic")  res = await RPT.icOverview(null);
@@ -162,6 +168,14 @@ export default function AffinityReports({ onNav }) {
       <div style={{ padding: "16px 20px 24px" }}>
         <div style={card}>
           <div style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
+            {def.needs.includes("budget") && (
+              <div>
+                <label style={{ display: "block", fontSize: 10.5, fontWeight: 600,
+                                color: "#555", marginBottom: 3 }}>Budget id</label>
+                <input style={{ ...inp, width: 110 }} value={budgetId}
+                       onChange={(e) => setBudgetId(e.target.value)} placeholder="e.g. 3" />
+              </div>
+            )}
             {def.needs.includes("entity") && (
               <div>
                 <label style={{ display: "block", fontSize: 10.5, fontWeight: 600,

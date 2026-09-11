@@ -529,6 +529,21 @@ export default function AffinityBookkeeping({ onNav }) {
                 Approve a journal
               </button>
               <button style={nb}
+                      title="Reads the journals actually posted, rather than the sample list this screen shows"
+                      onClick={async()=>{
+                        const e=window.prompt("Entity id? (blank for all)");
+                        const st=window.prompt("Status? (blank for all)");
+                        const r=await DW.journalList(e?Number(e):null, st||null, 50);
+                        if(!r||!r.live){ setJMsg("Not signed in."); return; }
+                        const rows=r.data||[];
+                        setJMsg(rows.length
+                          ? rows.length+" journal(s):\n"+rows.slice(0,20).map(x=>
+                              `  ${x.id} ${x.journal_date||""} ${x.narrative||""} (${x.status})`).join("\n")
+                          : "No journals recorded for that. The list on screen is sample data.");
+                      }}>
+                Show posted journals
+              </button>
+              <button style={nb}
                       title="An import of the wrong file, or the right file against the wrong entity, could only be unpicked journal by journal"
                       onClick={async()=>{
                         const e=window.prompt("Entity id? (blank for all)");

@@ -807,6 +807,21 @@ export default function AffinityFiduciary({ onNav }) {
                         textTransform: "uppercase", letterSpacing: "0.4px" }}>
             Accounts sets
           </div>
+          <button style={btn(false)}
+                  title="Opening a set is refused on a framework the jurisdiction does not accept — this is the question to ask before the attempt"
+                  onClick={async()=>{
+                    const e=window.prompt("Entity id?"); if(!e) return;
+                    const r=await FID.frameworksForEntity(Number(e));
+                    if(!r||!r.live){ setMsg("Not signed in."); return; }
+                    const rows=r.data||[];
+                    setMsg(rows.length
+                      ? "Frameworks this entity's jurisdiction accepts:\n"
+                        + rows.map(x=>`  ${x.code} — ${x.name}${x.is_default?" (default)":""}`).join("\n")
+                      : "No framework is recorded as accepted for that jurisdiction, so no "
+                        + "set can be opened for it until one is.");
+                  }}>
+            Which frameworks apply
+          </button>
           <button style={btn(true)}
                   title="Refused if the framework has no presentation format, if the jurisdiction does not accept it, or if the period has not finished"
                   onClick={async()=>{

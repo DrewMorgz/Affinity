@@ -2937,6 +2937,39 @@ group("Paying what is due, and mapping accounts without a batch");
      !/\{ \.\.\.nb, marginRight:8 \}/.test(con));
 }
 
+
+group("Which frameworks apply, posted journals, and the rolling forecast");
+{
+  const fid = fs.readFileSync(path.join(SRC, "affinity_core_fiduciary.jsx"), "utf8");
+  const bk  = fs.readFileSync(path.join(SRC, "affinity_core_bookkeeping_v2.jsx"), "utf8");
+  const rep = fs.readFileSync(path.join(SRC, "affinity_core_reports.jsx"), "utf8");
+
+  // Opening a set is REFUSED on a framework the jurisdiction does not accept.
+  // Asking which apply was unreachable, so the only way to find out was to try
+  // and be told.
+  ok("which frameworks apply is reachable",
+     /FID\.frameworksForEntity\s*\(/.test(fid));
+  ok("...and an empty answer explains what it means",
+     /until one is/.test(fid));
+
+  // Another screen showing sample data with the live list wrapped and uncalled.
+  ok("the posted journals can be read", /DW\.journalList\s*\(/.test(bk));
+  ok("...and the screen admits its default list is sample data",
+     /is sample data/.test(bk));
+
+  // Actuals to date plus budget for the rest of the year — the question asked
+  // in the second half of a year, when the budget has stopped resembling what
+  // is happening.
+  ok("the rolling forecast is a report", /id: "roll"/.test(rep));
+  ok("...and is dispatched", /RPT\.rollingForecast\(Number\(budgetId\)/.test(rep));
+
+  // It needs a budget id, and the module had no such parameter. Adding the
+  // report without the field would have produced a report nobody could run.
+  ok("the budget id field exists", /const \[budgetId, setBudgetId\]/.test(rep));
+  ok("...and is rendered when a report needs it",
+     /def\.needs\.includes\("budget"\)/.test(rep));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
