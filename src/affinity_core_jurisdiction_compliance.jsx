@@ -386,7 +386,7 @@ export default function AffinityJurisdictionCompliance({ onNav }) {
             </div>
             <table style={{ width:"100%", borderCollapse:"collapse" }}>
               <thead><tr>
-                {["Area","Obligation","Frequency","Due","Owner","Status","Action"].map(h=><th key={h} style={th}>{h}</th>)}
+                {["Area","Obligation","Frequency","Due","Owner","Status","","Action"].map(h=><th key={h} style={th}>{h}</th>)}
               </tr></thead>
               
             <tbody>
@@ -398,6 +398,34 @@ export default function AffinityJurisdictionCompliance({ onNav }) {
                     <td style={{ ...td, color:o.status==="Overdue"?"#EF4444":"#666", fontWeight:o.status==="Overdue"?600:400 }}>{o.due}</td>
                     <td style={{ ...td, color:"#666" }}>{o.owner}</td>
                     <td style={td}><Badge label={o.status} colors={statusC[o.status]||{bg:"#eee",color:"#666"}} /></td>
+                    <td style={td}>
+                      {!o.confirmed && (
+                        <button style={{ ...nb, fontSize:10 }}
+                                title="Refused without a legislation reference and a named owner — a confirmed deadline nobody can trace cannot be checked by anyone else"
+                                onClick={async()=>{
+                                  setObsMsg("");
+                                  const r = await OBL.obligationConfirm(o.id);
+                                  if (r && r.ok) { setObsMsg("Obligation confirmed."); loadObs(); return; }
+                                  setObsMsg((r && r.error) || "That could not be confirmed.");
+                                }}>
+                          Confirm
+                        </button>
+                      )}
+                      {o.confirmed && (
+                        <button style={{ ...nb, fontSize:10, color:"#A32D2D", borderColor:"#f0c9c9" }}
+                                title="Removing needs a reason and deactivates rather than deletes — a schedule that used to include something is part of the compliance history"
+                                onClick={async()=>{
+                                  const why = window.prompt("Why is this obligation being removed?");
+                                  if (!why) return;
+                                  setObsMsg("");
+                                  const r = await OBL.obligationRemove(o.id, why);
+                                  if (r && r.ok) { setObsMsg("Obligation deactivated."); loadObs(); return; }
+                                  setObsMsg((r && r.error) || "That could not be removed.");
+                                }}>
+                          Remove
+                        </button>
+                      )}
+                    </td>
                     <td style={td}>{o.status==="Overdue"?<button style={{ ...nb, fontSize:10, borderColor:"#EF4444", color:"#EF4444" }} onClick={openPortal}>File ↗</button>:<button style={{ ...nb, fontSize:10 }} title="View this obligation in Statutory" onClick={()=>onNav&&onNav("statutory")}>View ↗</button>}</td>
                   </tr>
                 ))}

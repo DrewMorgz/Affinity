@@ -550,6 +550,44 @@ export default function AffinityFiduciary({ onNav }) {
                             }}>
                       Approve
                     </button>
+                    <button style={btn(false)} disabled={busy}
+                            title="Posting to an approved set withdraws the approval — the director signed particular figures"
+                            onClick={() => {
+                              if (selSet.status === "approved" &&
+                                  !window.confirm(
+                                    "This set has been APPROVED.\n\n" +
+                                    "Posting an adjustment will withdraw that approval and return the set to draft, because the director signed particular figures and this changes them. They will have to approve the adjusted accounts.\n\n" +
+                                    "Continue?")) return;
+                              const narr = window.prompt("Narrative for the adjustment?");
+                              if (!narr) return;
+                              const date = window.prompt("Date (YYYY-MM-DD)?");
+                              if (!date) return;
+                              const lines = window.prompt(
+                                'Lines as JSON, e.g.\n[{"account_id":410,"amount":-2500},{"account_id":720,"amount":2500}]');
+                              if (!lines) return;
+                              let parsed;
+                              try { parsed = JSON.parse(lines); }
+                              catch (e) { setMsg("The lines were not valid JSON, so nothing was posted."); return; }
+                              act(() => FID.accountsAdjust(selSet.id, date, narr, parsed),
+                                  "Adjustment posted and the statements regenerated.");
+                            }}>
+                      Post an adjustment
+                    </button>
+                    <button style={btn(false)} disabled={busy}
+                            title="A note in the accounts — numbered and ordered as the framework requires"
+                            onClick={() => {
+                              const title = window.prompt("Note title?");
+                              if (!title) return;
+                              const body = window.prompt("Note text?");
+                              if (!body) return;
+                              const numb = window.prompt("Note number (optional)?");
+                              act(() => FID.accountsNoteAdd({
+                                    setId: selSet.id, title, body,
+                                    noteNumber: numb || null }),
+                                  "Note added.");
+                            }}>
+                      Add a note
+                    </button>
                   </>
                 )}
                 {selSet.status === "draft" && (

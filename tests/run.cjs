@@ -2237,6 +2237,41 @@ group("Journal control and bank reconciliation");
      (ops.match(/export const bankAutoMatch\s*=/g) || []).length === 1);
 }
 
+
+group("Obligations and statutory accounts — confirming, adjusting, noting");
+{
+  const jur = fs.readFileSync(path.join(SRC, "affinity_core_jurisdiction_compliance.jsx"), "utf8");
+  const fid = fs.readFileSync(path.join(SRC, "affinity_core_fiduciary.jsx"), "utf8");
+
+  // OBLIGATIONS could be added and listed and never confirmed. Confirming is
+  // what makes a deadline trustworthy — the whole point of the Unconfirmed
+  // status — so every obligation would have stayed unconfirmed for ever and
+  // the status would have meant nothing.
+  ok("confirming an obligation is reachable", /OBL\.obligationConfirm\s*\(/.test(jur));
+  ok("removing one is reachable", /OBL\.obligationRemove\s*\(/.test(jur));
+  ok("confirming explains what it requires", /cannot be checked by anyone else/.test(jur));
+  ok("removing explains it deactivates rather than deletes",
+     /part of the compliance history/.test(jur));
+  ok("the new action column has a matching header",
+     /"Status","","Action"/.test(jur));
+
+  // AUDIT ADJUSTMENTS to an approved set withdraw the approval. That behaviour
+  // was built and there was no way to reach it, so the most consequential
+  // thing the module does could not be done.
+  ok("posting an adjustment is reachable", /FID\.accountsAdjust\s*\(/.test(fid));
+  ok("adding a note is reachable", /FID\.accountsNoteAdd\s*\(/.test(fid));
+  ok("adjusting an approved set warns before it happens",
+     /withdraw that approval/.test(fid));
+  ok("...and says why", /signed particular figures/.test(fid));
+  ok("bad JSON is reported rather than silently swallowed",
+     /not valid JSON, so nothing was posted/.test(fid));
+
+  // accountsNoteAdd takes an OBJECT. Passing positional arguments compiles and
+  // sends the title as the whole object, saving nothing useful.
+  ok("accountsNoteAdd is called in its object form",
+     /accountsNoteAdd\(\{/.test(fid));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
