@@ -90,3 +90,56 @@ export const icSettlementsList = (entityId, limit) =>
   call("ic_settlements_list", { p_entity: entityId ?? null, p_limit: limit || 100 });
 export const tpUndocumentedCharges = (entityId) =>
   call("tp_undocumented_charges", { p_entity: entityId ?? null });
+
+// ── The rest of the purchase and expense cycle ──────────────────────────────
+// poCreate, goodsReceive, payRunCreate, payRunAddPayables, expenseClaimSubmit
+// and expenseClaimReimburse were wrapped and had no button, so the screen
+// could approve a payment run it could not assemble and approve a claim
+// nobody could submit. These five had no wrapper at all.
+
+// Rejecting a claim needs a reason. A claim that comes back with no reason
+// gets resubmitted unchanged, which wastes everyone's time twice.
+export const expenseClaimReject = (claimId, approver, reason) =>
+  call("reject_expense_claim", { p_claim_id: claimId, p_approver: approver,
+                                 p_reason: reason });
+
+// Recording a supplier invoice against the entity. Separate from matching it
+// to a purchase order, because an invoice can arrive without one.
+export const supplierInvoiceRecord = (i) => call("record_supplier_invoice", {
+  p_entity_id: i.entityId, p_supplier: i.supplier, p_reference: i.reference,
+  p_invoice_date: i.invoiceDate, p_due_date: i.dueDate || null,
+  p_net: i.net, p_vat_code: i.vatCode ?? null, p_ccy: i.ccy,
+  p_expense_account_id: i.expenseAccountId ?? null, p_created_by: null,
+});
+
+// Three-way matching: the order, the goods received, and the invoice. The
+// tolerance is explicit because an exact match almost never happens and a
+// system that demands one gets overridden into uselessness.
+export const invoiceMatchToPo = (siId, poId, matchType, tolerancePct) =>
+  call("match_invoice_to_po", { p_si_id: siId, p_po_id: poId,
+                                p_match_type: matchType,
+                                p_tolerance_pct: tolerancePct, p_by: null });
+
+// Credit notes. A credit note is not a negative invoice — it is its own
+// document with its own number, and reversing an invoice by editing it
+// destroys the audit trail.
+export const arCreditNote = (c) => call("raise_ar_credit_note", {
+  p_entity: c.entityId, p_date: c.date, p_ccy: c.ccy, p_lines: c.lines,
+  p_related_invoice_id: c.relatedInvoiceId || null, p_party: c.party || null,
+  p_reason: c.reason, p_created_by: null,
+});
+export const apCreditNote = (c) => call("raise_ap_credit_note", {
+  p_entity: c.entityId, p_date: c.date, p_ccy: c.ccy, p_lines: c.lines,
+  p_supplier: c.supplier, p_reason: c.reason, p_created_by: null,
+});
+
+// Disbursements paid on a client's behalf, and recharging them. An
+// unrecharged disbursement is money the firm has spent and not recovered, and
+// it is invisible until someone looks.
+export const disbursementRecord = (d) => call("record_disbursement", {
+  p_entity_id: d.entityId, p_supplier: d.supplier, p_amount: d.amount,
+  p_ccy: d.ccy, p_date: d.date, p_created_by: null,
+});
+export const disbursementsRecharge = (entityId, date) =>
+  call("recharge_disbursements", { p_entity_id: entityId, p_date: date,
+                                   p_created_by: null });

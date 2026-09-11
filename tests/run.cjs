@@ -2067,6 +2067,54 @@ group("Entity Admin — the registers can now be changed, not only added to");
   ok("actions are gated on a real entity id", /entityDbId && /.test(ui));
 }
 
+
+group("Payables — the purchase and expense cycle can be assembled, not only approved");
+{
+  const api = fs.readFileSync(path.join(SRC, "affinity_payables_api.js"), "utf8");
+  const ui  = fs.readFileSync(path.join(SRC, "affinity_core_payables.jsx"), "utf8");
+
+  // The screen could APPROVE a payment run nobody could create, approve an
+  // expense claim nobody could submit, and list purchase orders nobody could
+  // raise. Six functions were wrapped with no button; rejecting a claim,
+  // credit notes and disbursements had no wrapper at all.
+  ["payRunCreate", "payRunAddPayables", "poCreate", "goodsReceive",
+   "expenseClaimSubmit", "arCreditNote", "apCreditNote"].forEach((w) =>
+    ok(w + " is called by the screen", new RegExp("PAY\\." + w + "\\s*\\(").test(ui)));
+
+  ["expenseClaimReject", "supplierInvoiceRecord", "invoiceMatchToPo",
+   "arCreditNote", "apCreditNote", "disbursementRecord",
+   "disbursementsRecharge"].forEach((w) =>
+    ok(w + " is wrapped", new RegExp("export const " + w + "\\s*=").test(api)));
+
+  // The reasons, on screen.
+  ok("the three separate acts are explained", /three separate acts/.test(ui));
+  ok("...including why", /nobody checked/.test(ui));
+  ok("an empty run is refused and the risk named",
+     /someone goes on to approve/.test(ui));
+  ok("a credit note is explained as its own document",
+     /not a negative invoice/.test(ui));
+  ok("...and why editing an invoice is wrong",
+     /destroys the audit trail/.test(api));
+  ok("rejecting a claim requires a reason", /resubmitted unchanged/.test(api));
+  ok("three-way matching states why a tolerance is explicit",
+     /overridden into uselessness/.test(api));
+  ok("unrecharged disbursements are described as invisible money",
+     /invisible until someone looks/.test(api));
+
+  // The modal is at module level.
+  ok("PayForm is at module level", /^function PayForm\(/m.test(ui));
+
+  // FIVE PARAMETER NAMES WERE GUESSED AND WRONG — p_lines where the function
+  // takes p_net and p_vat_code, p_matched_by for p_by, p_related_invoice for
+  // p_related_invoice_id, p_description and p_client_entity_id that do not
+  // exist. Caught by checking every wrapper against the real signature.
+  ok("record_supplier_invoice passes the real parameters",
+     /p_net: i\.net/.test(api) && !/p_lines: i\.lines/.test(api));
+  ok("match_invoice_to_po passes p_by", /p_by: null/.test(api));
+  ok("raise_ar_credit_note passes p_related_invoice_id",
+     /p_related_invoice_id/.test(api));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

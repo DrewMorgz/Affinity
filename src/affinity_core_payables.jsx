@@ -36,13 +36,196 @@ const money = (v, ccy) => v == null || v === "" ? "—"
       { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtD = (d) => d ? String(d).split("-").reverse().join("/") : "—";
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// The purchase and expense cycle could APPROVE and not ASSEMBLE. The screen
+// could approve a payment run nobody could create, approve an expense claim
+// nobody could submit, and list purchase orders nobody could raise. poCreate,
+// goodsReceive, payRunCreate, payRunAddPayables, expenseClaimSubmit and
+// expenseClaimReimburse were all wrapped and had no button; rejecting a claim,
+// credit notes and disbursements had no wrapper at all.
+//
+// AT MODULE LEVEL — a modal declared inside the component remounts on every
+// keystroke and the form appears frozen.
+// ─────────────────────────────────────────────────────────────────────────────
+const PAY_FORMS = {
+  payRun: {
+    title: "Create a payment run",
+    note: "Assembling, approving and executing are three separate acts. The person who chooses who gets paid should not be the one who authorises it, nor the one who releases it — that is the control that stops a payment to an account nobody checked.",
+    cta: "Create the run",
+    fields: [["entityId", "Entity id", true, ""], ["runDate", "Run date", true, "YYYY-MM-DD"],
+             ["ccy", "Currency", true, "GBP"]],
+  },
+  addPayables: {
+    title: "Add open payables to the run",
+    note: "Core refuses if nothing was added and says why — no open payables at all, or payables in a different currency from the run. An empty run that looked assembled is one someone goes on to approve.",
+    cta: "Add them",
+    fields: [["runId", "Run id", true, ""]],
+  },
+  po: {
+    title: "Raise a purchase order",
+    note: "Lines are entered as JSON for now: [{\"description\":\"…\",\"qty\":1,\"unit_price\":100}]",
+    cta: "Raise the order",
+    fields: [["entityId", "Entity id", true, ""], ["supplierId", "Supplier id", true, ""],
+             ["poDate", "Date", true, "YYYY-MM-DD"], ["ccy", "Currency", true, "GBP"],
+             ["lines", "Lines (JSON)", true, ""]],
+  },
+  goods: {
+    title: "Record goods received",
+    note: "The middle leg of three-way matching: the order, the goods, and the invoice. Without it an invoice can be paid for something nobody confirmed arrived.",
+    cta: "Record receipt",
+    fields: [["poId", "Purchase order id", true, ""],
+             ["receiptDate", "Date received", true, "YYYY-MM-DD"],
+             ["lines", "Lines (JSON)", true, ""]],
+  },
+  claim: {
+    title: "Submit an expense claim",
+    note: "Approval is refused on your own claim.",
+    cta: "Submit the claim",
+    fields: [["employeeId", "Employee id", true, ""], ["entityId", "Entity id", true, ""],
+             ["claimDate", "Date", true, "YYYY-MM-DD"], ["ccy", "Currency", true, "GBP"],
+             ["lines", "Lines (JSON)", true, ""]],
+  },
+  reject: {
+    title: "Reject an expense claim",
+    note: "A reason is required. A claim that comes back with no reason gets resubmitted unchanged, which wastes everyone's time twice.",
+    cta: "Reject the claim",
+    fields: [["approver", "Your name", true, ""], ["reason", "Reason", true, ""]],
+  },
+  reimburse: {
+    title: "Reimburse an approved claim",
+    cta: "Record the reimbursement",
+    fields: [["date", "Date", true, "YYYY-MM-DD"],
+             ["bankAccountId", "Bank account id", true, ""]],
+  },
+  creditNote: {
+    title: "Raise a credit note",
+    note: "A credit note is not a negative invoice. It is its own document with its own number, because reversing an invoice by editing it destroys the audit trail.",
+    cta: "Raise the credit note",
+    fields: [["side", "AR or AP", true, "AR"], ["entityId", "Entity id", true, ""],
+             ["date", "Date", true, "YYYY-MM-DD"], ["ccy", "Currency", true, "GBP"],
+             ["party", "Customer or supplier", true, ""],
+             ["reason", "Reason", true, ""], ["lines", "Lines (JSON)", true, ""]],
+  },
+};
+
+function PayForm({ kind, f, setF, msg, busy, onCancel, onSave }) {
+  if (!kind) return null;
+  const d = PAY_FORMS[kind];
+  if (!d) return null;
+  return (
+    <div onClick={(e) => e.target === e.currentTarget && onCancel()}
+         style={{ position: "fixed", inset: 0, background: "rgba(0,18,66,0.45)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  zIndex: 1200, padding: 20 }}>
+      <div style={{ background: "#fff", borderRadius: 12, padding: "22px 24px",
+                    width: "min(640px,100%)", maxHeight: "86vh", overflowY: "auto" }}>
+        <div style={{ fontSize: 15, fontWeight: 600, color: "#001242", marginBottom: 6 }}>
+          {d.title}
+        </div>
+        {d.note && (
+          <div style={{ fontSize: 11.5, color: "#5B6B7B", lineHeight: 1.7, marginBottom: 14 }}>
+            {d.note}
+          </div>
+        )}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 14px" }}>
+          {d.fields.map(([k, lab, req, ph]) => (
+            <div key={k} style={{ gridColumn: (k === "lines" || k === "reason") ? "1/-1" : "auto" }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 600,
+                              color: "#555", marginBottom: 4 }}>
+                {lab}{req && <span style={{ color: "#A32D2D" }}> *</span>}
+              </label>
+              <input value={f[k] || ""} placeholder={ph}
+                     onChange={(e) => setF({ ...f, [k]: e.target.value })}
+                     style={{ width: "100%", height: 34, fontSize: 12.5, borderRadius: 6,
+                              border: "0.5px solid #ccc", padding: "0 8px" }} />
+            </div>
+          ))}
+        </div>
+        {msg && (
+          <div style={{ marginTop: 14, padding: "9px 12px", borderRadius: 7, fontSize: 11.5,
+                        lineHeight: 1.6, background: "#FCEBEB", border: "0.5px solid #f0c9c9",
+                        color: "#A32D2D", whiteSpace: "pre-wrap" }}>{msg}</div>
+        )}
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 18 }}>
+          <button style={{ padding: "6px 13px", borderRadius: 6, fontSize: 11.5,
+                           cursor: "pointer", border: "0.5px solid #D9DEE5",
+                           background: "transparent" }} onClick={onCancel}>Cancel</button>
+          <button style={{ padding: "6px 13px", borderRadius: 6, fontSize: 11.5,
+                           cursor: "pointer", border: "none", background: "#00C4CC",
+                           color: "#fff" }} onClick={onSave} disabled={busy}>{d.cta}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AffinityPayables({ onNav }) {
   const [tab, setTab]       = useState("overview");
   const [entity, setEntity] = useState("");
   const [busy, setBusy]     = useState(false);
   const [msg, setMsg]       = useState("");
   const [live, setLive]     = useState(false);
-  const [acting, setActing] = useState(null);   // id being approved/executed
+  const [acting, setActing] = useState(null);
+  // The actions that need input. Assembling a run, raising an order, recording
+  // goods, submitting or rejecting a claim, reimbursing one, raising a credit
+  // note — all previously unreachable.
+  const [pForm, setPForm] = useState(null);
+  const [pF, setPF]       = useState({});
+  const [pId, setPId]     = useState(null);
+  const [pMsg, setPMsg]   = useState("");
+  const [pBusy, setPBusy] = useState(false);
+
+  const jsonOr = (v, fallback) => {
+    try { return JSON.parse(v); } catch (e) { return fallback; }
+  };
+
+  const runPForm = async () => {
+    setPBusy(true); setPMsg("");
+    const v = pF;
+    let r;
+    try {
+      if (pForm === "payRun")
+        r = await PAY.payRunCreate(Number(v.entityId), v.runDate, v.ccy);
+      if (pForm === "addPayables")
+        r = await PAY.payRunAddPayables(Number(v.runId || pId));
+      if (pForm === "po")
+        r = await PAY.poCreate({ entityId: Number(v.entityId),
+                                 supplierId: Number(v.supplierId),
+                                 poDate: v.poDate, ccy: v.ccy,
+                                 lines: jsonOr(v.lines, null) });
+      if (pForm === "goods")
+        r = await PAY.goodsReceive(Number(v.poId || pId), v.receiptDate,
+                                   jsonOr(v.lines, null));
+      if (pForm === "claim")
+        r = await PAY.expenseClaimSubmit({ employeeId: Number(v.employeeId),
+                                           entityId: Number(v.entityId),
+                                           claimDate: v.claimDate, ccy: v.ccy,
+                                           lines: jsonOr(v.lines, null) });
+      if (pForm === "reject")
+        r = await PAY.expenseClaimReject(Number(pId), v.approver, v.reason);
+      if (pForm === "reimburse")
+        r = await PAY.expenseClaimReimburse(Number(pId), v.date,
+                                            Number(v.bankAccountId));
+      if (pForm === "creditNote") {
+        const common = { entityId: Number(v.entityId), date: v.date, ccy: v.ccy,
+                         lines: jsonOr(v.lines, null), reason: v.reason };
+        r = (v.side || "AR").toUpperCase() === "AP"
+          ? await PAY.apCreditNote({ ...common, supplier: v.party })
+          : await PAY.arCreditNote({ ...common, party: v.party });
+      }
+    } catch (e) {
+      r = { ok: false, live: true, error: String((e && e.message) || e) };
+    }
+    setPBusy(false);
+    if (r && r.ok) { setPForm(null); setPF({}); setPMsg(""); load(); return; }
+    if (r && r.live === false) { setPMsg("Not signed in — that cannot be saved."); return; }
+    setPMsg((r && r.error) || "That could not be completed.");
+  };
+
+  const openPForm = (kind, id, seed) => {
+    setPForm(kind); setPId(id ?? null); setPF(seed || {}); setPMsg("");
+  };   // id being approved/executed
 
   const [overview, setOverview] = useState([]);
   const [runs, setRuns]         = useState([]);
@@ -326,6 +509,15 @@ export default function AffinityPayables({ onNav }) {
   // ── Payment runs ──────────────────────────────────────────────────────────
   const Runs = () => (
     <div style={card}>
+      <div style={{ display:"flex", gap:6, marginBottom:12, flexWrap:"wrap" }}>
+        <button style={btn(true)} onClick={()=>openPForm("payRun")}>
+          ＋ Create a payment run
+        </button>
+        <button style={btn(false)} title="Refused if nothing was added, and says why"
+                onClick={()=>openPForm("addPayables")}>
+          Add open payables
+        </button>
+      </div>
       <div style={{ fontSize: 11, fontWeight: 600, color: MUT, marginBottom: 4,
                     textTransform: "uppercase", letterSpacing: "0.4px" }}>
         Payment runs
@@ -390,6 +582,11 @@ export default function AffinityPayables({ onNav }) {
   // ── Expense claims ────────────────────────────────────────────────────────
   const Claims = () => (
     <div style={card}>
+      <div style={{ display:"flex", gap:6, marginBottom:12 }}>
+        <button style={btn(true)} onClick={()=>openPForm("claim")}>
+          ＋ Submit a claim
+        </button>
+      </div>
       <div style={{ fontSize: 11, fontWeight: 600, color: MUT, marginBottom: 4,
                     textTransform: "uppercase", letterSpacing: "0.4px" }}>
         Expense claims
@@ -441,6 +638,15 @@ export default function AffinityPayables({ onNav }) {
   // ── Purchase orders ───────────────────────────────────────────────────────
   const Orders = () => (
     <div style={card}>
+      <div style={{ display:"flex", gap:6, marginBottom:12, flexWrap:"wrap" }}>
+        <button style={btn(true)} onClick={()=>openPForm("po")}>
+          ＋ Raise a purchase order
+        </button>
+        <button style={btn(false)} title="The middle leg of three-way matching"
+                onClick={()=>openPForm("goods")}>
+          Record goods received
+        </button>
+      </div>
       <div style={{ fontSize: 11, fontWeight: 600, color: MUT, marginBottom: 10,
                     textTransform: "uppercase", letterSpacing: "0.4px" }}>
         Purchase orders
@@ -473,6 +679,11 @@ export default function AffinityPayables({ onNav }) {
   // ── Credit control ────────────────────────────────────────────────────────
   const Credit = () => (
     <div style={card}>
+      <div style={{ display:"flex", gap:6, marginBottom:12 }}>
+        <button style={btn(true)} onClick={()=>openPForm("creditNote")}>
+          ＋ Raise a credit note
+        </button>
+      </div>
       <div style={{ fontSize: 11, fontWeight: 600, color: MUT, marginBottom: 4,
                     textTransform: "uppercase", letterSpacing: "0.4px" }}>
         Credit control
@@ -578,6 +789,10 @@ export default function AffinityPayables({ onNav }) {
         {tab === "credit"   && <Credit />}
         {tab === "interco" && <Intercompany />}
       </div>
+
+      <PayForm kind={pForm} f={pF} setF={setPF} msg={pMsg} busy={pBusy}
+               onCancel={()=>{ setPForm(null); setPF({}); setPMsg(""); }}
+               onSave={runPForm} />
     </div>
   );
 }
