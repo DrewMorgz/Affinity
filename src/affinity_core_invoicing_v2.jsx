@@ -5,6 +5,7 @@ import EntitySearch from "./affinity_entity_search";
 const ENTITY_NAMES = ["Meridian Holdings Ltd","Harrington Family Trust","Pacific Wealth Trust","Caledonian Ventures Ltd","North Star Holdings Ltd","Azure Mediterranean Foundation","Apex Growth Fund Ltd","Stonebridge Capital Ltd","Thornbury Asset Co Ltd","Bluewater Family Trust","Phoenix eGaming Ltd","Meridian Digital Ltd","Suncoast Ventures LLC"];
 import { isConfigured } from "./affinity_accounting_supabase";
 import { feeInvoices } from "./affinity_invoicing_api";
+import * as OW from "./affinity_ops_write_api";
 const CY = "#00C4CC";
 const Badge = ({ label, colors }) => (<span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:600, background:colors?.bg||"#eee", color:colors?.color||"#333", whiteSpace:"nowrap" }}>{label}</span>);
 const fmt = (n,s="£") => s+Math.abs(Number(n||0)).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -380,7 +381,20 @@ export default function AffinityInvoicing({ onNav }) {
             <option value="">All statuses</option>
             {["Draft","Sent","Paid","Overdue","Partial"].map(s=><option key={s}>{s}</option>)}
           </select>
-          <button style={{ ...nba, marginLeft:"auto" }} onClick={()=>setModal("newInvoice")}>＋ New invoice</button>
+          <button style={{ ...nb, marginLeft:"auto" }}
+                  title="Turns approved, unbilled time into invoices up to a date — the bridge between the time recorded and the fee charged"
+                  onClick={async()=>{
+                    const e = window.prompt("Entity id to bill?");
+                    if (!e) return;
+                    const d = window.prompt("Bill WIP up to which date (YYYY-MM-DD)?");
+                    if (!d) return;
+                    const r = await OW.runBilling(Number(e), d);
+                    window.alert(r && r.ok ? "Billing run complete."
+                      : (r && r.error) || "The billing run could not be completed.");
+                  }}>
+            Run billing from WIP
+          </button>
+          <button style={nba} onClick={()=>setModal("newInvoice")}>＋ New invoice</button>
         </div>
 
         <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:10, padding:"12px 20px", borderBottom:"0.5px solid #e5e5e5" }}>

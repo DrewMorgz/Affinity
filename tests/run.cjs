@@ -2316,6 +2316,40 @@ group("Closing a period, remediating a shortfall, and the controls nobody could 
      /auditor may raise it/.test(adm));
 }
 
+
+group("Billing from WIP, correcting time, reassigning a task");
+{
+  const ow  = fs.readFileSync(path.join(SRC, "affinity_ops_write_api.js"), "utf8");
+  const ops = fs.readFileSync(path.join(SRC, "affinity_accounting_ops_api.js"), "utf8");
+  const inv = fs.readFileSync(path.join(SRC, "affinity_core_invoicing_v2.jsx"), "utf8");
+  const ts  = fs.readFileSync(path.join(SRC, "affinity_core_timesheets_v2.jsx"), "utf8");
+  const tk  = fs.readFileSync(path.join(SRC, "affinity_core_tasks.jsx"), "utf8");
+
+  // WIP was visible and invoices could be raised by hand, and the function
+  // that connects them had no button — the bridge between the time recorded
+  // and the fee charged was missing.
+  ok("runBilling is wrapped", /export const runBilling\s*=/.test(ow));
+  ok("running billing is reachable", /OW\.runBilling\s*\(/.test(inv));
+  ok("...and it says what it connects", /bridge between/.test(ow));
+
+  // Time could be recorded and submitted and never corrected, so a mistyped
+  // hour or a thin narrative stayed as it was — and the narrative appears on
+  // the client's invoice.
+  ok("tsEntryUpdate is wrapped", /export const tsEntryUpdate\s*=/.test(ow));
+  ok("correcting an entry is reachable", /OW\.tsEntryUpdate\s*\(/.test(ts));
+  ok("...and the prompt says the narrative reaches the client",
+     /client's invoice/.test(ts));
+
+  // A task assigned to someone who has left is a task nobody does.
+  ok("reassigning a task is reachable", /OW\.taskReassign\s*\(/.test(tk));
+  ok("...with the reason", /task nobody does/.test(tk));
+
+  // A transfer is not a disposal: the group still owns the asset.
+  ok("assetTransfer is wrapped", /export const assetTransfer\s*=/.test(ops));
+  ok("...and is distinguished from a disposal",
+     /not a disposal/.test(ops) && /misstate the/.test(ops));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

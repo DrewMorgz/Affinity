@@ -114,3 +114,18 @@ export const journalReject = (journalId, reason) =>
 // unbalance the ledger and leave nothing to explain why the figures changed.
 export const journalReverse = (journalId, reason, date) =>
   call("bk_journal_reverse", { p_journal: journalId, p_reason: reason, p_date: date });
+
+// ── Billing and timesheet corrections ───────────────────────────────────────
+// run_billing turns approved, unbilled WIP into invoices up to a date. WIP was
+// visible, invoices could be raised by hand, and the thing that connects them
+// had no button — so the bridge between the time recorded and the fee charged
+// was missing.
+export const runBilling = (entityId, upTo) =>
+  call("run_billing", { p_entity_id: entityId, p_up_to: upTo, p_created_by: null });
+
+// Correcting a time entry before it is submitted. Time could be recorded and
+// submitted and never corrected, so a mistyped hour or a thin narrative stayed
+// as it was — and the narrative is what appears on the client's invoice.
+export const tsEntryUpdate = (id, hours, matter, narrative, billable) =>
+  call("ts_entry_update", { p_id: id, p_hours: hours, p_matter: matter,
+                            p_narrative: narrative, p_billable: billable });

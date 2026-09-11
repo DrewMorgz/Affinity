@@ -311,6 +311,15 @@ export default function AffinityTasks({ userId, onNav, initialView }) {
                   <td style={{ padding:"10px 14px" }}>
                     <div style={{ display:"flex", gap:4 }} onClick={e=>e.stopPropagation()}>
                       {t.status==="Open"&&<button style={{ ...nba, fontSize:10, padding:"3px 8px" }} onClick={()=>completeTask(t.id)}>Complete ✓</button>}
+                      {t.status==="Open"&&<button style={{ ...nb, fontSize:10, padding:"3px 8px" }}
+                              title="A task assigned to someone who has left is a task nobody does"
+                              onClick={async()=>{
+                                const who = window.prompt("Reassign this task to whom?");
+                                if (!who) return;
+                                const r = await OW.taskReassign(t.id, who);
+                                if (r && r.ok) { window.alert("Task reassigned."); return; }
+                                window.alert((r && r.error) || "That could not be reassigned.");
+                              }}>Reassign</button>}
                       {/* Per review: only system manager can delete */}
                       {CURRENT_USER.isSystemManager && <button style={{ ...nb, fontSize:10, padding:"3px 8px", borderColor:"#EF4444", color:"#EF4444" }} onClick={()=>deleteTask(t.id)}>Delete</button>}
                     </div>

@@ -183,3 +183,13 @@ export const clientMoneyRemediate = (reconId, firmEntityId, firmBankId, date) =>
                                              p_firm_entity: firmEntityId,
                                              p_firm_bank: firmBankId,
                                              p_date: date, p_created_by: null });
+
+// ── Moving an asset between group entities ──────────────────────────────────
+// A transfer is not a disposal: the group still owns the asset, so it leaves
+// one entity's register at a transfer value and joins another's. Recording it
+// as a disposal and a fresh purchase would lose the link and misstate the
+// group position on consolidation.
+export const assetTransfer = (assetId, toEntityId, date, transferValue) =>
+  call("transfer_asset", { p_asset: assetId, p_to_entity: toEntityId,
+                           p_date: date, p_transfer_value: transferValue,
+                           p_created_by: null });

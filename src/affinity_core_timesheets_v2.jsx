@@ -321,7 +321,23 @@ export default function AffinityTimesheets({ onNav }) {
             style={{ ...sel, minWidth:190, boxSizing:"border-box" }} />
           <datalist id="ts-staff-list">{STAFF.map(x=><option key={x.id} value={x.name}/>)}</datalist>
           <select style={sel}><option>{weekF}</option><option>W/C 07 Jul 2025</option><option>W/C 30 Jun 2025</option></select>
-          <button style={{ ...nb, marginLeft:"auto" }} onClick={()=>setModal("entry")}>＋ Manual entry</button>
+          <button style={{ ...nb, marginLeft:"auto" }}
+                  title="Corrects a draft entry. The narrative appears on the client's invoice, so a thin one is worth fixing before it is submitted."
+                  onClick={async()=>{
+                    const id = window.prompt("Time entry id to correct?");
+                    if (!id) return;
+                    const h = window.prompt("Hours (decimal, e.g. 1.5)?");
+                    if (h == null || h === "") return;
+                    const mt = window.prompt("Matter?");
+                    const nv = window.prompt("Narrative? It appears on the client's invoice, and a specific one answers a fee query before it is asked.");
+                    const bl = window.confirm("Is this billable? OK for yes, Cancel for no.");
+                    const r = await OW.tsEntryUpdate(Number(id), Number(h), mt, nv, bl);
+                    window.alert(r && r.ok ? "Entry corrected."
+                      : (r && r.error) || "That could not be corrected.");
+                  }}>
+            Correct an entry
+          </button>
+          <button style={nb} onClick={()=>setModal("entry")}>＋ Manual entry</button>
           <button style={nba} onClick={submitTimesheet}>Submit timesheet ↗</button>
         </div>
 
