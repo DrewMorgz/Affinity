@@ -5,6 +5,7 @@ import { appUsers, isConfigured } from "./affinity_ops_api";
 import { ROLES, ROLE_LABELS, permsFor, INTERNAL_ENTITIES, INTERNAL_ACCESS } from "./affinity_core_rbac";
 import { FOLDER_TREE } from "./affinity_core_documents_v2";
 import * as DEMO from "./affinity_demo_api";
+import { approvalThresholdSet, approvalThresholdsList } from "./affinity_fiduciary_api";
 
 const CY = "#00C4CC";
 
@@ -240,6 +241,27 @@ export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false })
   // Suspending a user removes their access WITHIN Core only. It does not touch
   // Entra, so it is not the leaver process — the message says so, because
   // assuming otherwise would leave a leaver with a live mailbox and sign-in.
+  // Suspend was wired; reinstate and changing a role were not. So a user could
+  // be suspended and never brought back, and nobody's role could be changed
+  // without a developer — which is the ordinary administrative work this
+  // module exists for.
+  const reinstateUser = async () => {
+    const id = typeof selUser !== "undefined" && selUser ? (selUser.id || selUser) : null;
+    if (!id) { setWMsg("Select a user first."); return; }
+    const reason = window.prompt("Reason for reinstating this user:");
+    if (!reason) { setWMsg("A reason is required to reinstate a user."); return; }
+    await wRun(() => DW.sysUserReinstate(id, reason), "Reinstated within Core.");
+  };
+
+  const setUserRole = async () => {
+    const id = typeof selUser !== "undefined" && selUser ? (selUser.id || selUser) : null;
+    if (!id) { setWMsg("Select a user first."); return; }
+    const role = window.prompt(
+      "New role?\n\nThe role decides what this person can see and do, including whether they see Affinity's own entities alongside client ones.");
+    if (!role) return;
+    await wRun(() => DW.sysUserSetRole(id, role), "Role changed.");
+  };
+
   const suspendUser = async () => {
     const id = typeof selUser !== "undefined" && selUser ? (selUser.id || selUser) : null;
     if (!id) { setWMsg("Select a user first."); return; }
@@ -429,6 +451,8 @@ export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false })
                 <button style={s.actBtn(false)} onClick={()=>setModal("editUser")}>Edit ↗</button>
                 {!selUser.mfa && <button style={{ ...s.actBtn(false), color:"#F59E0B", borderColor:"#F59E0B" }} disabled title="MFA is enforced in Entra, not here — set it in the Microsoft admin centre">Enforce MFA ↗</button>}
                 <button style={{ ...s.actBtn(false), color:"#EF4444", borderColor:"#EF4444" }} onClick={suspendUser}>Suspend ↗</button>
+                  <button style={nb} onClick={reinstateUser}>Reinstate</button>
+                  <button style={nb} onClick={setUserRole}>Change role</button>
               </div>
             </div>
           )}
@@ -724,6 +748,47 @@ export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false })
 
       {view === "config" && (
         <div style={s.pad}>
+          {/* Journal approval thresholds. The mechanism was built and no
+              threshold could be set, so the policy of not requiring approval
+              was not a choice — it was the only available state. */}
+          <div style={{ ...s.card, marginBottom:16 }}>
+            <div style={s.cardT}>Journal approval threshold</div>
+            <div style={{ fontSize:11.5, color:"#5B6B7B", lineHeight:1.8, marginBottom:10 }}>
+              Journals post immediately and none requires a second pair of eyes. That is
+              Affinity's policy, and setting a threshold here changes it per entity: journals
+              above the value would need approving by someone else.
+              <div style={{ marginTop:6 }}>
+                Zero means every journal needs approval. Leaving it unset means none does —
+                which is the current position, and an auditor may raise it.
+              </div>
+            </div>
+            <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+              <button style={nb} onClick={async()=>{
+                const e = window.prompt("Entity id?");
+                if (!e) return;
+                const t = window.prompt(
+                  "Threshold?\n\nJournals above this value will need a second person. Zero means every journal does.");
+                if (t == null || t === "") return;
+                const r = await approvalThresholdSet(Number(e), Number(t));
+                setWMsg(r && r.ok
+                  ? "Threshold set. Journals above it now require approval."
+                  : (r && r.error) || "That could not be set.");
+              }}>
+                Set a threshold
+              </button>
+              <button style={nb} onClick={async()=>{
+                const r = await approvalThresholdsList();
+                if (!r || !r.live) { setWMsg("Not signed in."); return; }
+                const rows = r.data || [];
+                setWMsg(rows.length
+                  ? rows.map(x=>`${x.entity_name || x.entity_id}: ${x.threshold}`).join("\n")
+                  : "No thresholds are set, so no journal requires approval.");
+              }}>
+                Show thresholds
+              </button>
+            </div>
+          </div>
+
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
             <div style={s.card}>
               <div style={s.cardT}>Security settings</div>

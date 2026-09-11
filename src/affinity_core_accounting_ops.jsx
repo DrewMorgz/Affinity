@@ -640,6 +640,39 @@ export default function AffinityAccountingOps({ onNav }) {
             </div>
             <button style={btn(true)} onClick={loadMe}>Run checklist</button>
             <button style={btn(false)}
+                    title="Prevents further posting into the period. A reason is recorded, because closing with items outstanding is a judgement."
+                    onClick={async () => {
+                      if (!meEntity) { setMeMsg("Enter an entity id first."); return; }
+                      const why = window.prompt(
+                        "Reason for closing " + mePeriod + "?\n\n" +
+                        "Closing prevents further posting into the period. If anything on the checklist is still outstanding, the reason is what explains the decision later.");
+                      if (!why) return;
+                      setMeMsg("");
+                      const r = await ME.periodClose(Number(meEntity), mePeriod, why);
+                      if (r && r.ok) { setMeMsg("Period closed."); loadMe(); return; }
+                      if (r && r.live === false) { setMeMsg("Not signed in."); return; }
+                      setMeMsg((r && r.error) || "The period could not be closed.");
+                    }}>
+              Close the period
+            </button>
+            <button style={btn(false)}
+                    title="Stronger than closing — a closed period can be reopened with a reason, a finally-locked one is meant to stay shut"
+                    onClick={async () => {
+                      if (!meEntity) { setMeMsg("Enter an entity id first."); return; }
+                      if (!window.confirm(
+                        "Lock " + mePeriod + " finally?\n\n" +
+                        "This is stronger than closing. A closed period can be reopened with a reason; a finally-locked one is meant to stay shut.")) return;
+                      const why = window.prompt("Reason for the final lock?");
+                      if (!why) return;
+                      setMeMsg("");
+                      const r = await ME.periodLockFinal(Number(meEntity), mePeriod, why);
+                      if (r && r.ok) { setMeMsg("Period locked."); loadMe(); return; }
+                      if (r && r.live === false) { setMeMsg("Not signed in."); return; }
+                      setMeMsg((r && r.error) || "The period could not be locked.");
+                    }}>
+              Lock finally
+            </button>
+            <button style={btn(false)}
                     title="Reopening a closed period needs a reason, because anything already reported on it may change"
                     onClick={async () => {
                       if (!meEntity) { setMeMsg("Enter an entity id first."); return; }
@@ -986,6 +1019,27 @@ export default function AffinityAccountingOps({ onNav }) {
           <div style={{ display: "flex", gap: 6 }}>
             <button style={btn(true)} onClick={() => openForm("cmReceive")}>＋ Receipt</button>
             <button style={btn(false)} onClick={() => openForm("cmPay")}>＋ Payment</button>
+            <button style={{ ...btn(false), color: RED, borderColor: "#f0c9c9" }}
+                    title="The firm pays its own money in — a shortfall is never fixed from another client's balance"
+                    onClick={async () => {
+                      const rec = window.prompt("Reconciliation id with the shortfall?");
+                      if (!rec) return;
+                      const fe = window.prompt("Affinity entity id paying it in?");
+                      if (!fe) return;
+                      const fb = window.prompt("Affinity bank account id?");
+                      if (!fb) return;
+                      const d = window.prompt("Date (YYYY-MM-DD)?");
+                      if (!d) return;
+                      setMsg("");
+                      const r = await OPS.clientMoneyRemediate(Number(rec), Number(fe),
+                                                               Number(fb), d);
+                      setMsg(r && r.ok
+                        ? "Shortfall remediated from the firm's own funds."
+                        : (r && r.error) || "That could not be completed.");
+                      load();
+                    }}>
+              Remediate a shortfall
+            </button>
             <button style={btn(false)}
                     title="Refused if the client does not hold the money — a fee transfer is the firm helping itself, not a client instruction"
                     onClick={() => { setFeeForm(true); setFee({}); setFeeAvail(null); setFeeMsg(""); }}>

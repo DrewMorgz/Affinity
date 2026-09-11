@@ -125,3 +125,19 @@ export const runDeferredIncome = (entityId, period) =>
 export const postVatReturn = (returnId, postDate) =>
   call("post_vat_return", { p_return_id: returnId, p_post_date: postDate,
                             p_created_by: null });
+
+// ── Closing a period ────────────────────────────────────────────────────────
+// The month-end checklist reports what is outstanding, the steps can now be
+// run, and the period could not actually be CLOSED. So the whole exercise
+// finished with everything ticked and nothing shut.
+
+// Closing prevents further posting into the period. A reason is recorded,
+// because closing with items outstanding is a judgement someone made.
+export const periodClose = (entityId, period, reason) =>
+  call("period_close", { p_entity: entityId, p_period: period, p_reason: reason });
+
+// The final lock is separate from closing, and stronger: a closed period can
+// be reopened with a reason, a finally-locked one is meant to stay shut. Two
+// steps because they are two different decisions.
+export const periodLockFinal = (entityId, period, reason) =>
+  call("period_lock_final", { p_entity: entityId, p_period: period, p_reason: reason });

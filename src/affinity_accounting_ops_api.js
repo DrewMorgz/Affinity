@@ -168,3 +168,18 @@ export const clientMoneyReconcile = (cmAccountId, reconDate, bankBalance) =>
                                             p_recon_date: reconDate,
                                             p_bank_balance: bankBalance,
                                             p_created_by: null });
+
+// ── Remediating a client money shortfall ────────────────────────────────────
+// A shortfall means the firm is holding less client money than it owes. The
+// reconciliation reports it, month-end and year-end both block on it, and
+// there was no way to put it right — so the one thing the system insisted on
+// could not be done in the system.
+//
+// Remediation is the firm paying its own money in. That is why it takes the
+// firm's entity and bank account rather than moving anything between clients:
+// a shortfall is never fixed from another client's balance.
+export const clientMoneyRemediate = (reconId, firmEntityId, firmBankId, date) =>
+  call("remediate_client_money_shortfall", { p_recon_id: reconId,
+                                             p_firm_entity: firmEntityId,
+                                             p_firm_bank: firmBankId,
+                                             p_date: date, p_created_by: null });

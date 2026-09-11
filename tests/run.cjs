@@ -2272,6 +2272,50 @@ group("Obligations and statutory accounts — confirming, adjusting, noting");
      /accountsNoteAdd\(\{/.test(fid));
 }
 
+
+group("Closing a period, remediating a shortfall, and the controls nobody could set");
+{
+  const me   = fs.readFileSync(path.join(SRC, "affinity_monthend_api.js"), "utf8");
+  const ops  = fs.readFileSync(path.join(SRC, "affinity_accounting_ops_api.js"), "utf8");
+  const opsU = fs.readFileSync(path.join(SRC, "affinity_core_accounting_ops.jsx"), "utf8");
+  const adm  = fs.readFileSync(path.join(SRC, "affinity_core_system_admin.jsx"), "utf8");
+
+  // The checklist reported, the steps could be run, and the period could not
+  // actually be CLOSED. The whole exercise finished with everything ticked and
+  // nothing shut.
+  ok("periodClose is wrapped", /export const periodClose\s*=/.test(me));
+  ok("periodLockFinal is wrapped", /export const periodLockFinal\s*=/.test(me));
+  ok("closing is reachable", /ME\.periodClose\s*\(/.test(opsU));
+  ok("the final lock is reachable", /ME\.periodLockFinal\s*\(/.test(opsU));
+  ok("locking is distinguished from closing", /meant to stay shut/.test(opsU));
+  ok("closing records a reason", /judgement/.test(opsU));
+
+  // A shortfall means the firm holds less client money than it owes. The
+  // reconciliation reports it, month-end and year-end both BLOCK on it, and
+  // there was no way to put it right — the one thing the system insisted on
+  // could not be done in the system.
+  ok("clientMoneyRemediate is wrapped",
+     /export const clientMoneyRemediate\s*=/.test(ops));
+  ok("remediation is reachable", /OPS\.clientMoneyRemediate\s*\(/.test(opsU));
+  ok("...and it is the firm's own money, not another client's",
+     /never fixed from another client/.test(ops));
+
+  // Suspend was wired; reinstate and role changes were not. A user could be
+  // suspended and never brought back.
+  ok("reinstating a user is reachable", /DW\.sysUserReinstate\s*\(/.test(adm));
+  ok("changing a role is reachable", /DW\.sysUserSetRole\s*\(/.test(adm));
+
+  // The approval mechanism existed and no threshold could be set, so the
+  // policy of not requiring approval was not a choice — it was the only
+  // available state.
+  ok("setting an approval threshold is reachable",
+     /approvalThresholdSet\s*\(/.test(adm));
+  ok("...and the screen explains what zero and unset mean",
+     /Zero means every journal needs approval/.test(adm));
+  ok("...and that an auditor may raise the current position",
+     /auditor may raise it/.test(adm));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
