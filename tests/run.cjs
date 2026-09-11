@@ -3010,6 +3010,43 @@ group("Every namespace a module calls is imported or defined");
      offenders.length === 0, offenders.slice(0, 4).join("; "));
 }
 
+
+group("db/088 — the screen's posting path ignored the approval threshold");
+{
+  const sql = fs.readFileSync(path.join(DB, "088_journal_post_honours_threshold.sql"), "utf8");
+
+  // FOUND BY FOLLOWING THE PATH RATHER THAN READING THE FUNCTION. Two ways to
+  // post a journal: post_with_approval checks the entity's threshold and holds
+  // the journal as draft; bk_journal_post, which the SCREEN calls, never
+  // looked at it.
+  //
+  // So a threshold set in System admin would have had no effect on anything
+  // posted from the interface. The journal posts, the approval queue stays
+  // empty, and the setting looks configured. Same shape as the bare
+  // approval_threshold_set found in 085: a second path that skips the control.
+  ok("the threshold is now read", /journal_approval_rule/.test(sql));
+  ok("...and the journal held as draft", /status = 'draft'/.test(sql));
+  ok("...and the hold is audited", /journal held for approval/.test(sql));
+  ok("the consequence of the gap is recorded",
+     /looked configured|appeared\s*\n?-- configured|setting appeared/.test(sql));
+
+  // THE WHOLE FUNCTION IS REPRODUCED, NOT REWRITTEN. A first attempt replaced
+  // it with a thin version carrying only the threshold check, which would have
+  // silently dropped six validations that exist nowhere else.
+  ["Journal type must be one of", "at least two lines",
+   "must be open before posting", "more than a month ahead",
+   "debits and credits differ by"].forEach((v) =>
+    ok("validation kept: " + v.slice(0, 28), sql.includes(v)));
+  ok("the near-miss is recorded so it is not repeated",
+     /is not a net gain/.test(sql));
+
+  // The signature must match the original exactly. A different parameter list
+  // creates a second overload rather than replacing it — which would have left
+  // two posting paths, the precise fault the file exists to remove.
+  ok("the signature matches the original",
+     /p_journal_type text DEFAULT 'manual', p_source text DEFAULT 'Bookkeeping'/.test(sql));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
