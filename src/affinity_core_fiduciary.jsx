@@ -619,7 +619,11 @@ export default function AffinityFiduciary({ onNav }) {
                               const r=await FID.accountMapList(Number(e));
                               if(!r||!r.live){ setMsg("Not signed in."); return; }
                               const rows=r.data||[];
-                              const unmapped=rows.filter(x=>!x.caption_code);
+                              // status, not caption_code. Filtering on a field
+                              // the function does not return made every row count
+                              // as unmapped — a check that flags everything is one
+                              // nobody acts on.
+                              const unmapped=rows.filter(x=>!x.group_code);
                               setMsg(rows.length
                                 ? rows.length+" account(s), "+unmapped.length+" unmapped"
                                   + (unmapped.length
@@ -649,7 +653,8 @@ export default function AffinityFiduciary({ onNav }) {
                               const rows=r.data||[];
                               setMsg(rows.length
                                 ? rows.length+" account(s) mapped more than once:\n"+
-                                  rows.slice(0,15).map(x=>`  ${x.account_code||x.account_id}: ${x.captions||x.caption_codes}`).join("\n")+
+                                  rows.slice(0,15).map(x=>`  ${x.account_code||x.account_id}: ${x.captions}`
+                                    + (x.double_counted ? "  ← DOUBLE COUNTED" : "  (different funds — correct)")).join("\n")+
                                   "\n\nTwo captions with the SAME fund treatment double-count. Two with different funds — income and capital — are correct and are the trust apportionment."
                                 : "No account is mapped more than once.");
                             }}>

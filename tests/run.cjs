@@ -3299,6 +3299,35 @@ group("Behavioural control tests, and a broken check that inverted them");
      /can execute nothing/.test(ct));
 }
 
+
+group("Column mismatches, and role access verified against the real module ids");
+{
+  const bk  = fs.readFileSync(path.join(SRC, "affinity_core_bookkeeping_v2.jsx"), "utf8");
+  const fid = fs.readFileSync(path.join(SRC, "affinity_core_fiduciary.jsx"), "utf8");
+
+  // TWO COLUMN MISMATCHES, BOTH IN CODE I WROTE TODAY. A screen reading a
+  // column the function does not return gets undefined — nothing errors, the
+  // value renders blank. This is the fault found in Compliance this morning
+  // (r.name against entity_name) and never swept for until now.
+  ok("the trial balance import list reads import_ref, not import_date",
+     /x\.import_ref/.test(bk) && !/x\.import_date/.test(bk));
+
+  // The worse of the two. account_map_list returns group_code; I filtered on
+  // caption_code, which does not exist — so EVERY row counted as unmapped. A
+  // check built to find unmapped accounts would have flagged all of them, and
+  // a check that flags everything is one nobody acts on.
+  ok("the unmapped-account check reads group_code",
+     /x=>!x\.group_code/.test(fid));
+  ok("...and why the wrong column was worse than useless is recorded",
+     /nobody acts on/.test(fid));
+
+  // The duplicates function returns double_counted, which says directly whether
+  // the duplication is the error or the legitimate income/capital
+  // apportionment. Reading it beats leaving the person to infer it.
+  ok("the duplicate check reports which duplications are actually wrong",
+     /x\.double_counted/.test(fid));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

@@ -565,7 +565,7 @@ export default function AffinityBookkeeping({ onNav }) {
                         const rows=r.data||[];
                         if(!rows.length){ setJMsg("No trial balance imports recorded."); return; }
                         setJMsg(rows.length+" import(s):\n"+rows.slice(0,15).map(x=>
-                          `  id ${x.id} — ${x.import_date||x.imported_at||""} ${x.entity_name||""} ${x.status||""}`).join("\n")
+                          `  id ${x.id} — ${x.import_ref||""} ${x.entity_name||""} ${x.period||""} ${x.rows_loaded||0} rows, ${x.status||""} (${x.imported_at||"no date"})`).join("\n")
                           + "\n\nUse Roll back an import with the id.");
                       }}>
                 Trial balance imports
