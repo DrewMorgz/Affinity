@@ -2115,6 +2115,36 @@ group("Payables — the purchase and expense cycle can be assembled, not only ap
      /p_related_invoice_id/.test(api));
 }
 
+
+group("Trust transactions — the fiduciary side could read and not record");
+{
+  const ui = fs.readFileSync(path.join(SRC, "affinity_core_fiduciary.jsx"), "utf8");
+
+  // The trust tabs READ — position, beneficiaries, distributions, the overview
+  // — and nothing could be written. A trustee could see the income fund held
+  // money and had no way to pay any of it to a life tenant.
+  ["trustRecordIncome", "trustRecordCapital", "trustRecordExpense",
+   "trustDistribute"].forEach((w) =>
+    ok(w + " is called by the screen", new RegExp("FID\\." + w + "\\s*\\(").test(ui)));
+
+  // THE THING THAT MATTERS MOST IN THIS MODULE. Income belongs to the life
+  // tenant, capital to the remaindermen. Paying capital as income is a breach
+  // of trust rather than a misposting.
+  ok("the funds-never-summed principle is on screen", /never summed/.test(ui));
+  ok("the fund is a choice, not a defaulted field",
+     /<option value="">— choose —<\/option>/.test(ui));
+  ok("...and the reason a default would be wrong is recorded",
+     /field that\s*\n?\/\/ defaults is a field people stop reading|stop reading/.test(ui));
+  ok("distributing explains the check is per fund",
+     /not enough in the trust/.test(ui));
+  ok("...with the case that makes it concrete",
+     /ample capital and no income/.test(ui));
+  ok("an expense records which fund bears it rather than apportioning silently",
+     /recorded explicitly rather than apportioned/.test(ui));
+
+  ok("TrustForm is at module level", /^function TrustForm\(/m.test(ui));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

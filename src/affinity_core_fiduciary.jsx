@@ -77,12 +77,170 @@ function Table({ cols, rows, render, empty }) {
   ) : empty;
 }
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TRUST TRANSACTIONS
+//
+// The trust tabs READ — position, beneficiaries, distributions, the overview —
+// and nothing could be recorded. trustRecordIncome, trustRecordCapital,
+// trustRecordExpense, trustDistribute and trustFundCheck were all wrapped and
+// unreachable. So a trustee could see that the income fund held £40,000 and
+// had no way to pay any of it to a life tenant.
+//
+// EVERY FORM HERE ASKS WHICH FUND, and it is never defaulted. Income belongs
+// to the life tenant; capital belongs to the remaindermen. Paying capital as
+// income is a breach of trust rather than a misposting, and a field that
+// defaults is a field people stop reading.
+// ─────────────────────────────────────────────────────────────────────────────
+const TRUST_FORMS = {
+  income: {
+    title: "Record trust income",
+    note: "Income belongs to the life tenant. Recording it as capital, or capital as income, is a breach of trust rather than a misposting — which is why the fund is asked rather than assumed.",
+    cta: "Record the income",
+    fields: [["trustId", "Trust entity id", true, ""], ["date", "Date", true, "YYYY-MM-DD"],
+             ["bankId", "Bank account id", true, ""],
+             ["incomeAcct", "Income account id", true, ""],
+             ["amount", "Amount", true, ""], ["narrative", "Narrative", false, ""]],
+  },
+  capital: {
+    title: "Record trust capital",
+    note: "Capital belongs to the remaindermen. It is a separate fund and is never summed with income, including in the totals.",
+    cta: "Record the capital",
+    fields: [["trustId", "Trust entity id", true, ""], ["date", "Date", true, "YYYY-MM-DD"],
+             ["bankId", "Bank account id", true, ""],
+             ["capitalAcct", "Capital account id", true, ""],
+             ["amount", "Amount", true, ""], ["narrative", "Narrative", false, ""]],
+  },
+  expense: {
+    title: "Record a trust expense",
+    note: "Which fund bears the expense is a trustee's decision with real consequences for the beneficiaries, so it is recorded explicitly rather than apportioned automatically.",
+    cta: "Record the expense",
+    fields: [["trustId", "Trust entity id", true, ""], ["date", "Date", true, "YYYY-MM-DD"],
+             ["bankId", "Bank account id", true, ""],
+             ["expenseAcct", "Expense account id", true, ""],
+             ["fund", "Borne by which fund", true, "income / capital"],
+             ["amount", "Amount", true, ""], ["narrative", "Narrative", false, ""]],
+  },
+  distribute: {
+    title: "Distribute to a beneficiary",
+    note: "The fund is required. Core checks there is enough in THAT fund — not enough in the trust — because a trust with ample capital and no income cannot pay an income distribution.",
+    cta: "Record the distribution",
+    fields: [["trustId", "Trust entity id", true, ""],
+             ["beneficiaryId", "Beneficiary id", true, ""],
+             ["date", "Date", true, "YYYY-MM-DD"],
+             ["fund", "From which fund", true, "income / capital"],
+             ["amount", "Amount", true, ""],
+             ["bankId", "Bank account id", true, ""],
+             ["narrative", "Narrative", false, ""]],
+  },
+};
+
+function TrustForm({ kind, f, setF, msg, busy, onCancel, onSave }) {
+  if (!kind) return null;
+  const d = TRUST_FORMS[kind];
+  if (!d) return null;
+  return (
+    <div onClick={(e) => e.target === e.currentTarget && onCancel()}
+         style={{ position: "fixed", inset: 0, background: "rgba(0,18,66,0.45)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  zIndex: 1200, padding: 20 }}>
+      <div style={{ background: "#fff", borderRadius: 12, padding: "22px 24px",
+                    width: "min(640px,100%)", maxHeight: "86vh", overflowY: "auto" }}>
+        <div style={{ fontSize: 15, fontWeight: 600, color: "#001242", marginBottom: 6 }}>
+          {d.title}
+        </div>
+        <div style={{ fontSize: 11.5, color: "#5B6B7B", lineHeight: 1.7, marginBottom: 14 }}>
+          {d.note}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 14px" }}>
+          {d.fields.map(([k, lab, req, ph]) => (
+            <div key={k} style={{ gridColumn: k === "narrative" ? "1/-1" : "auto" }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 600,
+                              color: "#555", marginBottom: 4 }}>
+                {lab}{req && <span style={{ color: "#A32D2D" }}> *</span>}
+              </label>
+              {k === "fund" ? (
+                <select value={f[k] || ""} onChange={(e) => setF({ ...f, [k]: e.target.value })}
+                        style={{ width: "100%", height: 34, fontSize: 12.5, borderRadius: 6,
+                                 border: "0.5px solid #ccc", padding: "0 8px" }}>
+                  <option value="">— choose —</option>
+                  <option value="income">Income</option>
+                  <option value="capital">Capital</option>
+                </select>
+              ) : (
+                <input value={f[k] || ""} placeholder={ph}
+                       onChange={(e) => setF({ ...f, [k]: e.target.value })}
+                       style={{ width: "100%", height: 34, fontSize: 12.5, borderRadius: 6,
+                                border: "0.5px solid #ccc", padding: "0 8px" }} />
+              )}
+            </div>
+          ))}
+        </div>
+        {msg && (
+          <div style={{ marginTop: 14, padding: "9px 12px", borderRadius: 7, fontSize: 11.5,
+                        lineHeight: 1.6, background: "#FCEBEB", border: "0.5px solid #f0c9c9",
+                        color: "#A32D2D", whiteSpace: "pre-wrap" }}>{msg}</div>
+        )}
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 18 }}>
+          <button style={{ padding: "6px 13px", borderRadius: 6, fontSize: 11.5,
+                           cursor: "pointer", border: "0.5px solid #D9DEE5",
+                           background: "transparent" }} onClick={onCancel}>Cancel</button>
+          <button style={{ padding: "6px 13px", borderRadius: 6, fontSize: 11.5,
+                           cursor: "pointer", border: "none", background: "#00C4CC",
+                           color: "#fff" }} onClick={onSave} disabled={busy}>{d.cta}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AffinityFiduciary({ onNav }) {
   const [tab, setTab]       = useState("trusts");
   const [entity, setEntity] = useState("");
   const [busy, setBusy]     = useState(false);
   const [msg, setMsg]       = useState("");
   const [live, setLive]     = useState(false);
+
+  // Recording trust transactions. The tabs read and nothing could be written,
+  // so a trustee could see the income fund held money and had no way to pay
+  // any of it to a life tenant.
+  const [tForm, setTForm] = useState(null);
+  const [tF, setTF]       = useState({});
+  const [tMsg, setTMsg]   = useState("");
+  const [tBusy, setTBusy] = useState(false);
+
+  const runTForm = async () => {
+    setTBusy(true); setTMsg("");
+    const v = tF;
+    const n = (x) => (x === "" || x == null ? null : Number(x));
+    let r;
+    try {
+      if (tForm === "income")
+        r = await FID.trustRecordIncome({ trustId: n(v.trustId), date: v.date,
+              bankAccountId: n(v.bankId), incomeAccountId: n(v.incomeAcct),
+              amount: n(v.amount), description: v.narrative });
+      if (tForm === "capital")
+        r = await FID.trustRecordCapital({ trustId: n(v.trustId), date: v.date,
+              bankAccountId: n(v.bankId), capitalAccountId: n(v.capitalAcct),
+              amount: n(v.amount), description: v.narrative });
+      if (tForm === "expense")
+        r = await FID.trustRecordExpense({ trustId: n(v.trustId), date: v.date,
+              bankAccountId: n(v.bankId), expenseAccountId: n(v.expenseAcct),
+              amount: n(v.amount), fund: v.fund, apportion: false,
+              description: v.narrative });
+      if (tForm === "distribute")
+        r = await FID.trustDistribute({ trustId: n(v.trustId),
+              beneficiaryId: n(v.beneficiaryId), date: v.date, fund: v.fund,
+              amount: n(v.amount), bankAccountId: n(v.bankId),
+              description: v.narrative });
+    } catch (e) {
+      r = { ok: false, live: true, error: String((e && e.message) || e) };
+    }
+    setTBusy(false);
+    if (r && r.ok) { setTForm(null); setTF({}); setTMsg(""); load(); return; }
+    if (r && r.live === false) { setTMsg("Not signed in — that cannot be recorded."); return; }
+    setTMsg((r && r.error) || "That could not be recorded.");
+  };
 
   const [trusts, setTrusts]   = useState([]);
   const [benef, setBenef]     = useState([]);
@@ -192,6 +350,26 @@ export default function AffinityFiduciary({ onNav }) {
   // ── Trusts ────────────────────────────────────────────────────────────────
   const Trusts = () => (
     <div>
+      <div style={{ ...card, display:"flex", gap:6, flexWrap:"wrap", alignItems:"center" }}>
+        <div style={{ fontSize:11, color:MUT, lineHeight:1.7, flex:1, minWidth:240 }}>
+          Income and capital are separate funds and are never summed. Every entry asks which
+          fund, and it is not defaulted — paying capital as income is a breach of trust
+          rather than a misposting.
+        </div>
+        <button style={btn(true)} onClick={()=>{ setTForm("income"); setTF({}); setTMsg(""); }}>
+          ＋ Income
+        </button>
+        <button style={btn(true)} onClick={()=>{ setTForm("capital"); setTF({}); setTMsg(""); }}>
+          ＋ Capital
+        </button>
+        <button style={btn(false)} onClick={()=>{ setTForm("expense"); setTF({}); setTMsg(""); }}>
+          ＋ Expense
+        </button>
+        <button style={btn(false)} title="Core checks there is enough in that fund, not in the trust"
+                onClick={()=>{ setTForm("distribute"); setTF({}); setTMsg(""); }}>
+          ＋ Distribution
+        </button>
+      </div>
       {critical.length > 0 && (
         <div style={{ ...card, background: RED_BG, borderColor: "#f0c9c9" }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: RED, marginBottom: 8 }}>
@@ -1006,6 +1184,10 @@ export default function AffinityFiduciary({ onNav }) {
       </div>
 
       <AuthForm />
+      <TrustForm kind={tForm} f={tF} setF={setTF} msg={tMsg} busy={tBusy}
+                 onCancel={()=>{ setTForm(null); setTF({}); setTMsg(""); }}
+                 onSave={runTForm} />
+
     </div>
   );
 }
