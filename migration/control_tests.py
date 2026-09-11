@@ -76,6 +76,18 @@ def run(db):
                        WHERE ns.nspname='public' AND has_function_privilege('anon',p.oid,'EXECUTE');""") or 0)
     check("the anonymous key can execute nothing", n == 0)
 
+    print("direct table access")
+    # RBAC gates the interface. It does not gate the API — a signed-in user
+    # could read any granted table through PostgREST whatever their role. The
+    # tables that will hold client data are now closed; reference data stays
+    # readable because a caption list is not client information.
+    for t in ['crm_prospect', 'periodic_review', 'fs_accounts_set',
+              'client_money_reconciliation', 'payroll_rate', 'tp_policy']:
+        got = one(db, """SELECT count(*) FROM information_schema.role_table_grants
+                         WHERE grantee IN ('anon','authenticated') AND table_schema='public'
+                           AND table_name='%s';""" % t)
+        check("%s cannot be read directly" % t, (got or '0') == '0')
+
     print("audit trail")
     b = int(one(db, "SELECT count(*) FROM audit_event;") or 0)
     db.psql("UPDATE entity_ubo SET nationality='AuditProbe' WHERE id=(SELECT min(id) FROM entity_ubo);")

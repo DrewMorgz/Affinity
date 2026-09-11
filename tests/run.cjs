@@ -3483,6 +3483,36 @@ group("098 — a draft set of accounts could be finalised as the filed figures")
      /did not add a\s*\n?-- status check|left the larger one open/.test(f));
 }
 
+
+group("099 — RBAC gates the interface, not the API");
+{
+  const f = fs.readFileSync(path.join(DB, "099_direct_table_reads.sql"), "utf8");
+
+  // The role model works in the app: System admin is System Admin only, the
+  // audit log is System Admin plus Director view, managers and administrators
+  // cannot delete or approve. None of it applied to the API — `authenticated`
+  // held SELECT on 31 tables, so anyone signed in could read them through
+  // PostgREST whatever their role.
+  //
+  // Nothing has leaked because every one of those tables is reference data or
+  // currently empty. The CRM, attrition, periodic reviews and client money
+  // reconciliations all had grants and no rows — which stops being true the
+  // day Compliance records a review.
+  ok("client and prospect records are closed",
+     /'crm_prospect', 'crm_interaction'/.test(f) && /'periodic_review'/.test(f));
+  ok("the accounts themselves are closed",
+     /'fs_accounts_set', 'accounts_line'/.test(f));
+  ok("commercially sensitive rates are closed",
+     /'tp_policy', 'payroll_rate'/.test(f));
+  ok("reference data stays readable, with the reason",
+     /Reference data stays readable/.test(f));
+  ok("new tables start closed", /ALTER DEFAULT PRIVILEGES/.test(f));
+
+  // Revoking costs nothing: the app makes 92 rpc calls and 2 direct table
+  // queries, and neither of the two is on this list.
+  ok("the grants are recorded as unused", /92 rpc\s*\n?-- calls|92 rpc/.test(f));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
