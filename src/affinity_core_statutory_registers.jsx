@@ -352,6 +352,21 @@ export default function AffinityStatutory() {
                 </select>
               </div>
               <div style={{ display:"flex", gap:6 }}>
+                <button style={{ ...nb, fontSize:10 }}
+                        title="Reads the filings actually recorded, rather than the sample list this screen shows by default"
+                        onClick={async()=>{
+                          const e=window.prompt("Entity id? (blank for all)");
+                          const st=window.prompt("Status? (blank for all)");
+                          const r=await DW.statFilingList(e?Number(e):null, st||null);
+                          if(!r||!r.live){ window.alert("Not signed in."); return; }
+                          const rows=r.data||[];
+                          window.alert(rows.length
+                            ? rows.length+" filing(s) recorded:\n"+rows.slice(0,20).map(x=>
+                                `  ${x.entity_name||x.entity_id} — ${x.filing_type} due ${x.due_date} (${x.status})`).join("\n")
+                            : "No filings recorded for that. The list on screen is sample data.");
+                        }}>
+                  Show recorded filings
+                </button>
                 <button style={{ ...nb, fontSize:10 }} onClick={exportFilings}>Export to Excel ↗</button>
                 <button style={nba} onClick={()=>setModal("newReturn")}>＋ Log filing</button>
               </div>

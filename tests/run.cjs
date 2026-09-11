@@ -2736,6 +2736,40 @@ group("Standing checks, caseload, fund availability, WIP");
   ok("available WIP is reachable", /await wipAvailable\(/.test(ts));
 }
 
+
+group("Seeing the result: reconciliation, movements, and the live lists");
+{
+  const ops  = fs.readFileSync(path.join(SRC, "affinity_accounting_ops_api.js"), "utf8");
+  const opsU = fs.readFileSync(path.join(SRC, "affinity_core_accounting_ops.jsx"), "utf8");
+  const st   = fs.readFileSync(path.join(SRC, "affinity_core_statutory_registers.jsx"), "utf8");
+  const inv  = fs.readFileSync(path.join(SRC, "affinity_core_invoicing_v2.jsx"), "utf8");
+
+  // The bank tab could auto-match and add reconciling items and could not SHOW
+  // the reconciliation. The work could be done and the result could not be
+  // seen, which is the same gap as a control with no way to run it, pointing
+  // the other way.
+  ok("bankReconciliation is wrapped",
+     /export const bankReconciliation\s*=/.test(ops));
+  ok("...and reachable", /OPS\.bankReconciliation\s*\(/.test(opsU));
+  ok("the unmatched lines are shown alongside it",
+     /OPS\.bankUnmatched\s*\(/.test(opsU));
+  ok("...and it says plainly whether it reconciles",
+     /It does NOT reconcile/.test(opsU));
+
+  // The position says what is held; the movements say how it got there.
+  ok("client money movements are reachable", /OPS\.cmMovements\s*\(/.test(opsU));
+  ok("...with the distinction stated", /how it got there/.test(opsU));
+
+  // TWO SCREENS SHOWING SAMPLE DATA while the live list sat wrapped and
+  // uncalled — so what appeared and what was recorded were different things,
+  // with nothing on screen saying so.
+  ok("the recorded filings can be read", /DW\.statFilingList\s*\(/.test(st));
+  ok("...and the screen admits the default list is sample data",
+     /is sample data/.test(st));
+  ok("the recorded invoices can be read", /await invList\(/.test(inv));
+  ok("...and the screen admits the same", /is sample data/.test(inv));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

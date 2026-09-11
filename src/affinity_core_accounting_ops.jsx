@@ -1056,6 +1056,22 @@ export default function AffinityAccountingOps({ onNav }) {
           <div style={{ display: "flex", gap: 6 }}>
             <button style={btn(true)} onClick={() => openForm("cmReceive")}>＋ Receipt</button>
             <button style={btn(false)} onClick={() => openForm("cmPay")}>＋ Payment</button>
+            <button style={btn(false)}
+                    title="Every movement for one client — the position says what is held, this says how it got there"
+                    onClick={async()=>{
+                      const c=window.prompt("Client money client id?"); if(!c) return;
+                      const f=window.prompt("From date (YYYY-MM-DD, optional)?");
+                      setMsg("");
+                      const r=await OPS.cmMovements(Number(c), f||null, 50);
+                      if(!r||!r.live){ setMsg("Not signed in."); return; }
+                      const rows=r.data||[];
+                      setMsg(rows.length
+                        ? rows.length+" movement(s):\n"+rows.slice(0,20).map(x=>
+                            `  ${x.movement_date} ${x.movement_type} ${x.amount} ${x.description||""}`).join("\n")
+                        : "No movements recorded for that client.");
+                    }}>
+              Show movements
+            </button>
             <button style={{ ...btn(false), color: RED, borderColor: "#f0c9c9" }}
                     title="The firm pays its own money in — a shortfall is never fixed from another client's balance"
                     onClick={async () => {
@@ -1264,6 +1280,33 @@ export default function AffinityAccountingOps({ onNav }) {
                   load();
                 }}>
           Add a reconciling item
+        </button>
+        <button style={btn(false)}
+                title="Book against bank and the difference — auto-matching could be run and the result could not be seen"
+                onClick={async()=>{
+                  const id=window.prompt("Statement id?"); if(!id) return;
+                  setMsg("");
+                  const [rec,un]=await Promise.all([
+                    OPS.bankReconciliation(Number(id)),
+                    OPS.bankUnmatched(Number(id)),
+                  ]);
+                  if(!rec||!rec.live){ setMsg("Not signed in."); return; }
+                  const r0=(rec.data&&rec.data[0])||null;
+                  const rows=un.data||[];
+                  setMsg(!r0
+                    ? "Nothing found for that statement."
+                    : `Book ${r0.book_balance}, bank ${r0.bank_balance}, difference `
+                      + `${r0.difference}.\n`
+                      + (Number(r0.difference)===0
+                          ? "It reconciles."
+                          : "It does NOT reconcile — the difference is what the unmatched "
+                            + "lines and reconciling items have to explain.")
+                      + `\n\n${rows.length} unmatched line(s)`
+                      + (rows.length
+                          ? ":\n" + rows.slice(0,12).map(x=>`  ${x.value_date} ${x.description} ${x.amount}`).join("\n")
+                          : "."));
+                }}>
+          Show the reconciliation
         </button>
         <button style={btn(true)}
                 title="Bank against book against the sum of the client ledgers — a regulatory requirement, not housekeeping"

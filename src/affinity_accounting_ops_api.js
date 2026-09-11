@@ -226,3 +226,10 @@ export const withholdingTaxApply = (w) => call("apply_withholding_tax", {
 export const deferredIncomeRun = (entityId, period) =>
   call("run_deferred_income", { p_entity_id: entityId, p_period: period,
                                 p_created_by: null });
+
+// The reconciliation itself: book balance against bank balance, and the
+// difference. bank_unmatched lists the lines that have not been matched; this
+// is the summary that says whether it reconciles at all. Having one without
+// the other is how a reconciliation looks done and does not balance.
+export const bankReconciliation = (statementId) =>
+  call("bank_reconciliation", { p_statement_id: statementId });

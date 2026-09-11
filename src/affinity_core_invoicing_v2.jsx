@@ -6,6 +6,7 @@ const ENTITY_NAMES = ["Meridian Holdings Ltd","Harrington Family Trust","Pacific
 import { isConfigured } from "./affinity_accounting_supabase";
 import { feeInvoices } from "./affinity_invoicing_api";
 import * as OW from "./affinity_ops_write_api";
+import { invList } from "./affinity_docs_onb_write_api";
 const CY = "#00C4CC";
 const Badge = ({ label, colors }) => (<span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:600, background:colors?.bg||"#eee", color:colors?.color||"#333", whiteSpace:"nowrap" }}>{label}</span>);
 const fmt = (n,s="£") => s+Math.abs(Number(n||0)).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -393,6 +394,21 @@ export default function AffinityInvoicing({ onNav }) {
                       : (r && r.error) || "The billing run could not be completed.");
                   }}>
             Run billing from WIP
+          </button>
+          <button style={nb}
+                  title="Reads the invoices actually recorded, rather than the sample ledger this screen shows"
+                  onClick={async()=>{
+                    const e=window.prompt("Entity id? (blank for all)");
+                    const st=window.prompt("Status? (blank for all)");
+                    const r=await invList(e?Number(e):null, st||null);
+                    if(!r||!r.live){ window.alert("Not signed in."); return; }
+                    const rows=r.data||[];
+                    window.alert(rows.length
+                      ? rows.length+" invoice(s):\n"+rows.slice(0,20).map(x=>
+                          `  ${x.entity_name||x.entity_id} ${x.invoice_date} gross ${x.gross_total} outstanding ${x.outstanding}`).join("\n")
+                      : "No invoices recorded. The ledger on screen is sample data.");
+                  }}>
+            Show recorded invoices
           </button>
           <button style={nb}
                   title="A credit note is its own document against the invoice — editing an invoice to reverse it destroys the audit trail"
