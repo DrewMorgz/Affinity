@@ -8377,6 +8377,23 @@ BEGIN
 END;
 $$;
 
+-- ── WHAT HAPPENS IF THE AUDIT ITSELF FAILS ─────────────────────────────────
+-- Tested rather than assumed: with audit_event made to reject inserts, an
+-- update to a beneficial owner was BLOCKED and rolled back. A write that
+-- cannot be audited does not happen.
+--
+-- That is the right way round for a fiduciary firm — an unauditable change to
+-- a beneficial ownership register is worse than a failed one — but the
+-- trade-off is real and worth knowing before it bites: a fault in the audit
+-- table stops all work on nineteen tables rather than quietly losing the
+-- trail. If that ever happens it will look like the whole system is down, and
+-- the cause will be one table.
+--
+-- The only exception is deriving the target name, which falls back to the
+-- table name rather than failing. An audit entry with a weaker label is better
+-- than a blocked write, because the entry still records who changed what and
+-- when.
+
 COMMENT ON FUNCTION audit_row_change() IS
   'Row-level audit for the tables where a dispute is possible. Catches every '
   'write however it arrives, including direct updates, which a per-function '

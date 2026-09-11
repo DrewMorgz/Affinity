@@ -3513,6 +3513,32 @@ group("099 — RBAC gates the interface, not the API");
   ok("the grants are recorded as unused", /92 rpc\s*\n?-- calls|92 rpc/.test(f));
 }
 
+
+group("Two things verified rather than assumed");
+{
+  const a = fs.readFileSync(path.join(DB, "092_audit_the_records_that_get_disputed.sql"), "utf8");
+
+  // 1. SECURITY DEFINER WITHOUT A PINNED SEARCH_PATH. A definer function that
+  //    does not fix its search_path can be made to call the caller's objects
+  //    instead of its own, and it runs as the owner. All 316 definer functions
+  //    in the schema pin it. Checked, not assumed — this is the standard way
+  //    a definer function becomes a privilege escalation.
+
+  // 2. WHAT HAPPENS IF THE AUDIT ITSELF FAILS. Tested by making audit_event
+  //    reject inserts: an update to a beneficial owner was blocked and rolled
+  //    back. A write that cannot be audited does not happen.
+  ok("the audit failure behaviour is recorded", /cannot be audited does not happen/.test(a));
+  ok("...and the trade-off is stated rather than buried",
+     /stops all work on nineteen tables/.test(a));
+  ok("...including what it will look like when it bites",
+     /look like the whole system is down/.test(a));
+
+  // The one deliberate swallow: deriving the target name falls back to the
+  // table name rather than failing, because a weaker label beats a blocked
+  // write.
+  ok("the single exception is justified", /weaker label is better/.test(a));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

@@ -76,6 +76,23 @@ def run(db):
                        WHERE ns.nspname='public' AND has_function_privilege('anon',p.oid,'EXECUTE');""") or 0)
     check("the anonymous key can execute nothing", n == 0)
 
+    print("audit trail cannot be bypassed")
+    # A write that cannot be audited must not happen. Tested by blocking
+    # audit_event and confirming the underlying write rolls back.
+    tgt = one(db, "SELECT id FROM entity_ubo ORDER BY id LIMIT 1;")
+    if tgt:
+        base = one(db, "SELECT nationality FROM entity_ubo WHERE id=%s;" % tgt)
+        db.psql("""CREATE OR REPLACE FUNCTION probe_block_audit() RETURNS trigger
+                   LANGUAGE plpgsql AS $probe$ BEGIN
+                     RAISE EXCEPTION 'probe'; END $probe$;""")
+        db.psql("""CREATE TRIGGER probe_block BEFORE INSERT ON audit_event
+                   FOR EACH ROW EXECUTE FUNCTION probe_block_audit();""")
+        db.psql("UPDATE entity_ubo SET nationality='ProbeShouldRollBack' WHERE id=%s;" % tgt)
+        after = one(db, "SELECT nationality FROM entity_ubo WHERE id=%s;" % tgt)
+        db.psql("DROP TRIGGER IF EXISTS probe_block ON audit_event;")
+        db.psql("DROP FUNCTION IF EXISTS probe_block_audit();")
+        check("a write that cannot be audited is rolled back", after == base)
+
     print("direct table access")
     # RBAC gates the interface. It does not gate the API — a signed-in user
     # could read any granted table through PostgREST whatever their role. The
