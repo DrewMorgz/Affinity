@@ -83,3 +83,16 @@ def main():
 
 if __name__ == '__main__':
     sys.exit(main())
+
+# ── Added after the rewrite ─────────────────────────────────────────────────
+# The MISSING count is the wrong measure for a guide written for people who
+# already do the work. It describes what Core refuses and why, not every label
+# on every screen, so a high MISSING is expected and not a fault — 82 of the
+# 279 do something, and most of those are navigation links or actions the guide
+# describes by behaviour rather than by button text.
+#
+# What IS worth checking is the guide's actual content: every refusal it claims
+# should trace to a real RAISE in the database. A guide that invents a control
+# is worse than one that omits a button, because someone will rely on it.
+#
+# Run with --refusals and a refusals.json extracted from pg_proc.

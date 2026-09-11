@@ -56,6 +56,7 @@ function eq(desc, actual, expected) {
      `expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
 }
 
+const ROOT = path.join(__dirname, "..");
 const SRC = path.join(__dirname, "..", "src");
 const DB  = path.join(__dirname, "..", "db");
 
@@ -3077,6 +3078,39 @@ group("The last of the wiring");
   // ones anyone would see are those the system raises itself.
   ok("a notification can be posted", /notificationAdd\(\{/.test(nt));
   ok("...with the reason", /the system raises itself/.test(nt));
+}
+
+
+group("db/089 — the distribution check the guide claimed and the code lacked");
+{
+  const sql = fs.readFileSync(path.join(DB, "089_distribution_checks_the_fund.sql"), "utf8");
+  const g   = fs.readFileSync(path.join(ROOT, "docs", "Affinity-Core-User-Guide.md"), "utf8");
+
+  // FOUND BY WRITING THE GUIDE AND THEN CHECKING THE CLAIM. The guide said a
+  // distribution checks there is enough in that fund. It did not:
+  // distribute_to_beneficiary validated that the fund was spelled 'income' or
+  // 'capital' and posted, whatever the fund held.
+  //
+  // So a trustee could pay 60,000 of income from a fund holding 40,000. The
+  // money comes from capital in substance while the records show an income
+  // distribution — paying the life tenant out of the remaindermen's share,
+  // which is the exact thing the income/capital separation exists to prevent.
+  ok("the fund position is consulted", /trust_fund_check\(p_trust\)/.test(sql));
+  ok("...and a shortfall refuses", /Paying it would/.test(sql));
+  ok("...naming both funds so the right one can be chosen",
+     /the other fund/.test(sql) && /holds %/.test(sql));
+  ok("the refusal says why it is not a misposting",
+     /breach of trust rather than a misposting/.test(sql));
+
+  // Refusing here rather than warning, unlike the client money overdraw, and
+  // the file says why: a distribution is an act about to be performed, not a
+  // fact being recorded after the event.
+  ok("the choice of refusal over warning is justified",
+     /not a fact being recorded after it/.test(sql));
+
+  // The guide's claim is now true.
+  ok("the guide describes the check that now exists",
+     /enough in \*\*that fund\*\*/.test(g));
 }
 
 // ── report ─────────────────────────────────────────────────────────────────
