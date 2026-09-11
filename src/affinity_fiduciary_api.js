@@ -275,3 +275,28 @@ export const STATEMENT_CODES = [
   { id: "CF", label: "Cash flow" },
   { id: "EQ", label: "Changes in equity" },
 ];
+
+// ── Account mapping ─────────────────────────────────────────────────────────
+// An account with a balance and no caption is missing from the statements
+// entirely — the statements still balance, because the account simply is not
+// there. That is the hardest kind of error to find, which is why the gaps and
+// the duplicates both have to be visible.
+
+// What each account maps to, per entity.
+export const accountMapList = (entityId) =>
+  call("account_map_list", { p_entity: entityId });
+
+// Map one account to one caption in one framework.
+export const accountFsMapSet = (accountId, framework, captionCode) =>
+  call("account_fs_map_set", { p_account: accountId, p_fs_framework: framework,
+                               p_caption_code: captionCode });
+
+// Map several account CODES to a caption at once. Mapping one at a time across
+// a chart of accounts is how one gets missed.
+export const mapAccounts = (framework, caption, codes) =>
+  call("map_accounts", { p_framework: framework, p_caption: caption,
+                         p_codes: codes });
+
+// The consolidation equivalent: map codes to a group line.
+export const mapToGroup = (template, group, codes) =>
+  call("map_to_group", { p_template: template, p_group: group, p_codes: codes });

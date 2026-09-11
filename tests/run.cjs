@@ -2797,6 +2797,41 @@ group("Scenario comparison, budget summary, consolidated position");
   ok("...and something sets it", /setConsolSummary\(/.test(co));
 }
 
+
+group("Account mapping, and a trial balance import that was a one-way door");
+{
+  const api = fs.readFileSync(path.join(SRC, "affinity_fiduciary_api.js"), "utf8");
+  const fid = fs.readFileSync(path.join(SRC, "affinity_core_fiduciary.jsx"), "utf8");
+  const bk  = fs.readFileSync(path.join(SRC, "affinity_core_bookkeeping_v2.jsx"), "utf8");
+
+  // Captions could be authored and nothing could be mapped to them. An account
+  // with a balance and no caption is missing from the statements entirely —
+  // and they still balance without it, which is the hardest kind of error to
+  // find.
+  ["accountMapList", "accountFsMapSet", "mapAccounts", "mapToGroup"].forEach((w) =>
+    ok(w + " is wrapped", new RegExp("export const " + w + "\\s*=").test(api)));
+  ok("mapping accounts to a caption is reachable", /FID\.mapAccounts\s*\(/.test(fid));
+  ok("...several at once, with the reason",
+     /one account at a time is how one gets missed/.test(fid));
+  ok("...and the consequence of a miss is stated",
+     /the account simply is not in them/.test(fid));
+
+  // Two captions with the SAME fund treatment double-count; two with different
+  // funds are the trust apportionment and are correct.
+  ok("duplicate mappings can be checked",
+     /FID\.accountMappingDuplicates\s*\(/.test(fid));
+  ok("...and the legitimate case is distinguished from the error",
+     /are correct and are the trust apportionment/.test(fid));
+
+  // A TRIAL BALANCE IMPORT WITH NO ROLLBACK is a one-way door: an import of
+  // the wrong file, or the right file against the wrong entity, could only be
+  // unpicked journal by journal.
+  ok("the imports can be listed", /DW\.tbImportList\s*\(/.test(bk));
+  ok("rolling one back is reachable", /DW\.tbImportRollback\s*\(/.test(bk));
+  ok("...and asks why, because the reversals would otherwise look unexplained",
+     /look unexplained/.test(bk));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

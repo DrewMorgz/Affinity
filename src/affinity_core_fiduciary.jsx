@@ -599,6 +599,35 @@ export default function AffinityFiduciary({ onNav }) {
                       Post an adjustment
                     </button>
                     <button style={btn(false)} disabled={busy}
+                            title="An account with a balance and no caption is missing from the statements entirely — and they still balance without it"
+                            onClick={async()=>{
+                              const fw=window.prompt("Framework code?"); if(!fw) return;
+                              const cap=window.prompt("Caption code to map to?"); if(!cap) return;
+                              const codes=window.prompt(
+                                "Account codes, comma separated.\n\nSeveral at once rather than one at a time, because mapping a chart of accounts one account at a time is how one gets missed — and a missed one is invisible: the statements still balance, the account simply is not in them.");
+                              if(!codes) return;
+                              act(()=>FID.mapAccounts(fw, cap,
+                                    codes.split(",").map(x=>x.trim()).filter(Boolean)),
+                                  "Accounts mapped.");
+                            }}>
+                      Map accounts to a caption
+                    </button>
+                    <button style={btn(false)} disabled={busy}
+                            title="Two captions with the same fund treatment would double-count"
+                            onClick={async()=>{
+                              const fw=window.prompt("Framework code?"); if(!fw) return;
+                              const r=await FID.accountMappingDuplicates(fw);
+                              if(!r||!r.live){ setMsg("Not signed in."); return; }
+                              const rows=r.data||[];
+                              setMsg(rows.length
+                                ? rows.length+" account(s) mapped more than once:\n"+
+                                  rows.slice(0,15).map(x=>`  ${x.account_code||x.account_id}: ${x.captions||x.caption_codes}`).join("\n")+
+                                  "\n\nTwo captions with the SAME fund treatment double-count. Two with different funds — income and capital — are correct and are the trust apportionment."
+                                : "No account is mapped more than once.");
+                            }}>
+                      Check for duplicate mappings
+                    </button>
+                    <button style={btn(false)} disabled={busy}
                             title="Addressing a disclosure is what clears the readiness gate — without it no set can be finalised"
                             onClick={async () => {
                               const d = window.prompt("Disclosure id to address?");

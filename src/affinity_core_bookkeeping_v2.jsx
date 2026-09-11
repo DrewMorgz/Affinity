@@ -529,6 +529,31 @@ export default function AffinityBookkeeping({ onNav }) {
                 Approve a journal
               </button>
               <button style={nb}
+                      title="An import of the wrong file, or the right file against the wrong entity, could only be unpicked journal by journal"
+                      onClick={async()=>{
+                        const e=window.prompt("Entity id? (blank for all)");
+                        const r=await DW.tbImportList(e?Number(e):null);
+                        if(!r||!r.live){ setJMsg("Not signed in."); return; }
+                        const rows=r.data||[];
+                        if(!rows.length){ setJMsg("No trial balance imports recorded."); return; }
+                        setJMsg(rows.length+" import(s):\n"+rows.slice(0,15).map(x=>
+                          `  id ${x.id} — ${x.import_date||x.imported_at||""} ${x.entity_name||""} ${x.status||""}`).join("\n")
+                          + "\n\nUse Roll back an import with the id.");
+                      }}>
+                Trial balance imports
+              </button>
+              <button style={nb}
+                      title="Reverses everything an import posted, as one act rather than journal by journal"
+                      onClick={async()=>{
+                        const id=window.prompt("Import id to roll back?"); if(!id) return;
+                        const why=window.prompt(
+                          "Why is it being rolled back?\n\nThis reverses everything the import posted. The reason is what explains a set of reversals that would otherwise look unexplained.");
+                        if(!why) return;
+                        jAct(()=>DW.tbImportRollback(Number(id), why), "Import rolled back.");
+                      }}>
+                Roll back an import
+              </button>
+              <button style={nb}
                       title="A journal held for approval could be approved and never refused, so the queue had one exit"
                       onClick={()=>{
                         const id = window.prompt("Journal id to reject?");
