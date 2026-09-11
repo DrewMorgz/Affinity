@@ -2832,6 +2832,42 @@ group("Account mapping, and a trial balance import that was a one-way door");
      /look unexplained/.test(bk));
 }
 
+
+group("db/087 — a segregation-of-duties check with nobody in it");
+{
+  const sql = fs.readFileSync(path.join(DB, "087_populate_app_user.sql"), "utf8");
+  const api = fs.readFileSync(path.join(SRC, "affinity_docs_onb_write_api.js"), "utf8");
+  const adm = fs.readFileSync(path.join(SRC, "affinity_core_system_admin.jsx"), "utf8");
+
+  // FOUND BY TESTING A BUTTON RATHER THAN READING THE SCHEMA. assign_user_role
+  // refuses where someone already holds a conflicting role, and sod_conflict
+  // already defines the conflict that matters: preparer against approver.
+  //
+  // It could not work for anybody. sys_user had 16 staff; app_user, which
+  // app_user_role has a foreign key to, had none. Every grant failed on that
+  // foreign key, so the check could never fire — not because it was wrong, but
+  // because there was nobody for it to be wrong about.
+  ok("the staff are put into app_user", /INSERT INTO app_user \(username/.test(sql));
+  ok("...and kept in step by a trigger", /CREATE TRIGGER trg_app_user_sync/.test(sql));
+  ok("...because a manual step nobody remembers is not a step",
+     /nobody remembers/.test(sql));
+
+  // The foreign key error named a constraint. This names the problem.
+  ok("an unknown username is refused in plain words",
+     /There is no user %/.test(sql));
+  ok("the conflict refusal explains what it prevents",
+     /accumulating in the first place/.test(sql));
+
+  // The two-table arrangement is deliberately NOT restructured here.
+  ok("the two-table arrangement is recorded rather than quietly merged",
+     /is not fixed here|IS NOT FIXED HERE/i.test(sql));
+
+  ok("assignUserRole is wrapped", /export const assignUserRole\s*=/.test(api));
+  ok("...and reachable", /DW\.assignUserRole\s*\(/.test(adm));
+  ok("...and distinguished from setting a job title",
+     /NOT the same as sysUserSetRole/.test(api));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

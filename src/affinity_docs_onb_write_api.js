@@ -319,3 +319,17 @@ export const statCertificateRequest = (entityId, requestedDate, purpose) =>
 export const statDissolutionOpen = (entityId, openedDate, reason) =>
   call("stat_dissolution_open", { p_entity: entityId, p_opened_date: openedDate,
                                   p_reason: reason });
+
+// ── Segregation of duties ───────────────────────────────────────────────────
+// assign_user_role is NOT the same as sysUserSetRole. That one sets a person's
+// job title on sys_user. This grants a functional role in app_user_role and
+// REFUSES where the person already holds a conflicting one — the sod_conflict
+// table currently has preparer against approver.
+//
+// It was unreachable, which made the segregation-of-duties check unreachable
+// with it. The two-person rules elsewhere in Core refuse at the moment of the
+// act — you cannot approve your own payment run. This is the other half: it
+// stops one person accumulating both roles in the first place, which is the
+// half that prevents rather than catches.
+export const assignUserRole = (username, roleCode) =>
+  call("assign_user_role", { p_user: username, p_role: roleCode });

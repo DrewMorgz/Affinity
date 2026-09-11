@@ -454,6 +454,19 @@ export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false })
                 <button style={{ ...s.actBtn(false), color:"#EF4444", borderColor:"#EF4444" }} onClick={suspendUser}>Suspend ↗</button>
                   <button style={nb} onClick={reinstateUser}>Reinstate</button>
                   <button style={nb} onClick={setUserRole}>Change role</button>
+                  <button style={nb}
+                          title="Grants a functional role and refuses a conflicting one — preparer and approver cannot be held by the same person"
+                          onClick={async()=>{
+                            const u=window.prompt("Username or email?"); if(!u) return;
+                            const rc=window.prompt(
+                              "Functional role code?\n\ne.g. preparer, approver.\n\nThis is separate from their job title. It refuses where the person already holds a conflicting role — the two-person rules elsewhere refuse at the moment of the act; this stops one person holding both roles in the first place.");
+                            if(!rc) return;
+                            const r=await DW.assignUserRole(u, rc);
+                            setWMsg(r&&r.ok?"Role granted."
+                              :(r&&r.error)||"That could not be granted.");
+                          }}>
+                    Grant a functional role
+                  </button>
               </div>
             </div>
           )}
