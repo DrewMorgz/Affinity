@@ -3394,6 +3394,31 @@ group("096 — the rest of the missing-rate class");
   ok("straight line requires a useful life", /useful life for % is not set/.test(f));
 }
 
+
+group("097 — a missing currency is not sterling");
+{
+  const f = fs.readFileSync(path.join(DB, "097_a_missing_currency_is_not_sterling.sql"), "utf8");
+
+  // The widened sweep from 096. Six functions defaulted the currency to 'GBP'.
+  // Twelve of the twenty-two entities are not sterling — Malta and Cyprus in
+  // euro, Cayman and both US companies in dollars — so adding a bank account
+  // to the Malta company without naming the currency recorded a euro balance
+  // as sterling.
+  ok("the GBP default is gone", !/DEFAULT 'GBP'::bpchar/.test(f));
+  ok("the currency is inherited from the entity",
+     /SELECT functional_ccy INTO p_ccy FROM entity/.test(f));
+  ok("...and refuses where there is nothing to inherit",
+     /nothing to inherit/.test(f));
+  ok("why a currency error is harder to spot than a rate error is recorded",
+     /looks like a number/.test(f));
+
+  // The definitions were extracted from the database and transformed, not
+  // rewritten — twice today I rewrote a function by hand and dropped half its
+  // validation without noticing.
+  ok("the existing validation survives",
+     /Bank name is required/.test(f) && /Asset description is required/.test(f));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

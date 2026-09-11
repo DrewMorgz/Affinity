@@ -97,6 +97,14 @@ def run(db):
         check("a consolidation with no FX rate is refused",
               refused(db, "SELECT * FROM consolidated_cta(%s,'1990-01-01','1990-12-31');" % g))
 
+    print("currency")
+    eur = one(db, "SELECT id FROM entity WHERE functional_ccy='EUR' LIMIT 1;")
+    if eur:
+        db.psql("SELECT ea_bank_add(%s,'CcyProbe','Operating');" % eur)
+        got = one(db, "SELECT ccy FROM entity_bank WHERE entity_id=%s ORDER BY id DESC LIMIT 1;" % eur)
+        check("a EUR entity inherits EUR, not GBP", (got or '').strip() == 'EUR', want_refused=True)
+        db.psql("DELETE FROM entity_bank WHERE bank='CcyProbe';")
+
     print("demo data")
     real = one(db, "SELECT id FROM entity WHERE NOT coalesce(is_demo,false) LIMIT 1;")
     if real:
