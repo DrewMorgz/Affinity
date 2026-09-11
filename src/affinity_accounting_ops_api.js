@@ -148,3 +148,23 @@ export const assetImpair = (assetId, date, impairment) =>
 export const assetDepreciate = (assetId, date, months) =>
   call("post_depreciation", { p_asset: assetId, p_date: date, p_months: months,
                               p_created_by: null });
+
+// ── Bank and client money reconciliation ────────────────────────────────────
+// The bank tab listed statements and showed matched against unmatched, and
+// nothing could be matched or added. run_client_money_reconciliation — the
+// three-way check that is a regulatory requirement rather than housekeeping —
+// had no button either, so the reconciliation the month-end checklist demands
+// could not be produced from the screen that demands it.
+
+// bankAutoMatch, bankAutoMatchByRules and bankAddReconItem already exist above.
+// They were wrapped and had no button, which is a missing screen rather than a
+// missing wrapper — worth distinguishing, because I nearly added a second copy
+// of each.
+
+// The three-way client money reconciliation: bank against book against the sum
+// of the client ledgers. Signing it off is refused to whoever prepared it.
+export const clientMoneyReconcile = (cmAccountId, reconDate, bankBalance) =>
+  call("run_client_money_reconciliation", { p_cm_account: cmAccountId,
+                                            p_recon_date: reconDate,
+                                            p_bank_balance: bankBalance,
+                                            p_created_by: null });

@@ -1081,6 +1081,56 @@ export default function AffinityAccountingOps({ onNav }) {
   // ── Bank reconciliation ───────────────────────────────────────────────────
   const Bank = () => (
     <div style={card}>
+      <div style={{ display:"flex", gap:6, marginBottom:12, flexWrap:"wrap" }}>
+        <button style={btn(false)}
+                title="Matches by the configured rules — the bulk of the work on a statement"
+                onClick={async () => {
+                  const id = window.prompt("Statement id to auto-match?");
+                  if (!id) return;
+                  const r = await OPS.bankAutoMatchByRules(Number(id), null);
+                  setMsg(r && r.ok ? "Matched by rules."
+                        : (r && r.error) || "That could not be run.");
+                  load();
+                }}>
+          Auto-match by rules
+        </button>
+        <button style={btn(false)}
+                title="A reconciling item is something on one side and not the other"
+                onClick={async () => {
+                  const rid = window.prompt("Reconciliation id?");
+                  if (!rid) return;
+                  const d = window.prompt("Item date (YYYY-MM-DD)?");
+                  if (!d) return;
+                  const desc = window.prompt(
+                    "What is it?\n\nAn uncleared cheque, a bank charge not yet posted. Without these a reconciliation that is genuinely correct still looks wrong.");
+                  if (!desc) return;
+                  const amt = window.prompt("Amount?");
+                  if (!amt) return;
+                  const r = await OPS.bankAddReconItem(Number(rid), d, desc, Number(amt));
+                  setMsg(r && r.ok ? "Reconciling item added."
+                        : (r && r.error) || "That could not be added.");
+                  load();
+                }}>
+          Add a reconciling item
+        </button>
+        <button style={btn(true)}
+                title="Bank against book against the sum of the client ledgers — a regulatory requirement, not housekeeping"
+                onClick={async () => {
+                  const acc = window.prompt("Client money account id?");
+                  if (!acc) return;
+                  const d = window.prompt("Reconciliation date (YYYY-MM-DD)?");
+                  if (!d) return;
+                  const bal = window.prompt("Bank balance per the statement?");
+                  if (bal == null || bal === "") return;
+                  const r = await OPS.clientMoneyReconcile(Number(acc), d, Number(bal));
+                  setMsg(r && r.ok
+                    ? "Client money reconciliation produced. It must be signed off by someone other than whoever prepared it."
+                    : (r && r.error) || "That could not be run.");
+                  load();
+                }}>
+          Run the client money reconciliation
+        </button>
+      </div>
       <div style={{ fontSize: 11, fontWeight: 600, color: MUT, marginBottom: 4,
                     textTransform: "uppercase", letterSpacing: "0.4px" }}>
         Bank statements

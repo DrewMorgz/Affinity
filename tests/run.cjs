@@ -2187,6 +2187,56 @@ group("Intercompany loans and fixed asset events");
      (ops.match(/export const assetDispose/g) || []).length === 1);
 }
 
+
+group("Journal control and bank reconciliation");
+{
+  const ow   = fs.readFileSync(path.join(SRC, "affinity_ops_write_api.js"), "utf8");
+  const bk   = fs.readFileSync(path.join(SRC, "affinity_core_bookkeeping_v2.jsx"), "utf8");
+  const ops  = fs.readFileSync(path.join(SRC, "affinity_accounting_ops_api.js"), "utf8");
+  const opsU = fs.readFileSync(path.join(SRC, "affinity_core_accounting_ops.jsx"), "utf8");
+
+  // Journals post immediately, which is Affinity's policy, and an approval
+  // mechanism exists that can be switched on per entity with a threshold. None
+  // of it was reachable — so if a threshold were ever set, journals above it
+  // would queue for an approval nobody could give. The control would stop work
+  // rather than govern it.
+  ["journalApprove", "journalReject", "journalReverse"].forEach((w) =>
+    ok(w + " is wrapped", new RegExp("export const " + w + "\\s*=").test(ow)));
+  ok("approve is reachable", /OW\.journalApprove\s*\(/.test(bk));
+  ok("reverse is reachable", /OW\.journalReverse\s*\(/.test(bk));
+
+  // REVERSING IS NOT DELETING.
+  ok("reversing is described as posting an entry, not removing one",
+     /never deleted/.test(ow) || /never deleted/.test(bk));
+  ok("...with the consequence of deleting", /unbalance the ledger/.test(ow));
+  ok("reversing asks for a reason and a date", /Reversal date/.test(bk));
+
+  // The bank tab listed statements and showed matched against unmatched, and
+  // nothing could be matched or added. The three-way client money
+  // reconciliation — a regulatory requirement — had no button either, so the
+  // reconciliation the month-end checklist demands could not be produced from
+  // the screen that demands it.
+  ok("clientMoneyReconcile is wrapped",
+     /export const clientMoneyReconcile\s*=/.test(ops));
+  ok("auto-matching by rules is reachable",
+     /OPS\.bankAutoMatchByRules\s*\(/.test(opsU));
+  ok("adding a reconciling item is reachable",
+     /OPS\.bankAddReconItem\s*\(/.test(opsU));
+  ok("the client money reconciliation is reachable",
+     /OPS\.clientMoneyReconcile\s*\(/.test(opsU));
+  ok("...and the result says it needs a second person",
+     /other than whoever prepared it/.test(opsU));
+  ok("a reconciling item is explained", /not yet posted/.test(opsU));
+
+  // Three wrappers already existed and simply had no button. A missing wrapper
+  // and a missing screen are different faults; both were present here and I
+  // nearly added a second copy of each.
+  ok("bankAutoMatchByRules was not duplicated",
+     (ops.match(/export const bankAutoMatchByRules/g) || []).length === 1);
+  ok("bankAutoMatch was not duplicated",
+     (ops.match(/export const bankAutoMatch\s*=/g) || []).length === 1);
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

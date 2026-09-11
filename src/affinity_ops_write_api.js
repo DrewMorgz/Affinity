@@ -92,3 +92,25 @@ export const procAbandon = (id, reason) =>
   call("proc_run_abandon", { p_id: id, p_reason: reason });
 
 export const canWrite = () => isConfigured;
+
+// ── Journal control ─────────────────────────────────────────────────────────
+// Journals post immediately, which is Affinity's policy, and an approval
+// mechanism exists that can be switched on per entity with a threshold. None
+// of it was reachable: bk_journal_approve, bk_journal_reject and
+// bk_journal_reverse were built and had no button.
+//
+// So if a threshold were ever set, journals above it would queue for an
+// approval nobody could give — the control would stop work rather than
+// govern it.
+
+export const journalApprove = (journalId) =>
+  call("bk_journal_approve", { p_journal: journalId });
+
+export const journalReject = (journalId, reason) =>
+  call("bk_journal_reject", { p_journal: journalId, p_reason: reason });
+
+// REVERSING IS NOT DELETING. A posted journal is never removed — a reversing
+// entry is posted against it, dated, with a reason. Deleting one would
+// unbalance the ledger and leave nothing to explain why the figures changed.
+export const journalReverse = (journalId, reason, date) =>
+  call("bk_journal_reverse", { p_journal: journalId, p_reason: reason, p_date: date });

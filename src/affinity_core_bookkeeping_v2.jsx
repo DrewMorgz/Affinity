@@ -4,6 +4,7 @@ import * as DW from "./affinity_docs_onb_write_api";
 import EntitySearch from "./affinity_entity_search";
 import { bkEntities, bkTxnsAll, bkPnlAll, bkBanksAll, isConfigured } from "./affinity_ops_api";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import * as OW from "./affinity_ops_write_api";
 const CY = "#00C4CC";
 const Badge = ({ label, colors }) => (<span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:600, background:colors?.bg||"#eee", color:colors?.color||"#333", whiteSpace:"nowrap" }}>{label}</span>);
 const fmt = (n,s="£") => s+Math.abs(Number(n||0)).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -114,6 +115,19 @@ export default function AffinityBookkeeping({ onNav }) {
   const pnlMap = bkP ? bkP.reduce((m,p)=>{m[p.entity_id]=p;return m;},{}) : PNL;
   const banksMap = bkB ? bkB.reduce((m,b)=>{(m[b.entity_id]=m[b.entity_id]||[]).push(b);return m;},{}) : BANKS;
   const [view, setView]     = useState("sales");
+  // Journal control. Journals post immediately — that is Affinity's policy —
+  // and an approval mechanism exists that can be switched on per entity with a
+  // threshold. None of it was reachable, so if a threshold were ever set,
+  // journals above it would queue for an approval nobody could give: the
+  // control would stop work rather than govern it.
+  const [jMsg, setJMsg] = useState("");
+  const jAct = async (fn, okMsg) => {
+    setJMsg("");
+    const r = await fn();
+    if (r && r.ok) { setJMsg(okMsg); return; }
+    if (r && r.live === false) { setJMsg("Not signed in — that cannot be recorded."); return; }
+    setJMsg((r && r.error) || "That could not be recorded.");
+  };
   const [entityId, setEId]  = useState(1);
   const [search, setSearch] = useState("");
   const [modal, setModal]   = useState(null);
@@ -497,9 +511,37 @@ export default function AffinityBookkeeping({ onNav }) {
 
       {view==="journals"&&(
         <div style={{ padding:"16px 20px" }}>
+          {jMsg && (
+            <div style={{ padding:"9px 12px", borderRadius:7, fontSize:11.5, marginBottom:12,
+                          background:"#FDF4DC", border:"0.5px solid #E5CE9A",
+                          color:"#7B4F1D", whiteSpace:"pre-wrap" }}>{jMsg}</div>
+          )}
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
             <div style={{ fontSize:13, fontWeight:500 }}>Manual journals — adjustments only</div>
-            <button style={nba} onClick={()=>setModal("journal")}>＋ Post journal</button>
+            <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+              <button style={nba} onClick={()=>setModal("journal")}>＋ Post journal</button>
+              <button style={nb}
+                      title="Only needed where an approval threshold is set for the entity"
+                      onClick={()=>{
+                        const id = window.prompt("Journal id to approve?");
+                        if (id) jAct(()=>OW.journalApprove(Number(id)), "Journal approved.");
+                      }}>
+                Approve a journal
+              </button>
+              <button style={nb}
+                      title="Posts a reversing entry — a posted journal is never deleted"
+                      onClick={()=>{
+                        const id = window.prompt("Journal id to reverse?");
+                        if (!id) return;
+                        const why = window.prompt("Why is it being reversed? A reversing entry is posted against the original with a date and a reason; the journal itself is never deleted, because that would unbalance the ledger.");
+                        if (!why) return;
+                        const when = window.prompt("Reversal date (YYYY-MM-DD)?");
+                        if (!when) return;
+                        jAct(()=>OW.journalReverse(Number(id), why, when), "Reversing entry posted.");
+                      }}>
+                Reverse a journal
+              </button>
+            </div>
           </div>
           <div style={{ background:"var(--bg-secondary,#f9f9f9)", borderRadius:6, padding:"10px 12px", fontSize:11, color:"#666", marginBottom:14 }}>
             ℹ️ Manual journals are for <strong>adjustments only</strong> — accruals, prepayments, depreciation, reclassifications and corrections. Routine transactions are entered in <strong>Sales</strong>, <strong>Purchases</strong> and <strong>Cashbook</strong>, which post their double-entry automatically. Debits must equal credits; manual journals require preparer and approver sign-off.
