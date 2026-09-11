@@ -529,6 +529,18 @@ export default function AffinityBookkeeping({ onNav }) {
                 Approve a journal
               </button>
               <button style={nb}
+                      title="A journal held for approval could be approved and never refused, so the queue had one exit"
+                      onClick={()=>{
+                        const id = window.prompt("Journal id to reject?");
+                        if (!id) return;
+                        const why = window.prompt(
+                          "Why is it being rejected?\n\nThe reason goes back to whoever posted it. A journal returned without one gets resubmitted unchanged.");
+                        if (!why) return;
+                        jAct(()=>OW.journalReject(Number(id), why), "Journal rejected.");
+                      }}>
+                Reject a journal
+              </button>
+              <button style={nb}
                       title="Posts a reversing entry — a posted journal is never deleted"
                       onClick={()=>{
                         const id = window.prompt("Journal id to reverse?");

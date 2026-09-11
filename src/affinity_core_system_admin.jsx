@@ -591,6 +591,22 @@ export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false })
                         onClick={()=>{ setDForm("remove"); setDF({}); setDMsg(""); }}>
                   Remove one
                 </button>
+                <button style={nb}
+                        title="Flagging a REAL entity as demo makes it deletable — refused where there is time, invoices or posted journals against it"
+                        onClick={async()=>{
+                          const id = window.prompt("Entity id?");
+                          if (!id) return;
+                          const on = window.confirm(
+                            "Flag this entity AS demo data?\n\nOK = flag it as demo. Cancel = unflag it.\n\n" +
+                            "Flagging a real entity as demo is what makes it deletable, so it is refused where there is time, invoices or posted journals against it.");
+                          const r = await DEMO.demoFlagSet(Number(id), on);
+                          setDMsg(r && r.ok
+                            ? (on ? "Flagged as demo data." : "Demo flag removed.")
+                            : (r && r.error) || "That could not be changed.");
+                          loadDemo();
+                        }}>
+                  Set the demo flag
+                </button>
                 <button style={{ ...nb, color:"#A32D2D", borderColor:"#f0c9c9" }}
                         onClick={()=>{ setDForm("clear"); setDF({}); setDMsg(""); }}>
                   Clear all demo data

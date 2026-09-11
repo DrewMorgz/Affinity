@@ -382,6 +382,26 @@ export default function AffinityPayables({ onNav }) {
                     onClick={()=>openPForm("icSettle")}>
               Settle a balance
             </button>
+            <button style={btn(false)}
+                    title="Posts the charge a transfer pricing policy describes — the module flagged policies with nil markup and offered no way to post one"
+                    onClick={async()=>{
+                      const f=window.prompt("Charging entity id (the one providing the service)?");
+                      if(!f) return;
+                      const t2=window.prompt("Charged entity id?"); if(!t2) return;
+                      const d=window.prompt("Date (YYYY-MM-DD)?"); if(!d) return;
+                      const ccy=window.prompt("Currency?","GBP"); if(!ccy) return;
+                      const cb=window.prompt(
+                        "Cost base?\n\nThe markup comes from the policy rather than being typed here, so the charge matches what was agreed.");
+                      if(cb==null||cb==="") return;
+                      const st=window.prompt("Service type?"); if(!st) return;
+                      const r=await FID.tpChargePost(Number(f), Number(t2), d, ccy,
+                                                     Number(cb), st);
+                      window.alert(r&&r.ok?"Transfer pricing charge posted."
+                        :(r&&r.error)||"That could not be posted.");
+                      loadIc();
+                    }}>
+              Post a transfer pricing charge
+            </button>
           </div>
           {icMsg && (
             <div style={{ marginTop: 12, padding: "9px 12px", borderRadius: 7, fontSize: 11.5,

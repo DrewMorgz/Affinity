@@ -2657,6 +2657,51 @@ group("Year end, three-way matching, asset transfers, and a statement that was n
   ok("...and is distinguished from a disposal", /Not a disposal/.test(opsU));
 }
 
+
+group("Journal rejection, demo flagging, disclosures, transfer pricing");
+{
+  const bk  = fs.readFileSync(path.join(SRC, "affinity_core_bookkeeping_v2.jsx"), "utf8");
+  const adm = fs.readFileSync(path.join(SRC, "affinity_core_system_admin.jsx"), "utf8");
+  const fid = fs.readFileSync(path.join(SRC, "affinity_core_fiduciary.jsx"), "utf8");
+  const pay = fs.readFileSync(path.join(SRC, "affinity_core_payables.jsx"), "utf8");
+
+  // A journal held for approval could be approved and never refused, so the
+  // queue had one exit.
+  ok("rejecting a journal is reachable", /OW\.journalReject\s*\(/.test(bk));
+  ok("...and asks for a reason", /resubmitted unchanged/.test(bk));
+
+  // Flagging a REAL entity as demo is the dangerous direction — it is what
+  // makes it deletable.
+  ok("setting the demo flag is reachable", /DEMO\.demoFlagSet\s*\(/.test(adm));
+  ok("...and warns about the dangerous direction",
+     /what makes it deletable/.test(adm));
+
+  // A DEAD TERNARY. Both branches returned an empty array, so
+  // accountsDisclosures was never called and the list was always empty
+  // whatever the framework required. Same shape as the defensive ternary
+  // removed from the fee transfer: a guard that cannot fail, hiding the thing
+  // it was meant to protect.
+  ok("the disclosure list actually loads",
+     /FID\.accountsDisclosures\(selSet\.id\)/.test(fid));
+  ok("...and the dead ternary is recorded so it is not rewritten",
+     /two branches were identical/.test(fid));
+
+  // Addressing a disclosure is what CLEARS the readiness gate. Without it they
+  // stay outstanding for ever and no set can be finalised — the workflow ended
+  // one step before it finished.
+  ok("addressing a disclosure is reachable",
+     /FID\.accountsDisclosureAddress\s*\(/.test(fid));
+  ok("...and not-applicable requires a reason",
+     /indistinguishable from one nobody looked at/.test(fid));
+
+  // The module flagged transfer pricing policies with nil markup and offered
+  // no way to post the charge the policy describes.
+  ok("posting a transfer pricing charge is reachable",
+     /FID\.tpChargePost\s*\(/.test(pay));
+  ok("...and the markup comes from the policy rather than being typed",
+     /comes from the policy/.test(pay));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

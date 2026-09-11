@@ -295,8 +295,13 @@ export default function AffinityFiduciary({ onNav }) {
 
   const openFramework = async (f) => {
     setAuthFw(f); setAuthMsg(""); setCaptions([]); setFmtReady([]); setDiscl([]);
-    const calls = [FID.accountsDisclosures ? Promise.resolve({ ok: true, live: true, data: [] })
-                                           : Promise.resolve({ ok: true, live: true, data: [] })];
+    // Previously a ternary whose two branches were identical — both returned
+    // an empty array — so this never called anything and the disclosure list
+    // was always empty regardless of what the framework actually required.
+    // Disclosures are per accounts SET rather than per framework, so it loads
+    // for the selected set when there is one.
+    const calls = [selSet ? FID.accountsDisclosures(selSet.id)
+                          : Promise.resolve({ ok: true, live: true, data: [] })];
     if (f.has_format || f.captions > 0) {
       const [c, rd] = await Promise.all([
         FID.fsCaptionsList(f.fs_framework_code || f.framework),
@@ -572,6 +577,30 @@ export default function AffinityFiduciary({ onNav }) {
                                   "Adjustment posted and the statements regenerated.");
                             }}>
                       Post an adjustment
+                    </button>
+                    <button style={btn(false)} disabled={busy}
+                            title="Addressing a disclosure is what clears the readiness gate — without it no set can be finalised"
+                            onClick={async () => {
+                              const d = window.prompt("Disclosure id to address?");
+                              if (!d) return;
+                              const na = window.confirm(
+                                "Is this disclosure NOT APPLICABLE to this entity?\n\n" +
+                                "OK = not applicable, and you will be asked why.\n" +
+                                "Cancel = it is addressed by a note, and you will be asked which.");
+                              if (na) {
+                                const why = window.prompt(
+                                  "Why does it not apply?\n\nA disclosure marked not applicable with no reason is indistinguishable from one nobody looked at.");
+                                if (!why) return;
+                                act(() => FID.accountsDisclosureAddress(Number(d), null, why),
+                                    "Disclosure recorded as not applicable.");
+                              } else {
+                                const nid = window.prompt("Which note addresses it? (note id)");
+                                if (!nid) return;
+                                act(() => FID.accountsDisclosureAddress(Number(d), Number(nid), null),
+                                    "Disclosure addressed.");
+                              }
+                            }}>
+                      Address a disclosure
                     </button>
                     <button style={btn(false)} disabled={busy}
                             title="A note in the accounts — numbered and ordered as the framework requires"
