@@ -403,7 +403,7 @@ export default function AffinityGenerateDocument() {
           <div style={{ background:"#fff", borderRadius:12, padding:24, width:520, maxWidth:"95vw", maxHeight:"90vh", overflowY:"auto" }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
               <h3 style={{ margin:0, fontSize:15, fontWeight:600 }}>{selDoc.title}</h3>
-              <button onClick={()=>setModal(null)} style={{ background:"none", border:"none", fontSize:20, cursor:"pointer", color:"#888" }}>×</button>
+              <button onClick={()=>{ window.alert("Document generation is not built yet. The 82 templates here are a catalogue of what Core will produce, not working documents — nothing is generated and nothing downloads. Draft the letter outside Core for now."); setModal(null); }} style={{ background:"none", border:"none", fontSize:20, cursor:"pointer", color:"#888" }}>×</button>
             </div>
             {selDoc.form&&<div style={{ marginBottom:10 }}><Badge label={"Form: "+selDoc.form} colors={{ bg:"#E6F7FB", color:"#0077A8" }} /></div>}
             <div style={{ background:"#f9f9f9", borderRadius:6, padding:"8px 12px", fontSize:11, color:"#666", marginBottom:16, lineHeight:1.5 }}>{selDoc.desc||selDoc.notes}</div>
@@ -432,10 +432,10 @@ export default function AffinityGenerateDocument() {
             </div>
 
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginTop:16 }}>
-              <button onClick={()=>setModal(null)} style={{ background:"#E6EEF7", color:"#0D4A7A", border:"none", borderRadius:8, padding:10, fontSize:13, fontWeight:600, cursor:"pointer" }}>
+              <button onClick={()=>{ window.alert("Document generation is not built yet. The 82 templates here are a catalogue of what Core will produce, not working documents — nothing is generated and nothing downloads. Draft the letter outside Core for now."); setModal(null); }} style={{ background:"#E6EEF7", color:"#0D4A7A", border:"none", borderRadius:8, padding:10, fontSize:13, fontWeight:600, cursor:"pointer" }}>
                 Generate DOCX ↗
               </button>
-              <button onClick={()=>setModal(null)} style={{ background:CY, color:"#fff", border:"none", borderRadius:8, padding:10, fontSize:13, fontWeight:600, cursor:"pointer" }}>
+              <button onClick={()=>{ window.alert("Document generation is not built yet. Nothing is generated and nothing downloads."); setModal(null); }} style={{ background:CY, color:"#fff", border:"none", borderRadius:8, padding:10, fontSize:13, fontWeight:600, cursor:"pointer" }}>
                 Generate PDF ↗
               </button>
             </div>

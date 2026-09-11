@@ -520,7 +520,13 @@ export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false })
               <option>Last 90 days</option>
               <option>Custom range</option>
             </select>
-            <button style={s.addBtn} onClick={()=>{}}>📥 Export log</button>
+            <button style={s.addBtn}
+                    onClick={()=>window.alert(
+                      "Exporting the audit log is not built yet. The log can be read on "
+                      + "screen and filtered; there is no file export. If you need one for "
+                      + "an auditor, say so and it will be built — it is a small job.")}>
+              📥 Export log
+            </button>
           </div>
           <div style={{ ...s.stats, gridTemplateColumns:"repeat(4,1fr)" }}>
             {[

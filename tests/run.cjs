@@ -3161,6 +3161,45 @@ group("A sweep for every fault class this build actually produced");
      !/An invitation email will be sent/.test(adm));
 }
 
+
+group("Document generation and the export button that did nothing");
+{
+  const gd  = fs.readFileSync(path.join(SRC, "affinity_core_generate_document.jsx"), "utf8");
+  const adm = fs.readFileSync(path.join(SRC, "affinity_core_system_admin.jsx"), "utf8");
+  const files = fs.readdirSync(SRC).filter((f) => f.endsWith(".jsx"));
+
+  // 82 DOCUMENT TYPES OFFERED AND NEITHER BUTTON GENERATES ANYTHING. Engagement
+  // letters, KYC request letters, source of wealth letters. Someone would pick
+  // a template, fill the fields, click Generate DOCX and look for a download
+  // that never arrives.
+  ok("the generate buttons say nothing is generated",
+     /not built yet/.test(gd));
+  ok("...on both formats",
+     (gd.match(/Document generation is not built yet/g) || []).length >= 2);
+
+  // onClick={()=>{}} — a button that did literally nothing, with no indication.
+  ok("the export log button says it is not built",
+     /Exporting the audit log is not built yet/.test(adm));
+
+  // THE STANDING SWEEP. Every check against every file, rather than the class
+  // I happened to be looking at. Three separate rounds of "found six more" is
+  // what this exists to stop.
+  const bad = [];
+  files.forEach((f) => {
+    const src = fs.readFileSync(path.join(SRC, f), "utf8");
+    let m;
+    const discard = /<button[^>]*onClick=\{\(\)\s*=>\s*set\w+\((?:null|false)\)\}[^>]*>\s*([^<]{2,44}?)\s*<\/button>/g;
+    while ((m = discard.exec(src)) !== null)
+      if (/^(save|submit|create|add|record|post|confirm|log|apply|ok|send|generate|issue)\b/i.test(m[1].trim()))
+        bad.push(f + " discards: " + m[1].trim());
+    const nothing = /<button[^>]*onClick=\{\(\)\s*=>\s*\{?\s*\}?\s*\}[^>]*>\s*([^<]{2,44}?)\s*<\/button>/g;
+    while ((m = nothing.exec(src)) !== null)
+      bad.push(f + " does nothing: " + m[1].trim());
+  });
+  ok("no button silently discards input or does nothing",
+     bad.length === 0, bad.slice(0, 4).join("; "));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
