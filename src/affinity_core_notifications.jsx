@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { notificationsList, isConfigured } from "./affinity_ops_api";
+import { notificationAdd } from "./affinity_ops_write_api";
 
 const CY   = "#00C4CC";
 const NAVY = "#001242";
@@ -89,7 +90,20 @@ export function NotificationsPanel(props) {
       onClick={function(e){ e.stopPropagation(); }}>
 
       <div style={{padding:"10px 14px",borderBottom:"0.5px solid #e5e5e5",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <div style={{fontSize:13,fontWeight:700,color:NAVY}}>Notifications</div>
+        <div style={{fontSize:13,fontWeight:700,color:NAVY}}>Notifications<button style={{ marginLeft:10, padding:"3px 9px", fontSize:10.5,
+                      borderRadius:6, cursor:"pointer", border:"0.5px solid #D9DEE5",
+                      background:"transparent" }}
+              title="The module could read notifications and nobody could post one, so the only ones anyone would see are those the system raises itself"
+              onClick={async()=>{
+                const t=window.prompt("Title?"); if(!t) return;
+                const b=window.prompt("Body?");
+                const who=window.prompt("Who for? (blank for everyone)");
+                const r=await notificationAdd({ title:t, body:b, who:who||null });
+                window.alert(r&&r.ok?"Notification posted."
+                  :(r&&r.error)||"That could not be posted.");
+              }}>
+        ＋ Post one
+      </button></div>
         <button onClick={markAllRead} style={{background:"none",border:"none",fontSize:10,color:CY,cursor:"pointer",fontWeight:600}}>Mark all read</button>
       </div>
 

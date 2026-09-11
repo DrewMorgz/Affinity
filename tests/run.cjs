@@ -3047,6 +3047,38 @@ group("db/088 — the screen's posting path ignored the approval threshold");
      /p_journal_type text DEFAULT 'manual', p_source text DEFAULT 'Bookkeeping'/.test(sql));
 }
 
+
+group("The last of the wiring");
+{
+  const ops = fs.readFileSync(path.join(SRC, "affinity_core_accounting_ops.jsx"), "utf8");
+  const bk  = fs.readFileSync(path.join(SRC, "affinity_core_bookkeeping_v2.jsx"), "utf8");
+  const jur = fs.readFileSync(path.join(SRC, "affinity_core_jurisdiction_compliance.jsx"), "utf8");
+  const nt  = fs.readFileSync(path.join(SRC, "affinity_core_notifications.jsx"), "utf8");
+
+  // TWO DIFFERENT MATCHERS, not a duplicate pair. auto_match_by_rules applies
+  // the configured rules; auto_match_statement matches statement lines against
+  // journals already posted. Only the first was reachable — so the matcher
+  // that needs no configuration, and therefore works on day one, could not be
+  // run.
+  ok("matching against posted journals is reachable",
+     /OPS\.bankAutoMatch\(Number\(id\)\)/.test(ops));
+  ok("...and is distinguished from rule matching",
+     /needs no rules configured/.test(ops));
+
+  // Querying a transaction is how a bookkeeper parks something unresolved.
+  ok("a transaction status can be set", /DW\.txnSetStatus\s*\(/.test(bk));
+  ok("...and Queried is explained as the useful one",
+     /seen and unresolved/.test(bk));
+
+  ok("the obligation summary is shown with the coverage",
+     /OBL\.obligationSummary\(\)/.test(jur));
+
+  // The module could READ notifications and nobody could post one, so the only
+  // ones anyone would see are those the system raises itself.
+  ok("a notification can be posted", /notificationAdd\(\{/.test(nt));
+  ok("...with the reason", /the system raises itself/.test(nt));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

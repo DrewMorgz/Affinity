@@ -310,9 +310,12 @@ export default function AffinityJurisdictionCompliance({ onNav }) {
                         title="Across every jurisdiction and area at once — this screen shows one jurisdiction at a time, so the gaps between them were invisible"
                         onClick={async()=>{
                           setObsMsg("");
-                          const cov = await OBL.obligationCoverage();
+                          const [cov, sum] = await Promise.all([
+                            OBL.obligationCoverage(), OBL.obligationSummary(),
+                          ]);
                           if (!cov || !cov.live) { setObsMsg("Not signed in."); return; }
                           const rows = cov.data || [];
+                          const tot = (sum && sum.data) || [];
                           const gaps = rows.filter(r => Number(r.recorded) === 0);
                           const unconf = rows.filter(r => Number(r.recorded) > 0
                                                        && Number(r.confirmed) === 0);
@@ -326,7 +329,11 @@ export default function AffinityJurisdictionCompliance({ onNav }) {
                               ? unconf.length + " with obligations recorded but NONE confirmed:\n"
                                 + unconf.slice(0,10).map(r=>`  ${r.location_name} — ${r.area_name} (${r.recorded})`).join("\n")
                                 + "\n\nRecorded is not the same as trustworthy — an unconfirmed deadline is a draft."
-                              : "Everything recorded has been confirmed."));
+                              : "Everything recorded has been confirmed.")
+                            + (tot.length
+                              ? "\n\nBy jurisdiction:\n" + tot.map(t=>
+                                  `  ${t.name}: ${t.areas_covered ?? t.areas ?? "?"} area(s) covered, ${t.obligations ?? t.total ?? "?"} obligation(s)`).join("\n")
+                              : ""));
                         }}>
                   Coverage across all jurisdictions
                 </button>

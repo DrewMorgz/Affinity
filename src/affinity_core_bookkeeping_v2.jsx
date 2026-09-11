@@ -529,6 +529,19 @@ export default function AffinityBookkeeping({ onNav }) {
                 Approve a journal
               </button>
               <button style={nb}
+                      title="Querying a transaction is how a bookkeeper parks something they cannot resolve — without it the only options were post it or leave it looking unexamined"
+                      onClick={async()=>{
+                        const id=window.prompt("Transaction id?"); if(!id) return;
+                        const st=window.prompt(
+                          "Status?\n\nUnposted, Posted, Queried or Void.\n\nQueried is the useful one: it marks a transaction as seen and unresolved, which is different from one nobody has looked at.");
+                        if(!st) return;
+                        const r=await DW.txnSetStatus(Number(id), st);
+                        setJMsg(r&&r.ok?"Status set to "+st+"."
+                          :(r&&r.error)||"That status could not be set.");
+                      }}>
+                Set a transaction status
+              </button>
+              <button style={nb}
                       title="Reads the journals actually posted, rather than the sample list this screen shows"
                       onClick={async()=>{
                         const e=window.prompt("Entity id? (blank for all)");

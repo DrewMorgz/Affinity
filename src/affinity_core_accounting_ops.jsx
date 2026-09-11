@@ -1251,7 +1251,23 @@ export default function AffinityAccountingOps({ onNav }) {
     <div style={card}>
       <div style={{ display:"flex", gap:6, marginBottom:12, flexWrap:"wrap" }}>
         <button style={btn(false)}
-                title="Matches by the configured rules — the bulk of the work on a statement"
+                title="Matches statement lines against journals already posted — needs no rules configured, so it is the one that works on day one"
+                onClick={async () => {
+                  const id = window.prompt("Statement id to match against posted journals?");
+                  if (!id) return;
+                  const r = await OPS.bankAutoMatch(Number(id));
+                  const n = Array.isArray(r && r.data) ? r.data[0] : (r && r.data);
+                  setMsg(r && r.ok
+                    ? (n ? n + " line(s) matched against posted journals."
+                         : "Nothing matched. Either the journals are not posted yet, or the "
+                           + "amounts and dates do not line up closely enough.")
+                    : (r && r.error) || "That could not be run.");
+                  load();
+                }}>
+          Match against posted journals
+        </button>
+        <button style={btn(false)}
+                title="Matches by the configured rules — the bulk of the work on a statement once rules exist"
                 onClick={async () => {
                   const id = window.prompt("Statement id to auto-match?");
                   if (!id) return;
