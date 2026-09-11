@@ -176,3 +176,39 @@ export const demoDataClear = (confirmation) =>
 // there is time, invoices or posted journals against it.
 export const demoFlagSet = (entityId, isDemo) =>
   call("demo_flag_set", { p_entity: entityId, p_is_demo: isDemo });
+
+// ── Entity-level changes (the ones with no wrapper at all) ──────────────────
+// The register writes had wrappers and no buttons. These five had neither, so
+// the entity itself could be created and then never edited, reclassified,
+// reassigned or closed.
+
+// Changes are recorded in the audit trail with who made them and when.
+export const profileUpdate = (entityId, p) => call("ea_profile_update", {
+  p_entity: entityId, p_reg_no: p.regNo || null, p_year_end: p.yearEnd || null,
+  p_business_activity: p.businessActivity || null,
+  p_risk_rating: p.riskRating || null, p_admin_status: p.adminStatus || null,
+});
+
+// FATCA and CRS drive the reporting obligation, so recording them wrongly
+// means reporting the wrong thing — or nothing at all.
+export const classificationUpdate = (entityId, fatca, crs, giin) =>
+  call("ea_classification_update", { p_entity: entityId, p_fatca_class: fatca || null,
+                                     p_crs_class: crs || null, p_giin: giin || null });
+
+export const responsibilitiesSet = (entityId, r) => call("ea_responsibilities_set", {
+  p_entity: entityId, p_administrator: r.administrator || null,
+  p_manager: r.manager || null, p_lead_director: r.leadDirector || null,
+  p_accountant: r.accountant || null, p_office: r.office || null,
+});
+
+// Closing keeps every record. Refused where unbilled time stands against the
+// entity, because closing writes that work off.
+export const entityClose = (entityId, reason, closedDate) =>
+  call("ea_entity_close", { p_entity: entityId, p_reason: reason,
+                            p_closed_date: closedDate });
+
+// Moves every entity from one person to another in one step. Reassigning forty
+// one at a time is how one gets missed, and the one that gets missed is the one
+// nobody administers.
+export const reassignCaseload = (fromName, toName, role) =>
+  call("ea_reassign_caseload", { p_from: fromName, p_to: toName, p_role: role });

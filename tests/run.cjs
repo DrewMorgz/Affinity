@@ -2019,6 +2019,54 @@ group("Month-end steps and procedure runs — actionable rather than only report
   ok("run actions report their result", /setRunMsg/.test(proc));
 }
 
+
+group("Entity Admin — the registers can now be changed, not only added to");
+{
+  const ui  = fs.readFileSync(path.join(SRC, "affinity_core_entity_admin.jsx"), "utf8");
+  const api = fs.readFileSync(path.join(SRC, "affinity_entity_write_api.js"), "utf8");
+
+  // THE WORST FINDING OF THE AUDIT. Entity Admin could ADD to every register
+  // and change nothing: a director could be appointed and never resigned, a
+  // UBO added and never corrected or removed, an entity opened and never
+  // closed. Seventeen functions, all with API wrappers or none at all, and not
+  // one with a button — while the user guide described resigning a director in
+  // detail, including why it keeps history.
+  //
+  // The register is the legal record and the missing operations are the
+  // ordinary ones. A register you can only add to is not a register.
+  ["officerResign", "officerUpdate", "uboUpdate", "uboRemove", "shareholderRemove",
+   "dividendPay", "profileUpdate", "classification", "responsibilities",
+   "entityClose", "caseload"].forEach((a) =>
+    ok(a + " is reachable from a button", new RegExp('openAct\\("' + a + '"').test(ui)));
+
+  // Five had no wrapper at all, so the entity itself could be created and then
+  // never edited, reclassified, reassigned or closed.
+  ["profileUpdate", "classificationUpdate", "responsibilitiesSet", "entityClose",
+   "reassignCaseload"].forEach((w) =>
+    ok(w + " is wrapped", new RegExp("export const " + w + "\\s*=").test(api)));
+
+  // The reasons, on screen rather than only in the schema.
+  ok("resigning explains why history is kept", /matter of record/.test(ui));
+  ok("removing a UBO says it is a filing matter", /filing matter/.test(ui));
+  ok("removing a shareholder says the register is a legal record",
+     /legal record/.test(ui));
+  ok("closing warns about unbilled time", /writes that work off/.test(api));
+  ok("bulk reassignment explains why it is one action",
+     /how one gets missed/.test(api));
+  ok("FATCA and CRS classification says what it drives",
+     /reporting the wrong thing/.test(ui));
+
+  // The modal must stay at module level — a component defined inside another
+  // remounts on every keystroke and the form appears frozen. Made twice
+  // already in this build.
+  ok("ActionModal is at module level", /^function ActionModal\(/m.test(ui));
+  ok("ACTION_SPECS is at module level", /^const ACTION_SPECS/m.test(ui));
+
+  // Writes are only offered when signed in, consistent with the module's
+  // existing behaviour — in preview mode the ids are demo ids.
+  ok("actions are gated on a real entity id", /entityDbId && /.test(ui));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

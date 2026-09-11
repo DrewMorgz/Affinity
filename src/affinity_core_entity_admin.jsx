@@ -138,6 +138,9 @@ const TABS = [
 ];
 
 const s = {
+  // Small inline action button used on the register rows.
+  mini: { padding:"3px 8px", fontSize:10, borderRadius:5, cursor:"pointer",
+          border:"0.5px solid #D9DEE5", background:"transparent", color:"#333" },
   wrap:  { fontFamily:"'Catamaran',system-ui,sans-serif", background:"var(--bg-primary,#fff)", color:"var(--text-primary,#111)", height:"100vh", display:"flex", flexDirection:"column", overflow:"hidden" },
   hdr:   { display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 20px", borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)", flexShrink:0 },
   logo:  { fontSize:18, fontWeight:500, color:CY },
@@ -330,6 +333,182 @@ function SubstanceTab({entity}) {
       </div>
     </div>}
   </div>;
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REGISTER ACTIONS
+//
+// Entity Admin could ADD to every register and change nothing. A director
+// could be appointed and never resigned; a UBO added and never corrected or
+// removed; an entity opened and never closed. All fifteen functions existed in
+// the database with API wrappers, and not one had a button.
+//
+// That is the worst instance of the gap this audit found, because the register
+// is the legal record and the missing operations are the ordinary ones — a
+// director resigns, a shareholder transfers, an address changes. A register
+// you can only add to is not a register.
+//
+// AT MODULE LEVEL. A modal defined inside the component is a new function on
+// every render, so React remounts it on each keystroke and the state never
+// updates. That bug has already been made twice in this build.
+// ─────────────────────────────────────────────────────────────────────────────
+const ACTION_SPECS = {
+  officerResign: {
+    title: "Resign an officer",
+    note: "The officer stays on the register, marked resigned. Who was a director on a given date is a matter of record — for filings, for liability, and for any later question about who authorised what. A register showing only current officers cannot answer it.",
+    cta: "Record the resignation",
+    fields: [["resigned", "Resignation date", true, "YYYY-MM-DD"]],
+  },
+  officerUpdate: {
+    title: "Correct an officer's details",
+    note: "For correcting what was recorded. If the officer has actually left, resign them instead — that keeps the history.",
+    fields: [["name", "Name", true, ""], ["role", "Role", true, ""],
+             ["appointed", "Appointed", false, "YYYY-MM-DD"],
+             ["nationality", "Nationality", false, ""],
+             ["dob", "Date of birth", false, "YYYY-MM-DD"],
+             ["taxResidence", "Tax residence", false, ""],
+             ["tin", "TIN", false, ""], ["address", "Address", false, ""]],
+    cta: "Save the correction",
+  },
+  uboUpdate: {
+    title: "Correct a beneficial owner",
+    note: "Ownership percentages should account for 100% across the register. Core reports the total so an incomplete register is visible.",
+    fields: [["name", "Name", true, ""], ["role", "Role", false, ""],
+             ["dob", "Date of birth", false, "YYYY-MM-DD"],
+             ["nationality", "Nationality", false, ""],
+             ["ownershipPct", "Ownership %", false, ""],
+             ["natureOfControl", "Nature of control", false, ""],
+             ["taxResidence", "Tax residence", false, ""], ["tin", "TIN", false, ""]],
+    cta: "Save the correction",
+  },
+  uboRemove: {
+    title: "Remove a beneficial owner",
+    note: "A reason is required. Removing someone from the beneficial ownership register is a filing matter in most jurisdictions, and the reason is what a later question is answered with.",
+    fields: [["reason", "Reason", true, "e.g. holding transferred on 1 May"]],
+    cta: "Remove from the register",
+  },
+  shareholderRemove: {
+    title: "Remove a shareholder",
+    note: "A reason is required, because a share register is a legal record and a holding that simply disappears cannot be explained afterwards.",
+    fields: [["reason", "Reason", true, "e.g. shares transferred to J Smith"]],
+    cta: "Remove from the register",
+  },
+  signatoryRemove: {
+    title: "End a signatory's authority",
+    note: "The signatory stays on the register with an end date rather than being deleted — who could sign, and when, is exactly what gets asked later.",
+    fields: [["toDate", "Authority ends", true, "YYYY-MM-DD"]],
+    cta: "End the authority",
+  },
+  dividendPay: {
+    title: "Record a dividend as paid",
+    note: "Declaring and paying are separate events, and the gap between them matters for both tax and the accounts.",
+    fields: [["paidDate", "Date paid", true, "YYYY-MM-DD"]],
+    cta: "Record the payment",
+  },
+  safeRetrieve: {
+    title: "Retrieve an item from safe custody",
+    note: "Who authorised the retrieval is recorded, because physical custody of certificates and deeds is something a client or a regulator will ask about.",
+    fields: [["retrievedDate", "Date retrieved", true, "YYYY-MM-DD"],
+             ["authorisedBy", "Authorised by", true, ""]],
+    cta: "Record the retrieval",
+  },
+  profileUpdate: {
+    title: "Edit the entity",
+    note: "Changes are recorded in the audit trail with who made them and when.",
+    fields: [["regNo", "Registration number", false, ""],
+             ["yearEnd", "Year end", false, "e.g. 31 December"],
+             ["businessActivity", "Business activity", false, ""],
+             ["riskRating", "Risk rating", false, ""],
+             ["adminStatus", "Status", false, ""]],
+    cta: "Save the changes",
+  },
+  classification: {
+    title: "FATCA and CRS classification",
+    note: "The classification drives the reporting obligation. Recording it wrongly means reporting the wrong thing, or nothing at all.",
+    fields: [["fatcaClass", "FATCA classification", false, ""],
+             ["crsClass", "CRS classification", false, ""],
+             ["giin", "GIIN", false, ""]],
+    cta: "Save the classification",
+  },
+  responsibilities: {
+    title: "Who is responsible",
+    fields: [["administrator", "Administrator", false, ""],
+             ["manager", "Manager", false, ""],
+             ["leadDirector", "Lead director", false, ""],
+             ["accountant", "Accountant", false, ""],
+             ["office", "Office", false, ""]],
+    cta: "Save",
+  },
+  entityClose: {
+    title: "Close the entity",
+    note: "Closing sets the status and keeps every record. Core refuses to close an entity with unbilled time against it, because closing writes that work off — bill it or write it off deliberately first.",
+    fields: [["reason", "Reason", true, ""],
+             ["closedDate", "Closed date", true, "YYYY-MM-DD"]],
+    cta: "Close the entity",
+  },
+  caseload: {
+    title: "Reassign a caseload",
+    note: "Moves every entity from one person to another in a single step. Reassigning forty entities one at a time is how one gets missed, and the one that gets missed is the one nobody administers. Core reports how many moved, and refuses if nothing matched.",
+    fields: [["fromName", "From", true, ""], ["toName", "To", true, ""],
+             ["roleField", "Which role", true, "administrator / manager / lead_director"]],
+    cta: "Reassign",
+  },
+};
+
+function ActionModal({ spec, f, setF, msg, busy, subject, onCancel, onSave }) {
+  if (!spec) return null;
+  const d = ACTION_SPECS[spec];
+  if (!d) return null;
+  return (
+    <div onClick={(e) => e.target === e.currentTarget && onCancel()}
+         style={{ position:"fixed", inset:0, background:"rgba(0,18,66,0.45)",
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                  zIndex:1200, padding:20 }}>
+      <div style={{ background:"#fff", borderRadius:12, padding:"22px 24px",
+                    width:"min(640px,100%)", maxHeight:"86vh", overflowY:"auto" }}>
+        <div style={{ fontSize:15, fontWeight:600, color:"#001242", marginBottom:6 }}>
+          {d.title}
+        </div>
+        {subject && (
+          <div style={{ fontSize:12, color:"#5B6B7B", marginBottom:8 }}>{subject}</div>
+        )}
+        {d.note && (
+          <div style={{ fontSize:11.5, color:"#5B6B7B", lineHeight:1.7, marginBottom:14 }}>
+            {d.note}
+          </div>
+        )}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px 14px" }}>
+          {d.fields.map(([k, lab, req, ph]) => (
+            <div key={k} style={{ gridColumn: (k==="reason"||k==="address"||
+                                               k==="businessActivity") ? "1/-1" : "auto" }}>
+              <label style={{ display:"block", fontSize:11, fontWeight:600,
+                              color:"#555", marginBottom:4 }}>
+                {lab}{req && <span style={{ color:"#A32D2D" }}> *</span>}
+              </label>
+              <input value={f[k] || ""} placeholder={ph}
+                     onChange={(e) => setF({ ...f, [k]: e.target.value })}
+                     style={{ width:"100%", height:34, fontSize:12.5, borderRadius:6,
+                              border:"0.5px solid #ccc", padding:"0 8px" }} />
+            </div>
+          ))}
+        </div>
+        {msg && (
+          <div style={{ marginTop:14, padding:"9px 12px", borderRadius:7, fontSize:11.5,
+                        lineHeight:1.6, background:"#FCEBEB", border:"0.5px solid #f0c9c9",
+                        color:"#A32D2D", whiteSpace:"pre-wrap" }}>{msg}</div>
+        )}
+        <div style={{ display:"flex", gap:8, justifyContent:"flex-end", marginTop:18 }}>
+          <button style={{ padding:"6px 13px", borderRadius:6, fontSize:11.5,
+                           cursor:"pointer", border:"0.5px solid #D9DEE5",
+                           background:"transparent" }} onClick={onCancel}>Cancel</button>
+          <button style={{ padding:"6px 13px", borderRadius:6, fontSize:11.5,
+                           cursor:"pointer", border:"none", background:"#00C4CC",
+                           color:"#fff" }} onClick={onSave} disabled={busy}>{d.cta}</button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="system_admin", internalRefs }) {
@@ -744,7 +923,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
             <div style={{ fontSize:12, fontWeight:500 }}>{entity.type==="Trust"?"Trustees & parties":"Directors & officers"}</div>
             <button style={s.btn(true)} onClick={()=>setModal("director")}>＋ Appoint officer</button>
           </div>
-          <Tbl cols={[{l:"Name",w:"16%"},{l:"Role",w:"13%"},{l:"Appointed",w:"9%"},{l:"Resigned",w:"8%"},{l:"Nationality",w:"10%"},{l:"Tax residence",w:"12%"},{l:"TIN",w:"11%"},{l:"Date of birth",w:"9%"},{l:"Address",w:"12%"}]}
+          <Tbl cols={[{l:"Name",w:"16%"},{l:"Role",w:"13%"},{l:"Appointed",w:"9%"},{l:"Resigned",w:"8%"},{l:"Nationality",w:"10%"},{l:"Tax residence",w:"12%"},{l:"TIN",w:"11%"},{l:"Date of birth",w:"9%"},{l:"Address",w:"12%"},{l:"",w:"10%"}]}
             rows={dirs.map(d=>(
               <tr key={d.id} style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)", background:d.resigned?"var(--bg-secondary,#f9f9f9)":"transparent" }}>
                 <td style={{ ...s.td, fontWeight:500, color:d.resigned?"var(--text-secondary,#666)":undefined }}>{d.name}</td>
@@ -756,6 +935,18 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
                 <td style={{ ...s.td, color:"var(--text-secondary,#666)", fontFamily:"monospace", fontSize:10 }}>{d.tin||"—"}</td>
                 <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{d.dob}</td>
                 <td style={{ ...s.td, color:"var(--text-secondary,#666)", overflow:"hidden", textOverflow:"ellipsis" }}>{d.address}</td>
+                <td style={s.td}>
+                  {entityDbId && !d.resigned && (
+                    <>
+                      <button style={{ ...s.mini }} title="Keeps the officer on the register, marked resigned"
+                              onClick={()=>openAct("officerResign", d.id, d.name)}>Resign</button>
+                      <button style={{ ...s.mini, marginLeft:4 }} title="Correct what was recorded"
+                              onClick={()=>openAct("officerUpdate", d.id, d.name,
+                                { name:d.name, role:d.role, nationality:d.nationality,
+                                  taxResidence:d.tax_residence, tin:d.tin, address:d.address })}>Edit</button>
+                    </>
+                  )}
+                </td>
               </tr>
             ))}
           />
@@ -770,7 +961,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
             <button style={s.btn(true)} onClick={()=>setModal("shareholder")}>＋ Register transfer / issuance</button>
           </div>
           {shares.length>0?(
-            <Tbl cols={[{l:"Shareholder",w:"22%"},{l:"Type",w:"10%"},{l:"Shares",w:"10%"},{l:"Class",w:"10%"},{l:"Nominal",w:"10%"},{l:"Paid up",w:"10%"},{l:"%",w:"8%"},{l:"Reg. date",w:"12%"}]}
+            <Tbl cols={[{l:"Shareholder",w:"22%"},{l:"Type",w:"10%"},{l:"Shares",w:"10%"},{l:"Class",w:"10%"},{l:"Nominal",w:"10%"},{l:"Paid up",w:"10%"},{l:"%",w:"8%"},{l:"Reg. date",w:"12%"},{l:"",w:"8%"}]}
               rows={shares.map(sh=>(
                 <tr key={sh.id} style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)" }}>
                   <td style={{ ...s.td, fontWeight:500 }}>{sh.name}</td>
@@ -781,6 +972,13 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
                   <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{sh.paid}</td>
                   <td style={{ ...s.td, fontWeight:600 }}>{sh.pct}</td>
                   <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{sh.regDate}</td>
+                <td style={s.td}>
+                  {entityDbId && (
+                    <button style={s.mini}
+                            title="A reason is required — a share register is a legal record and a holding that simply disappears cannot be explained afterwards"
+                            onClick={()=>openAct("shareholderRemove", sh.id, sh.name)}>Remove</button>
+                  )}
+                </td>
                 </tr>
               ))}
             />
@@ -911,7 +1109,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
             <button style={s.btn(true)} onClick={()=>setModal("dividend")}>＋ Record dividend</button>
           </div>
           {divs.length>0?(
-            <Tbl cols={[{l:"Share class",w:"14%"},{l:"Recipient",w:"20%"},{l:"Date requested",w:"14%"},{l:"Date paid",w:"14%"},{l:"Per share",w:"14%"},{l:"Notes",w:"24%"}]}
+            <Tbl cols={[{l:"Share class",w:"14%"},{l:"Recipient",w:"20%"},{l:"Date requested",w:"14%"},{l:"Date paid",w:"14%"},{l:"Per share",w:"14%"},{l:"Notes",w:"24%"},{l:"",w:"8%"}]}
               rows={divs.map(d=>(
                 <tr key={d.id} style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)" }}>
                   <td style={s.td}>{d.class}</td>
@@ -920,6 +1118,13 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
                   <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{d.paid}</td>
                   <td style={{ ...s.td, fontWeight:600 }}>{d.perShare}</td>
                   <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{d.notes}</td>
+                <td style={s.td}>
+                  {entityDbId && !d.paid && (
+                    <button style={s.mini}
+                            title="Declaring and paying are separate events, and the gap matters for tax and the accounts"
+                            onClick={()=>openAct("dividendPay", d.id, d.name)}>Mark paid</button>
+                  )}
+                </td>
                 </tr>
               ))}
             />
@@ -960,7 +1165,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
             ℹ️ Beneficial owners (owners &amp; controllers) are held here, distinct from the officer register. A person may appear both here and as an officer where they hold both roles.
           </div>
           {relations.length>0?(
-            <Tbl cols={[{l:"Name",w:"18%"},{l:"Nature of control",w:"22%"},{l:"Ownership",w:"9%"},{l:"DOB",w:"11%"},{l:"Nationality",w:"11%"},{l:"Tax residence",w:"11%"},{l:"TIN",w:"11%"},{l:"Record",w:"7%"}]}
+            <Tbl cols={[{l:"Name",w:"18%"},{l:"Nature of control",w:"22%"},{l:"Ownership",w:"9%"},{l:"DOB",w:"11%"},{l:"Nationality",w:"11%"},{l:"Tax residence",w:"11%"},{l:"TIN",w:"11%"},{l:"Record",w:"7%"},{l:"",w:"10%"}]}
               rows={relations.map(r=>(
                 <tr key={r.id} style={{ borderBottom:"0.5px solid var(--border-tertiary,#e5e5e5)" }}>
                   <td style={{ ...s.td, fontWeight:500 }}>{r.name}{r.role&&<span style={{ display:"block", fontSize:10, fontWeight:400, color:"var(--text-secondary,#999)" }}>{r.role}</span>}</td>
@@ -971,6 +1176,20 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
                   <td style={{ ...s.td, color:"var(--text-secondary,#666)" }}>{r.taxResidence||"—"}</td>
                   <td style={{ ...s.td, color:"var(--text-secondary,#666)", fontFamily:"monospace", fontSize:10 }}>{r.tin||"—"}</td>
                   <td style={s.td}>{r.shared?<Badge label="Shared" colors={{bg:"#E6F7FB",color:"#0077A8"}} title={r.linkedEntities.join(", ")} />:<span style={{ color:"var(--text-secondary,#999)" }}>—</span>}</td>
+                <td style={s.td}>
+                  {entityDbId && (
+                    <>
+                      <button style={s.mini}
+                              onClick={()=>openAct("uboUpdate", r.id, r.name,
+                                { name:r.name, role:r.role, nationality:r.nationality,
+                                  ownershipPct:r.ownershipPct, natureOfControl:r.nature,
+                                  taxResidence:r.taxResidence, tin:r.tin })}>Edit</button>
+                      <button style={{ ...s.mini, marginLeft:4 }}
+                              title="A reason is required — removing a beneficial owner is a filing matter in most jurisdictions"
+                              onClick={()=>openAct("uboRemove", r.id, r.name)}>Remove</button>
+                    </>
+                  )}
+                </td>
                 </tr>
               ))}
             />
@@ -1260,6 +1479,56 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
   // it is a demo id, so writing is not offered at all.
   const entityDbId = (isConfigured && liveEnts && sel != null) ? sel : null;
 
+  // Register actions — resign, update, remove, close. All fifteen of these
+  // functions had API wrappers and no buttons, so every register could be
+  // added to and never changed.
+  const [act, setAct]         = useState(null);
+  const [actF, setActF]       = useState({});
+  const [actId, setActId]     = useState(null);
+  const [actSubj, setActSubj] = useState("");
+  const [actMsg, setActMsg]   = useState("");
+  const [actBusy, setActBusy] = useState(false);
+
+  const openAct = (spec, id, subject, seed) => {
+    setAct(spec); setActId(id); setActSubj(subject || "");
+    setActF(seed || {}); setActMsg("");
+  };
+
+  const runAct = async () => {
+    setActBusy(true); setActMsg("");
+    const v = actF;
+    let r;
+    try {
+      if (act === "officerResign")     r = await EW.officerResign(actId, toISO(v.resigned));
+      if (act === "officerUpdate")     r = await EW.officerUpdate(actId, v);
+      if (act === "uboUpdate")         r = await EW.uboUpdate(actId, v);
+      if (act === "uboRemove")         r = await EW.uboRemove(actId, v.reason);
+      if (act === "shareholderRemove") r = await EW.shareholderRemove(actId, v.reason);
+      if (act === "signatoryRemove")   r = await EW.signatoryRemove(actId, toISO(v.toDate));
+      if (act === "dividendPay")       r = await EW.dividendPay(actId, toISO(v.paidDate));
+      if (act === "safeRetrieve")      r = await EW.safeItemRetrieve(actId,
+                                              toISO(v.retrievedDate), v.authorisedBy);
+      if (act === "profileUpdate")     r = await EW.profileUpdate(entityDbId, v);
+      if (act === "classification")    r = await EW.classificationUpdate(entityDbId,
+                                              v.fatcaClass, v.crsClass, v.giin);
+      if (act === "responsibilities")  r = await EW.responsibilitiesSet(entityDbId, v);
+      if (act === "entityClose")       r = await EW.entityClose(entityDbId, v.reason,
+                                              toISO(v.closedDate));
+      if (act === "caseload")          r = await EW.reassignCaseload(v.fromName, v.toName,
+                                              v.roleField);
+    } catch (e) {
+      r = { ok: false, live: true, error: String((e && e.message) || e) };
+    }
+    setActBusy(false);
+    if (r && r.ok) {
+      setAct(null); setActF({}); setActMsg("");
+      setDetVersion((n) => n + 1);   // reload the registers
+      return;
+    }
+    if (r && r.live === false) { setActMsg("Not signed in — that cannot be saved."); return; }
+    setActMsg((r && r.error) || "That could not be saved.");
+  };
+
   const modalSaves = {
     // Creating a client. Found missing by the wiring audit: every register
     // worked but nothing could create the entity they hang off.
@@ -1517,6 +1786,32 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
                       <Badge label={entity.status} colors={statusBadge(entity.status)} />
                       {entity.risk && entity.risk!=="—" && <Badge label={entity.risk+" risk"} colors={riskColors[entity.risk]} />}
                     </div>
+                    {entityDbId && (
+                      <div style={{ display:"flex", gap:6, marginTop:8, flexWrap:"wrap" }}>
+                        <button style={s.mini} onClick={()=>openAct("profileUpdate", null, entity.name,
+                          { regNo:entity.regNo, yearEnd:entity.yearEnd,
+                            businessActivity:entity.principalActivity,
+                            riskRating:entity.risk, adminStatus:entity.status })}>
+                          Edit entity
+                        </button>
+                        <button style={s.mini} onClick={()=>openAct("classification", null, entity.name)}>
+                          FATCA / CRS
+                        </button>
+                        <button style={s.mini} onClick={()=>openAct("responsibilities", null, entity.name,
+                          { administrator:entity.administrator, manager:entity.manager,
+                            leadDirector:entity.leadDirector, accountant:entity.accountant })}>
+                          Responsibilities
+                        </button>
+                        <button style={s.mini} onClick={()=>openAct("caseload", null, "")}>
+                          Reassign caseload
+                        </button>
+                        <button style={{ ...s.mini, color:"#A32D2D", borderColor:"#f0c9c9" }}
+                                title="Refused while unbilled time stands against the entity, because closing writes that work off"
+                                onClick={()=>openAct("entityClose", null, entity.name)}>
+                          Close entity
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <div style={{ display:"flex", gap:6 }}>
                     <button style={{ ...s.btn(false), opacity:0.5, cursor:"not-allowed" }} disabled
@@ -1669,6 +1964,11 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
           </div>
         </div>
       )}
+      <ActionModal spec={act} f={actF} setF={setActF} msg={actMsg} busy={actBusy}
+                   subject={actSubj}
+                   onCancel={()=>{ setAct(null); setActF({}); setActMsg(""); }}
+                   onSave={runAct} />
+
     </div>
   );
 }
