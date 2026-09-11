@@ -306,6 +306,30 @@ export default function AffinityJurisdictionCompliance({ onNav }) {
 
             {obligations.length>0 && (
               <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:10 }}>
+                <button style={nb}
+                        title="Across every jurisdiction and area at once — this screen shows one jurisdiction at a time, so the gaps between them were invisible"
+                        onClick={async()=>{
+                          setObsMsg("");
+                          const cov = await OBL.obligationCoverage();
+                          if (!cov || !cov.live) { setObsMsg("Not signed in."); return; }
+                          const rows = cov.data || [];
+                          const gaps = rows.filter(r => Number(r.recorded) === 0);
+                          const unconf = rows.filter(r => Number(r.recorded) > 0
+                                                       && Number(r.confirmed) === 0);
+                          setObsMsg(
+                            (gaps.length
+                              ? gaps.length + " jurisdiction/area combination(s) with NOTHING recorded:\n"
+                                + gaps.slice(0,14).map(r=>`  ${r.location_name} — ${r.area_name}`).join("\n")
+                                + "\n\n"
+                              : "Every jurisdiction and area has at least one obligation recorded.\n\n")
+                            + (unconf.length
+                              ? unconf.length + " with obligations recorded but NONE confirmed:\n"
+                                + unconf.slice(0,10).map(r=>`  ${r.location_name} — ${r.area_name} (${r.recorded})`).join("\n")
+                                + "\n\nRecorded is not the same as trustworthy — an unconfirmed deadline is a draft."
+                              : "Everything recorded has been confirmed."));
+                        }}>
+                  Coverage across all jurisdictions
+                </button>
                 <button style={nb} onClick={()=>{setObForm(true);setOb({});}}>
                   ＋ Add an obligation
                 </button>

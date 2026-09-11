@@ -4,6 +4,7 @@ import { isConfigured } from "./affinity_accounting_supabase";
 import { tasksList } from "./affinity_tasks_api";
 import { notificationsList } from "./affinity_ops_api";
 import { NOTIFICATIONS_DATA, TYPE_STYLE, timeAgo } from "./affinity_core_notifications";
+import { taskList } from "./affinity_ops_write_api";
 const CY = "#00C4CC";
 const NAVY = "#001242";
 
@@ -257,9 +258,36 @@ export default function AffinityTasks({ userId, onNav, initialView, userName, is
           </div>
         </div>
         {view==="tasks"
-          ? <button style={{ ...nba, background:"#4CAF7D", borderColor:"#4CAF7D" }} onClick={()=>{ setForm({ category:"Compliance", assignee:"Andy Morgan", status:"Open" }); setModal("add"); }}>
-              ＋ Add task
-            </button>
+          ? <>
+              <button style={{ ...nb, marginRight:6 }}
+                      title="Reads the tasks actually recorded, rather than the sample list this screen shows by default"
+                      onClick={async()=>{
+                        const who=window.prompt("Assignee? (blank for everyone)", CURRENT_USER.name);
+                        const st=window.prompt("Status? (blank for all)");
+                        const r=await taskList(who||null, st||null);
+                        if(!r||!r.live){ window.alert("Not signed in."); return; }
+                        const rows=r.data||[];
+                        window.alert(rows.length
+                          ? rows.length+" task(s) recorded:\n"+rows.slice(0,20).map(x=>
+                              `  ${x.title} — ${x.assignee||"unassigned"} (${x.status}) due ${x.due_date||"—"}`).join("\n")
+                          : "No tasks recorded for that. The list on screen is sample data.");
+                      }}>
+                Show recorded tasks
+              </button>
+              <button style={{ ...nba, background:"#4CAF7D", borderColor:"#4CAF7D" }}
+                      onClick={()=>{
+                        // The assignee defaulted to "Andy Morgan", hardcoded, so every
+                        // task anyone created was assigned to him. Same fault as the
+                        // shell's uid, surviving in a form default — which is where it
+                        // would have lasted longest, because a default looks like a
+                        // choice someone made.
+                        setForm({ category:"Compliance",
+                                  assignee: CURRENT_USER.name, status:"Open" });
+                        setModal("add");
+                      }}>
+                ＋ Add task
+              </button>
+            </>
           : <button style={{ ...nb, background:"transparent", color:"#8892b0", borderColor:"#33405e" }} onClick={markAllRead}>Mark all read</button>}
       </div>
 

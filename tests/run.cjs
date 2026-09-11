@@ -2868,6 +2868,39 @@ group("db/087 — a segregation-of-duties check with nobody in it");
      /NOT the same as sysUserSetRole/.test(api));
 }
 
+
+group("Obligation coverage, live tasks, and a default that assigned everything to Andrew");
+{
+  const jur = fs.readFileSync(path.join(SRC, "affinity_core_jurisdiction_compliance.jsx"), "utf8");
+  const tk  = fs.readFileSync(path.join(SRC, "affinity_core_tasks.jsx"), "utf8");
+
+  // The screen shows one jurisdiction at a time, so the question Compliance
+  // actually needs answering before they start — which of the ten areas has
+  // nothing recorded ANYWHERE — could not be asked.
+  ok("coverage across all jurisdictions is reachable",
+     /OBL\.obligationCoverage\(\)/.test(jur));
+  ok("...and separates nothing-recorded from nothing-confirmed",
+     /NOTHING recorded/.test(jur) && /NONE confirmed/.test(jur));
+  ok("...with the distinction that matters",
+     /an unconfirmed deadline is a draft/.test(jur));
+
+  // ANOTHER HARDCODED IDENTITY, surviving in a form default. Every task anyone
+  // created was assigned to "Andy Morgan" — the same fault as the shell's uid,
+  // in the place it would have lasted longest, because a default looks like a
+  // choice somebody made rather than a bug.
+  ok("the new-task assignee is the current user",
+     /assignee: CURRENT_USER\.name/.test(tk));
+  // Narrowed to the FORM DEFAULT. The sample task rows further up the file
+  // legitimately name people, including Andrew — sample data naming a real
+  // colleague is not the same fault as a default that assigns everyone's work
+  // to him.
+  ok("...and the form default is not hardcoded",
+     !/setForm\(\{ category:"Compliance", assignee:"Andy Morgan"/.test(tk));
+  ok("...and the reason is recorded", /a default looks like a/.test(tk));
+
+  ok("the recorded task list can be read", /await taskList\(/.test(tk));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
