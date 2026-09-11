@@ -440,6 +440,32 @@ const ACTION_SPECS = {
              ["office", "Office", false, ""]],
     cta: "Save",
   },
+  chargeSatisfy: {
+    title: "Satisfy a charge",
+    note: "A satisfied charge stays on the register with its satisfaction date. Whether security was in place on a given date is exactly what gets asked in a transaction, and a register showing only live charges cannot answer it.",
+    cta: "Record the satisfaction",
+    fields: [["satisfiedDate", "Date satisfied", true, "YYYY-MM-DD"]],
+  },
+  bankClose: {
+    title: "Close a bank account",
+    note: "The account stays on the register with a closing date. Which account was in use when a payment was made is a question that comes up later.",
+    cta: "Record the closure",
+    fields: [["closedDate", "Date closed", true, "YYYY-MM-DD"]],
+  },
+  assetRevalue: {
+    title: "Revalue an asset",
+    note: "Recording a new valuation and the date it was made. The date matters as much as the figure — a valuation with no date cannot be judged as current or stale.",
+    cta: "Record the valuation",
+    fields: [["value", "New value", true, ""],
+             ["valuationDate", "Valuation date", true, "YYYY-MM-DD"]],
+  },
+  serviceSet: {
+    title: "Set a service",
+    note: "Which services Affinity provides to this entity. It feeds billing, so a service that is provided and not recorded is one nobody invoices for.",
+    cta: "Save",
+    fields: [["service", "Service", true, ""],
+             ["active", "Active? yes or no", true, "yes"]],
+  },
   entityClose: {
     title: "Close the entity",
     note: "Closing sets the status and keeps every record. Core refuses to close an entity with unbilled time against it, because closing writes that work off — bill it or write it off deliberately first.",
@@ -1508,6 +1534,12 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
       if (act === "dividendPay")       r = await EW.dividendPay(actId, toISO(v.paidDate));
       if (act === "safeRetrieve")      r = await EW.safeItemRetrieve(actId,
                                               toISO(v.retrievedDate), v.authorisedBy);
+      if (act === "chargeSatisfy")     r = await EW.chargeSatisfy(actId, toISO(v.satisfiedDate));
+      if (act === "bankClose")         r = await EW.bankClose(actId, toISO(v.closedDate));
+      if (act === "assetRevalue")      r = await EW.assetRevalue(actId, Number(v.value),
+                                              toISO(v.valuationDate));
+      if (act === "serviceSet")        r = await EW.serviceSet(entityDbId, v.service,
+                                              String(v.active).toLowerCase() === "yes");
       if (act === "profileUpdate")     r = await EW.profileUpdate(entityDbId, v);
       if (act === "classification")    r = await EW.classificationUpdate(entityDbId,
                                               v.fatcaClass, v.crsClass, v.giin);
@@ -1804,6 +1836,35 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
                         </button>
                         <button style={s.mini} onClick={()=>openAct("caseload", null, "")}>
                           Reassign caseload
+                        </button>
+                        <button style={s.mini}
+                                title="A satisfied charge stays on the register with its date — whether security was in place on a given date is what gets asked in a transaction"
+                                onClick={()=>{
+                                  const id = window.prompt("Charge id to satisfy? (shown in the Charges tab)");
+                                  if (id) openAct("chargeSatisfy", Number(id), "Charge " + id);
+                                }}>
+                          Satisfy a charge
+                        </button>
+                        <button style={s.mini}
+                                title="The account stays on the register with a closing date — which account was in use when a payment was made comes up later"
+                                onClick={()=>{
+                                  const id = window.prompt("Bank account id to close? (shown in the Bank accounts tab)");
+                                  if (id) openAct("bankClose", Number(id), "Account " + id);
+                                }}>
+                          Close an account
+                        </button>
+                        <button style={s.mini}
+                                title="A valuation with no date cannot be judged as current or stale"
+                                onClick={()=>{
+                                  const id = window.prompt("Asset id to revalue? (shown in the Assets tab)");
+                                  if (id) openAct("assetRevalue", Number(id), "Asset " + id);
+                                }}>
+                          Revalue an asset
+                        </button>
+                        <button style={s.mini}
+                                title="Feeds billing — a service provided and not recorded is one nobody invoices for"
+                                onClick={()=>openAct("serviceSet", null, entity.name)}>
+                          Services
                         </button>
                         <button style={{ ...s.mini, color:"#A32D2D", borderColor:"#f0c9c9" }}
                                 title="Refused while unbilled time stands against the entity, because closing writes that work off"

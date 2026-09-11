@@ -695,9 +695,33 @@ export default function AffinityFiduciary({ onNav }) {
 
     return (
       <div style={card}>
-        <div style={{ fontSize: 11, fontWeight: 600, color: MUT, marginBottom: 10,
-                      textTransform: "uppercase", letterSpacing: "0.4px" }}>
-          Accounts sets
+        <div style={{ display:"flex", justifyContent:"space-between",
+                      alignItems:"center", marginBottom:10 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: MUT,
+                        textTransform: "uppercase", letterSpacing: "0.4px" }}>
+            Accounts sets
+          </div>
+          <button style={btn(true)}
+                  title="Refused if the framework has no presentation format, if the jurisdiction does not accept it, or if the period has not finished"
+                  onClick={async()=>{
+                    const e = window.prompt("Entity id?");
+                    if (!e) return;
+                    const fw = window.prompt(
+                      "Framework code?\n\nRefused if the framework has no presentation format — statutory accounts need prescribed captions in a prescribed order.");
+                    if (!fw) return;
+                    const ps = window.prompt("Period start (YYYY-MM-DD)?");
+                    if (!ps) return;
+                    const pe = window.prompt("Period end (YYYY-MM-DD)?");
+                    if (!pe) return;
+                    const qs = window.prompt("Comparative period start (optional)?");
+                    const qe = window.prompt("Comparative period end (optional)?");
+                    await act(() => FID.accountsSetOpen({
+                      entityId:Number(e), framework:fw, periodStart:ps, periodEnd:pe,
+                      priorStart:qs || null, priorEnd:qe || null }),
+                      "Accounts set opened.");
+                  }}>
+            ＋ Open a set
+          </button>
         </div>
         <Table
           cols={["Entity", "Framework", "Period", "Status", "Prepared by", "Lines",

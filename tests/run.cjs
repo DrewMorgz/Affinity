@@ -2393,6 +2393,31 @@ group("VAT posting, reverse charge, disbursements, amending an obligation");
      /confirmed different terms/.test(jur));
 }
 
+
+group("Opening a statutory accounts set, and the last Entity Admin gaps");
+{
+  const fid = fs.readFileSync(path.join(SRC, "affinity_core_fiduciary.jsx"), "utf8");
+  const ea  = fs.readFileSync(path.join(SRC, "affinity_core_entity_admin.jsx"), "utf8");
+
+  // NO SET OF STATUTORY ACCOUNTS COULD BE OPENED. The workflow was unreachable
+  // from its first step, so generate, review, approve, finalise and adjust all
+  // applied to sets that could only have arrived some other way.
+  ok("opening a set is reachable", /FID\.accountsSetOpen\s*\(/.test(fid));
+  ok("...and the refusals are stated before the attempt",
+     /no presentation format/.test(fid));
+
+  // A charge could be registered and never satisfied; a bank account opened
+  // and never closed; an asset recorded and never revalued.
+  ["chargeSatisfy", "bankClose", "assetRevalue", "serviceSet"].forEach((a) =>
+    ok(a + " is reachable", new RegExp('openAct\\("' + a + '"').test(ea)));
+
+  ok("satisfying a charge explains why history is kept",
+     /security was in place/.test(ea));
+  ok("closing an account explains the same", /comes up later/.test(ea));
+  ok("a revaluation records its date", /current or stale/.test(ea));
+  ok("services are tied to billing", /nobody invoices for/.test(ea));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
