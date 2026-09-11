@@ -417,6 +417,16 @@ export default function AffinityCore(){
         office: "—", av: (resolved.name || "?").slice(0, 1).toUpperCase(),
       })
     : (USERS.find(u=>u.id===uid)||USERS[0]);
+
+  // The id that goes to modules, not the raw uid. The shell was resolving
+  // `user` correctly and still passing uid — hardcoded to 1 — so anything
+  // keyed on userId kept showing Andrew. The Dashboard greeting did exactly
+  // that, which is how it was reported.
+  //
+  // Where a signed-in person has no matching staff record, this is null rather
+  // than 1: a module that cannot identify someone should show nothing personal
+  // rather than defaulting to the first user in the list.
+  const effectiveUid = resolved ? resolved.id : uid;
   const rbacRole=deriveRbacRole(user.role);
   const navLabel=NAV.flatMap(s=>s.items).find(i=>i.id===mod)?.label||mod;
 
@@ -477,7 +487,7 @@ export default function AffinityCore(){
     if (mod && !canAccessModule(rbacRole, mod)) return <div style={{padding:28,color:"#5B6B7B",fontSize:14}}>You don’t have access to this module. Contact a System Admin if you need it.</div>;
     if (mod && mod.slice(0,4) === "acc_") return <Accounting module={mod}/>;
     switch(mod){
-      case "dashboard":    return <Dashboard userId={uid} onNav={setMod} officeFilter={officeFilter} userName={user?.name||""}/>;
+      case "dashboard":    return <Dashboard userId={effectiveUid} onNav={setMod} officeFilter={officeFilter} userName={user?.name||""}/>;
       case "tasks":        return <Tasks onNav={setMod} userName={user?.name||""} isSuperAdmin={!!(user&&user.role&&user.role.indexOf("Super Admin")>=0)}/>;
       case "feedback":     return <Feedback userName={user?.name||""} isSuperAdmin={!!(user&&user.role&&user.role.indexOf("Super Admin")>-1)}/>;
       case "audit":        return <AuditLog userName={user?.name||""} isSuperAdmin={!!(user&&user.role&&user.role.indexOf("Super Admin")>-1)}/>;
@@ -510,7 +520,7 @@ export default function AffinityCore(){
       case "system":       return <SystemAdmin onNav={setMod} isSuperAdmin={!!(user&&user.role&&user.role.indexOf("Super Admin")>-1)}/>;
       case "generate":     return <GenerateDoc/>;
       case "egaming":      return <EGaming onNav={setMod}/>;
-      default:             return <Dashboard userId={uid} onNav={setMod} userName={user?.name||""}/>;
+      default:             return <Dashboard userId={effectiveUid} onNav={setMod} userName={user?.name||""}/>;
     }
   };
 

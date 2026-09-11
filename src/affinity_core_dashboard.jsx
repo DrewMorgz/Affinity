@@ -236,8 +236,22 @@ export default function Dashboard({userId, onNav, userName}) {
     return ()=>{ok=false;};
   },[]);
 
-  const user = USERS.find(u=>u.id===userId)||USERS[0];
-  const cpdStaff = user.name || userName || "";
+  // THE NAME IS AUTHORITATIVE, NOT THE ID.
+  //
+  // This module has its own USERS list whose ids do not line up with the
+  // shell's. Looking a person up by id therefore returned a DIFFERENT
+  // colleague — passing id 3 with the name Colette Grisdale greeted "Joanne".
+  // Wrong in a quieter way than greeting everyone as Andrew, and harder to
+  // notice, because it is a plausible name rather than obviously the boss.
+  //
+  // So the id is used only to pick sample figures. Whoever the shell says is
+  // signed in is who gets greeted.
+  const lookedUp = USERS.find(u=>u.id===userId);
+  const user = {
+    ...(lookedUp || USERS[0]),
+    name: userName || (lookedUp ? lookedUp.name : USERS[0].name),
+  };
+  const cpdStaff = userName || user.name || "";
   const myCpd = cpd.filter(c=>!cpdStaff || c.staff===cpdStaff);
   const myCpdHours = myCpd.reduce((s,c)=>s+(parseFloat(c.hours)||0),0);
   const logCpd = async () => {

@@ -2585,6 +2585,34 @@ group("Everyone was seeing Andrew Morgan and inheriting Super Admin");
      /<Tasks onNav=\{setMod\} userName=/.test(sh));
 }
 
+
+group("The dashboard greeting, and an id that pointed at the wrong colleague");
+{
+  const sh = fs.readFileSync(path.join(SRC, "affinity_core_unified_v3.jsx"), "utf8");
+  const db = fs.readFileSync(path.join(SRC, "affinity_core_dashboard.jsx"), "utf8");
+
+  // REPORTED BY A USER, after the first identity fix. Her profile showed her
+  // own name and the dashboard still said "Good morning, Andrew" — because the
+  // shell resolved `user` correctly and went on passing the raw uid, hardcoded
+  // to 1, to anything keyed on userId.
+  ok("the shell passes the resolved id, not the hardcoded one",
+     /const effectiveUid = resolved \? resolved\.id : uid/.test(sh));
+  ok("the dashboard receives it", /<Dashboard userId=\{effectiveUid\}/.test(sh));
+  ok("...and someone with no staff record gets null rather than 1",
+     /should show nothing personal/.test(sh));
+
+  // A BUG IN THE FIX ITSELF, caught by driving it. The dashboard has its own
+  // USERS list whose ids do not line up with the shell's, so a lookup by id
+  // returned a DIFFERENT colleague — id 3 with the name Colette Grisdale
+  // greeted "Joanne". Wrong in a quieter way than greeting everyone as the
+  // boss, and harder to notice, because it is a plausible name.
+  ok("the name the shell passes wins over the id lookup",
+     /name: userName \|\| \(lookedUp \? lookedUp\.name : USERS\[0\]\.name\)/.test(db));
+  ok("...and the reason is recorded", /greeted "Joanne"/.test(db));
+  ok("the id is only used for sample figures",
+     /id is used only to pick sample figures/.test(db));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
