@@ -5,6 +5,7 @@ import * as FID from "./affinity_fiduciary_api";
 import { isConfigured } from "./affinity_accounting_supabase";
 import EntitySearch from "./affinity_entity_search";
 import * as OW from "./affinity_ops_write_api";
+import { confirmEntity } from "./affinity_confirm_entity";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PURCHASES AND RECEIVABLES
@@ -593,7 +594,8 @@ export default function AffinityPayables({ onNav }) {
         <button style={btn(false)}
                 title="Pays everything due up to a date, with NO approval step in front of it — use a payment run for anything that should be approved"
                 onClick={async()=>{
-                  const e=window.prompt("Entity id?"); if(!e) return;
+                  const e = await confirmEntity(window.prompt("Entity id?"), "post against");
+                  if (!e) return;
                   const d=window.prompt("Payment date (YYYY-MM-DD)?"); if(!d) return;
                   const up=window.prompt("Pay everything due up to which date (YYYY-MM-DD)?");
                   if(!up) return;
@@ -743,7 +745,8 @@ export default function AffinityPayables({ onNav }) {
         <button style={btn(false)}
                 title="An invoice can arrive without an order, so recording it is separate from matching it"
                 onClick={async()=>{
-                  const e=window.prompt("Entity id?"); if(!e) return;
+                  const e = await confirmEntity(window.prompt("Entity id?"), "post against");
+                  if (!e) return;
                   const sup=window.prompt("Supplier?"); if(!sup) return;
                   const ref=window.prompt("Invoice reference?"); if(!ref) return;
                   const d=window.prompt("Invoice date (YYYY-MM-DD)?"); if(!d) return;
@@ -813,7 +816,7 @@ export default function AffinityPayables({ onNav }) {
         <button style={btn(false)}
                 title="Money the firm spends on a client's behalf — unrecharged, it is money spent and not recovered, and invisible until someone looks"
                 onClick={async()=>{
-                  const e = window.prompt("Entity id?");
+                  const e = await confirmEntity(window.prompt("Entity id?"), "post against");
                   if (!e) return;
                   const sup = window.prompt("Supplier?");
                   if (!sup) return;
@@ -854,7 +857,7 @@ export default function AffinityPayables({ onNav }) {
         <button style={btn(false)}
                 title="Recharges outstanding disbursements to the clients they were incurred for"
                 onClick={async()=>{
-                  const e = window.prompt("Entity id?");
+                  const e = await confirmEntity(window.prompt("Entity id?"), "post against");
                   if (!e) return;
                   const d = window.prompt("Date (YYYY-MM-DD)?");
                   if (!d) return;

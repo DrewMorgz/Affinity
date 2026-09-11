@@ -7,6 +7,7 @@ import { isConfigured } from "./affinity_accounting_supabase";
 import { feeInvoices } from "./affinity_invoicing_api";
 import * as OW from "./affinity_ops_write_api";
 import { invList } from "./affinity_docs_onb_write_api";
+import { confirmEntity } from "./affinity_confirm_entity";
 const CY = "#00C4CC";
 const Badge = ({ label, colors }) => (<span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:600, background:colors?.bg||"#eee", color:colors?.color||"#333", whiteSpace:"nowrap" }}>{label}</span>);
 const fmt = (n,s="£") => s+Math.abs(Number(n||0)).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -385,8 +386,8 @@ export default function AffinityInvoicing({ onNav }) {
           <button style={{ ...nb, marginLeft:"auto" }}
                   title="Turns approved, unbilled time into invoices up to a date — the bridge between the time recorded and the fee charged"
                   onClick={async()=>{
-                    const e = window.prompt("Entity id to bill?");
-                    if (!e) return;
+                    const e = await confirmEntity(window.prompt("Entity id to bill?"), "run billing for");
+                  if (!e) return;
                     const d = window.prompt("Bill WIP up to which date (YYYY-MM-DD)?");
                     if (!d) return;
                     const r = await OW.runBilling(Number(e), d);

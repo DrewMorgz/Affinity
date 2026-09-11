@@ -4,6 +4,7 @@ import * as ME from "./affinity_monthend_api";
 import { yearEndClose } from "./affinity_fiduciary_api";
 import { isConfigured } from "./affinity_accounting_supabase";
 import EntitySearch from "./affinity_entity_search";
+import { confirmEntity } from "./affinity_confirm_entity";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ACCOUNTING OPERATIONS
@@ -1077,8 +1078,8 @@ export default function AffinityAccountingOps({ onNav }) {
                     onClick={async () => {
                       const rec = window.prompt("Reconciliation id with the shortfall?");
                       if (!rec) return;
-                      const fe = window.prompt("Affinity entity id paying it in?");
-                      if (!fe) return;
+                      const fe = await confirmEntity(window.prompt("Affinity entity id paying it in?"), "remediate a client money shortfall from");
+                  if (!fe) return;
                       const fb = window.prompt("Affinity bank account id?");
                       if (!fb) return;
                       const d = window.prompt("Date (YYYY-MM-DD)?");
@@ -1170,7 +1171,7 @@ export default function AffinityAccountingOps({ onNav }) {
         <button style={btn(false)}
                 title="VAT accounted for by the buyer on cross-border services — both sides are posted, so the net effect is nil"
                 onClick={async()=>{
-                  const e = window.prompt("Entity id?");
+                  const e = await confirmEntity(window.prompt("Entity id?"), "post against");
                   if (!e) return;
                   const d = window.prompt("Date (YYYY-MM-DD)?");
                   if (!d) return;
@@ -1194,7 +1195,7 @@ export default function AffinityAccountingOps({ onNav }) {
         <button style={btn(false)}
                 title="Recording only the net loses the tax the firm may be able to reclaim or credit"
                 onClick={async()=>{
-                  const e = window.prompt("Entity id?");
+                  const e = await confirmEntity(window.prompt("Entity id?"), "post against");
                   if (!e) return;
                   const d = window.prompt("Date (YYYY-MM-DD)?");
                   if (!d) return;
@@ -1453,8 +1454,8 @@ export default function AffinityAccountingOps({ onNav }) {
           <button style={btn(false)}
                   title="An unreleased deferral is a misstatement that fails quietly — the figures simply stay wrong"
                   onClick={async()=>{
-                    const e = window.prompt("Entity id?");
-                    if (!e) return;
+                    const e = await confirmEntity(window.prompt("Entity id?"), "post against");
+                  if (!e) return;
                     const per = window.prompt("Period (YYYY-MM)?");
                     if (!per) return;
                     const r = await OPS.deferredIncomeRun(Number(e), per);

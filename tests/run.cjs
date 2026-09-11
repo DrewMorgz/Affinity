@@ -3419,6 +3419,43 @@ group("097 — a missing currency is not sterling");
      /Bank name is required/.test(f) && /Asset description is required/.test(f));
 }
 
+
+group("Confirming which entity before writing to it");
+{
+  const h   = fs.readFileSync(path.join(SRC, "affinity_confirm_entity.js"), "utf8");
+  const ops = fs.readFileSync(path.join(SRC, "affinity_core_accounting_ops.jsx"), "utf8");
+  const inv = fs.readFileSync(path.join(SRC, "affinity_core_invoicing_v2.jsx"), "utf8");
+  const pay = fs.readFileSync(path.join(SRC, "affinity_core_payables.jsx"), "utf8");
+
+  // NINETEEN ACTIONS TAKE AN ENTITY ID TYPED INTO A PROMPT. Reading a figure
+  // against the wrong one is visible and recoverable. WRITING to the wrong one
+  // is not always either — billing, posting a tax entry, transferring an asset,
+  // remediating a client money shortfall. And 3 is one keystroke from 13.
+  //
+  // The number carries nothing a person can check. The name does.
+  ok("the id is resolved to a name before writing",
+     /confirmEntity/.test(h) && /hit\.name/.test(h));
+  ok("...and the jurisdiction and type are shown too",
+     /jurisdiction/.test(h) && /entity_type/.test(h));
+  ok("...and demo data is flagged in the confirmation", /DEMO DATA/.test(h));
+
+  // An id matching nothing is a typo by definition; offering to proceed would
+  // defeat the point.
+  ok("an unknown id refuses rather than asking",
+     /There is no entity with id/.test(h));
+  ok("...and says why proceeding would be wrong",
+     /how the wrong client gets touched/.test(h));
+
+  // Applied to the writes, not the reads.
+  ok("billing confirms the entity", /await confirmEntity\(window\.prompt\("Entity id to bill\?"\)/.test(inv));
+  ok("accounting ops writes confirm", /await confirmEntity\(/.test(ops));
+  ok("payables writes confirm", /await confirmEntity\(/.test(pay));
+
+  // It is not presented as the final answer.
+  ok("the proper fix is named rather than implied",
+     /not a substitute for a proper entity picker/.test(h));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
