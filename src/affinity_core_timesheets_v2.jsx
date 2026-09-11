@@ -617,7 +617,7 @@ export default function AffinityTimesheets({ onNav }) {
             ))}
             <div style={{ display:"flex",gap:8 }}>
               <button onClick={()=>setModal(null)} style={{ flex:1,background:"#f5f5f5",color:"#333",border:"none",borderRadius:8,padding:10,fontSize:13,fontWeight:600,cursor:"pointer" }}>Cancel</button>
-              <button onClick={()=>setModal(null)} style={{ flex:2,background:CY,color:"#fff",border:"none",borderRadius:8,padding:10,fontSize:13,fontWeight:600,cursor:"pointer" }}>Save changes</button>
+              <button onClick={()=>{ window.alert("This form saves nothing. Use Correct an entry, which does."); setModal(null); }} style={{ flex:2,background:CY,color:"#fff",border:"none",borderRadius:8,padding:10,fontSize:13,fontWeight:600,cursor:"pointer" }}>Save changes</button>
             </div>
           </div>
         </div>

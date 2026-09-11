@@ -726,7 +726,7 @@ Isle of Man · Malta · Cayman Islands · Cyprus · USA · United Kingdom`
           <Input label="Summary" value={form.note||""} onChange={v=>setForm(p=>({...p,note:v}))} />
           <Input label="Next action" value={form.next||""} onChange={v=>setForm(p=>({...p,next:v}))} />
           <Input label="Due date" type="date" value={form.dueDate||""} onChange={v=>setForm(p=>({...p,dueDate:v}))} />
-          <button onClick={()=>setModal(null)} style={{ width:"100%", background:CY, color:"#fff", border:"none", borderRadius:8, padding:10, fontSize:14, fontWeight:600, cursor:"pointer" }}>Save</button>
+          <button onClick={()=>{ window.alert("This is the old CRM screen and this form saves nothing. Use CRM (live), which records prospects and interactions properly."); setModal(null); }} style={{ width:"100%", background:CY, color:"#fff", border:"none", borderRadius:8, padding:10, fontSize:14, fontWeight:600, cursor:"pointer" }}>Save</button>
         </Modal>
       )}
 

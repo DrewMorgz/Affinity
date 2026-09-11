@@ -1273,8 +1273,8 @@ export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false })
                 </div>
                 <div style={{ ...s.fg, gridColumn:"1/-1" }}><label style={s.fgl}>Module access</label><select style={s.fgi}><option>All modules (office only)</option><option>Custom — select below</option></select></div>
               </div>
-              <div style={{ ...s.infoBox }}>An invitation email will be sent to the user with instructions to set their password and configure MFA.</div>
-              <div style={s.mActions}><button style={s.btnC} onClick={()=>setModal(null)}>Cancel</button><button style={s.btnS} onClick={()=>setModal(null)}>Create user & send invite</button></div>
+              <div style={{ ...s.infoBox }}>This form does not create anything yet. People get access by signing in with their Affinity Microsoft account — there is no separate password and no invitation to send. What needs adding first is their staff record.</div>
+              <div style={s.mActions}><button style={s.btnC} onClick={()=>setModal(null)}>Cancel</button><button style={s.btnS} onClick={()=>{ window.alert("There is no function to create a user yet, so nothing was created and no invitation was sent. Users arrive by signing in with their Microsoft account; their staff record is what needs adding first."); setModal(null); }}>Create user & send invite</button></div>
             </>)}
 
             {modal==="editRole" && (<>
@@ -1288,7 +1288,7 @@ export default function AffinityCoreSystemAdmin({ onNav, isSuperAdmin = false })
                   </div>
                 ))}
               </div>
-              <div style={s.mActions}><button style={s.btnC} onClick={()=>setModal(null)}>Cancel</button><button style={s.btnS} onClick={()=>setModal(null)}>Save permissions</button></div>
+              <div style={s.mActions}><button style={s.btnC} onClick={()=>setModal(null)}>Cancel</button><button style={s.btnS} onClick={()=>{ window.alert("Permission sets cannot be saved yet — there is no function behind this form. Roles are set per user on the Users tab, which does save."); setModal(null); }}>Save permissions</button></div>
             </>)}
 
 

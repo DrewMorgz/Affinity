@@ -462,7 +462,7 @@ export default function AffinityEGaming({ entity, onNav }) {
                 :<input style={{ width:"100%", padding:"8px 10px", border:"1.5px solid #e0e0e0", borderRadius:6, fontSize:12, outline:"none", boxSizing:"border-box" }} />}
               </div>
             ))}
-            <button onClick={()=>setModal(null)} style={{ width:"100%", background:CY, color:"#fff", border:"none", borderRadius:8, padding:10, fontSize:13, fontWeight:600, cursor:"pointer" }}>Save</button>
+            <button onClick={()=>{ window.alert("This form saves nothing yet — the gaming record update function exists in the database and has not been connected to this screen."); setModal(null); }} style={{ width:"100%", background:CY, color:"#fff", border:"none", borderRadius:8, padding:10, fontSize:13, fontWeight:600, cursor:"pointer" }}>Save</button>
           </div>
         </div>
       )}

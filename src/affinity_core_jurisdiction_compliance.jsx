@@ -589,7 +589,7 @@ export default function AffinityJurisdictionCompliance({ onNav }) {
                 :<input type={t} style={{ width:"100%", padding:"8px 10px", border:"1.5px solid #e0e0e0", borderRadius:6, fontSize:12, outline:"none", boxSizing:"border-box" }} />}
               </div>
             ))}
-            <button onClick={()=>setModal(null)} style={{ width:"100%", background:CY, color:"#fff", border:"none", borderRadius:8, padding:10, fontSize:13, fontWeight:600, cursor:"pointer" }}>Save</button>
+            <button onClick={()=>{ window.alert("This form saves nothing. Obligations are added and amended from the obligations table below, which does save."); setModal(null); }} style={{ width:"100%", background:CY, color:"#fff", border:"none", borderRadius:8, padding:10, fontSize:13, fontWeight:600, cursor:"pointer" }}>Save</button>
           </div>
         </div>
       )}

@@ -3113,6 +3113,54 @@ group("db/089 — the distribution check the guide claimed and the code lacked")
      /enough in \*\*that fund\*\*/.test(g));
 }
 
+
+group("A sweep for every fault class this build actually produced");
+{
+  const sql = fs.readFileSync(path.join(DB, "090_close_the_remaining_bypasses.sql"), "utf8");
+  const files = fs.readdirSync(SRC).filter((f) => f.endsWith(".jsx"));
+
+  // THE REACHABILITY AUDIT MEASURED ONE THING and nearly every serious fault
+  // today was a different kind. This asserts the shapes, not the instances.
+
+  // 1. A save button that only closes the modal. Six were found in five
+  //    modules after the statutory registers one — all live, all discarding
+  //    what was typed.
+  const discarding = [];
+  files.forEach((f) => {
+    const src = fs.readFileSync(path.join(SRC, f), "utf8");
+    const re = /<button[^>]*onClick=\{\(\)\s*=>\s*set(?:Modal|Form|Open)\((?:null|false)\)\}[^>]*>\s*([^<]{2,40}?)\s*<\/button>/g;
+    let m;
+    while ((m = re.exec(src)) !== null) {
+      const label = m[1].trim();
+      if (/^(save|submit|create|add|record|post|confirm|log|apply|ok)\b/i.test(label))
+        discarding.push(f + ': ' + label);
+    }
+  });
+  ok("no button labelled save only closes the dialog",
+     discarding.length === 0, discarding.slice(0, 4).join("; "));
+
+  // 2. Three more second paths that skipped their controls, found by looking
+  //    for pairs of functions named with the same words in a different order.
+  //    approve_accounts had 1 refusal and no audit entry beside
+  //    accounts_approve's 4 and an audit entry — and approving accounts is a
+  //    director signing a true and fair view.
+  ["approve_accounts", "draw_ic_loan", "post_tp_charge"].forEach((f) =>
+    ok(f + " delegates rather than bypassing",
+       new RegExp("(PERFORM|RETURN)\\s+\\w*" ).test(sql) && sql.includes(f)));
+  ok("the guarded targets are named", /accounts_approve/.test(sql)
+     && /ic_loan_draw/.test(sql) && /tp_charge_post/.test(sql));
+  ok("...and why they are closed while dormant is recorded",
+     /still a door/.test(sql));
+
+  // 3. The false promise. The create-user form said an invitation email would
+  //    be sent with instructions to set a password and configure MFA. No email
+  //    is sent, no user is created, and there are no passwords — three false
+  //    statements in one sentence on a screen that saved nothing.
+  const adm = fs.readFileSync(path.join(SRC, "affinity_core_system_admin.jsx"), "utf8");
+  ok("the invitation email promise is gone",
+     !/An invitation email will be sent/.test(adm));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
