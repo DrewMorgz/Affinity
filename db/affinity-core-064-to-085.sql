@@ -54,6 +54,35 @@ BEGIN
 END $roles$;
 
 
+-- ── Preamble ───────────────────────────────────────────────────────────────
+-- 1. The roles the grant blocks name.
+--    On Supabase anon and authenticated always exist and this does nothing. It
+--    is here so the file can also apply to a plain PostgreSQL database — a
+--    restored backup, a test build, or the Azure server this will move to —
+--    where a REVOKE naming a missing role would abort the whole run.
+DO $roles$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
+    CREATE ROLE anon NOLOGIN;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+    CREATE ROLE authenticated NOLOGIN;
+  END IF;
+END $roles$;
+
+-- 2. One function changes its return type inside this bundle.
+--    070 creates accounts_set_generate returning (statement, lines, totals) and
+--    071 replaces it with a different shape. CREATE OR REPLACE cannot change a
+--    return type, so on any database where the function already exists the run
+--    aborts at 070 — before 071 gets the chance to drop it.
+--
+--    Dropping it here means the bundle applies whatever state the database is
+--    in: at 063, part way through an earlier attempt, or already at 085.
+--    Everything that calls it is recreated later in the bundle, so nothing is
+--    left pointing at a function that no longer exists.
+DROP FUNCTION IF EXISTS accounts_set_generate(bigint) CASCADE;
+
+
 -- ───────────────────────────────────────────────────────────────────────
 -- 064_entity_responsibilities.sql
 -- ───────────────────────────────────────────────────────────────────────
