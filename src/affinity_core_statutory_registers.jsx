@@ -176,20 +176,33 @@ export default function AffinityStatutory() {
                 notes: v["Notes"] || null });
         }
       }
-      // ONLY THE FILING ONE CAN BE SAVED. The other four modals — recording a
-      // BO submission, an officer change, a certificate request and opening a
-      // dissolution — have no function behind them in the database at all.
-      // There are read functions for each (stat_bo_registers,
-      // stat_officer_changes, stat_cogs_list, stat_dissolutions) but nothing
-      // that writes.
-      //
-      // They previously closed and discarded what was typed, which read as
-      // success. Saying so plainly is worse to look at and better to rely on.
-      else
+      else if (modal === "boUpdate") {
+        const id = Number(v["Entity"]);
+        r = id ? await DW.statBoSubmission(id, v["Date"], v["Reference"], v["Notes"])
+               : { ok: false, live: true, error: "Enter the entity id." };
+      }
+      else if (modal === "cogRequest") {
+        const id = Number(v["Entity"]);
+        r = id ? await DW.statCertificateRequest(id, v["Date"], v["Notes"])
+               : { ok: false, live: true, error: "Enter the entity id." };
+      }
+      else if (modal === "dissolution") {
+        const id = Number(v["Entity"]);
+        r = id ? await DW.statDissolutionOpen(id, v["Date"], v["Notes"])
+               : { ok: false, live: true, error: "Enter the entity id." };
+      }
+      // Recording an OFFICER CHANGE stays unconnected on purpose. Appointing
+      // and resigning officers is Entity Admin's job and works there. A second
+      // route would be a second place for the register to disagree with
+      // itself, which is worse than one route and a signpost.
+      else if (modal === "officerChange")
         r = { ok: false, live: true, error:
-              "This form has no function behind it yet, so nothing was saved. " +
-              "The register can be read but not added to from here. Recorded as " +
-              "outstanding work rather than left to look as though it saved." };
+              "Officer appointments and resignations are recorded in Entity " +
+              "Admin, on the entity's Officers tab. They are not recorded here, " +
+              "deliberately — two places to change the same register is how the " +
+              "two end up disagreeing." };
+      else
+        r = { ok: false, live: true, error: "That form is not connected." };
     } catch (e) {
       r = { ok: false, live: true, error: String((e && e.message) || e) };
     }

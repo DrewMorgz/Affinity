@@ -2480,15 +2480,61 @@ group("Statements, and five modals that threw away what was typed");
   // Only one of the five has a function behind it. The other four are honest
   // about saving nothing rather than appearing to work.
   ok("logging a filing is wired", /DW\.statFilingAdd\s*\(/.test(st));
-  ok("the four with no backing function say so plainly",
-     /no function behind it yet/.test(st));
-  ok("...rather than being left to look as though they saved",
-     /look as though it saved/.test(st));
+  // Three of the four have since been built in db/086 and are wired. The
+  // fourth — recording an officer change — is deliberately signposted to
+  // Entity Admin rather than duplicated, because two routes to the same
+  // register is how the two end up disagreeing.
+  ok("three of the four now save", /DW\.statBoSubmission/.test(st)
+     && /DW\.statCertificateRequest/.test(st) && /DW\.statDissolutionOpen/.test(st));
+  ok("the fourth signposts rather than pretending",
+     /recorded in Entity/.test(st) && /end up disagreeing/.test(st));
 
   // An entity name is not an entity id, and matching on a name would be a
   // guess.
   ok("the filing form asks for an id rather than guessing at a name",
      /the wrong entity is worse than no entity/.test(st));
+}
+
+
+group("db/086 — the three statutory submissions that had no function at all");
+{
+  const sql = fs.readFileSync(path.join(DB, "086_statutory_submissions.sql"), "utf8");
+  const api = fs.readFileSync(path.join(SRC, "affinity_docs_onb_write_api.js"), "utf8");
+  const ui  = fs.readFileSync(path.join(SRC, "affinity_core_statutory_registers.jsx"), "utf8");
+
+  // Four modals had no function behind them. Three of them turn out to be
+  // statutory_filing records rather than registers in their own right, so they
+  // are built here rather than as new tables.
+  ["stat_bo_submission", "stat_certificate_request", "stat_dissolution_open"]
+    .forEach((f) => ok(f + " exists",
+      new RegExp("CREATE OR REPLACE FUNCTION " + f).test(sql)));
+  ["statBoSubmission", "statCertificateRequest", "statDissolutionOpen"]
+    .forEach((w) => ok(w + " is called by the screen",
+      new RegExp("DW\\." + w + "\\s*\\(").test(ui)));
+
+  // Each carries a check that makes it worth having rather than being a thin
+  // wrapper over stat_filing_add.
+  ok("a BO submission is refused on an incomplete register",
+     /not 100%%/.test(sql));
+  ok("...because filing one is a breach", /breach in most jurisdictions/.test(sql));
+  ok("a certificate is refused where filings are overdue",
+     /will not issue a certificate/.test(sql));
+  ok("...with the reason it would fail anyway", /would be\s*'\s*'refused/.test(sql)
+     || /request would be/.test(sql));
+  ok("a dissolution needs a reason", /nobody can reconstruct/.test(sql));
+  ok("...is refused with overdue filings", /does not discharge them/.test(sql));
+  ok("...and warns that officers may be pursued personally",
+     /officers '\s*'personally|officers/.test(sql));
+  ok("...and is refused with unbilled time", /writes that '\s*'work off|writes that/.test(sql));
+
+  // The unbilled figure must match what ea_entity_close uses, or the two
+  // checks disagree about the same number.
+  ok("unbilled time is measured the same way as on closing",
+     /entity_label = nm/.test(sql) && /sum\(value\)/.test(sql));
+
+  // Recording an officer change is deliberately NOT added here.
+  ok("officer changes are signposted to Entity Admin rather than duplicated",
+     /end up disagreeing/.test(ui));
 }
 
 // ── report ─────────────────────────────────────────────────────────────────

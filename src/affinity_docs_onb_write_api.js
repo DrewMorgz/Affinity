@@ -289,3 +289,33 @@ export const eaEntityClose = (entityId, reason, closedDate) =>
 // CDD and risk-rating gates, so it cannot be used to go round them.
 export const onbCaseGoLive = (caseId, ref) =>
   call("onb_case_go_live", { p_case: caseId, p_ref: ref || null });
+
+// ── Statutory submissions (db/086) ──────────────────────────────────────────
+// Three of the five modals in Statutory registers had no function behind them
+// at all — they collected input and discarded it. These are what they should
+// have been calling. Recording an officer change is deliberately not here:
+// appointing and resigning officers is Entity Admin's job and already works,
+// and a second route would be a second place for the register to disagree with
+// itself.
+
+// Refused unless the beneficial ownership register accounts for 100%. Filing
+// an incomplete BO register is a breach in most of these jurisdictions, and
+// Core already knows whether it is complete.
+export const statBoSubmission = (entityId, submittedDate, reference, notes) =>
+  call("stat_bo_submission", { p_entity: entityId, p_submitted_date: submittedDate,
+                               p_reference: reference || null, p_notes: notes || null });
+
+// Refused where filings are overdue. A registry will not issue a certificate
+// of good standing while they are outstanding, so the request would come back
+// refused a week later — better to be told now.
+export const statCertificateRequest = (entityId, requestedDate, purpose) =>
+  call("stat_certificate_request", { p_entity: entityId,
+                                     p_requested_date: requestedDate,
+                                     p_purpose: purpose || null });
+
+// Refused with overdue filings — winding an entity up does not discharge them,
+// and a registry will often pursue the officers personally — and refused with
+// unbilled time, which a dissolution writes off.
+export const statDissolutionOpen = (entityId, openedDate, reason) =>
+  call("stat_dissolution_open", { p_entity: entityId, p_opened_date: openedDate,
+                                  p_reason: reason });
