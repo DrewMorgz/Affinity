@@ -2770,6 +2770,33 @@ group("Seeing the result: reconciliation, movements, and the live lists");
   ok("...and the screen admits the same", /is sample data/.test(inv));
 }
 
+
+group("Scenario comparison, budget summary, consolidated position");
+{
+  const pl = fs.readFileSync(path.join(SRC, "affinity_core_planning.jsx"), "utf8");
+  const co = fs.readFileSync(path.join(SRC, "affinity_core_consolidation.jsx"), "utf8");
+
+  // Scenarios could be CREATED and never compared. A scenario you cannot
+  // compare against the approved budget is just a second set of numbers.
+  ok("comparing a scenario is reachable", /compareScenarios\(Number\(a\)/.test(pl));
+  ok("...with the reason", /just a second set of numbers/.test(pl));
+  ok("the budget summary is reachable", /budgetSummary\(Number\(id\)/.test(pl));
+
+  // CTA and NCI were reachable and the position they ADJUST was not, so the
+  // module could show what moved without showing what it moved from.
+  ok("the consolidated position is fetched",
+     /consolidatedSummary\(groupId/.test(co));
+  ok("...and rendered beside CTA and NCI", /consolSummary\.length/.test(co));
+  ok("...with the reason it matters", /impossible to\s*\n?\s*\/\/ sanity-check|sanity-check/.test(co));
+
+  // A state declaration and a render that referenced it went in as separate
+  // edits, and only the render landed — so the module referenced state that
+  // did not exist. Both are asserted here so a half-applied edit fails.
+  ok("the state it renders actually exists",
+     /const \[consolSummary, setConsolSummary\]/.test(co));
+  ok("...and something sets it", /setConsolSummary\(/.test(co));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

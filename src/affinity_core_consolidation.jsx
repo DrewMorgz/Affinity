@@ -25,7 +25,7 @@ import { useState, useMemo, useEffect } from "react";
 import { groupList, mappingList, mappingSet, runList, runRecord } from "./affinity_planning_api";
 // consolidated_cta and consolidated_nci were unreachable: this module's header
 // said it covered them and the code never called them.
-import { consolidatedCta, consolidatedNci } from "./affinity_consolidation_fx_api";
+import { consolidatedCta, consolidatedNci, consolidatedSummary } from "./affinity_consolidation_fx_api";
 
 const NAVY = "#001242", CY = "#00C4CC";
 const INK  = "var(--text-primary,#111)";
@@ -146,6 +146,11 @@ export default function AffinityConsolidation({ onNav }) {
   const [ctaRows, setCtaRows] = useState([]);
   const [nciRows, setNciRows] = useState([]);
   const [fxMsg, setFxMsg]     = useState("");
+  // The consolidated position itself. CTA and NCI were reachable and the
+  // position they adjust was not, so the module could show what moved without
+  // showing what it moved from — which leaves the figures impossible to
+  // sanity-check.
+  const [consolSummary, setConsolSummary] = useState([]);
   const [groupId, setGroupId] = useState(null);
 
   // Live group members and run register when the database is available.
@@ -521,10 +526,12 @@ export default function AffinityConsolidation({ onNav }) {
                       if (!groupId) { setFxMsg("Choose a group first."); return; }
                       setFxMsg("");
                       const y = String(period).slice(-4);
-                      const [c, n] = await Promise.all([
+                      const [c, n, sum] = await Promise.all([
                         consolidatedCta(groupId, (Number(y)-1)+"-12-31", y+"-12-31"),
                         consolidatedNci(groupId, y+"-12-31"),
+                        consolidatedSummary(groupId, y+"-12-31"),
                       ]);
+                      setConsolSummary((sum && sum.data) || []);
                       if (!c.live && !n.live) {
                         setFxMsg("Not signed in — these figures come from the consolidation engine and cannot be read yet.");
                         return;
@@ -539,6 +546,23 @@ export default function AffinityConsolidation({ onNav }) {
             </span>
           </div>
 
+          {consolSummary.length > 0 && (
+            <div style={{ background:"#fff", border:"0.5px solid #D9DEE5", borderRadius:10,
+                          padding:"12px 14px", marginBottom:12 }}>
+              <div style={{ fontSize:11, fontWeight:600, color:"#5B6B7B", marginBottom:8,
+                            textTransform:"uppercase", letterSpacing:"0.4px" }}>
+                Consolidated position — what CTA and NCI adjust
+              </div>
+              {consolSummary.map((r,i2)=>(
+                <div key={i2} style={{ display:"flex", justifyContent:"space-between",
+                                       fontSize:12, padding:"3px 0",
+                                       borderBottom:"0.5px solid #f0f0f0" }}>
+                  <span>{r.line}</span>
+                  <span style={{ fontVariantNumeric:"tabular-nums" }}>{r.amount}</span>
+                </div>
+              ))}
+            </div>
+          )}
           {fxMsg && (
             <div style={{ padding:"9px 12px", borderRadius:7, fontSize:11.5, marginBottom:14,
                           background:"#FDF4DC", border:"0.5px solid #E5CE9A", color:"#7B4F1D" }}>

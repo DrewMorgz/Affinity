@@ -22,7 +22,7 @@
 // db/001-051 is run; every write below maps to an RPC that already exists.
 // ─────────────────────────────────────────────────────────────────────────────
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
-import { budgetList, budgetGrid, setBudgetCell, submitBudget, approveBudget, pivotToGrid } from "./affinity_planning_api";
+import { budgetList, budgetGrid, setBudgetCell, submitBudget, approveBudget, pivotToGrid, compareScenarios, budgetSummary } from "./affinity_planning_api";
 import { planningScenarioCreate } from "./affinity_docs_onb_write_api";
 import { phaseFee, phaseFees, phaseHeadcount, phaseStaffCost, projectBalanceSheet, daysInMonth,
          FREQUENCIES, PHASING, COST_CENTRES, BUDGET_STAGES,
@@ -1326,7 +1326,35 @@ export default function AffinityPlanning({ onNav, userName = "" }) {
           <div style={{ display:"flex", alignItems:"center", gap:9, marginBottom:11, flexWrap:"wrap" }}>
             <div style={{ fontSize:13, fontWeight:600, color:NAVY }}>Scenarios</div>
             <span style={{ fontSize:11, color:MUT }}>A scenario is a copy of an approved budget. Changing one never touches the approved figures.</span>
-            <button style={{ ...btnP, marginLeft:"auto" }} onClick={createScenario}>＋ New scenario from approved budget</button>
+            <button style={{ ...btnP, marginLeft:"auto" }}
+                    title="A scenario you cannot compare against the approved budget is just a second set of numbers"
+                    onClick={async()=>{
+                      const a=window.prompt("Approved budget id?"); if(!a) return;
+                      const b=window.prompt("Scenario id to compare against it?"); if(!b) return;
+                      const r=await compareScenarios(Number(a), Number(b));
+                      if(!r||!r.live){ window.alert("Not signed in."); return; }
+                      const rows=r.data||[];
+                      window.alert(rows.length
+                        ? "Where they differ:\n"+rows.slice(0,20).map(x=>
+                            `  ${x.account_code} ${x.account_name||""}: ${x.amount_a} vs ${x.amount_b} (${x.variance})`).join("\n")
+                        : "They do not differ on any account.");
+                    }}>
+              Compare to a scenario
+            </button>
+            <button style={btnP}
+                    title="The budget as a whole, rather than account by account"
+                    onClick={async()=>{
+                      const id=window.prompt("Budget id?"); if(!id) return;
+                      const r=await budgetSummary(Number(id));
+                      if(!r||!r.live){ window.alert("Not signed in."); return; }
+                      const rows=r.data||[];
+                      window.alert(rows.length
+                        ? rows.slice(0,25).map(x=>`  ${x.account_code} ${x.account_name||""}: ${x.total}`).join("\n")
+                        : "Nothing recorded for that budget.");
+                    }}>
+              Budget summary
+            </button>
+            <button style={{ ...btnP }} onClick={createScenario}>＋ New scenario from approved budget</button>
           </div>
 
           <div style={{ background:CARD, border:`0.5px solid ${LINE}`, borderRadius:9, overflow:"hidden", marginBottom:18 }}>
