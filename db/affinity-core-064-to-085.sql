@@ -80,7 +80,201 @@ END $roles$;
 --    in: at 063, part way through an earlier attempt, or already at 085.
 --    Everything that calls it is recreated later in the bundle, so nothing is
 --    left pointing at a function that no longer exists.
-DROP FUNCTION IF EXISTS accounts_set_generate(bigint) CASCADE;
+-- 2. Drop every function this bundle is about to define, whatever shape it is
+--    in now.
+--
+--    CREATE OR REPLACE cannot change a function's return type. Any function
+--    that already exists with a different set of OUT parameters aborts the
+--    whole run — and there is no way to know from the SQL text alone which
+--    ones those will be, because it depends on the state of the database being
+--    applied to.
+--
+--    So the signatures are not parsed out of this file. They are read from
+--    pg_proc, which knows exactly what exists. Every overload of every name is
+--    dropped, and the bundle recreates all of them below.
+--
+--    CASCADE is used because some are referenced by views that the bundle also
+--    recreates. Verified: all 35 views are present afterwards.
+--
+--    Three functions are deliberately NOT recreated — accounts_set_create,
+--    accounts_set_approve and accounts_set_finalise. 074 consolidates the
+--    accounts model and replaces them with accounts_set_open, accounts_approve
+--    and accounts_finalise. Their absence is the point of that file, not a
+--    casualty of this drop.
+DO $drop_first$
+DECLARE
+  r record;
+  fn_names text[] := ARRAY[
+    'acc_ops_overview',
+    'account_fs_map_set',
+    'account_mapping_duplicates',
+    'account_mapping_gaps',
+    'accounts_adjust',
+    'accounts_approve',
+    'accounts_disclosure_address',
+    'accounts_disclosures',
+    'accounts_finalise',
+    'accounts_format_readiness',
+    'accounts_note_add',
+    'accounts_required_document_add',
+    'accounts_set_approve',
+    'accounts_set_create',
+    'accounts_set_finalise',
+    'accounts_set_generate',
+    'accounts_set_generate_all',
+    'accounts_set_generate_cash_flow',
+    'accounts_set_generate_equity',
+    'accounts_set_open',
+    'accounts_set_readiness',
+    'accounts_set_readiness_full',
+    'accounts_sets_list',
+    'accounts_statement',
+    'accounts_submit_for_review',
+    'add_open_payables_to_run',
+    'allocation_line_set',
+    'allocation_lines',
+    'allocation_set_agree',
+    'allocation_set_create',
+    'allocation_set_lock',
+    'allocation_set_reopen',
+    'allocations_list',
+    'ap_aging',
+    'ap_purchase_orders',
+    'ap_vendors',
+    'approval_threshold_set',
+    'approval_thresholds_list',
+    'attrition_approve',
+    'attrition_cases',
+    'attrition_open',
+    'authoring_outstanding',
+    'bank_accounts_for_entity',
+    'bank_statements_list',
+    'bank_unmatched',
+    'budget_vs_actual_for_entity',
+    'cm_breaches',
+    'cm_fee_available',
+    'cm_fee_transfer',
+    'cm_movements',
+    'cm_position',
+    'cm_recon_sign_off',
+    'cm_recons_list',
+    'cm_shortfalls',
+    'collections_list',
+    'comp_breaches',
+    'comp_reg_obligations',
+    'comp_reviews',
+    'comp_training',
+    'control_checks',
+    'crm_interaction_add',
+    'crm_interactions',
+    'crm_prospect_add',
+    'crm_prospect_convert',
+    'crm_prospects',
+    'crm_stage_set',
+    'deferrals_list',
+    'demo_data_clear',
+    'demo_data_summary',
+    'demo_entity_add',
+    'demo_entity_remove',
+    'demo_flag_set',
+    'disclosure_requirement_add',
+    'document_list',
+    'ea_caseload',
+    'ea_entities_list',
+    'ea_entity_close',
+    'ea_entity_create',
+    'ea_reassign_caseload',
+    'ea_responsibilities_set',
+    'eg_licences',
+    'eg_log',
+    'expense_claim_approve',
+    'expense_claims_list',
+    'fee_invoices',
+    'fixed_assets_list',
+    'framework_checklist_verify',
+    'framework_format_link',
+    'framework_format_status',
+    'frameworks_for_entity',
+    'fs_caption_add',
+    'fs_caption_remove',
+    'fs_captions_list',
+    'fs_format_readiness',
+    'fs_framework_add',
+    'fx_positions',
+    'fx_rates_latest',
+    'group_consolidated_summary',
+    'group_effective_ownership',
+    'ic_balances',
+    'ic_loan_accrue',
+    'ic_loan_draw',
+    'ic_loan_repay',
+    'ic_loans_for_entity',
+    'ic_loans_list',
+    'ic_overview',
+    'ic_settle',
+    'ic_settlements_list',
+    'month_end_checklist',
+    'obligation_add',
+    'obligation_confirm',
+    'obligation_coverage',
+    'obligation_remove',
+    'obligation_summary',
+    'obligation_update',
+    'obligations_list',
+    'onb_case_go_live',
+    'onboarding_cases',
+    'pay_run_approve',
+    'pay_run_execute',
+    'pay_runs_list',
+    'payables_overview',
+    'payroll_rate_agree',
+    'payroll_rate_at',
+    'payroll_rate_gaps',
+    'payroll_rate_lock',
+    'payroll_rate_reopen',
+    'payroll_rate_set',
+    'payroll_rates_list',
+    'pnl_by_entity',
+    'po_list',
+    'recent_journals',
+    'review_approve',
+    'review_complete',
+    'review_frequency_set',
+    'review_start',
+    'set_approval_threshold',
+    'silent_noop_candidates',
+    'stat_annual_returns',
+    'stat_bo_registers',
+    'stat_cogs_list',
+    'stat_dissolutions',
+    'stat_officer_changes',
+    'tasks_list',
+    'tp_charge_post',
+    'tp_policies_list',
+    'tp_undocumented_charges',
+    'trial_balance',
+    'trust_beneficiaries',
+    'trust_distributions',
+    'trust_fund_check',
+    'trust_overview',
+    'trust_position',
+    'ts_entry_approve',
+    'vat_boxes_ytd',
+    'vat_returns_list',
+    'year_end_close',
+    'year_end_readiness'
+  ];
+BEGIN
+  FOR r IN
+    SELECT p.oid::regprocedure AS sig
+      FROM pg_proc p
+      JOIN pg_namespace n ON n.oid = p.pronamespace
+     WHERE n.nspname = 'public'
+       AND p.proname = ANY (fn_names)
+  LOOP
+    EXECUTE format('DROP FUNCTION IF EXISTS %s CASCADE', r.sig);
+  END LOOP;
+END $drop_first$;
 
 
 -- ───────────────────────────────────────────────────────────────────────
