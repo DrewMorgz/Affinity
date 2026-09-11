@@ -52,6 +52,11 @@ const REPORTS = [
   { id: "dim",    label: "Analysis by dimension", needs: ["entity", "dim", "period"] },
   { id: "cf",     label: "Cash flow forecast",  needs: ["entity", "asAt", "buckets"] },
   { id: "ic",     label: "Intercompany check",  needs: [] },
+  // A statement is what you send when someone asks what they owe or are owed.
+  // Aged debt in aggregate answers how much; only the statement answers
+  // which invoices, which is what a query is actually about.
+  { id: "cust",   label: "Customer statement",  needs: ["entity", "asAt"] },
+  { id: "supp",   label: "Supplier statement",  needs: ["entity", "asAt"] },
 ];
 
 export default function AffinityReports({ onNav }) {
@@ -83,6 +88,8 @@ export default function AffinityReports({ onNav }) {
     if (rpt === "dim") res = await RPT.dimensionPnl(Number(entityId) || null, dimType, from, to);
     if (rpt === "cf")  res = await RPT.cashFlowForecast(Number(entityId) || null, asAt,
                                                         Number(buckets) || 6, 30);
+    if (rpt === "cust") res = await RPT.customerStatement(Number(ent), asAt);
+    if (rpt === "supp") res = await RPT.supplierStatement(Number(ent), asAt);
     if (rpt === "ic")  res = await RPT.icOverview(null);
     setBusy(false);
 

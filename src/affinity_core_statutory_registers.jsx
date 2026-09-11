@@ -147,6 +147,57 @@ export default function AffinityStatutory() {
   const [entitySearch, setEntitySearch] = useState("");
   const [view, setView]   = useState("calendar");
   const [modal, setModal] = useState(null);
+  // The five modals in this module collected input and threw it away — the
+  // save button called setModal(null) and nothing else. These hold the values
+  // and actually record them.
+  const [mf, setMf]       = useState({});
+  const [mMsg, setMMsg]   = useState("");
+  const [mBusy, setMBusy] = useState(false);
+
+  const saveModal = async () => {
+    setMBusy(true); setMMsg("");
+    const v = mf;
+    let r;
+    try {
+      if (modal === "newReturn") {
+        // The entity field is a search box, so what arrives is a name. The
+        // function takes an id, and there is no lookup on this screen yet —
+        // so a numeric id is required rather than guessing at a match.
+        const id = Number(v["Entity"]);
+        if (!id) {
+          r = { ok: false, live: true, error:
+                "Enter the entity id rather than the name. This form does not " +
+                "resolve a name to an id yet, and matching on a name would be a " +
+                "guess — the wrong entity is worse than no entity." };
+        } else {
+          r = await DW.statFilingAdd(id, {
+                filingType: v["Filing type"] || "Annual return",
+                dueDate: v["Date"], period: v["Period"] || null,
+                notes: v["Notes"] || null });
+        }
+      }
+      // ONLY THE FILING ONE CAN BE SAVED. The other four modals — recording a
+      // BO submission, an officer change, a certificate request and opening a
+      // dissolution — have no function behind them in the database at all.
+      // There are read functions for each (stat_bo_registers,
+      // stat_officer_changes, stat_cogs_list, stat_dissolutions) but nothing
+      // that writes.
+      //
+      // They previously closed and discarded what was typed, which read as
+      // success. Saying so plainly is worse to look at and better to rely on.
+      else
+        r = { ok: false, live: true, error:
+              "This form has no function behind it yet, so nothing was saved. " +
+              "The register can be read but not added to from here. Recorded as " +
+              "outstanding work rather than left to look as though it saved." };
+    } catch (e) {
+      r = { ok: false, live: true, error: String((e && e.message) || e) };
+    }
+    setMBusy(false);
+    if (r && r.ok) { setModal(null); setMf({}); setMMsg(""); return; }
+    if (r && r.live === false) { setMMsg("Not signed in — that cannot be saved."); return; }
+    setMMsg((r && r.error) || "That could not be saved.");
+  };
   const [jurF, setJurF]   = useState("");
   const [live, setLive]   = useState(null);
 
@@ -453,10 +504,15 @@ export default function AffinityStatutory() {
               <div key={l} style={{ marginBottom:12 }}>
                 <label style={{ display:"block", fontSize:11, fontWeight:600, color:"#555", marginBottom:4 }}>{l}</label>
                 {(l==="Entity"||l==="Client"||l==="Entity name"||l==="Client name"||l==="Linked entity")?<><input list="st-ent-1" placeholder="Search entity…" style={{ width:"100%", padding:"8px 10px", border:"1.5px solid #e0e0e0", borderRadius:6, fontSize:12, outline:"none" , boxSizing:"border-box" }} /><datalist id="st-ent-1">{(opts||[]).map(o=><option key={o} value={o}/>)}</datalist></>:t==="select"?<select style={{ width:"100%", padding:"8px 10px", border:"1.5px solid #e0e0e0", borderRadius:6, fontSize:12, outline:"none" }}>{(opts||[]).map(o=><option key={o}>{o}</option>)}</select>
-                :<input type={t} style={{ width:"100%", padding:"8px 10px", border:"1.5px solid #e0e0e0", borderRadius:6, fontSize:12, outline:"none", boxSizing:"border-box" }} placeholder={typeof opts==="string"?opts:""} />}
+                :<input type={t} value={mf[l]||""} onChange={e=>setMf({...mf,[l]:e.target.value})} style={{ width:"100%", padding:"8px 10px", border:"1.5px solid #e0e0e0", borderRadius:6, fontSize:12, outline:"none", boxSizing:"border-box" }} placeholder={typeof opts==="string"?opts:""} />}
               </div>
             ))}
-            <button onClick={()=>setModal(null)} style={{ width:"100%", background:CY, color:"#fff", border:"none", borderRadius:8, padding:10, fontSize:13, fontWeight:600, cursor:"pointer" }}>Save</button>
+            {mMsg && (
+              <div style={{ padding:"9px 12px", borderRadius:7, fontSize:11.5, marginBottom:10,
+                            background:"#FCEBEB", border:"0.5px solid #f0c9c9",
+                            color:"#A32D2D", whiteSpace:"pre-wrap" }}>{mMsg}</div>
+            )}
+            <button onClick={saveModal} disabled={mBusy} style={{ width:"100%", background:CY, color:"#fff", border:"none", borderRadius:8, padding:10, fontSize:13, fontWeight:600, cursor:"pointer" }}>Save</button>
           </div>
         </div>
       )}

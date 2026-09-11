@@ -2452,6 +2452,45 @@ group("A duplicate function that bypassed its own controls");
   ok("...with the reason", /every chase starts from nothing/.test(ow));
 }
 
+
+group("Statements, and five modals that threw away what was typed");
+{
+  const rep = fs.readFileSync(path.join(SRC, "affinity_core_reports.jsx"), "utf8");
+  const st  = fs.readFileSync(path.join(SRC, "affinity_core_statutory_registers.jsx"), "utf8");
+
+  // A statement is what you send when someone asks what they owe. Aged debt in
+  // aggregate answers "how much"; only the statement answers "which invoices",
+  // which is what a query is actually about.
+  ok("the customer statement is reachable", /RPT\.customerStatement\s*\(/.test(rep));
+  ok("the supplier statement is reachable", /RPT\.supplierStatement\s*\(/.test(rep));
+  ok("...and why it differs from aged debt is recorded",
+     /which invoices/.test(rep));
+
+  // THE WORST FAULT OF ITS KIND FOUND SO FAR. Five modals collected input and
+  // ended in a button that called setModal(null) and nothing else. The fields
+  // were typed, the dialog closed, and the data was discarded. That is worse
+  // than a missing button: it reads as success.
+  ok("the save button now saves rather than just closing",
+     /onClick=\{saveModal\}/.test(st));
+  ok("...and the values typed are captured",
+     /onChange=\{e=>setMf\(/.test(st));
+  ok("the fault is recorded so it is not reintroduced",
+     /threw it away|discarded/.test(st));
+
+  // Only one of the five has a function behind it. The other four are honest
+  // about saving nothing rather than appearing to work.
+  ok("logging a filing is wired", /DW\.statFilingAdd\s*\(/.test(st));
+  ok("the four with no backing function say so plainly",
+     /no function behind it yet/.test(st));
+  ok("...rather than being left to look as though they saved",
+     /look as though it saved/.test(st));
+
+  // An entity name is not an entity id, and matching on a name would be a
+  // guess.
+  ok("the filing form asks for an id rather than guessing at a name",
+     /the wrong entity is worse than no entity/.test(st));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
