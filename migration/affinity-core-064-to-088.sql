@@ -109,6 +109,58 @@ END $roles$;
 --    accounts model and replaces them with accounts_set_open, accounts_approve
 --    and accounts_finalise. Their absence is the point of that file, not a
 --    casualty of this drop.
+
+-- 3. accounts_set must exist before anything that RETURNS it.
+--
+--    070 creates functions declared `RETURNS accounts_set`. A function's
+--    return type is resolved when the function is created, not when it runs —
+--    so if the table is absent at that moment the whole run stops there with
+--    "relation accounts_set does not exist".
+--
+--    069 creates it and 074 deliberately drops it, replacing it with
+--    fs_accounts_set. On a database where 074 has already run the table is
+--    therefore gone, and the bundle depends on 069 recreating it before 070
+--    needs it. That held on every database I could build and did not hold on
+--    Andy's, and I could not reproduce why.
+--
+--    Rather than keep guessing, this removes the dependency: the table is
+--    created here if it is missing, before anything at all refers to it. Where
+--    it already exists this does nothing. 074 still drops it, so the end state
+--    is identical either way.
+CREATE TABLE IF NOT EXISTS accounts_set (
+  id             bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  entity_id      bigint NOT NULL REFERENCES entity(id),
+  framework_code text NOT NULL REFERENCES reporting_framework(code),
+  period_start   date NOT NULL,
+  period_end     date NOT NULL,
+  prior_start    date,
+  prior_end      date,
+  ccy            char(3) NOT NULL DEFAULT 'GBP',
+
+  -- draft -> in_review -> finalised -> approved -> filed
+  status         text NOT NULL DEFAULT 'draft',
+
+  basis_of_preparation text,               -- required where no framework is prescribed
+  going_concern_basis  boolean,
+  going_concern_note   text,
+  audit_required       boolean,
+  auditor              text,
+  audit_opinion        text,
+
+  prepared_by    text NOT NULL DEFAULT current_app_user(),
+  prepared_at    timestamptz NOT NULL DEFAULT now(),
+  reviewed_by    text,
+  reviewed_at    timestamptz,
+  approved_by    text,                     -- the director who signs
+  approved_at    timestamptz,
+  filed_at       timestamptz,
+  filed_ref      text,
+
+  CONSTRAINT accounts_set_period CHECK (period_end > period_start),
+  CONSTRAINT accounts_set_status CHECK (status IN ('draft','in_review','finalised','approved','filed')),
+  UNIQUE (entity_id, period_start, period_end)
+);
+
 DO $drop_first$
 DECLARE
   r record;
