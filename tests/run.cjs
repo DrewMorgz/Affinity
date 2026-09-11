@@ -3285,7 +3285,7 @@ group("Behavioural control tests, and a broken check that inverted them");
   // tooling: a check that cannot fail is no check at all.
   ok("the correct detection is recorded", /returns an EMPTY STRING/.test(dq));
   ok("...and why the obvious form is wrong",
-     /never matches/.test(dq) || /reported ten controls/.test(dq));
+     /never matched/.test(dq) && /read as a success/.test(dq));
 
   // Source tests assert a check is WRITTEN. These assert it FIRES. 087 found a
   // segregation-of-duties rule operating on an empty table, which every
