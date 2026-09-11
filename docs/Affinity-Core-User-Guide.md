@@ -295,9 +295,18 @@ unmapped accounts rather than listing the mapped ones.
 
 ## Payables and purchasing
 
-**Assembling, approving and executing a payment run are three separate acts.**
-The person who chooses who gets paid should not authorise it, nor release it.
-That is the control that stops a payment to an account nobody checked.
+**Assembling, approving and releasing a payment run are three separate acts**,
+and Core enforces all three separations: you cannot approve a run you
+assembled, and you cannot release one you approved or assembled.
+
+Both halves matter for different reasons. Assembling and approving being
+separate stops one person paying an account nobody checked. Approving and
+releasing being separate is what stops the approver changing the bank details
+between the two.
+
+Until recently only the first half was enforced — releasing checked nothing,
+so an approver could also release. This guide claimed otherwise before the code
+caught up.
 
 Adding open payables to a run is refused if nothing was added, and says why —
 no open payables, or payables in a different currency from the run. A run that

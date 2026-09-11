@@ -3235,6 +3235,40 @@ group("db/091 and 092 — the anonymous key, and writes nobody could trace");
      /86 chances to miss one/.test(b));
 }
 
+
+group("db/093 — the third leg of the payment control");
+{
+  const sql = fs.readFileSync(path.join(DB, "093_the_third_leg_of_the_payment_control.sql"), "utf8");
+  const g   = fs.readFileSync(path.join(ROOT, "docs", "Affinity-Core-User-Guide.md"), "utf8");
+
+  // FOUND BY TESTING WHETHER THE TWO-PERSON RULES HOLD, not whether they exist.
+  //
+  // pay_run_approve refuses the person who assembled the run. pay_run_execute
+  // checked only that the run was approved — so the person who approved it
+  // could also release it. The control was two-way, not three-way, and the
+  // guide I wrote today said in terms that the person choosing who gets paid
+  // "should not authorise it, nor release it". The first half was true.
+  ok("releasing compares against who approved",
+     /lower\(r\.approved_by\) = lower\(me\)/.test(sql));
+  ok("...and against who assembled",
+     /lower\(r\.created_by\) = lower\(me\)/.test(sql));
+  ok("the reason the second gap matters is stated",
+     /where bank details can change/.test(sql));
+
+  // accounts_approve refused self-approval; accounts_finalise refused only a
+  // missing set. Finalising is what makes the figures the filed ones.
+  ok("finalising refuses the preparer",
+     /lower\(s\.prepared_by\) = lower\(me\)/.test(sql));
+  ok("...with the reason", /closes the door on them/.test(sql));
+
+  // The guide claimed the three-way separation before it existed. It now
+  // describes what the code does and says so.
+  ok("the guide describes all three separations",
+     /cannot release one you approved or assembled/.test(g));
+  ok("...and admits it was ahead of the code",
+     /before the code\s*\n?caught up|caught up/.test(g));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
