@@ -686,6 +686,39 @@ export default function AffinityPayables({ onNav }) {
                 onClick={()=>openPForm("goods")}>
           Record goods received
         </button>
+        <button style={btn(false)}
+                title="An invoice can arrive without an order, so recording it is separate from matching it"
+                onClick={async()=>{
+                  const e=window.prompt("Entity id?"); if(!e) return;
+                  const sup=window.prompt("Supplier?"); if(!sup) return;
+                  const ref=window.prompt("Invoice reference?"); if(!ref) return;
+                  const d=window.prompt("Invoice date (YYYY-MM-DD)?"); if(!d) return;
+                  const due=window.prompt("Due date (optional)?");
+                  const net=window.prompt("Net amount?"); if(!net) return;
+                  const ccy=window.prompt("Currency?","GBP"); if(!ccy) return;
+                  const r=await PAY.supplierInvoiceRecord({
+                    entityId:Number(e), supplier:sup, reference:ref, invoiceDate:d,
+                    dueDate:due||null, net:Number(net), ccy });
+                  window.alert(r&&r.ok?"Supplier invoice recorded."
+                    :(r&&r.error)||"That could not be recorded.");
+                  load();
+                }}>
+          Record a supplier invoice
+        </button>
+        <button style={btn(false)}
+                title="The third leg: the order, the goods, and the invoice. A tolerance is explicit because an exact match almost never happens."
+                onClick={async()=>{
+                  const si=window.prompt("Supplier invoice id?"); if(!si) return;
+                  const po=window.prompt("Purchase order id?"); if(!po) return;
+                  const tol=window.prompt("Tolerance %? e.g. 5","5"); if(tol==null) return;
+                  const r=await PAY.invoiceMatchToPo(Number(si), Number(po),
+                                                     "three-way", Number(tol));
+                  window.alert(r&&r.ok?"Matched."
+                    :(r&&r.error)||"That could not be matched.");
+                  load();
+                }}>
+          Match an invoice to an order
+        </button>
       </div>
       <div style={{ fontSize: 11, fontWeight: 600, color: MUT, marginBottom: 10,
                     textTransform: "uppercase", letterSpacing: "0.4px" }}>

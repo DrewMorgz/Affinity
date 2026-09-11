@@ -1144,7 +1144,11 @@ group("Reports — ten engine functions that had no interface");
   ok("the module is reachable", /id:"reports"/.test(sh) && /case "reports"/.test(sh));
 
   ["report_ar_aging", "report_ap_aging", "report_ar_overdue_interest",
-   "report_vat_by_jurisdiction", "report_dimension_pnl", "customer_statement_for",
+   "report_vat_by_jurisdiction", "report_dimension_pnl",
+   // customer_statement, not customer_statement_for: the latter returns a bare
+   // invoice list with no ageing and no document reference, which is not a
+   // statement. Changed when that was noticed, so this assertion changes with it.
+   "customer_statement",
    "supplier_statement", "cash_flow_forecast", "rolling_forecast_summary",
    "ic_overview"].forEach((f) =>
     ok(f + " is called", new RegExp('"' + f + '"').test(api)));
@@ -2611,6 +2615,46 @@ group("The dashboard greeting, and an id that pointed at the wrong colleague");
   ok("...and the reason is recorded", /greeted "Joanne"/.test(db));
   ok("the id is only used for sample figures",
      /id is used only to pick sample figures/.test(db));
+}
+
+
+group("Year end, three-way matching, asset transfers, and a statement that was not one");
+{
+  const rep  = fs.readFileSync(path.join(SRC, "affinity_reports_api.js"), "utf8");
+  const opsU = fs.readFileSync(path.join(SRC, "affinity_core_accounting_ops.jsx"), "utf8");
+  const payU = fs.readFileSync(path.join(SRC, "affinity_core_payables.jsx"), "utf8");
+
+  // TWO FUNCTIONS EXIST AND ONLY ONE IS A STATEMENT. customer_statement_for
+  // returns a bare invoice list; customer_statement returns a document
+  // reference, due date, currency, days overdue and an ageing bucket. The
+  // wrapper pointed at the first, so the report labelled "Customer statement"
+  // would have produced numbers the recipient could not reconcile to anything.
+  ok("the customer statement uses the function that is actually a statement",
+     /call\("customer_statement", \{ p_entity/.test(rep));
+  ok("...and the reason is recorded", /cannot reconcile to anything/.test(rep));
+
+  // YEAR END CLOSE was wrapped with no screen — the least reversible thing in
+  // Core and no way to reach it.
+  ok("closing the year is reachable", /yearEndClose\(Number\(meEntity\)/.test(opsU));
+  ok("...and says it is not reversible in the ordinary way",
+     /not reversible in the/.test(opsU));
+  ok("...and distinguishes hard gates from advisory ones",
+     /hard gates and cannot be overridden/.test(opsU));
+  ok("...offering the override only after seeing which kind failed",
+     /Offer the override only after seeing which/.test(opsU));
+
+  // Three-way matching had two legs and no third: an invoice could not be
+  // recorded against an order.
+  ok("recording a supplier invoice is reachable",
+     /PAY\.supplierInvoiceRecord\s*\(/.test(payU));
+  ok("matching it to an order is reachable",
+     /PAY\.invoiceMatchToPo\s*\(/.test(payU));
+  ok("...and the tolerance is explicit", /exact match almost never happens/.test(payU));
+
+  // A transfer is not a disposal.
+  ok("transferring an asset between entities is reachable",
+     /OPS\.assetTransfer\s*\(/.test(opsU));
+  ok("...and is distinguished from a disposal", /Not a disposal/.test(opsU));
 }
 
 // ── report ─────────────────────────────────────────────────────────────────

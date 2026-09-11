@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import * as OPS from "./affinity_accounting_ops_api";
 import * as ME from "./affinity_monthend_api";
+import { yearEndClose } from "./affinity_fiduciary_api";
 import { isConfigured } from "./affinity_accounting_supabase";
 import EntitySearch from "./affinity_entity_search";
 
@@ -655,6 +656,42 @@ export default function AffinityAccountingOps({ onNav }) {
                     }}>
               Close the period
             </button>
+            <button style={{ ...btn(false), borderColor: "#E5CE9A", color: AMB }}
+                    title="Rolls the year's result to reserves. The least reversible thing in Core."
+                    onClick={async () => {
+                      if (!meEntity) { setMeMsg("Enter an entity id first."); return; }
+                      const fs = window.prompt("Financial year START (YYYY-MM-DD)?");
+                      if (!fs) return;
+                      const fe = window.prompt("Financial year END (YYYY-MM-DD)?");
+                      if (!fe) return;
+                      if (!window.confirm(
+                        "Close the year " + fs + " to " + fe + "?\n\n" +
+                        "This rolls the result to reserves and is not reversible in the " +
+                        "ordinary way. Draft journals in the year and any client money " +
+                        "shortfall are hard gates and cannot be overridden. Months still " +
+                        "open, and accounts not yet approved, are advisory.\n\n" +
+                        "Take a backup first if you have not.")) return;
+                      setMeMsg("");
+                      let r = await yearEndClose(Number(meEntity), fs, fe, false);
+                      // Advisory gates come back as a refusal that CAN be overridden;
+                      // hard ones cannot. Offer the override only after seeing which.
+                      if (r && !r.ok && /override/i.test(r.error || "")) {
+                        if (window.confirm(
+                          r.error + "\n\nThese are advisory rather than hard gates. " +
+                          "Close anyway?")) {
+                          r = await yearEndClose(Number(meEntity), fs, fe, true);
+                        } else { setMeMsg("Year end not closed."); return; }
+                      }
+                      if (r && r.ok) {
+                        const n = Array.isArray(r.data) ? r.data.length : 1;
+                        setMeMsg("Year closed. " + n + " closing journal(s) posted to reserves.");
+                        loadMe(); return;
+                      }
+                      if (r && r.live === false) { setMeMsg("Not signed in."); return; }
+                      setMeMsg((r && r.error) || "The year could not be closed.");
+                    }}>
+              Close the year
+            </button>
             <button style={btn(false)}
                     title="Stronger than closing — a closed period can be reopened with a reason, a finally-locked one is meant to stay shut"
                     onClick={async () => {
@@ -1295,6 +1332,20 @@ export default function AffinityAccountingOps({ onNav }) {
         <button style={btn(false)}
                 onClick={()=>{ setAForm("depreciateOne"); setAF({}); setAMsg(""); }}>
           Depreciate one asset
+        </button>
+        <button style={btn(false)}
+                title="Not a disposal — the group still owns it, so it leaves one register at a transfer value and joins another"
+                onClick={async()=>{
+                  const a=window.prompt("Asset id?"); if(!a) return;
+                  const to=window.prompt("Transfer to which entity id?"); if(!to) return;
+                  const d=window.prompt("Date (YYYY-MM-DD)?"); if(!d) return;
+                  const v=window.prompt("Transfer value?"); if(v==null||v==="") return;
+                  const r=await OPS.assetTransfer(Number(a), Number(to), d, Number(v));
+                  setMsg(r&&r.ok?"Asset transferred."
+                        :(r&&r.error)||"That could not be transferred.");
+                  load();
+                }}>
+          Transfer to another entity
         </button>
       </div>
       <div style={{ display: "flex", justifyContent: "space-between",

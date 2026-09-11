@@ -50,8 +50,19 @@ export const arOverdueInterest = (annualRatePct, asAt) =>
                                        p_as_at: asAt || today() });
 
 // ── Statements ──────────────────────────────────────────────────────────────
-export const customerStatement = (customerId, asAt) =>
-  call("customer_statement_for", { p_customer: customerId, p_as_at: asAt || today() });
+// TWO FUNCTIONS EXIST AND ONLY ONE IS A STATEMENT.
+//
+// customer_statement_for returns a bare list of invoices: id, date, gross,
+// outstanding, status. customer_statement returns what you would actually send
+// someone: a document reference, the due date, the currency, days overdue and
+// an ageing bucket.
+//
+// This pointed at the first. A statement without ageing or a document
+// reference is a list of numbers the recipient cannot reconcile to anything,
+// which is the opposite of the point. It is keyed on the ENTITY, which is what
+// the report screen asks for, so the parameter matches too.
+export const customerStatement = (entityId, asAt) =>
+  call("customer_statement", { p_entity: entityId, p_as_at: asAt || today() });
 export const supplierStatement = (supplierId, asAt) =>
   call("supplier_statement", { p_supplier: supplierId, p_as_at: asAt || today() });
 
