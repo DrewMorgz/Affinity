@@ -2970,6 +2970,46 @@ group("Which frameworks apply, posted journals, and the rolling forecast");
      /def\.needs\.includes\("budget"\)/.test(rep));
 }
 
+
+group("Every namespace a module calls is imported or defined");
+{
+  // FOUND BY A SWEEP AFTER MAKING THE MISTAKE. A button called EA.eaServices()
+  // in a module that never imported EA. It compiled, and the render check
+  // passed, because the call only happens on click — so the failure would have
+  // arrived as a blank alert the first time someone pressed it.
+  //
+  // The check accounts for THREE ways a name can be legitimate: a namespace
+  // import, a named import, and a local const. An earlier version knew only
+  // the first and reported two false positives, which is worse than no check —
+  // a sweep that cries wolf gets ignored, and the real one gets ignored with
+  // it.
+  const files = fs.readdirSync(SRC).filter((f) => f.endsWith(".jsx"));
+  const known = new Set(["Math", "JSON", "Object", "Array", "String", "Number",
+                         "Date", "React", "Promise", "URL", "DOM"]);
+  const offenders = [];
+  files.forEach((f) => {
+    const src = fs.readFileSync(path.join(SRC, f), "utf8");
+    const ns    = new Set([...src.matchAll(/import \* as (\w+) from/g)].map((m) => m[1]));
+    const named = new Set([...src.matchAll(/import \{([^}]*)\} from/g)]
+                    .flatMap((m) => m[1].split(",").map((x) => x.trim().split(" as ").pop())));
+    // Comma-separated declarations count too: `const A = x, B = y, C = z`
+    // declares three names, and an earlier version saw only the first — which
+    // reported EVENTSL and NEWSL as undefined when both are declared on the
+    // same line as OFFICESL.
+    const local = new Set([...src.matchAll(/(?<![\w.])([A-Z][A-Z0-9_]*)\s*=(?!=)/g)]
+                    .map((m) => m[1]));
+    const destructured = new Set([...src.matchAll(/(?:const|let)\s*\{([^}]*)\}\s*=/g)]
+                    .flatMap((m) => m[1].split(",").map((x) => x.trim().split(":").pop().trim())));
+    [...src.matchAll(/(?<![\w.])([A-Z][A-Z0-9_]{1,7})\.\w+\s*\(/g)].forEach((m) => {
+      const n = m[1];
+      if (!ns.has(n) && !named.has(n) && !local.has(n) && !destructured.has(n)
+          && !known.has(n)) offenders.push(f + ": " + n);
+    });
+  });
+  ok("no module calls a namespace it never imports or defines",
+     offenders.length === 0, offenders.slice(0, 4).join("; "));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

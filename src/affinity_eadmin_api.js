@@ -68,3 +68,8 @@ export async function repAum()          { if (!isConfigured) return off(); retur
 export async function repBankBalances() { if (!isConfigured) return off(); return supabase.rpc("rep_bank_balances", {}); }
 export async function repSafeCustody(t) { if (!isConfigured) return off(); return supabase.rpc("rep_safe_custody", { p_type: t||null }); }
 export async function repSignatories()  { if (!isConfigured) return off(); return supabase.rpc("rep_signatories", {}); }
+
+// Which services Affinity provides to an entity. serviceSet could record one
+// and nothing could read them back, so the list fed billing and could not be
+// checked against what is actually being billed.
+export const eaServices = (entityId) => call("ea_services", { p_entity: entityId });

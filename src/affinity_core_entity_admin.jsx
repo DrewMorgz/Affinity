@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import * as DW from "./affinity_docs_onb_write_api";
 import * as OUT from "./affinity_output";
 import * as EW from "./affinity_entity_write_api";
+import * as EA from "./affinity_eadmin_api";
 import { filterEntitiesByAccess } from "./affinity_core_rbac";
 import { REGISTERS as RAW_REGISTERS, REGISTER_ORDER } from "./affinity_core_compliance";
 // "breaches" is rendered by its own view in Compliance and has no catalogue entry.
@@ -1864,6 +1865,20 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
                         <button style={s.mini}
                                 title="Feeds billing — a service provided and not recorded is one nobody invoices for"
                                 onClick={()=>openAct("serviceSet", null, entity.name)}>
+                          Set a service
+                        </button>
+                        <button style={s.mini}
+                                title="What is recorded as provided — the list feeds billing and could not be read back to check against what is billed"
+                                onClick={async()=>{
+                                  const r = await EA.eaServices(entityDbId);
+                                  if (!r || !r.live) { window.alert("Not signed in."); return; }
+                                  const rows = r.data || [];
+                                  window.alert(rows.length
+                                    ? "Services recorded for " + entity.name + ":\n"
+                                      + rows.map(x=>`  ${x.service}${x.active===false?" (inactive)":""}`).join("\n")
+                                    : "No services recorded for " + entity.name
+                                      + ". Anything provided is not being invoiced for.");
+                                }}>
                           Services
                         </button>
                         <button style={{ ...s.mini, color:"#A32D2D", borderColor:"#f0c9c9" }}

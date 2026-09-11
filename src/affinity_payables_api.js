@@ -182,3 +182,9 @@ export const icSettle = (creditorId, debtorId, date, ccy, amount) =>
 export const paymentsRunDueUpTo = (entityId, paymentDate, upToDue) =>
   call("run_payment", { p_entity_id: entityId, p_payment_date: paymentDate,
                         p_up_to_due: upToDue });
+
+// The principal outstanding on a group loan at a date: drawdowns less
+// repayments. The loan list showed the facility; this is what is actually
+// drawn, which is the figure that matters for interest and for elimination.
+export const icLoanPrincipal = (loanId, asAt) =>
+  call("ic_loan_principal", { p_loan: loanId, p_as_at: asAt });

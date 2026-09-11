@@ -383,6 +383,19 @@ export default function AffinityPayables({ onNav }) {
               Settle a balance
             </button>
             <button style={btn(false)}
+                    title="Drawdowns less repayments — what is actually drawn, which is the figure interest and elimination both depend on"
+                    onClick={async()=>{
+                      const l=window.prompt("Loan id?"); if(!l) return;
+                      const d=window.prompt("As at (YYYY-MM-DD)?"); if(!d) return;
+                      const r=await PAY.icLoanPrincipal(Number(l), d);
+                      if(!r||!r.live){ window.alert("Not signed in."); return; }
+                      const v=Array.isArray(r.data)?r.data[0]:r.data;
+                      window.alert("Principal outstanding at "+d+": "+
+                        (v==null?"nothing drawn":v));
+                    }}>
+              Loan principal
+            </button>
+            <button style={btn(false)}
                     title="Posts the charge a transfer pricing policy describes — the module flagged policies with nil markup and offered no way to post one"
                     onClick={async()=>{
                       const f=window.prompt("Charging entity id (the one providing the service)?");
