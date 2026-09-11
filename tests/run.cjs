@@ -2537,6 +2537,54 @@ group("db/086 — the three statutory submissions that had no function at all");
      /end up disagreeing/.test(ui));
 }
 
+
+group("Everyone was seeing Andrew Morgan and inheriting Super Admin");
+{
+  const sh = fs.readFileSync(path.join(SRC, "affinity_core_unified_v3.jsx"), "utf8");
+  const tk = fs.readFileSync(path.join(SRC, "affinity_core_tasks.jsx"), "utf8");
+  const au = fs.readFileSync(path.join(SRC, "affinity_auth.js"), "utf8");
+
+  // REPORTED BY A REAL USER, not found by an audit. Someone signed in with
+  // their own Microsoft account and landed in the app showing Andrew's name.
+  //
+  // Nobody was in anyone else's account: the Supabase session was always
+  // correct and writes were attributed properly. But the shell read
+  // USERS.find(u => u.id === uid) with uid fixed at 1, so the INTERFACE showed
+  // the wrong person and granted his Super Admin role to everyone.
+  //
+  // identityFromSession already existed, resolved the real user five ways, and
+  // fell back to the least privileged role on no match. It had no caller —
+  // the same fault as everything else in this audit, but this one was visible
+  // to a user on day one.
+  ok("the shell resolves the real signed-in user",
+     /identityFromSession\(\{ user: signedInUser \}/.test(sh));
+  ok("...and only falls back to a sample user with no session",
+     /signedInUser\s*\n?\s*\?/.test(sh));
+  ok("the fault is recorded so it is not reintroduced",
+     /uid fixed at 1|uid still selects/.test(sh));
+
+  // THE PROPERTY THAT MATTERS MOST. A staff record that does not match must
+  // never hand out Super Admin.
+  ok("an unmatched user gets the least privileged role",
+     /role: match \? match\.role : "Administrator"/.test(au));
+  ok("...and the mismatch is warned about rather than silently tolerated",
+     /no Core staff record matched/.test(au));
+
+  // Tasks hardcoded the user AND gave everyone system-manager rights, so the
+  // one permission check in that module passed for everybody.
+  // Matched on an ACTIVE declaration, not the comment that records what the
+  // old one was — a comment describing the bug should not fail the test that
+  // proves it is fixed.
+  ok("tasks no longer hardcodes the user",
+     !/^const CURRENT_USER = \{ name:/m.test(tk));
+  ok("...it takes the user from the shell",
+     /name: userName \|\| "Unknown user"/.test(tk));
+  ok("...and withholds the privileged action when the prop is missing",
+     /isSystemManager: !!isSuperAdmin/.test(tk));
+  ok("the shell passes the real user to tasks",
+     /<Tasks onNav=\{setMod\} userName=/.test(sh));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

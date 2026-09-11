@@ -49,9 +49,28 @@ const statusC = {
 };
 
 // Per review: anyone can add/assign, only system manager can delete
-const CURRENT_USER = { name:"Andrew Morgan", role:"Super Admin", isSystemManager:true };
+// Previously: const CURRENT_USER = { name:"Andrew Morgan", role:"Super Admin",
+//                                     isSystemManager:true };
+//
+// Hardcoded. Every user saw Andrew's name on "My tasks", had their tasks
+// created in his name, and got the delete button that is meant to be system
+// manager only — so the one permission check in this module passed for
+// everyone.
+//
+// The real user now comes from the shell as props. Defaulting isSystemManager
+// to FALSE matters: if the prop is ever missing, the module withholds the
+// privileged action rather than granting it.
 
-export default function AffinityTasks({ userId, onNav, initialView }) {
+export default function AffinityTasks({ userId, onNav, initialView, userName, isSuperAdmin}) {
+  // Derived from what the shell passes, not hardcoded. isSystemManager
+  // defaults to false so a missing prop withholds the privileged action
+  // rather than granting it.
+  const CURRENT_USER = {
+    name: userName || "Unknown user",
+    role: isSuperAdmin ? "Super Admin" : "User",
+    isSystemManager: !!isSuperAdmin,
+  };
+
   const [tasks, setTasks]           = useState(INITIAL_TASKS);
 
   useEffect(()=>{

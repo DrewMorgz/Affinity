@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import AffinityLoginPage from "./affinity_login_page";
-import { signOut as authSignOut } from "./affinity_auth";
+import { signOut as authSignOut, identityFromSession } from "./affinity_auth";
 import Planning from "./affinity_core_planning";
 import Consolidation from "./affinity_core_consolidation";
 import AccountingOps from "./affinity_core_accounting_ops";
@@ -393,7 +393,30 @@ export default function AffinityCore(){
   const [searchQ,setSearchQ]=useState("");
   const [shortcutsOpen,setShortcutsOpen]=useState(false);
   const [officeOpen,setOfficeOpen]=useState(false);
-  const user=USERS.find(u=>u.id===uid)||USERS[0];
+  // WHO IS ACTUALLY SIGNED IN.
+  //
+  // This previously read USERS.find(u => u.id === uid) with uid fixed at 1, so
+  // every signed-in person saw Andrew Morgan's name and inherited his Super
+  // Admin role. Nobody was in anyone else's account — the Supabase session was
+  // always correct and writes were attributed properly — but the interface
+  // showed the wrong person and granted the wrong permissions to everyone.
+  //
+  // identityFromSession already existed and did this correctly, including
+  // falling back to the LEAST privileged role when no staff record matches, so
+  // a matching gap can never hand out Super Admin by accident. It simply had
+  // no caller.
+  //
+  // The preview path is unchanged: with no Microsoft session, uid still
+  // selects a sample user so the app can be demonstrated without signing in.
+  const resolved = signedInUser
+    ? identityFromSession({ user: signedInUser }, USERS)
+    : null;
+  const user = resolved
+    ? (USERS.find(u => u.id === resolved.id) || {
+        id: null, name: resolved.name, role: resolved.role,
+        office: "—", av: (resolved.name || "?").slice(0, 1).toUpperCase(),
+      })
+    : (USERS.find(u=>u.id===uid)||USERS[0]);
   const rbacRole=deriveRbacRole(user.role);
   const navLabel=NAV.flatMap(s=>s.items).find(i=>i.id===mod)?.label||mod;
 
@@ -455,7 +478,7 @@ export default function AffinityCore(){
     if (mod && mod.slice(0,4) === "acc_") return <Accounting module={mod}/>;
     switch(mod){
       case "dashboard":    return <Dashboard userId={uid} onNav={setMod} officeFilter={officeFilter} userName={user?.name||""}/>;
-      case "tasks":        return <Tasks onNav={setMod}/>;
+      case "tasks":        return <Tasks onNav={setMod} userName={user?.name||""} isSuperAdmin={!!(user&&user.role&&user.role.indexOf("Super Admin")>=0)}/>;
       case "feedback":     return <Feedback userName={user?.name||""} isSuperAdmin={!!(user&&user.role&&user.role.indexOf("Super Admin")>-1)}/>;
       case "audit":        return <AuditLog userName={user?.name||""} isSuperAdmin={!!(user&&user.role&&user.role.indexOf("Super Admin")>-1)}/>;
       case "notifications":return <Tasks onNav={setMod} initialView="activity"/>;  // merged into Tasks
