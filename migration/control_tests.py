@@ -137,6 +137,53 @@ def run(db):
         check("an in-review set cannot be finalised without approval", st2 == 'in_review')
         db.psql("DELETE FROM fs_accounts_set WHERE id=%s;" % sid)
 
+    # Every staged workflow, tested by acting out of order and reading the
+    # resulting state. 098 was found this way: accounts_finalise was the only
+    # step in any workflow that did not check the one before it, and a draft
+    # set went straight to filed.
+    print("onboarding gate")
+    as_user('probe.alice@affinityco.com',
+            "SELECT onb_case_add('Probe','Probe Holdings Ltd','Isle of Man','Isle of Man','Company');")
+    cid = one(db, "SELECT id FROM onboarding_case ORDER BY id DESC LIMIT 1;")
+    if cid:
+        as_user('probe.bob@affinityco.com', "SELECT onb_case_go_live(%s,'PROBE');" % cid)
+        check("a case with no CDD cannot go live",
+              (one(db, "SELECT stage FROM onboarding_case WHERE id=%s;" % cid) or '').strip() != 'live')
+        as_user('probe.alice@affinityco.com',
+                "SELECT cdd_item_add(%s,'Probe','passport','probe');" % cid)
+        as_user('probe.bob@affinityco.com', "SELECT onb_case_go_live(%s,'PROBE');" % cid)
+        check("a case with UNVERIFIED CDD cannot go live",
+              (one(db, "SELECT stage FROM onboarding_case WHERE id=%s;" % cid) or '').strip() != 'live')
+        db.psql("DELETE FROM cdd_item WHERE case_id=%s; DELETE FROM onboarding_case WHERE id=%s;" % (cid, cid))
+
+    print("attrition sequence")
+    ent2 = one(db, "SELECT id FROM entity WHERE entity_class='client' LIMIT 1;")
+    if ent2:
+        db.psql("DELETE FROM attrition_approval; DELETE FROM attrition_case;")
+        as_user('probe.alice@affinityco.com',
+                "SELECT attrition_open(%s,'probe','d','a','b',current_date+90);" % ent2)
+        ac = one(db, "SELECT id FROM attrition_case ORDER BY id DESC LIMIT 1;")
+        napp = lambda: one(db, "SELECT count(*) FROM attrition_approval WHERE case_id=%s;" % ac)
+        as_user('probe.carol@affinityco.com',
+                "SELECT attrition_approve(%s,'GROUP','Group CEO','skip');" % ac)
+        check("the last attrition stage cannot be approved first", napp() == '0')
+        as_user('probe.bob@affinityco.com',
+                "SELECT attrition_approve(%s,'MANAGER','Manager','ok');" % ac)
+        as_user('probe.bob@affinityco.com',
+                "SELECT attrition_approve(%s,'MD','Managing Director','same');" % ac)
+        check("one person cannot approve two attrition stages", napp() == '1')
+        db.psql("DELETE FROM attrition_approval; DELETE FROM attrition_case;")
+
+    print("periodic review gate")
+    if ent2:
+        db.psql("DELETE FROM periodic_review WHERE entity_id=%s;" % ent2)
+        as_user('probe.alice@affinityco.com', "SELECT review_start(%s, current_date);" % ent2)
+        rv = one(db, "SELECT id FROM periodic_review ORDER BY id DESC LIMIT 1;")
+        as_user('probe.bob@affinityco.com', "SELECT review_approve(%s);" % rv)
+        check("a review cannot be approved before it is completed",
+              (one(db, "SELECT status FROM periodic_review WHERE id=%s;" % rv) or '').strip() != 'approved')
+        db.psql("DELETE FROM periodic_review WHERE id=%s;" % rv)
+
     print("integrity")
     for label, sql in [
         ("posted journals balance to nil",
