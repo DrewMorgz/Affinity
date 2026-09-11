@@ -3269,6 +3269,36 @@ group("db/093 — the third leg of the payment control");
      /before the code\s*\n?caught up|caught up/.test(g));
 }
 
+
+group("Behavioural control tests, and a broken check that inverted them");
+{
+  const ct = fs.readFileSync(path.join(ROOT, "migration", "control_tests.py"), "utf8");
+  const dq = fs.readFileSync(path.join(ROOT, "migration", "dbq.py"), "utf8");
+
+  // A CHECK THAT REPORTED EVERY REFUSAL AS A SUCCESS. pgserver's psql() does
+  // not raise on error and does not return the error text — it returns an
+  // EMPTY STRING. So `if "ERROR" in output` never matched, and every attack
+  // test I ran read as "ALLOWED" when the control had fired correctly.
+  //
+  // I reported ten controls as broken in one run. All ten were working. That is
+  // the same failure mode as everything else this audit has found, in my own
+  // tooling: a check that cannot fail is no check at all.
+  ok("the correct detection is recorded", /returns an EMPTY STRING/.test(dq));
+  ok("...and why the obvious form is wrong",
+     /never matches/.test(dq) || /reported ten controls/.test(dq));
+
+  // Source tests assert a check is WRITTEN. These assert it FIRES. 087 found a
+  // segregation-of-duties rule operating on an empty table, which every
+  // source-level test passes.
+  ok("behavioural tests exist separately from source tests",
+     /assert that the check FIRES/.test(ct));
+  ["double entry", "trust funds", "segregation of duties",
+   "reference data sanity", "access", "audit trail", "integrity"].forEach((area) =>
+    ok("covers " + area, ct.includes(area)));
+  ok("the anonymous key is asserted to reach nothing",
+     /can execute nothing/.test(ct));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
