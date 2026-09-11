@@ -82,6 +82,31 @@ def run(db):
     a = int(one(db, "SELECT count(*) FROM audit_event;") or 0)
     check("a change to a beneficial owner is recorded", a > b)
 
+    print("a missing rate is not zero")
+    check("billable time with no rate is refused",
+          refused(db, "SELECT ts_entry_add(1,current_date,'RateProbe','M','advice',2,true,NULL,'x');"))
+    check("billable time with a zero rate is refused",
+          refused(db, "SELECT ts_entry_add(1,current_date,'RateProbe','M','advice',2,true,0,'x');"))
+    check("non-billable time with no rate is allowed",
+          refused(db, "SELECT ts_entry_add(1,current_date,'RateProbe','M','admin',2,false,NULL,NULL);"),
+          want_refused=False)
+    db.psql("DELETE FROM timesheet_entry WHERE entity_label='RateProbe';")
+    g = one(db, "SELECT id FROM consol_group LIMIT 1;")
+    if g:
+        db.psql("DELETE FROM fx_rate WHERE rate_date='1990-01-01';")
+        check("a consolidation with no FX rate is refused",
+              refused(db, "SELECT * FROM consolidated_cta(%s,'1990-01-01','1990-12-31');" % g))
+
+    print("demo data")
+    real = one(db, "SELECT id FROM entity WHERE NOT coalesce(is_demo,false) LIMIT 1;")
+    if real:
+        check("a real entity cannot be flagged as demo",
+              refused(db, "SELECT demo_flag_set(%s, true);" % real))
+        check("removing a non-demo entity is refused",
+              refused(db, "SELECT demo_entity_remove(%s);" % real))
+    check("clearing demo data without the phrase is refused",
+          refused(db, "SELECT demo_data_clear('yes');"))
+
     print("integrity")
     for label, sql in [
         ("posted journals balance to nil",

@@ -3365,6 +3365,35 @@ group("094 and 095 — demo data one-way, and a missing rate that was read as ze
      /a failure gets investigated/.test(f));
 }
 
+
+group("096 — the rest of the missing-rate class");
+{
+  const f = fs.readFileSync(path.join(DB, "096_a_missing_rate_is_not_zero_either.sql"), "utf8");
+
+  // 095 fixed the CTA. This is the class, found by sweeping every
+  // COALESCE(<rate-like>, 0) in the schema — 19 occurrences, most defensible
+  // (a missing VAT rate meaning zero-rated, a disbursement recharged at cost),
+  // two not.
+
+  // Billable time with no rate has a value of zero. It appears on the
+  // timesheet, WIP does not show it, a billing run does not pick it up, and
+  // the write-off report has nothing to write off. The function already
+  // refused six things and not the one number that decides whether the work
+  // gets paid for.
+  ok("billable time requires a rate", /Billable time needs a charge-out rate/.test(f));
+  ok("...and says what happens without one", /worth\s*'\s*'nothing|worth nothing/.test(f));
+  ok("non-billable time with no rate stays allowed",
+     /IF p_billable AND \(p_rate IS NULL/.test(f));
+
+  // A reducing-balance asset with no rate never depreciates — silently, every
+  // period, leaving the asset at cost and overstating profit.
+  ok("a reducing balance asset requires a rate",
+     /reducing balance rate for % is not set/.test(f));
+  ok("...and why nobody would notice is recorded",
+     /Nobody\s*'\s*'queries a charge of nil|queries a charge of nil/.test(f));
+  ok("straight line requires a useful life", /useful life for % is not set/.test(f));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
