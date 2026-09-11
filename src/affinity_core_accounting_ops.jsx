@@ -1099,6 +1099,67 @@ export default function AffinityAccountingOps({ onNav }) {
   // ── VAT ───────────────────────────────────────────────────────────────────
   const Vat = () => (
     <div style={card}>
+      <div style={{ display:"flex", gap:6, marginBottom:12, flexWrap:"wrap" }}>
+        <button style={btn(true)}
+                title="Preparing and posting are separate so a return can be checked before it hits the accounts"
+                onClick={async()=>{
+                  const id = window.prompt("Prepared return id to post?");
+                  if (!id) return;
+                  const d = window.prompt("Posting date (YYYY-MM-DD)?");
+                  if (!d) return;
+                  const r = await OPS.vatReturnPost(Number(id), d);
+                  setMsg(r && r.ok ? "VAT return posted to the ledger."
+                        : (r && r.error) || "That could not be posted.");
+                  load();
+                }}>
+          Post a prepared return
+        </button>
+        <button style={btn(false)}
+                title="VAT accounted for by the buyer on cross-border services — both sides are posted, so the net effect is nil"
+                onClick={async()=>{
+                  const e = window.prompt("Entity id?");
+                  if (!e) return;
+                  const d = window.prompt("Date (YYYY-MM-DD)?");
+                  if (!d) return;
+                  const net = window.prompt("Net amount?");
+                  if (!net) return;
+                  const rate = window.prompt("VAT rate as a percentage, e.g. 20?");
+                  if (!rate) return;
+                  const acct = window.prompt("Expense account id?");
+                  if (!acct) return;
+                  const sup = window.prompt("Supplier?");
+                  const r = await OPS.reverseChargeRecord({
+                    entityId:Number(e), date:d, net:Number(net),
+                    vatRate:Number(rate), expenseAccountId:Number(acct), supplier:sup });
+                  setMsg(r && r.ok
+                    ? "Reverse charge recorded on both sides."
+                    : (r && r.error) || "That could not be recorded.");
+                  load();
+                }}>
+          Record a reverse charge
+        </button>
+        <button style={btn(false)}
+                title="Recording only the net loses the tax the firm may be able to reclaim or credit"
+                onClick={async()=>{
+                  const e = window.prompt("Entity id?");
+                  if (!e) return;
+                  const d = window.prompt("Date (YYYY-MM-DD)?");
+                  if (!d) return;
+                  const base = window.prompt("Gross amount before withholding?");
+                  if (!base) return;
+                  const rate = window.prompt("Withholding rate as a percentage?");
+                  if (!rate) return;
+                  const sup = window.prompt("Supplier?");
+                  const r = await OPS.withholdingTaxApply({
+                    entityId:Number(e), date:d, baseNet:Number(base),
+                    rate:Number(rate), supplier:sup });
+                  setMsg(r && r.ok ? "Withholding tax recorded."
+                        : (r && r.error) || "That could not be recorded.");
+                  load();
+                }}>
+          Record withholding tax
+        </button>
+      </div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
                     marginBottom: 10 }}>
         <div style={{ fontSize: 11, fontWeight: 600, color: MUT,
@@ -1278,6 +1339,22 @@ export default function AffinityAccountingOps({ onNav }) {
     const stalled = deferrals.filter((d) => d.stalled);
     return (
       <div>
+        <div style={{ ...card, display:"flex", gap:6, flexWrap:"wrap" }}>
+          <button style={btn(false)}
+                  title="An unreleased deferral is a misstatement that fails quietly — the figures simply stay wrong"
+                  onClick={async()=>{
+                    const e = window.prompt("Entity id?");
+                    if (!e) return;
+                    const per = window.prompt("Period (YYYY-MM)?");
+                    if (!per) return;
+                    const r = await OPS.deferredIncomeRun(Number(e), per);
+                    setMsg(r && r.ok ? "Deferred income released."
+                          : (r && r.error) || "That could not be run.");
+                    load();
+                  }}>
+            Release deferred income
+          </button>
+        </div>
         {stalled.length > 0 && (
           <div style={{ ...card, background: AMB_BG, borderColor: "#E5CE9A" }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: AMB, marginBottom: 6 }}>

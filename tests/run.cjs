@@ -2350,6 +2350,49 @@ group("Billing from WIP, correcting time, reassigning a task");
      /not a disposal/.test(ops) && /misstate the/.test(ops));
 }
 
+
+group("VAT posting, reverse charge, disbursements, amending an obligation");
+{
+  const ops  = fs.readFileSync(path.join(SRC, "affinity_accounting_ops_api.js"), "utf8");
+  const opsU = fs.readFileSync(path.join(SRC, "affinity_core_accounting_ops.jsx"), "utf8");
+  const payU = fs.readFileSync(path.join(SRC, "affinity_core_payables.jsx"), "utf8");
+  const jur  = fs.readFileSync(path.join(SRC, "affinity_core_jurisdiction_compliance.jsx"), "utf8");
+
+  // A VAT return could be PREPARED and not posted. The separation exists so a
+  // return can be checked before it hits the accounts; with no way to post one
+  // the separation just meant it never reached them.
+  ok("vatReturnPost is wrapped", /export const vatReturnPost\s*=/.test(ops));
+  ok("posting a return is reachable", /OPS\.vatReturnPost\s*\(/.test(opsU));
+
+  // The reverse charge posts both sides, so the NET effect is nil — but
+  // omitting it understates both input and output VAT, and a return that nets
+  // to the right figure from two wrong ones is still wrong.
+  ok("the reverse charge is reachable", /OPS\.reverseChargeRecord\s*\(/.test(opsU));
+  ok("...and why omitting it matters is recorded",
+     /still wrong/.test(ops));
+
+  // Recording only the net loses the tax the firm may reclaim.
+  ok("withholding tax is reachable", /OPS\.withholdingTaxApply\s*\(/.test(opsU));
+  ok("...with the reason", /reclaim or credit/.test(ops));
+
+  // An unreleased deferral is a misstatement that fails quietly.
+  ok("releasing deferred income is reachable", /OPS\.deferredIncomeRun\s*\(/.test(opsU));
+  ok("...with the reason", /fails quietly/.test(ops));
+
+  // Unrecharged disbursements are money spent and not recovered.
+  ok("recording a disbursement is reachable",
+     /PAY\.disbursementRecord\s*\(/.test(payU));
+  ok("recharging them is reachable", /PAY\.disbursementsRecharge\s*\(/.test(payU));
+  ok("...and the risk is named", /not recovered/.test(payU));
+
+  // Amending a CONFIRMED obligation withdraws the confirmation, because
+  // whoever confirmed it confirmed different terms. That behaviour existed and
+  // could not be triggered.
+  ok("amending an obligation is reachable", /OBL\.obligationUpdate\s*\(/.test(jur));
+  ok("...and warns before withdrawing the confirmation",
+     /confirmed different terms/.test(jur));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

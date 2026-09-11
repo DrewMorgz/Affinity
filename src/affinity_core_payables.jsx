@@ -718,9 +718,44 @@ export default function AffinityPayables({ onNav }) {
   // ── Credit control ────────────────────────────────────────────────────────
   const Credit = () => (
     <div style={card}>
-      <div style={{ display:"flex", gap:6, marginBottom:12 }}>
+      <div style={{ display:"flex", gap:6, marginBottom:12, flexWrap:"wrap" }}>
         <button style={btn(true)} onClick={()=>openPForm("creditNote")}>
           ＋ Raise a credit note
+        </button>
+        <button style={btn(false)}
+                title="Money the firm spends on a client's behalf — unrecharged, it is money spent and not recovered, and invisible until someone looks"
+                onClick={async()=>{
+                  const e = window.prompt("Entity id?");
+                  if (!e) return;
+                  const sup = window.prompt("Supplier?");
+                  if (!sup) return;
+                  const amt = window.prompt("Amount?");
+                  if (!amt) return;
+                  const ccy = window.prompt("Currency?", "GBP");
+                  if (!ccy) return;
+                  const d = window.prompt("Date (YYYY-MM-DD)?");
+                  if (!d) return;
+                  const r = await PAY.disbursementRecord({
+                    entityId:Number(e), supplier:sup, amount:Number(amt), ccy, date:d });
+                  window.alert(r && r.ok ? "Disbursement recorded."
+                    : (r && r.error) || "That could not be recorded.");
+                  load();
+                }}>
+          Record a disbursement
+        </button>
+        <button style={btn(false)}
+                title="Recharges outstanding disbursements to the clients they were incurred for"
+                onClick={async()=>{
+                  const e = window.prompt("Entity id?");
+                  if (!e) return;
+                  const d = window.prompt("Date (YYYY-MM-DD)?");
+                  if (!d) return;
+                  const r = await PAY.disbursementsRecharge(Number(e), d);
+                  window.alert(r && r.ok ? "Disbursements recharged."
+                    : (r && r.error) || "That could not be run.");
+                  load();
+                }}>
+          Recharge disbursements
         </button>
       </div>
       <div style={{ fontSize: 11, fontWeight: 600, color: MUT, marginBottom: 4,

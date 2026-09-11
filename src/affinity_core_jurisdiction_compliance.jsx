@@ -411,6 +411,23 @@ export default function AffinityJurisdictionCompliance({ onNav }) {
                           Confirm
                         </button>
                       )}
+                      <button style={{ ...nb, fontSize:10, marginRight:4 }}
+                              title="Amending a confirmed obligation withdraws the confirmation — whoever confirmed it confirmed different terms"
+                              onClick={async()=>{
+                                if (o.confirmed && !window.confirm(
+                                  "This obligation is CONFIRMED.\n\nAmending it withdraws the confirmation, because whoever confirmed it confirmed different terms. It will need confirming again.\n\nContinue?")) return;
+                                const t = window.prompt("Obligation title?", o.title || "");
+                                if (t == null) return;
+                                const leg = window.prompt("Legislation or rule reference?", o.legislation || "");
+                                const own = window.prompt("Owner?", o.owner === "—" ? "" : o.owner);
+                                setObsMsg("");
+                                const r = await OBL.obligationUpdate(o.id, {
+                                  title: t, legislationRef: leg, owner: own });
+                                if (r && r.ok) { setObsMsg("Obligation amended."); loadObs(); return; }
+                                setObsMsg((r && r.error) || "That could not be amended.");
+                              }}>
+                        Edit
+                      </button>
                       {o.confirmed && (
                         <button style={{ ...nb, fontSize:10, color:"#A32D2D", borderColor:"#f0c9c9" }}
                                 title="Removing needs a reason and deactivates rather than deletes — a schedule that used to include something is part of the compliance history"

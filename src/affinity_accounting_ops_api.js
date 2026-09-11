@@ -193,3 +193,36 @@ export const assetTransfer = (assetId, toEntityId, date, transferValue) =>
   call("transfer_asset", { p_asset: assetId, p_to_entity: toEntityId,
                            p_date: date, p_transfer_value: transferValue,
                            p_created_by: null });
+
+// ── VAT, reverse charge and deferred income ─────────────────────────────────
+// A VAT return could be PREPARED and not posted. Preparing and posting are
+// deliberately separate so a return can be checked before it hits the
+// accounts, and with no way to post one the separation just meant it never
+// reached them.
+export const vatReturnPost = (returnId, postDate) =>
+  call("post_vat_return", { p_return_id: returnId, p_post_date: postDate,
+                            p_created_by: null });
+
+// The reverse charge: VAT accounted for by the buyer rather than the supplier,
+// on cross-border services. Both sides are posted, so the net VAT effect is
+// nil — but omitting it understates both the input and the output VAT, and a
+// return that nets to the right figure from two wrong ones is still wrong.
+export const reverseChargeRecord = (r) => call("record_reverse_charge", {
+  p_entity: r.entityId, p_date: r.date, p_net: r.net, p_vat_rate: r.vatRate,
+  p_expense_account: r.expenseAccountId, p_supplier: r.supplier,
+  p_created_by: null,
+});
+
+// Withholding tax deducted at source. The gross cost and the tax withheld are
+// separate figures, and recording only the net loses the tax the firm may be
+// able to reclaim or credit.
+export const withholdingTaxApply = (w) => call("apply_withholding_tax", {
+  p_entity: w.entityId, p_date: w.date, p_base_net: w.baseNet,
+  p_wht_rate: w.rate, p_supplier: w.supplier, p_created_by: null,
+});
+
+// Deferred income released for a period. An unreleased deferral is a
+// misstatement that fails quietly — the figures simply stay wrong.
+export const deferredIncomeRun = (entityId, period) =>
+  call("run_deferred_income", { p_entity_id: entityId, p_period: period,
+                                p_created_by: null });
