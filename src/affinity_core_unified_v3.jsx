@@ -87,7 +87,7 @@ const NAV = [
   ]},
   {s:"Core",       items:[
     {id:"entities",     label:"Entity Admin",  icon:"\uD83C\uDFE2",b:null},
-    {id:"documents",    label:"Documents",     icon:"\uD83D\uDCC1",b:2},
+    {id:"dms",          label:"Documents",     icon:"\uD83D\uDCC1",b:null},
     {id:"timesheets",   label:"Timesheets",    icon:"\u23F1",b:1},
     {id:"reporting",    label:"Reporting",     icon:"\uD83D\uDCC8",b:null},
     {id:"procedures",   label:"Procedures",    icon:"\u2699",b:null},
@@ -116,7 +116,6 @@ const NAV = [
     {id:"payables",   label:"Purchases & AR",  icon:"\uD83D\uDCE6",b:null},
     {id:"fiduciary",  label:"Fiduciary reporting", icon:"\uD83C\uDFDB\uFE0F",b:null},
     {id:"reports",    label:"Reports",         icon:"\uD83D\uDCC8",b:null},
-    {id:"dms",        label:"Documents (DMS)", icon:"\uD83D\uDDC2\uFE0F",b:null},
     {id:"rates",      label:"Rates & allocations",icon:"\uD83D\uDCC9",b:null},
     {id:"consol",     label:"Consolidation",  icon:"\uD83C\uDFE2",b:null},
     {id:"acc_admin",    label:"Accounting admin",icon:"\u2699",b:null},

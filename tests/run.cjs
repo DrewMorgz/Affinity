@@ -3590,6 +3590,59 @@ group("Reported by a tester: one letter at a time, and three registers that lied
   ok("the mismatch is recorded", /invisible to every check in the suite/.test(ea));
 }
 
+
+group("Procedures, duplicate Documents, and imports that do not exist");
+{
+  const pr = fs.readFileSync(path.join(SRC, "affinity_core_procedures_v2.jsx"), "utf8");
+  const sh = fs.readFileSync(path.join(SRC, "affinity_core_unified_v3.jsx"), "utf8");
+
+  // "PROCEDURES DOES NOT WORK, I CAN'T OPEN OR RUN ANY."
+  //
+  // The module imported isConfigured from affinity_ops_api, which does not
+  // export it. A named import that does not exist is UNDEFINED, not an error —
+  // so the loader's first line, `if (!isConfigured) return;`, was always true.
+  // Nothing ever loaded, the screen always showed its sample list, and starting
+  // a procedure passed an id like "3.01" that matches nothing in the database,
+  // where five real procedures sit.
+  //
+  // It compiled. It rendered. It survived interaction. It did nothing.
+  ok("isConfigured comes from the module that exports it",
+     /import \{ isConfigured \} from "\.\/affinity_accounting_supabase"/.test(pr));
+  ok("...and is no longer taken from affinity_ops_api",
+     !/isConfigured.*from "\.\/affinity_ops_api"/.test(pr));
+
+  // THE STANDING CHECK for the class. This is invisible to every other test:
+  // the function exists, the screen calls it, the module renders.
+  const exportsOf = {};
+  fs.readdirSync(SRC).forEach((f) => {
+    if (!/\.jsx?$/.test(f)) return;
+    const src = fs.readFileSync(path.join(SRC, f), "utf8");
+    const e = new Set();
+    [...src.matchAll(/export\s+(?:const|function|async function|class)\s+(\w+)/g)]
+      .forEach((m) => e.add(m[1]));
+    [...src.matchAll(/export\s*\{([^}]*)\}/g)].forEach((m) =>
+      m[1].split(",").forEach((x) => e.add(x.trim().split(" as ").pop().trim())));
+    exportsOf[f] = e;
+  });
+  const missing = [];
+  fs.readdirSync(SRC).forEach((f) => {
+    if (!/\.jsx?$/.test(f)) return;
+    const src = fs.readFileSync(path.join(SRC, f), "utf8");
+    [...src.matchAll(/import\s*\{([^}]*)\}\s*from\s*["']\.\/(\w+)["']/g)].forEach((m) => {
+      const target = [m[2] + ".js", m[2] + ".jsx"].find((c) => exportsOf[c]);
+      if (!target) return;
+      m[1].split(",").map((x) => x.trim().split(" as ")[0].trim()).filter(Boolean)
+        .forEach((n) => { if (!exportsOf[target].has(n)) missing.push(f + ": " + n + " from " + m[2]); });
+    });
+  });
+  ok("no module imports a name another does not export",
+     missing.length === 0, missing.slice(0, 5).join("; "));
+
+  // Documents appeared twice, and the weaker module was in the right place.
+  ok("there is one Documents entry", (sh.match(/\{id:"dms"/g) || []).length === 1
+     && !/\{id:"documents"/.test(sh));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

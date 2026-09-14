@@ -144,3 +144,7 @@ export const collectionActionLog = (c) => call("log_collection_action", {
   p_customer: c.customer, p_invoice: c.invoiceId ?? null, p_date: c.date,
   p_level: c.level, p_note: c.note || null, p_user: null,
 });
+
+// proceduresList and procedureRuns already exist in affinity_ops_api.js. I
+// nearly added a second copy here before checking — the same duplicate-wrapper
+// mistake this audit has found three times in other people's code.

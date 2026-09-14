@@ -1,6 +1,16 @@
 import { useState, useEffect } from "react";
 import * as OW from "./affinity_ops_write_api";
-import { proceduresList, procedureRuns, procedureHist, isConfigured } from "./affinity_ops_api";
+import { proceduresList, procedureRuns, procedureHist } from "./affinity_ops_api";
+// isConfigured is NOT exported by affinity_ops_api — it lives in the supabase
+// module. Importing it from the wrong place made it undefined, so the loader's
+// first line, `if (!isConfigured) return;`, was always true. Nothing ever
+// loaded, the screen always fell back to its sample list, and starting one
+// passed an id like "3.01" that matches nothing in the database.
+//
+// Reported as "Procedures does not work, I can't open or run any". A named
+// import that does not exist is undefined rather than an error, which is why
+// it compiled, rendered, and did nothing.
+import { isConfigured } from "./affinity_accounting_supabase";
 const CY = "#00C4CC";
 const NAVY = "#001242";
 
