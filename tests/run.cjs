@@ -3687,6 +3687,42 @@ group("db/100 — charge-out rates and services, so time can be recorded at all"
   ok("services can be added and listed", /serviceAdd\(/.test(ui) && /servicesList\(/.test(ui));
 }
 
+
+group("Pickers that could not include anything created later");
+{
+  const ts = fs.readFileSync(path.join(SRC, "affinity_core_timesheets_v2.jsx"), "utf8");
+  const st = fs.readFileSync(path.join(SRC, "affinity_core_statutory_registers.jsx"), "utf8");
+  const files = fs.readdirSync(SRC).filter((f) => f.endsWith(".jsx"));
+
+  // REPORTED BY A TESTER: "Adding another entity does not pull it through to
+  // other modules. I created ABC Limited and it is not available on
+  // timesheets."
+  //
+  // The entity list in Timesheets was five client names written into the file.
+  // Nothing created anywhere else could ever appear in it. The work type list
+  // was the same, which is part of why db/100 added a service table — services
+  // are reference data somebody maintains, not a literal in a screen.
+  ok("timesheets loads its entity list", /eaEntitiesList\(\)/.test(ts));
+  ok("...and its service list", /servicesList\(\)/.test(ts));
+  ok("statutory registers loads its entity list", /eaEntitiesList\(\)/.test(st));
+
+  // THE CLASS, not the instance. A hardcoded name in a sample data row is
+  // fine — that is demo content. A hardcoded name in a PICKER is the bug,
+  // because nothing created later can be chosen.
+  const bad = [];
+  files.forEach((f) => {
+    const src = fs.readFileSync(path.join(SRC, f), "utf8");
+    const re = /(<datalist[\s\S]{0,500}?<\/datalist>|\["Entity","select",\[[^\]]{0,300}\])/g;
+    let m;
+    while ((m = re.exec(src)) !== null) {
+      const blk = m[0];
+      if (/Meridian Holdings|Harrington Family/.test(blk) && !/liveEntities/.test(blk))
+        bad.push(f);
+    }
+  });
+  ok("no entity picker is hardcoded", bad.length === 0, bad.join("; "));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

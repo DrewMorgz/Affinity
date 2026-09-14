@@ -4,6 +4,7 @@ import * as DW from "./affinity_docs_onb_write_api";
 import EntitySearch from "./affinity_entity_search";
 import { isConfigured } from "./affinity_accounting_supabase";
 import { statAnnualReturns, statBoRegisters, statCogs, statOfficerChanges, statDissolutions } from "./affinity_statutory_api";
+import { eaEntitiesList } from "./affinity_eadmin_api";
 const CY = "#00C4CC";
 const NAVY = "#001242";
 
@@ -147,6 +148,18 @@ export default function AffinityStatutory() {
   const [entitySearch, setEntitySearch] = useState("");
   const [view, setView]   = useState("calendar");
   const [modal, setModal] = useState(null);
+  // The entity picker held six client names written into this file, so nothing
+  // created after it was written could be chosen. Same fault as Timesheets,
+  // reported there by a tester: "I created ABC Limited and it is not available".
+  const [liveEntities, setLiveEntities] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    eaEntitiesList().then((r) => {
+      if (alive && r && r.ok && Array.isArray(r.data))
+        setLiveEntities(r.data.map((e) => e.name).filter(Boolean));
+    }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
   // The five modals in this module collected input and threw it away — the
   // save button called setModal(null) and nothing else. These hold the values
   // and actually record them.
@@ -528,7 +541,7 @@ export default function AffinityStatutory() {
               </h3>
               <button onClick={()=>setModal(null)} style={{ background:"none", border:"none", fontSize:20, cursor:"pointer", color:"#888" }}>×</button>
             </div>
-            {[["Entity","select",["Meridian Holdings Ltd","Harrington Family Trust","Caledonian Ventures Ltd","Azure Mediterranean Fdn","Apex Growth Fund Ltd","Stonebridge Capital Ltd"]],["Jurisdiction","select",["Isle of Man","Malta","Cayman Islands","Cyprus"]],["Date","date"],["Notes","text","Optional notes"]].map(([l,t,opts])=>(
+            {[["Entity","select",(liveEntities || ["Meridian Holdings Ltd","Harrington Family Trust","Caledonian Ventures Ltd","Azure Mediterranean Fdn","Apex Growth Fund Ltd","Stonebridge Capital Ltd"])],["Jurisdiction","select",["Isle of Man","Malta","Cayman Islands","Cyprus"]],["Date","date"],["Notes","text","Optional notes"]].map(([l,t,opts])=>(
               <div key={l} style={{ marginBottom:12 }}>
                 <label style={{ display:"block", fontSize:11, fontWeight:600, color:"#555", marginBottom:4 }}>{l}</label>
                 {(l==="Entity"||l==="Client"||l==="Entity name"||l==="Client name"||l==="Linked entity")?<><input list="st-ent-1" placeholder="Search entity…" style={{ width:"100%", padding:"8px 10px", border:"1.5px solid #e0e0e0", borderRadius:6, fontSize:12, outline:"none" , boxSizing:"border-box" }} /><datalist id="st-ent-1">{(opts||[]).map(o=><option key={o} value={o}/>)}</datalist></>:t==="select"?<select style={{ width:"100%", padding:"8px 10px", border:"1.5px solid #e0e0e0", borderRadius:6, fontSize:12, outline:"none" }}>{(opts||[]).map(o=><option key={o}>{o}</option>)}</select>

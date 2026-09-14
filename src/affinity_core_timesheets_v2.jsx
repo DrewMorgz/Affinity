@@ -5,6 +5,8 @@ import * as OW from "./affinity_ops_write_api";
 import EntitySearch from "./affinity_entity_search";
 const ENTITY_NAMES = ["Meridian Holdings Ltd","Harrington Family Trust","Pacific Wealth Trust","Caledonian Ventures Ltd","North Star Holdings Ltd","Azure Mediterranean Foundation","Apex Growth Fund Ltd","Stonebridge Capital Ltd","Thornbury Asset Co Ltd","Bluewater Family Trust","Phoenix eGaming Ltd","Meridian Digital Ltd","Suncoast Ventures LLC"];
 import { tsEntries, isConfigured } from "./affinity_ops_api";
+import { eaEntitiesList } from "./affinity_eadmin_api";
+import { servicesList, chargeRateForStaff } from "./affinity_rates_api";
 const CY = "#00C4CC";
 const Badge = ({ label, colors }) => (<span style={{ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:600, background:colors?.bg||"#eee", color:colors?.color||"#333", whiteSpace:"nowrap" }}>{label}</span>);
 const fmt = (n,s="£") => s+Math.abs(Number(n||0)).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -89,6 +91,28 @@ export default function AffinityTimesheets({ onNav }) {
 
   // ── Output plumbing ───────────────────────────────────────────────────────
   const [outMsg, setOutMsg] = useState("");
+  // REPORTED BY A TESTER: "Adding another entity does not pull it through to
+  // other modules. I created ABC Limited and it is not available on
+  // timesheets." The entity list here was five names hardcoded in this file,
+  // so nothing created anywhere else could ever appear.
+  //
+  // The same was true of the work type list, which is why db/100 added a
+  // service table: services are reference data somebody maintains, not a
+  // literal in a screen.
+  const [liveEntities, setLiveEntities] = useState(null);
+  const [liveServices, setLiveServices] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    eaEntitiesList().then((r) => {
+      if (alive && r && r.ok && Array.isArray(r.data))
+        setLiveEntities(r.data.map((e) => e.name).filter(Boolean));
+    }).catch(() => {});
+    servicesList().then((r) => {
+      if (alive && r && r.ok && Array.isArray(r.data) && r.data.length)
+        setLiveServices(r.data.map((x) => x.name).filter(Boolean));
+    }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
   const outRun = (fn) => {
     try {
       const res = fn();
@@ -362,10 +386,10 @@ export default function AffinityTimesheets({ onNav }) {
           </div>
           <div style={{ display:"flex", gap:6, flex:1, flexWrap:"wrap" }}>
             <span title="Set by the entity search above" style={{ height:30, display:"flex", alignItems:"center", padding:"0 10px", border:"0.5px solid #e5e5e5", borderRadius:5, fontSize:11.5, background:"#f7f7f9", color:timerEntity?"#111":"#999", minWidth:180 }}>{timerEntity || "No entity selected"}</span>
-            <datalist id="ts-timer-entities">{["Meridian Holdings Ltd","Harrington Family Trust","Pacific Wealth Trust","Caledonian Ventures Ltd","Azure Mediterranean Fdn","North Star Holdings Ltd"].map(e=><option key={e} value={e}/>)}</datalist>
+            <datalist id="ts-timer-entities">{(liveEntities || ["Meridian Holdings Ltd"]).map(e=><option key={e} value={e}/>)}</datalist>
             <input value={timerMatter} onChange={e=>setTimerMatter(e.target.value)} placeholder="Matter description…" style={{ height:30, padding:"0 10px", border:"0.5px solid #e5e5e5", borderRadius:5, fontSize:11, minWidth:160, outline:"none" }}/>
             <select value={timerType} onChange={e=>setTimerType(e.target.value)} style={{ height:30, padding:"0 8px", border:"0.5px solid #e5e5e5", borderRadius:5, fontSize:11 }}>
-              {["Administration","Compliance","Legal","Accounts","Meetings","Client liaison","New Business — non-billable","Client — non-billable"].map(t=><option key={t}>{t}</option>)}
+              {(liveServices || ["Administration","Compliance","Legal","Accounts","Meetings","Client liaison","New Business — non-billable","Client — non-billable"]).map(t=><option key={t}>{t}</option>)}
             </select>
           </div>
           <div style={{ display:"flex", gap:6, flexShrink:0 }}>
@@ -585,7 +609,7 @@ export default function AffinityTimesheets({ onNav }) {
               <span style={{ fontSize:13,fontWeight:600,color:"#27500A" }}>⏱ {fmtTimer(timerSeconds)}</span>
               <span style={{ fontSize:12,color:"#27500A" }}>{Math.ceil(timerSeconds/600)} units · {(timerSeconds/3600).toFixed(2)} hours</span>
             </div>
-            {[["Entity","select",["Meridian Holdings Ltd","Harrington Family Trust","Pacific Wealth Trust","Caledonian Ventures Ltd","North Star Holdings Ltd"]],["Matter","text","e.g. Annual review preparation"],["Work type","select",["Administration","Compliance","Legal","Accounts","Meetings","Client liaison","New Business — non-billable","Client — non-billable"]]].map(([l,t,opts])=>(
+            {[["Entity","select",(liveEntities || ["Meridian Holdings Ltd","Harrington Family Trust","Pacific Wealth Trust","Caledonian Ventures Ltd","North Star Holdings Ltd"])],["Matter","text","e.g. Annual review preparation"],["Work type","select",(liveServices || ["Administration","Compliance","Legal","Accounts","Meetings","Client liaison","New Business — non-billable","Client — non-billable"])]].map(([l,t,opts])=>(
               <div key={l} style={{ marginBottom:12 }}>
                 <label style={{ display:"block",fontSize:11,fontWeight:600,color:"#555",marginBottom:4 }}>{l}</label>
                 {l==="Entity"?<><input list="ts-timer-entity" defaultValue={timerEntity} placeholder="Search entity…" style={{ width:"100%",padding:"8px 10px",border:"1.5px solid #e0e0e0",borderRadius:6,fontSize:12,outline:"none",boxSizing:"border-box" }} /><datalist id="ts-timer-entity">{(Array.isArray(opts)?opts:[]).map(o=><option key={o} value={o}/>)}</datalist></>
@@ -608,9 +632,9 @@ export default function AffinityTimesheets({ onNav }) {
             {[["Date","text",editEntry.date],["Entity","select"],["Matter","text",editEntry.matter],["Units","number",editEntry.units],["Work type","select"]].map(([l,t,def])=>(
               <div key={l} style={{ marginBottom:12 }}>
                 <label style={{ display:"block",fontSize:11,fontWeight:600,color:"#555",marginBottom:4 }}>{l}</label>
-                {l==="Entity"?<><input list="ts-edit-entity" defaultValue={editEntry.entity} placeholder="Search entity…" style={{ width:"100%",padding:"8px 10px",border:"1.5px solid #e0e0e0",borderRadius:6,fontSize:12,outline:"none",boxSizing:"border-box" }} /><datalist id="ts-edit-entity">{["Meridian Holdings Ltd","Harrington Family Trust","Pacific Wealth Trust","Caledonian Ventures Ltd","North Star Holdings Ltd"].map(o=><option key={o} value={o}/>)}</datalist></>
+                {l==="Entity"?<><input list="ts-edit-entity" defaultValue={editEntry.entity} placeholder="Search entity…" style={{ width:"100%",padding:"8px 10px",border:"1.5px solid #e0e0e0",borderRadius:6,fontSize:12,outline:"none",boxSizing:"border-box" }} /><datalist id="ts-edit-entity">{(liveEntities || ["Meridian Holdings Ltd","Harrington Family Trust","Pacific Wealth Trust","Caledonian Ventures Ltd","North Star Holdings Ltd"]).map(o=><option key={o} value={o}/>)}</datalist></>
                 :t==="select"?<select defaultValue={editEntry.type} style={{ width:"100%",padding:"8px 10px",border:"1.5px solid #e0e0e0",borderRadius:6,fontSize:12,outline:"none" }}>
-                  {["Administration","Compliance","Legal","Accounts","Meetings","Client liaison","New Business — non-billable","Client — non-billable"].map(o=><option key={o}>{o}</option>)}
+                  {(liveServices || ["Administration","Compliance","Legal","Accounts","Meetings","Client liaison","New Business — non-billable","Client — non-billable"]).map(o=><option key={o}>{o}</option>)}
                 </select>
                 :<input type={t} defaultValue={def} style={{ width:"100%",padding:"8px 10px",border:"1.5px solid #e0e0e0",borderRadius:6,fontSize:12,outline:"none",boxSizing:"border-box" }} />}
               </div>
