@@ -3760,6 +3760,50 @@ group("db/101 — FATCA and CRS classification, and two decisions from Andy");
   ok("bank account numbers are full, not last four", !/last 4/i.test(ea));
 }
 
+
+group("db/102 — the classification methodology and the reporting extract");
+{
+  const sql = fs.readFileSync(path.join(DB, "102_fatca_methodology_and_extract.sql"), "utf8");
+  const ea  = fs.readFileSync(path.join(SRC, "affinity_core_entity_admin.jsx"), "utf8");
+
+  // A CORRECTION FIRST: the FATCA return to the IRS is XML, not CSV, and CRS is
+  // the OECD CRS XML schema. Some portals take a CSV template and convert it,
+  // and the templates differ by jurisdiction. So "the CSV file required for
+  // reporting" does not exist as one thing — but the reportable accounts,
+  // holders and controlling persons are the same whatever comes out.
+  ok("the XML/CSV position is stated rather than assumed", /XML, not CSV/.test(sql));
+
+  // The methodology records the ANSWERS, not just the conclusion.
+  ok("the questions exist", /CREATE TABLE IF NOT EXISTS classification_question/.test(sql));
+  ok("an assessment without answers is refused",
+     /needs the answers, not just the conclusion/.test(sql));
+  ok("...with the reason", /cannot be defended three years later/.test(sql));
+  ok("the conclusion is validated against the classification list",
+     /is not a % classification/.test(sql));
+  ok("assessments are kept as history", /classification_history/.test(sql));
+
+  // The question most structures turn on is named as such.
+  ok("the FI question flags the case most structures turn on",
+     /this is the question most structures turn on/.test(sql));
+
+  // The extract reports what is MISSING, because a rejected return is found out
+  // days later and an accepted wrong one considerably later.
+  ok("the extract exists", /CREATE OR REPLACE FUNCTION fatca_crs_extract/.test(sql));
+  ok("it looks through passive entities to controlling persons",
+     /'PNFFE','DRNFFE','PNFE'/.test(sql));
+  ok("it flags a passive entity with no controlling persons recorded",
+     /looks through to controlling persons and none are recorded/.test(sql));
+  ok("it flags a missing TIN", /controlling person has no TIN/.test(sql));
+  ok("it flags a balance that is not at the period end",
+     /balance is not as at the period end/.test(sql));
+  ok("readiness can be checked before filing", /fatca_crs_readiness/.test(sql));
+
+  ok("the guided classification is reachable", /EA\.classificationAssess/.test(ea));
+  ok("the extract is reachable", /EA\.fatcaCrsExtract/.test(ea));
+  ok("the screen says the judgement is the user's, not the system's",
+     /your judgement, not the system/.test(ea));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

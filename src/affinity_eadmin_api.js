@@ -94,3 +94,32 @@ export const entityClassificationSet = (entityId, fatca, crs, giin) =>
 // report, are controlling persons looked through, and what is missing.
 export const classificationStatus = (entityId) =>
   call("classification_status", { p_entity: entityId || null });
+
+// ── Classification methodology and the reporting extract (db/102) ───────────
+// The questions that arrive at a classification, and the record of the answers.
+// The answers matter more than the conclusion: "Passive NFFE" written in a box
+// tells a regulator nothing about whether anybody thought about it.
+export const classificationQuestions = (regime) =>
+  call("classification_questions", { p_regime: regime });
+
+// Records the answers, the conclusion and why, and applies the classification
+// through the validating setter. Refuses a conclusion with no answers.
+export const classificationAssess = (entityId, regime, answers, concluded, rationale) =>
+  call("classification_assess", { p_entity: entityId, p_regime: regime,
+                                  p_answers: answers, p_concluded: concluded,
+                                  p_rationale: rationale || null });
+
+export const classificationHistory = (entityId) =>
+  call("classification_history", { p_entity: entityId });
+
+// One row per reportable account, with the holder and — where the holder is a
+// passive NFE — one row per controlling person. This is the content of a FATCA
+// or CRS return whatever file the portal wants. The file itself is a formatting
+// step on top and differs by jurisdiction.
+export const fatcaCrsExtract = (regime, periodEnd, jurisdiction) =>
+  call("fatca_crs_extract", { p_regime: regime, p_period_end: periodEnd,
+                              p_jurisdiction: jurisdiction || null });
+
+// Whether the return could be filed at all, before anybody tries.
+export const fatcaCrsReadiness = (regime, periodEnd) =>
+  call("fatca_crs_readiness", { p_regime: regime, p_period_end: periodEnd });

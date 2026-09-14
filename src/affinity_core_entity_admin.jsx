@@ -1896,6 +1896,64 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
                           Classification codes
                         </button>
                         <button style={s.mini}
+                                title="Work through the questions that arrive at a classification, and record the answers"
+                                onClick={async()=>{
+                                  const reg = window.prompt("FATCA or CRS?", "FATCA");
+                                  if (!reg) return;
+                                  const q = await EA.classificationQuestions(reg.toUpperCase());
+                                  if (!q || !q.live) { window.alert("Not signed in."); return; }
+                                  const answers = {};
+                                  for (const item of (q.data || [])) {
+                                    const a = window.prompt(
+                                      item.question + "\n\n" + (item.help || "") +
+                                      "\n\nAnswer yes, no, or n/a. Cancel to stop.");
+                                    if (a === null) return;
+                                    answers[item.code] = a;
+                                  }
+                                  const concl = window.prompt(
+                                    "Which classification does that arrive at?\n\n" +
+                                    "This is your judgement, not the system's — the answers " +
+                                    "above are recorded beside it so it can be defended later.");
+                                  if (!concl) return;
+                                  const why = window.prompt("Why, in a sentence?");
+                                  const r = await EA.classificationAssess(entityDbId,
+                                              reg.toUpperCase(), answers, concl.toUpperCase(), why);
+                                  window.alert(r && r.ok
+                                    ? "Assessment recorded and the classification applied."
+                                    : (r && r.error) || "That could not be recorded.");
+                                }}>
+                          Classify (guided)
+                        </button>
+                        <button style={s.mini}
+                                title="Every reportable account, holder and controlling person — and what is missing"
+                                onClick={async()=>{
+                                  const reg = window.prompt("FATCA or CRS?", "FATCA");
+                                  if (!reg) return;
+                                  const pe = window.prompt("Period end (YYYY-MM-DD)?", "2025-12-31");
+                                  if (!pe) return;
+                                  const [x, rd] = await Promise.all([
+                                    EA.fatcaCrsExtract(reg.toUpperCase(), pe, null),
+                                    EA.fatcaCrsReadiness(reg.toUpperCase(), pe),
+                                  ]);
+                                  if (!x || !x.live) { window.alert("Not signed in."); return; }
+                                  const rows = x.data || [], r0 = (rd.data || [])[0] || {};
+                                  const gaps = rows.filter(r=>r.missing);
+                                  window.alert(
+                                    reg.toUpperCase() + " extract to " + pe + "\n\n" +
+                                    r0.entities + " client entit(ies), " + r0.reportable +
+                                    " reportable, " + gaps.length + " row(s) with something missing.\n\n" +
+                                    (gaps.length
+                                      ? "Nothing can be filed until these are closed:\n" +
+                                        [...new Set(gaps.map(g=>g.missing))].slice(0,8).map(m=>"  · "+m).join("\n")
+                                      : "Every row is complete.") +
+                                    "\n\nThe extract is the content of the return. The file itself " +
+                                    "differs by jurisdiction — the IRS takes FATCA XML, and the " +
+                                    "Isle of Man, Malta and Cayman portals each publish their own " +
+                                    "template.");
+                                }}>
+                          Reporting extract
+                        </button>
+                        <button style={s.mini}
                                 title="What follows from the classification, and what is missing"
                                 onClick={async()=>{
                                   const r = await EA.classificationStatus(null);
