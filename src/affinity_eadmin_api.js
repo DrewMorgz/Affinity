@@ -73,3 +73,24 @@ export async function repSignatories()  { if (!isConfigured) return off(); retur
 // and nothing could read them back, so the list fed billing and could not be
 // checked against what is actually being billed.
 export const eaServices = (entityId) => call("ea_services", { p_entity: entityId });
+
+// ── FATCA and CRS classification (db/101) ───────────────────────────────────
+// The classifications were free text, so two administrators would write the
+// same thing three ways and one of them would use the CRS term for a FATCA
+// classification. These are the valid codes, what each means for reporting,
+// and a setter that refuses anything not on the list.
+
+export const classificationTypes = (regime) =>
+  call("classification_types", { p_regime: regime || null });
+
+// Refuses an unknown code, and refuses a classification that requires a GIIN
+// without one — an entity classified as a Reporting FI is registered with the
+// IRS, and the GIIN is what that registration is evidenced by.
+export const entityClassificationSet = (entityId, fatca, crs, giin) =>
+  call("entity_classification_set", { p_entity: entityId, p_fatca: fatca || null,
+                                      p_crs: crs || null, p_giin: giin || null });
+
+// What FOLLOWS from the classification, which is the useful question: does it
+// report, are controlling persons looked through, and what is missing.
+export const classificationStatus = (entityId) =>
+  call("classification_status", { p_entity: entityId || null });

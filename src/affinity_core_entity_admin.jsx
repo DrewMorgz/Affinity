@@ -427,9 +427,9 @@ const ACTION_SPECS = {
   classification: {
     title: "FATCA and CRS classification",
     note: "The classification drives the reporting obligation. Recording it wrongly means reporting the wrong thing, or nothing at all.",
-    fields: [["fatcaClass", "FATCA classification", false, ""],
-             ["crsClass", "CRS classification", false, ""],
-             ["giin", "GIIN", false, ""]],
+    fields: [["fatcaClass", "FATCA code", false, "RFI, PNFFE, ANFFE, TDT…"],
+             ["crsClass", "CRS code", false, "INVA, PNFE, ANFE, NRFI…"],
+             ["giin", "GIIN", false, "required for RFI and DRNFFE"]],
     cta: "Save the classification",
   },
   responsibilities: {
@@ -836,7 +836,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
             <div style={s.card}>
               <div style={s.cardT}>Core information</div>
               {[
-                ["Client / group",entity.group],
+                
                 ["Principal activity",entity.principalActivity],
                 ["Entity type",entity.type],
                 ...(entity.companiesAct?[["Incorporation regime",entity.companiesAct]]:[]),
@@ -1542,7 +1542,9 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
       if (act === "serviceSet")        r = await EW.serviceSet(entityDbId, v.service,
                                               String(v.active).toLowerCase() === "yes");
       if (act === "profileUpdate")     r = await EW.profileUpdate(entityDbId, v);
-      if (act === "classification")    r = await EW.classificationUpdate(entityDbId,
+      // db/101: validated against the classification list rather than free
+      // text, and refuses a classification needing a GIIN without one.
+      if (act === "classification")    r = await EA.entityClassificationSet(entityDbId,
                                               v.fatcaClass, v.crsClass, v.giin);
       if (act === "responsibilities")  r = await EW.responsibilitiesSet(entityDbId, v);
       if (act === "entityClose")       r = await EW.entityClose(entityDbId, v.reason,
@@ -1673,7 +1675,7 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
     bank: { title:"Add bank / broker account", fields:[
       {label:"Bank / broker name",placeholder:"e.g. Barclays Bank",full:true},
       {label:"Account name",placeholder:"e.g. Current account"},
-      {label:"Account number (last 4 digits)",placeholder:"****"},
+      {label:"Account number",placeholder:"****"},
       {label:"Currency",type:"select",opts:["GBP","USD","EUR","Other"]},
       {label:"Board resolution date",placeholder:"DD/MM/YYYY"},
       {label:"Date closed",placeholder:"DD/MM/YYYY or leave blank"},
@@ -1874,6 +1876,44 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
                           Revalue an asset
                         </button>
                         <button style={s.mini}
+                                title="The valid FATCA and CRS codes and what each means for reporting"
+                                onClick={async()=>{
+                                  const r = await EA.classificationTypes(null);
+                                  if (!r || !r.live) { window.alert("Not signed in."); return; }
+                                  const rows = r.data || [];
+                                  const by = (reg) => rows.filter(x=>x.regime===reg)
+                                    .map(x=>`  ${x.code.padEnd(7)} ${x.name}` +
+                                            (x.reportable ? "  [REPORTS]" : "") +
+                                            (x.needs_giin ? "  [needs GIIN]" : ""))
+                                    .join("\n");
+                                  window.alert(
+                                    "FATCA\n" + by("FATCA") + "\n\nCRS\n" + by("CRS") +
+                                    "\n\n[REPORTS] means the entity itself has a reporting " +
+                                    "obligation. Passive NFFE and Passive NFE look through to " +
+                                    "controlling persons, which is the classification most " +
+                                    "holding companies land on.");
+                                }}>
+                          Classification codes
+                        </button>
+                        <button style={s.mini}
+                                title="What follows from the classification, and what is missing"
+                                onClick={async()=>{
+                                  const r = await EA.classificationStatus(null);
+                                  if (!r || !r.live) { window.alert("Not signed in."); return; }
+                                  const rows = r.data || [];
+                                  const gaps = rows.filter(x=>x.gap);
+                                  window.alert(
+                                    rows.length + " client entit(ies), " + gaps.length +
+                                    " with a classification gap" +
+                                    (gaps.length
+                                      ? ":\n" + gaps.slice(0,15).map(x=>`  ${x.entity_name}: ${x.gap}`).join("\n")
+                                      : ". Every entity is classified.") +
+                                    "\n\nAn unclassified entity is not reported at all, which is " +
+                                    "the failure that does not announce itself.");
+                                }}>
+                          Classification gaps
+                        </button>
+                        <button style={s.mini}
                                 title="Feeds billing — a service provided and not recorded is one nobody invoices for"
                                 onClick={()=>openAct("serviceSet", null, entity.name)}>
                           Set a service
@@ -2002,7 +2042,6 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
           title="Add new entity"
           fields={[
             {label:"Entity name",placeholder:"Full legal name",full:true},
-            {label:"Client / group",placeholder:"Group or client name"},
             {label:"Entity type",type:"select",opts:["Company","Trust","Foundation","LLC","Partnership"]},
             {label:"Jurisdiction",type:"select",opts:Object.keys(officeColors)},
             {label:"Registration number",placeholder:"Reg. number"},

@@ -3723,6 +3723,43 @@ group("Pickers that could not include anything created later");
   ok("no entity picker is hardcoded", bad.length === 0, bad.join("; "));
 }
 
+
+group("db/101 — FATCA and CRS classification, and two decisions from Andy");
+{
+  const sql = fs.readFileSync(path.join(DB, "101_fatca_crs_classification.sql"), "utf8");
+  const ea  = fs.readFileSync(path.join(SRC, "affinity_core_entity_admin.jsx"), "utf8");
+
+  // The classifications were free text. Two administrators write the same thing
+  // three ways — "Passive NFFE", "passive nffe", "Passive NFE" — and the third
+  // is the CRS term for a FATCA field. The classification drives the reporting
+  // obligation, so the error surfaces when a regulator asks.
+  ok("FATCA classifications are reference data", /'FATCA','PNFFE','Passive NFFE'/.test(sql));
+  ok("CRS classifications too", /'CRS','PNFE','Passive NFE'/.test(sql));
+  ok("an unknown code is refused", /is not a FATCA classification/.test(sql));
+  ok("a classification needing a GIIN refuses without one",
+     /requires a GIIN and none was given/.test(sql));
+
+  // The useful question is what FOLLOWS, not what it is called.
+  ok("look-through is derived, not typed", /look_through/.test(sql));
+  ok("...and the classifications that look through are named",
+     /'PNFFE','DRNFFE'/.test(sql));
+  ok("gaps are reported per entity", /no FATCA classification/.test(sql));
+  ok("...including reportable controlling persons that are not recorded",
+     /controlling persons are reportable and none are recorded/.test(sql));
+
+  // Deliberately NOT a wizard that decides for you.
+  ok("the limit of the tool is stated", /a wizard that appears to make it for/.test(sql)
+     || /judgement a person makes/.test(sql));
+
+  ok("the classification action is validated", /EA\.entityClassificationSet/.test(ea));
+  ok("the codes can be looked up from the screen", /EA\.classificationTypes/.test(ea));
+  ok("the gap report is reachable", /EA\.classificationStatus/.test(ea));
+
+  // Andy's two decisions.
+  ok("Client / group is gone", !/Client \/ group/.test(ea));
+  ok("bank account numbers are full, not last four", !/last 4/i.test(ea));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
