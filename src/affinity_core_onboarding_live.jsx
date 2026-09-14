@@ -51,6 +51,77 @@ const TABS = [
   { id: "attrition", label: "Attrition" },
 ];
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AT MODULE LEVEL, and this one was reported by a tester rather than found by
+// me: "you can only type one letter at a time and then it jumps".
+//
+// A component declared inside another is a NEW FUNCTION on every render, so
+// React unmounts and remounts it on each keystroke. The input loses focus after
+// one character. I had already fixed this twice in this build and written
+// "AT MODULE LEVEL" in the files where I did — and then wrote it again here,
+// in two modules, on the same day.
+// ─────────────────────────────────────────────────────────────────────────────
+function Form({ form, setForm, f, setF, msg, setMsg, busy, onSave }) {
+    if (!form || !FORMS[form]) return null;
+    const d = FORMS[form];
+    return (
+      <div onClick={(e) => e.target === e.currentTarget && (setForm(null), setF({}), setMsg(""))}
+           style={{ position: "fixed", inset: 0, background: "rgba(0,18,66,0.45)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    zIndex: 1000, padding: 20 }}>
+        <div style={{ background: "#fff", borderRadius: 12, padding: "22px 24px",
+                      width: "min(620px,100%)", maxHeight: "86vh", overflowY: "auto" }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: NAVY, marginBottom: 6 }}>
+            {d.title}
+          </div>
+          {(f.subject || f.entity) && (
+            <div style={{ fontSize: 12, color: MUT, marginBottom: 8 }}>
+              {f.subject || f.entity}{f.next ? ` · next stage: ${f.next}` : ""}
+            </div>
+          )}
+          <div style={{ fontSize: 11.5, color: MUT, lineHeight: 1.7, marginBottom: 14 }}>
+            {d.note}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 14px" }}>
+            {d.fields.map((fl) => (
+              <div key={fl.k} style={{ gridColumn: fl.full ? "1/-1" : "auto" }}>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 600,
+                                color: "#555", marginBottom: 4 }}>
+                  {fl.label}{fl.required && <span style={{ color: RED }}> *</span>}
+                </label>
+                {fl.type === "select" ? (
+                  <select value={f[fl.k] || ""}
+                          onChange={(e) => setF({ ...f, [fl.k]: e.target.value })}
+                          style={{ ...inp, height: 34 }}>
+                    <option value="">—</option>
+                    {fl.opts.map((o) => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                ) : (
+                  <input value={f[fl.k] || ""} placeholder={fl.ph || ""}
+                         onChange={(e) => setF({ ...f, [fl.k]: e.target.value })}
+                         style={{ ...inp, height: 34 }} />
+                )}
+              </div>
+            ))}
+          </div>
+          {msg && (
+            <div style={{ marginTop: 14, padding: "9px 12px", borderRadius: 7, fontSize: 11.5,
+                          lineHeight: 1.6, background: RED_BG,
+                          border: "0.5px solid #f0c9c9", color: RED, whiteSpace: "pre-wrap" }}>
+              {msg}
+            </div>
+          )}
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 18 }}>
+            <button style={btn(false)}
+                    onClick={() => { setForm(null); setF({}); setMsg(""); }}>Cancel</button>
+            <button style={btn(true)} onClick={d.save} disabled={busy}>{d.cta}</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
 export default function AffinityOnboarding({ onNav }) {
   const [tab, setTab]     = useState("cases");
   const [cases, setCases] = useState([]);
@@ -447,65 +518,6 @@ export default function AffinityOnboarding({ onNav }) {
     },
   };
 
-  const Form = () => {
-    if (!form || !FORMS[form]) return null;
-    const d = FORMS[form];
-    return (
-      <div onClick={(e) => e.target === e.currentTarget && (setForm(null), setF({}), setMsg(""))}
-           style={{ position: "fixed", inset: 0, background: "rgba(0,18,66,0.45)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    zIndex: 1000, padding: 20 }}>
-        <div style={{ background: "#fff", borderRadius: 12, padding: "22px 24px",
-                      width: "min(620px,100%)", maxHeight: "86vh", overflowY: "auto" }}>
-          <div style={{ fontSize: 15, fontWeight: 600, color: NAVY, marginBottom: 6 }}>
-            {d.title}
-          </div>
-          {(f.subject || f.entity) && (
-            <div style={{ fontSize: 12, color: MUT, marginBottom: 8 }}>
-              {f.subject || f.entity}{f.next ? ` · next stage: ${f.next}` : ""}
-            </div>
-          )}
-          <div style={{ fontSize: 11.5, color: MUT, lineHeight: 1.7, marginBottom: 14 }}>
-            {d.note}
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 14px" }}>
-            {d.fields.map((fl) => (
-              <div key={fl.k} style={{ gridColumn: fl.full ? "1/-1" : "auto" }}>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 600,
-                                color: "#555", marginBottom: 4 }}>
-                  {fl.label}{fl.required && <span style={{ color: RED }}> *</span>}
-                </label>
-                {fl.type === "select" ? (
-                  <select value={f[fl.k] || ""}
-                          onChange={(e) => setF({ ...f, [fl.k]: e.target.value })}
-                          style={{ ...inp, height: 34 }}>
-                    <option value="">—</option>
-                    {fl.opts.map((o) => <option key={o} value={o}>{o}</option>)}
-                  </select>
-                ) : (
-                  <input value={f[fl.k] || ""} placeholder={fl.ph || ""}
-                         onChange={(e) => setF({ ...f, [fl.k]: e.target.value })}
-                         style={{ ...inp, height: 34 }} />
-                )}
-              </div>
-            ))}
-          </div>
-          {msg && (
-            <div style={{ marginTop: 14, padding: "9px 12px", borderRadius: 7, fontSize: 11.5,
-                          lineHeight: 1.6, background: RED_BG,
-                          border: "0.5px solid #f0c9c9", color: RED, whiteSpace: "pre-wrap" }}>
-              {msg}
-            </div>
-          )}
-          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 18 }}>
-            <button style={btn(false)}
-                    onClick={() => { setForm(null); setF({}); setMsg(""); }}>Cancel</button>
-            <button style={btn(true)} onClick={d.save} disabled={busy}>{d.cta}</button>
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div style={{ fontFamily: "Catamaran, system-ui, sans-serif",
@@ -552,7 +564,7 @@ export default function AffinityOnboarding({ onNav }) {
         {tab === "attrition" && <Attrition />}
       </div>
 
-      <Form />
+      <Form form={form} setForm={setForm} f={f} setF={setF} msg={msg} setMsg={setMsg} busy={busy} onSave={save} />
     </div>
   );
 }

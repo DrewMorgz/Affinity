@@ -1563,6 +1563,12 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
   };
 
   const modalSaves = {
+    // Aliases. The buttons open 'bank', 'fileNote' and 'safeItem'; the
+    // handlers below are keyed 'account', 'filenote' and 'safeitem'. The
+    // mismatch made three working registers report "the write function is not
+    // built" — reported by a tester within minutes of opening the module, and
+    // invisible to every check in the suite.
+
     // Creating a client. Found missing by the wiring audit: every register
     // worked but nothing could create the entity they hang off.
     // Creating a client. Found missing by the wiring audit: every register
@@ -1632,7 +1638,12 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
       item: v["Item"] || v["Description"], depositedDate: toISO(v["Date deposited"]),
       authorisedBy: v["Authorised by"],
     }),
-  };
+  
+    // These three are the same handlers under the names the buttons use.
+    bank:      (v) => modalSaves.account(v),
+    fileNote:  (v) => modalSaves.filenote(v),
+    safeItem:  (v) => modalSaves.safeitem(v),
+};
 
   const modalForms = {
     director: { title:"Appoint officer / trustee", fields:[

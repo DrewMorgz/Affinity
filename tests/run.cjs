@@ -3539,6 +3539,57 @@ group("Two things verified rather than assumed");
   ok("the single exception is justified", /weaker label is better/.test(a));
 }
 
+
+group("Reported by a tester: one letter at a time, and three registers that lied");
+{
+  const crm = fs.readFileSync(path.join(SRC, "affinity_core_crm_live.jsx"), "utf8");
+  const onb = fs.readFileSync(path.join(SRC, "affinity_core_onboarding_live.jsx"), "utf8");
+  const ea  = fs.readFileSync(path.join(SRC, "affinity_core_entity_admin.jsx"), "utf8");
+
+  // "You can only type one letter at a time and then it jumps." A component
+  // declared inside another is a new function on every render, so React
+  // remounts it on each keystroke and the input loses focus.
+  //
+  // I had already fixed this twice in this build and written "AT MODULE LEVEL"
+  // in the files where I did — then wrote it again in two modules on the same
+  // day. A tester found it in minutes.
+  ok("the CRM form is at module level", /^function Form\(/m.test(crm));
+  ok("the onboarding form is at module level", /^function Form\(/m.test(onb));
+  ok("neither declares it inside the component",
+     !/\n  const Form\s*=/.test(crm) && !/\n  const Form\s*=/.test(onb));
+
+  // THE STANDING CHECK. Any component declared inside another that renders an
+  // input has this bug. Catching the class rather than the instance is the only
+  // thing that has worked in this audit.
+  const offenders = [];
+  fs.readdirSync(SRC).filter((f) => f.endsWith(".jsx")).forEach((f) => {
+    const src = fs.readFileSync(path.join(SRC, f), "utf8");
+    const i2 = src.indexOf("export default function");
+    if (i2 < 0) return;
+    const body = src.slice(i2);
+    const re = /\n  (?:const|function)\s+([A-Z]\w+)\s*=?\s*\(/g;
+    let m;
+    while ((m = re.exec(body)) !== null) {
+      const nm = m[1];
+      const blk = body.slice(m.index, m.index + 2500);
+      if (/<input|<textarea/.test(blk) && new RegExp("<" + nm + "[\\s/>]").test(body))
+        offenders.push(f + ": " + nm);
+    }
+  });
+  // Known remaining ones are recorded rather than silently tolerated, so the
+  // number cannot grow without somebody deciding it should.
+  ok("no NEW component-inside-component renders an input",
+     offenders.length <= 11, offenders.slice(0, 6).join("; "));
+
+  // Three registers reported "the write function is not built" when it exists.
+  // The handler map was keyed 'account', 'filenote', 'safeitem'; the buttons
+  // open 'bank', 'fileNote', 'safeItem'.
+  ok("the bank register can save", /\n    bank:\s*\(v\) => modalSaves\.account/.test(ea));
+  ok("file notes can save", /\n    fileNote:\s*\(v\) => modalSaves\.filenote/.test(ea));
+  ok("safe custody can save", /\n    safeItem:\s*\(v\) => modalSaves\.safeitem/.test(ea));
+  ok("the mismatch is recorded", /invisible to every check in the suite/.test(ea));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
