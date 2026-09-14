@@ -91,3 +91,44 @@ export const allocationSetReopen = (setId, reason) =>
   call("allocation_set_reopen", { p_set: setId, p_reason: reason });
 
 export const canWrite = () => isConfigured;
+
+// ── Charge-out rates and services (db/100) ──────────────────────────────────
+// Reported by a tester: "Where are charge out rates and services recorded?
+// Unable to record time entries." They were recorded nowhere — there was no
+// charge-out rate table at all, and 096 had just made billable time without a
+// rate refuse outright, which is correct and left nobody able to record any.
+
+// Rates attach to a GRADE, not a job title. There are thirty-odd titles in the
+// staff list and a firm has a handful of rate bands.
+export const chargeRateSet = (grade, location, effectiveFrom, hourlyRate, ccy, service, note) =>
+  call("charge_rate_set", { p_grade: grade, p_location: location,
+                            p_effective_from: effectiveFrom, p_hourly_rate: hourlyRate,
+                            p_ccy: ccy, p_service: service || null, p_note: note || null });
+
+export const chargeRatesList = (location) =>
+  call("charge_rates_list", { p_location: location || null });
+
+// The rate that applied on a date. Effective-dated and never edited in place,
+// so time recorded in March keeps March's rate when it changes in April.
+export const chargeRateAt = (grade, location, onDate, service) =>
+  call("charge_rate_at", { p_grade: grade, p_location: location,
+                           p_on_date: onDate, p_service: service || null });
+
+// The rate for a PERSON, resolving their title to a grade. This is what a
+// timesheet screen should call — it knows who is recording the time, not which
+// band they sit in.
+export const chargeRateForStaff = (staffId, onDate, service) =>
+  call("charge_rate_for_staff", { p_staff_id: staffId, p_on_date: onDate,
+                                  p_service: service || null });
+
+export const staffGradesList     = () => call("staff_grades_list", {});
+export const staffGradeAssign    = (roleTitle, grade) =>
+  call("staff_grade_assign", { p_role_title: roleTitle, p_grade: grade });
+// Job titles with nobody's grade set — the thing that stops a rate resolving.
+export const staffTitlesUnmapped = () => call("staff_titles_unmapped", {});
+
+export const serviceAdd   = (code, name, revenueAccountId, vatCode) =>
+  call("service_add", { p_code: code, p_name: name,
+                        p_revenue_account_id: revenueAccountId || null,
+                        p_vat_code: vatCode ?? null });
+export const servicesList = () => call("services_list", {});

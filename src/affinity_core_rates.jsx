@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import * as R from "./affinity_rates_api";
 import { isConfigured } from "./affinity_accounting_supabase";
+import { chargeRateSet, chargeRatesList, staffGradesList, staffGradeAssign, staffTitlesUnmapped, serviceAdd, servicesList } from "./affinity_rates_api";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RATES AND ALLOCATIONS
@@ -343,6 +344,130 @@ export default function AffinityRates({ onNav }) {
   );
 
   // ── Allocations ───────────────────────────────────────────────────────────
+  // ── Charge-out rates ─────────────────────────────────────────────────────
+  // Reported by a tester: "Where are charge out rates and services recorded?
+  // Unable to record time entries." Nowhere, until now.
+  //
+  // Rates attach to a GRADE. There are thirty-odd job titles in the staff list
+  // and a firm has a handful of rate bands, so the mapping from title to grade
+  // is data that can be corrected without a release. A title with no grade is
+  // what stops a rate resolving, so it is the first thing this screen shows.
+  const ChargeRates = () => (
+    <div style={card}>
+      <div style={{ fontSize: 11, fontWeight: 600, color: MUT, marginBottom: 6,
+                    textTransform: "uppercase", letterSpacing: "0.4px" }}>
+        Charge-out rates
+      </div>
+      <div style={{ fontSize: 11.5, color: MUT, lineHeight: 1.8, marginBottom: 12 }}>
+        Rates are effective-dated and never edited in place: time recorded in March keeps
+        March's rate when the rate changes in April, or every historic WIP figure moves.
+        To change a rate, set a new one from a later date.
+        <div style={{ marginTop: 6 }}>
+          A rate is found by grade and office, and optionally by service. Without a grade
+          mapped to somebody's job title their rate cannot resolve, and billable time
+          cannot be recorded at all.
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
+        <button style={btn(true)} onClick={async () => {
+          const grade = window.prompt("Grade code? DIRECTOR, MD, MANAGER, ASSISTANT, SENIOR, ADMIN, TRAINEE, SUPPORT");
+          if (!grade) return;
+          const loc = window.prompt("Office? e.g. Isle of Man, Malta, Cayman, Cyprus, UK, USA");
+          if (!loc) return;
+          const from = window.prompt("Effective from (YYYY-MM-DD)?");
+          if (!from) return;
+          const rate = window.prompt("Hourly rate? A whole amount per hour — 250, not 2.50");
+          if (!rate) return;
+          const ccy = window.prompt("Currency?", "GBP");
+          if (!ccy) return;
+          const svc = window.prompt("Service code (optional — blank applies to all work)");
+          const r = await chargeRateSet(grade.toUpperCase(), loc, from, Number(rate),
+                                        ccy, svc || null, null);
+          setMsg(r && r.ok ? "Rate set." : (r && r.error) || "That rate could not be set.");
+        }}>
+          ＋ Set a rate
+        </button>
+        <button style={btn(false)} onClick={async () => {
+          const r = await chargeRatesList(null);
+          if (!r || !r.live) { setMsg("Not signed in."); return; }
+          const rows = r.data || [];
+          setMsg(rows.length
+            ? rows.length + " rate(s):\n" + rows.map(x =>
+                `  ${x.grade_name} · ${x.location_code}${x.service_code ? " · " + x.service_code : ""}` +
+                `  ${x.ccy} ${x.hourly_rate}/hr from ${x.effective_from}`).join("\n")
+            : "No charge-out rates recorded. Nobody can record billable time until there are.");
+        }}>
+          Show rates
+        </button>
+        <button style={btn(false)}
+                title="A job title with no grade is what stops a rate resolving"
+                onClick={async () => {
+          const [g, u] = await Promise.all([staffGradesList(), staffTitlesUnmapped()]);
+          if (!g || !g.live) { setMsg("Not signed in."); return; }
+          const grades = g.data || [], un = u.data || [];
+          setMsg("Grades:\n" + grades.map(x =>
+                   `  ${x.code} — ${x.name} (${x.mapped_titles} title(s) mapped)`).join("\n")
+                 + (un.length
+                    ? "\n\nJob titles with NO grade — nobody with these can record billable time:\n"
+                      + un.map(x => `  ${x.role_title} (${x.people})`).join("\n")
+                    : "\n\nEvery job title is mapped to a grade."));
+        }}>
+          Grades and unmapped titles
+        </button>
+        <button style={btn(false)} onClick={async () => {
+          const title = window.prompt("Job title, exactly as it appears on the staff record?");
+          if (!title) return;
+          const grade = window.prompt("Which grade?");
+          if (!grade) return;
+          const r = await staffGradeAssign(title, grade.toUpperCase());
+          setMsg(r && r.ok ? "Mapped." : (r && r.error) || "That could not be mapped.");
+        }}>
+          Map a title to a grade
+        </button>
+      </div>
+    </div>
+  );
+
+  // ── Services ─────────────────────────────────────────────────────────────
+  // The service list feeds billing and the entity service register. It was
+  // empty, so a time entry could not be categorised.
+  const Services = () => (
+    <div style={card}>
+      <div style={{ fontSize: 11, fontWeight: 600, color: MUT, marginBottom: 6,
+                    textTransform: "uppercase", letterSpacing: "0.4px" }}>
+        Services
+      </div>
+      <div style={{ fontSize: 11.5, color: MUT, lineHeight: 1.8, marginBottom: 12 }}>
+        What Affinity provides, and what time is recorded against. A service can carry its
+        own revenue account and VAT code, so the billing lands in the right place without
+        anyone choosing it each time.
+      </div>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        <button style={btn(true)} onClick={async () => {
+          const code = window.prompt("Service code? e.g. COSEC, TRUST, ACCTS, COMPLIANCE");
+          if (!code) return;
+          const name = window.prompt("Name? e.g. Company secretarial");
+          if (!name) return;
+          const r = await serviceAdd(code, name, null, null);
+          setMsg(r && r.ok ? "Service recorded." : (r && r.error) || "That could not be recorded.");
+        }}>
+          ＋ Add a service
+        </button>
+        <button style={btn(false)} onClick={async () => {
+          const r = await servicesList();
+          if (!r || !r.live) { setMsg("Not signed in."); return; }
+          const rows = r.data || [];
+          setMsg(rows.length
+            ? rows.map(x => `  ${x.code} — ${x.name}` +
+                (x.entities ? `  (${x.entities} entit${x.entities === 1 ? "y" : "ies"})` : "")).join("\n")
+            : "No services recorded. Time cannot be categorised until there are.");
+        }}>
+          Show services
+        </button>
+      </div>
+    </div>
+  );
+
   const Allocations = () => {
     const unbalanced = allocs.filter((a) => !a.balanced && a.status !== "locked");
     return (
@@ -504,7 +629,8 @@ export default function AffinityRates({ onNav }) {
 
       <div style={{ display: "flex", gap: 4, padding: "10px 20px 0", background: "#fff",
                     borderBottom: "0.5px solid #e5e5e5" }}>
-        {[["rates", "Payroll rates"], ["allocations", "Group allocations"]].map(([id, label]) => (
+        {[["rates", "Payroll rates"], ["allocations", "Group allocations"],
+          ["charge", "Charge-out rates"], ["services", "Services"]].map(([id, label]) => (
           <button key={id} onClick={() => { setTab(id); setMsg(""); }}
                   style={{ padding: "7px 14px", fontSize: 12, cursor: "pointer",
                            border: "none", background: "transparent",
@@ -525,6 +651,8 @@ export default function AffinityRates({ onNav }) {
         )}
         {tab === "rates"       && <Rates />}
         {tab === "allocations" && <Allocations />}
+        {tab === "charge"      && <ChargeRates />}
+        {tab === "services"    && <Services />}
       </div>
 
       <RateForm open={!!form} kind={form} f={f} setF={setF} msg={fMsg} busy={busy}

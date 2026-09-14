@@ -3643,6 +3643,50 @@ group("Procedures, duplicate Documents, and imports that do not exist");
      && !/\{id:"documents"/.test(sh));
 }
 
+
+group("db/100 — charge-out rates and services, so time can be recorded at all");
+{
+  const sql = fs.readFileSync(path.join(DB, "100_charge_rates_and_services.sql"), "utf8");
+  const ui  = fs.readFileSync(path.join(SRC, "affinity_core_rates.jsx"), "utf8");
+  const api = fs.readFileSync(path.join(SRC, "affinity_rates_api.js"), "utf8");
+
+  // REPORTED BY A TESTER: "Where are charge out rates and services recorded?
+  // Unable to record time entries."
+  //
+  // Nowhere. There was no charge-out rate table of any kind. ts_entry_add takes
+  // the rate as a parameter, so the caller had to know it — and 096 had just
+  // made billable time without a rate refuse outright, which is correct and
+  // left nobody able to record any billable time whatsoever.
+  ok("there is a charge rate table", /CREATE TABLE IF NOT EXISTS charge_rate/.test(sql));
+  ok("and a grade table", /CREATE TABLE IF NOT EXISTS staff_grade/.test(sql));
+
+  // Rates attach to a GRADE, not a job title — thirty-odd titles, a handful of
+  // bands — and the mapping is data so a new title needs no release.
+  ok("the grade decision is explained", /handful of rate bands and thirty job titles/.test(sql));
+  ok("titles map to grades as data", /CREATE TABLE IF NOT EXISTS staff_grade_map/.test(sql));
+  ok("unmapped titles can be found", /staff_titles_unmapped/.test(sql));
+
+  // Effective-dated, never edited in place.
+  ok("rates are effective dated", /effective_from\s+date NOT NULL/.test(sql));
+  ok("...with the reason", /every\s*'\s*'historic WIP figure would move|historic WIP figure/.test(sql));
+  ok("the lookup takes the rate that applied on the day",
+     /effective_from <= p_on_date/.test(sql));
+  ok("a service-specific rate beats a general one",
+     /\(service_code IS NOT NULL\) DESC/.test(sql));
+
+  // The same fraction trap as the payroll rates.
+  ok("a rate under 5 an hour is questioned", /looks wrong/.test(sql));
+  ok("a nil rate is refused", /makes the\s*'\s*'time worth nothing|time worth nothing/.test(sql));
+
+  // Reachable, and resolvable from a person rather than a band.
+  ["chargeRateSet", "chargeRatesList", "chargeRateForStaff", "staffGradeAssign",
+   "serviceAdd", "servicesList"].forEach((w) =>
+    ok(w + " is wrapped", new RegExp("export const " + w + "\\s*=").test(api)));
+  ok("the rates screen sets a rate", /chargeRateSet\(/.test(ui));
+  ok("...and shows which titles have no grade", /staffTitlesUnmapped\(/.test(ui));
+  ok("services can be added and listed", /serviceAdd\(/.test(ui) && /servicesList\(/.test(ui));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {
