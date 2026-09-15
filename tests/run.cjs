@@ -3804,6 +3804,48 @@ group("db/102 — the classification methodology and the reporting extract");
      /your judgement, not the system/.test(ea));
 }
 
+
+group("CRM and Onboarding were broken, and I broke one half of it");
+{
+  const files = fs.readdirSync(SRC).filter((f) => f.endsWith(".js"));
+  const crm = fs.readFileSync(path.join(SRC, "affinity_core_crm_live.jsx"), "utf8");
+  const onb = fs.readFileSync(path.join(SRC, "affinity_core_onboarding_live.jsx"), "utf8");
+
+  // REPORTED: "CRM & Onboarding are not working", with "save is not defined"
+  // in the stack. TWO separate faults, and the first was mine.
+  //
+  // 1. When I lifted the Form component to module level this morning to fix
+  //    the one-letter-at-a-time bug, I passed onSave={save} — and no `save`
+  //    function existed. Worse, the lifted Form still referenced FORMS, which
+  //    is declared INSIDE the component and is therefore invisible from module
+  //    level. I moved a component out of its scope without checking what it
+  //    closed over.
+  //
+  //    It compiled, because JSX does not resolve identifiers at build time. It
+  //    passed the render check, because that never opens the form. It failed
+  //    the moment somebody clicked Add.
+  ok("the form takes its definition as a prop",
+     /function Form\(\{ d, setForm/.test(crm) && /function Form\(\{ d, setForm/.test(onb));
+  ok("...and the undefined save reference is gone",
+     !/onSave=\{save\}/.test(crm) && !/onSave=\{save\}/.test(onb));
+
+  // 2. FIVE API FILES USED call() AND NEVER DEFINED IT. Every function in
+  //    affinity_crm_api, affinity_onboarding_api, affinity_compliance_api,
+  //    affinity_ops_api and affinity_eadmin_api threw "call is not defined" on
+  //    first use. An undefined identifier is only an error when reached, so all
+  //    five compiled and rendered and failed on contact.
+  const missing = [];
+  files.forEach((f) => {
+    const src = fs.readFileSync(path.join(SRC, f), "utf8");
+    const uses = (src.match(/(?<![\w.])call\(/g) || []).length;
+    if (!uses) return;
+    const defines = /(const|async function|function)\s+call\b/.test(src)
+                 || /import\s*\{[^}]*\bcall\b[^}]*\}/.test(src);
+    if (!defines) missing.push(f);
+  });
+  ok("no API file calls a helper it never defines", missing.length === 0, missing.join("; "));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

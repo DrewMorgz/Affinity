@@ -56,9 +56,8 @@ const TABS = [
 // "AT MODULE LEVEL" in the files where I did — and then wrote it again here,
 // in two modules, on the same day.
 // ─────────────────────────────────────────────────────────────────────────────
-function Form({ form, setForm, f, setF, msg, setMsg, busy, onSave }) {
-    if (!form || !FORMS[form]) return null;
-    const d = FORMS[form];
+function Form({ d, setForm, f, setF, msg, setMsg, busy }) {
+  if (!d) return null;
     return (
       <div onClick={(e) => e.target === e.currentTarget && (setForm(null), setF({}), setMsg(""))}
            style={{ position: "fixed", inset: 0, background: "rgba(0,18,66,0.45)",
@@ -530,7 +529,7 @@ export default function AffinityCRM({ onNav }) {
         {tab === "closed"   && <Closed />}
       </div>
 
-      <Form form={form} setForm={setForm} f={f} setF={setF} msg={msg} setMsg={setMsg} busy={busy} onSave={save} />
+      <Form d={form ? FORMS[form] : null} setForm={setForm} f={f} setF={setF} msg={msg} setMsg={setMsg} busy={busy} />
     </div>
   );
 }

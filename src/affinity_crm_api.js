@@ -1,5 +1,34 @@
 // src/affinity_crm_api.js
 import { supabase, isConfigured } from "./affinity_accounting_supabase";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THE CALL HELPER. This file used call() throughout and never defined it, so
+// every function in it threw "call is not defined" the moment it ran. Reported
+// as "CRM & Onboarding are not working" with exactly that message in the stack.
+//
+// It compiled, because an undefined identifier in JavaScript is only an error
+// when it is reached. It rendered, because the module renders before it loads.
+// It failed the first time anybody opened the screen.
+//
+// Five API files were in this state. The working ones each define their own
+// helper; these five were written expecting one and never got it.
+// ─────────────────────────────────────────────────────────────────────────────
+const clean = (m) => String(m || "").replace(/^[A-Z0-9]{5}:\s*/, "");
+
+async function call(fn, args) {
+  if (!isConfigured) {
+    return { ok: false, live: false, data: null,
+             error: "Not signed in — this is read from the database." };
+  }
+  try {
+    const { data, error } = await supabase.rpc(fn, args || {});
+    if (error) return { ok: false, live: true, data: null, error: clean(error.message) };
+    return { ok: true, live: true, data, error: null };
+  } catch (e) {
+    return { ok: false, live: false, data: null, error: String((e && e.message) || e) };
+  }
+}
+
 const off = () => ({ data: null, error: new Error("not configured") });
 // ── CRM pipeline (db/084) ───────────────────────────────────────────────────
 // Prospects and their contact log had no table until db/084.
