@@ -40,6 +40,24 @@ const inp = { height: 32, fontSize: 12, borderRadius: 6, border: "0.5px solid #c
 const pill = (bg, fg) => ({ fontSize: 9.5, fontWeight: 600, padding: "2px 7px",
                             borderRadius: 20, background: bg, color: fg, whiteSpace: "nowrap" });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// WHY THE PANELS BELOW ARE CALLED RATHER THAN MOUNTED
+//
+// Browse, Search, Retention and Form are declared inside the module component.
+// A component declared inside another is a new function on every render, so
+// React sees a new type and remounts it, and an input inside loses focus after
+// one character. Reported as "unable to type without it jumping after each
+// letter".
+//
+// The obvious fix is to lift them to module level. I did exactly that in CRM
+// and Onboarding this morning and broke both, because the lifted component
+// still referenced FORMS, which is declared inside and invisible from outside.
+//
+// Calling the function instead changes no scope at all: the JSX becomes part of
+// the parent's output, so there is no component boundary to remount across and
+// everything they close over is still in reach. Smaller, and it cannot fail the
+// way the last fix did.
+// ─────────────────────────────────────────────────────────────────────────────
 const TABS = [
   { id: "browse",    label: "Browse" },
   { id: "search",    label: "Search" },
