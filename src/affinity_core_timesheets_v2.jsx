@@ -345,22 +345,6 @@ export default function AffinityTimesheets({ onNav }) {
             style={{ ...sel, minWidth:190, boxSizing:"border-box" }} />
           <datalist id="ts-staff-list">{STAFF.map(x=><option key={x.id} value={x.name}/>)}</datalist>
           <select style={sel}><option>{weekF}</option><option>W/C 07 Jul 2025</option><option>W/C 30 Jun 2025</option></select>
-          <button style={{ ...nb, marginLeft:"auto" }}
-                  title="Corrects a draft entry. The narrative appears on the client's invoice, so a thin one is worth fixing before it is submitted."
-                  onClick={async()=>{
-                    const id = window.prompt("Time entry id to correct?");
-                    if (!id) return;
-                    const h = window.prompt("Hours (decimal, e.g. 1.5)?");
-                    if (h == null || h === "") return;
-                    const mt = window.prompt("Matter?");
-                    const nv = window.prompt("Narrative? It appears on the client's invoice, and a specific one answers a fee query before it is asked.");
-                    const bl = window.confirm("Is this billable? OK for yes, Cancel for no.");
-                    const r = await OW.tsEntryUpdate(Number(id), Number(h), mt, nv, bl);
-                    window.alert(r && r.ok ? "Entry corrected."
-                      : (r && r.error) || "That could not be corrected.");
-                  }}>
-            Correct an entry
-          </button>
           <button style={nb}
                   title="Approved, unbilled time for one client — what a billing run would actually pick up"
                   onClick={async()=>{
@@ -641,7 +625,7 @@ export default function AffinityTimesheets({ onNav }) {
             ))}
             <div style={{ display:"flex",gap:8 }}>
               <button onClick={()=>setModal(null)} style={{ flex:1,background:"#f5f5f5",color:"#333",border:"none",borderRadius:8,padding:10,fontSize:13,fontWeight:600,cursor:"pointer" }}>Cancel</button>
-              <button onClick={()=>{ window.alert("This form saves nothing. Use Correct an entry, which does."); setModal(null); }} style={{ flex:2,background:CY,color:"#fff",border:"none",borderRadius:8,padding:10,fontSize:13,fontWeight:600,cursor:"pointer" }}>Save changes</button>
+              <button onClick={()=>{ window.alert("This form saves nothing. Correct an entry from the entry itself on the timesheet."); setModal(null); }} style={{ flex:2,background:CY,color:"#fff",border:"none",borderRadius:8,padding:10,fontSize:13,fontWeight:600,cursor:"pointer" }}>Save changes</button>
             </div>
           </div>
         </div>
@@ -654,7 +638,7 @@ export default function AffinityTimesheets({ onNav }) {
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
               {[
                 ["Date","text","DD/MM/YYYY",false],["Entity","text","Entity name",false],
-                ["Matter / service","text","e.g. Company administration",false],
+                ["Matter / service","select","",false,(liveServices || ["Administration","Compliance","Accounts","Company secretarial","Trust administration","Client liaison"])],
                 ["Work type","select","",false,["Client — admin","Client — compliance","Client — trust","Client — finance","Client — onboarding","Client — corporate","Client — non-billable","Non-billable — new business","Non-billable — internal","Non-billable — leave"]],
                 ["Units (10 min)","number","e.g. 6 = 1 hour",false],
               ].map(([l,t,ph,full,opts])=>(

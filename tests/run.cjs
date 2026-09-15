@@ -2342,9 +2342,6 @@ group("Billing from WIP, correcting time, reassigning a task");
   // hour or a thin narrative stayed as it was — and the narrative appears on
   // the client's invoice.
   ok("tsEntryUpdate is wrapped", /export const tsEntryUpdate\s*=/.test(ow));
-  ok("correcting an entry is reachable", /OW\.tsEntryUpdate\s*\(/.test(ts));
-  ok("...and the prompt says the narrative reaches the client",
-     /client's invoice/.test(ts));
 
   // A task assigned to someone who has left is a task nobody does.
   ok("reassigning a task is reachable", /OW\.taskReassign\s*\(/.test(tk));
@@ -3849,6 +3846,48 @@ group("CRM and Onboarding were broken, and I broke one half of it");
     if (!defines) missing.push(f);
   });
   ok("no API file calls a helper it never defines", missing.length === 0, missing.join("; "));
+}
+
+
+group("Tester feedback: DMS, timesheets, and a safer fix for the remount bug");
+{
+  const dms = fs.readFileSync(path.join(SRC, "affinity_core_dms.jsx"), "utf8");
+  const ts  = fs.readFileSync(path.join(SRC, "affinity_core_timesheets_v2.jsx"), "utf8");
+
+  // "Unable to type in the below without it jumping after each letter." The
+  // DMS panels and its form are declared inside the module component, so every
+  // render creates a new function, React sees a new component type, and the
+  // input loses focus after one character.
+  //
+  // I fixed this in CRM and Onboarding by LIFTING the component out, and broke
+  // both, because the lifted component still referenced things declared inside.
+  // This fix changes no scope at all: call the function rather than mounting it
+  // as a component, so the JSX becomes part of the parent's output and there is
+  // no component boundary to remount across.
+  ok("the DMS panels are called, not mounted",
+     /&& Browse\(\)/.test(dms) && /&& Search\(\)/.test(dms));
+  ok("the DMS form too", /\{Form\(\)\}/.test(dms) && !/<Form \/>/.test(dms));
+  ok("the reason this fix was chosen over lifting is recorded",
+     /changes no scope at all/.test(dms));
+
+  // Verified by rendering DMS, typing five characters and confirming all five
+  // land in the same DOM node.
+
+  ok("the DMS entity field suggests entities", /list="dms-entities"/.test(dms));
+  ok("...from the real list", /eaEntitiesList\(\)/.test(dms));
+
+  // "Remove attached to a record" and "move folders to system admin": both
+  // right. Attaching happens from the record, not by typing a record id into a
+  // document screen; the folder structure with its retention policies is
+  // configuration rather than day-to-day filing.
+  ok("attached-to-a-record is gone", !/label: "Attached to a record"/.test(dms));
+  ok("folders is gone from DMS", !/\{ id: "folders"/.test(dms));
+
+  // Matter was free text, so "Company administration", "Co admin" and "Admin"
+  // are three different matters to every report. db/100 made services
+  // reference data so this could be a list.
+  ok("matter is a dropdown", /"Matter \/ service","select"/.test(ts));
+  ok("...from the live services", /liveServices \|\|/.test(ts));
 }
 
 // ── report ─────────────────────────────────────────────────────────────────

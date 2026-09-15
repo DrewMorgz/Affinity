@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import * as DMS from "./affinity_dms_api";
 import { isConfigured } from "./affinity_accounting_supabase";
+import { eaEntitiesList } from "./affinity_eadmin_api";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DOCUMENT MANAGEMENT
@@ -43,8 +44,6 @@ const TABS = [
   { id: "browse",    label: "Browse" },
   { id: "search",    label: "Search" },
   { id: "retention", label: "Retention" },
-  { id: "attached",  label: "Attached to a record" },
-  { id: "folders",   label: "Folders" },
 ];
 
 export default function AffinityDMS({ onNav, entityId }) {
@@ -53,6 +52,17 @@ export default function AffinityDMS({ onNav, entityId }) {
   const [msg, setMsg]       = useState("");
   const [busy, setBusy]     = useState(false);
   const [eid, setEid]       = useState(entityId ? String(entityId) : "");
+  // "It also does not provide a drop down of entities when typing." A datalist
+  // of the real entities, so the field suggests rather than requiring somebody
+  // to know an id. Typing an id still works.
+  const [dmsEntities, setDmsEntities] = useState([]);
+  useEffect(() => {
+    let alive = true;
+    eaEntitiesList().then((r) => {
+      if (alive && r && r.ok && Array.isArray(r.data)) setDmsEntities(r.data);
+    }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
   const [cat, setCat]       = useState("");
   const [query, setQuery]   = useState("");
   const [hits, setHits]     = useState([]);
@@ -94,7 +104,11 @@ export default function AffinityDMS({ onNav, entityId }) {
             <label style={{ display: "block", fontSize: 10.5, fontWeight: 600,
                             color: "#555", marginBottom: 3 }}>Entity id</label>
             <input style={{ ...inp, width: 110 }} value={eid}
-                   onChange={(e) => setEid(e.target.value)} placeholder="all entities" />
+                   onChange={(e) => setEid(e.target.value)} list="dms-entities"
+                   placeholder="all entities — type to search" />
+            <datalist id="dms-entities">
+              {dmsEntities.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+            </datalist>
           </div>
           <div>
             <label style={{ display: "block", fontSize: 10.5, fontWeight: 600,
@@ -196,7 +210,7 @@ export default function AffinityDMS({ onNav, entityId }) {
             <label style={{ display: "block", fontSize: 10.5, fontWeight: 600,
                             color: "#555", marginBottom: 3 }}>Entity id</label>
             <input style={{ ...inp, width: 110 }} value={eid}
-                   onChange={(e) => setEid(e.target.value)} placeholder="all" />
+                   onChange={(e) => setEid(e.target.value)} list="dms-entities" placeholder="all" />
           </div>
           <button style={btn(true)} disabled={busy || !query.trim()}
                   onClick={async () => {
@@ -620,14 +634,14 @@ export default function AffinityDMS({ onNav, entityId }) {
             {msg}
           </div>
         )}
-        {tab === "browse"    && <Browse />}
-        {tab === "search"    && <Search />}
-        {tab === "retention" && <Retention />}
-        {tab === "attached"  && <Attached />}
-        {tab === "folders"   && <Folders />}
+        {tab === "browse"    && Browse()}
+        {tab === "search"    && Search()}
+        {tab === "retention" && Retention()}
+        {tab === "attached"  && Attached()}
+        {tab === "folders"   && Folders()}
       </div>
 
-      <Form />
+      {Form()}
     </div>
   );
 }
