@@ -234,7 +234,7 @@ export default function AffinityJurisdictionCompliance({ onNav }) {
         <div style={{ marginLeft:"auto", display:"flex", gap:4 }}>
           {["overview","obligations","entities","aml","legislation"].map(v=>(
             <button key={v} onClick={()=>setView(v)} style={{ padding:"5px 12px", fontSize:11, borderRadius:20, border:`0.5px solid ${view===v?"#ccc":"#e5e5e5"}`, background:view===v?"#fff":"transparent", color:view===v?"#111":"#666", cursor:"pointer", fontWeight:view===v?500:400 }}>
-              {{"overview":"Overview","obligations":"Obligations","entities":"Entities","aml":"AML framework","legislation":"Legislation"}[v]}
+              {{"overview":"Overview","obligations":"Obligations","aml":"AML framework","legislation":"Legislation"}[v]}
             </button>
           ))}
         </div>

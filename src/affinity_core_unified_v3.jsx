@@ -95,7 +95,7 @@ const NAV = [
     {id:"client_portal",label:"Client portal", icon:"\uD83D\uDC64",b:null},
   ]},
   {s:"Compliance", items:[
-    {id:"jurisdiction", label:"Jurisdictions",  icon:"\uD83C\uDF0D",b:null},
+    {id:"jurisdiction", label:"Our jurisdictions",  icon:"\uD83C\uDF0D",b:null},
     {id:"compliance",   label:"Compliance",     icon:"\uD83D\uDEE1",b:null},
     {id:"crm",          label:"CRM",           icon:"\uD83E\uDD1D",b:null},
   ]},

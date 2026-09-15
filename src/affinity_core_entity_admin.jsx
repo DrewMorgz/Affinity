@@ -1972,11 +1972,6 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
                           Classification gaps
                         </button>
                         <button style={s.mini}
-                                title="Feeds billing — a service provided and not recorded is one nobody invoices for"
-                                onClick={()=>openAct("serviceSet", null, entity.name)}>
-                          Set a service
-                        </button>
-                        <button style={s.mini}
                                 title="What is recorded as provided — the list feeds billing and could not be read back to check against what is billed"
                                 onClick={async()=>{
                                   const r = await EA.eaServices(entityDbId);
@@ -1999,8 +1994,14 @@ export default function AffinityCoreEntityAdmin({ officeFilter="", onNav, role="
                     )}
                   </div>
                   <div style={{ display:"flex", gap:6 }}>
-                    <button style={{ ...s.btn(false), opacity:0.5, cursor:"not-allowed" }} disabled
-                      title="Editing entity records needs the write layer (Azure + Entra)">Edit entity</button>
+                    <button style={s.btn(false)}
+                      title="Change the registration number, year end, business activity, risk rating or status"
+                      onClick={()=>openAct("profileUpdate", null, entity.name,
+                        { regNo: entity.regNo, yearEnd: entity.yearEnd,
+                          businessActivity: entity.principalActivity,
+                          riskRating: entity.risk, adminStatus: entity.status })}>
+                      Edit entity
+                    </button>
                     <button style={s.btn(false)} onClick={()=>onNav&&onNav("documents")}
                       title={"Open "+(entity?entity.name:"this entity")+" in Documents"}>Documents ↗</button>
                     <button style={s.btn(true)} onClick={()=>onNav&&onNav("generate")}

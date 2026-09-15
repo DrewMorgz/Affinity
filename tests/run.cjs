@@ -2414,7 +2414,12 @@ group("Opening a statutory accounts set, and the last Entity Admin gaps");
 
   // A charge could be registered and never satisfied; a bank account opened
   // and never closed; an asset recorded and never revalued.
-  ["chargeSatisfy", "bankClose", "assetRevalue", "serviceSet"].forEach((a) =>
+  // serviceSet moved to a per-row button on the Services tab, which is where it
+  // belongs — the tester called the action-row copy a duplicate and was right
+  // about that one. The other three are NOT duplicated: they exist only in the
+  // action row, so removing them would lose the function rather than tidy it.
+  // Checked rather than assumed.
+  ["chargeSatisfy", "bankClose", "assetRevalue"].forEach((a) =>
     ok(a + " is reachable", new RegExp('openAct\\("' + a + '"').test(ea)));
 
   ok("satisfying a charge explains why history is kept",

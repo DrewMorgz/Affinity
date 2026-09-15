@@ -88,9 +88,27 @@ export const canApprove = (role, moduleId) => can(role, moduleId, "A");
 // Map a person's job-title (USERS[].role) to one of the four RBAC roles.
 // Interim until Entra app roles drive this directly. Order matters: check
 // "super admin" before the director/officer keywords.
+// WHO ADMINISTERS THE SYSTEM IS DERIVED FROM A JOB TITLE STRING, which is
+// fragile in a way that showed up immediately: the Group COO could not see
+// System admin, because his title says "Group COO" and the rule looks for the
+// words "super admin". Nothing was wrong with his access — the rule had never
+// been told he should have it.
+//
+// The titles below are the ones that carry system administration. Keeping it as
+// an explicit list rather than a substring match means adding somebody is a
+// visible change to a named set, not a coincidence of wording. It should
+// eventually be a table an administrator maintains, like the staff grades in
+// db/100 — deriving a permission from what somebody's business card says is not
+// a permission model.
+const SYSTEM_ADMIN_TITLES = [
+  "super admin",
+  "group ceo",
+  "group coo",
+];
+
 export function deriveRbacRole(title) {
   const t = (title || "").toLowerCase();
-  if (t.includes("super admin")) return "system_admin";
+  if (SYSTEM_ADMIN_TITLES.some((x) => t.includes(x))) return "system_admin";
   if (t.includes("director") || t.includes("cfo") || t.includes("coo") || t.includes("ceo")) return "director";
   if (t.includes("manager")) return "manager";
   return "admin";
