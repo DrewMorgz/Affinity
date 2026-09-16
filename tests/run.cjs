@@ -3929,6 +3929,44 @@ group("db/103 — CPD notes, structured vs general, and a person's own log");
      /cannot change a function's\s*\n?-- return type|cannot change a function/.test(sql));
 }
 
+
+group("Tasks, and the sample-data fallback across the app");
+{
+  const t = fs.readFileSync(path.join(SRC, "affinity_core_tasks.jsx"), "utf8");
+  const files = fs.readdirSync(SRC).filter((f) => f.startsWith("affinity_core_") && f.endsWith(".jsx"));
+
+  // "THIS DOES NOT WORK, UNABLE TO REASSIGN."
+  //
+  // The reassign worked. The task did not exist. The loader required
+  // data.length before using the live list, so an EMPTY result left the sample
+  // tasks on screen — and reassigning one passed an id that matches nothing.
+  ok("tasks use the live list even when it is empty",
+     /!Array\.isArray\(data\)\) return;/.test(t));
+  ok("...and say when what is shown is a sample",
+     /These are sample tasks/.test(t));
+
+  // The mapping was wrong too: tasks_list returns entity_label, raised_by and
+  // due_date; the screen read t.entity, t.created_by and t.due.
+  ok("the task columns match what the function returns",
+     /entity:t\.entity_label/.test(t) && /createdBy:t\.raised_by/.test(t) && /due:t\.due_date/.test(t));
+
+  // THE CLASS. Fifteen modules keep sample data when the real list is empty.
+  // It is a deliberate pattern from when nothing was wired, and it now hides
+  // the difference between "nothing recorded" and "this screen works" — which
+  // is exactly what made Tasks and Procedures look broken when they were not.
+  //
+  // Recorded rather than silently changed across fifteen modules: whether an
+  // empty screen should show samples or an empty state is Andy's call, not a
+  // refactor to slip in. The count is asserted so it cannot grow unnoticed.
+  const fallbacks = [];
+  files.forEach((f) => {
+    const src = fs.readFileSync(path.join(SRC, f), "utf8");
+    if (/if\s*\(\s*(?:ok\s*&&\s*)?(\w+)\s*&&\s*\1\.length\s*\)/.test(src)) fallbacks.push(f);
+  });
+  ok("the sample-data fallback count has not grown", fallbacks.length <= 15,
+     fallbacks.length + " modules: " + fallbacks.slice(0, 3).join(", "));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

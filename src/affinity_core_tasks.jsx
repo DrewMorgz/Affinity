@@ -73,15 +73,29 @@ export default function AffinityTasks({ userId, onNav, initialView, userName, is
   };
 
   const [tasks, setTasks]           = useState(INITIAL_TASKS);
+  const [liveTasks, setLiveTasks]   = useState(false);
 
   useEffect(()=>{
     if(!isConfigured) return;
     let ok=true;
     tasksList().then(({data})=>{
-      if(ok && data && data.length){
-        setTasks(data.map(t=>({ id:t.id, title:t.title, category:t.category, entity:t.entity,
-          assignee:t.assignee, createdBy:t.created_by, due:t.due, status:t.status, notes:t.notes })));
-      }
+      if(!ok || !Array.isArray(data)) return;
+      // LIVE EVEN WHEN EMPTY. This used to require data.length, so an empty
+      // list left the sample tasks on screen — and reassigning one passed an id
+      // that matches nothing in the database. Reported as "unable to reassign";
+      // the reassign worked, the task was not real.
+      //
+      // Sample data presented as real is the quietest way a screen lies,
+      // because everything about it looks like it worked.
+      //
+      // The mapping was wrong too: tasks_list returns entity_label, raised_by
+      // and due_date, and this read t.entity, t.created_by and t.due — three
+      // fields blank on every live task.
+      setTasks(data.map(t=>({ id:t.id, title:t.title, category:t.category,
+        entity:t.entity_label, assignee:t.assignee, createdBy:t.raised_by,
+        due:t.due_date, status:t.status, notes:t.notes,
+        priority:t.priority, overdue:t.overdue })));
+      setLiveTasks(true);
     }).catch(()=>{});
     return ()=>{ok=false;};
   },[]);
@@ -236,7 +250,20 @@ export default function AffinityTasks({ userId, onNav, initialView, userName, is
     </div>
   );
 
-  const openCount = tasks.filter(t=>t.status==="Open").length;
+    // Say which list this is. Everything on screen looks identical whether it is
+  // real or sample, and the difference decides whether acting on a task does
+  // anything at all.
+  const sampleBanner = (!liveTasks && isConfigured) ? (
+    <div style={{ padding:"7px 12px", margin:"0 0 10px", borderRadius:6,
+                  background:"#FFF6E5", border:"0.5px solid #E8C889",
+                  fontSize:11.5, color:"#6B4E00" }}>
+      These are sample tasks — nothing has been recorded yet. Acting on one will
+      not work, because it does not exist in the database. Add a task and it will
+      appear here for real.
+    </div>
+  ) : null;
+
+const openCount = tasks.filter(t=>t.status==="Open").length;
 
   return (
     <div style={{ fontFamily:"'Catamaran',system-ui,sans-serif", background:"#f8f9fc", color:"#111", minHeight:"100vh" }}>
@@ -342,7 +369,8 @@ export default function AffinityTasks({ userId, onNav, initialView, userName, is
               </tr>
             </thead>
             <tbody>
-              {filtered.map(t=>(
+              {sampleBanner}
+          {filtered.map(t=>(
                 <tr key={t.id}
                   onClick={()=>setSel(sel===t.id?null:t.id)}
                   style={{ borderBottom:"0.5px solid #f0f0f0", background:sel===t.id?"#f0f8fb":t.status==="Completed"?"#fafafa":"#fff", cursor:"pointer", opacity:t.status==="Completed"?0.65:1 }}>
