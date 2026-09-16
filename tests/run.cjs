@@ -3890,6 +3890,45 @@ group("Tester feedback: DMS, timesheets, and a safer fix for the remount bug");
   ok("...from the live services", /liveServices \|\|/.test(ts));
 }
 
+
+group("db/103 — CPD notes, structured vs general, and a person's own log");
+{
+  const sql = fs.readFileSync(path.join(DB, "103_cpd_notes_and_own_log.sql"), "utf8");
+  const dash = fs.readFileSync(path.join(SRC, "affinity_core_dashboard.jsx"), "utf8");
+  const comp = fs.readFileSync(path.join(SRC, "affinity_core_compliance.jsx"), "utf8");
+
+  // "I have recorded a test training and it has not pulled through to
+  // compliance section." cpdRows was declared, the render already preferred it
+  // over the sample rows, and NOTHING EVER SET IT. cpdList was imported and
+  // never called. The wiring was started and left one line short, so the log
+  // showed two sample entries for ever.
+  ok("the compliance CPD log reads live entries", /cpdList\(\)\.then/.test(comp));
+
+  // Structured and general is the split the professional bodies make and the
+  // one a CPD return asks for. Subject matter belongs in the note.
+  ok("categories are structured or general",
+     /\["Structured","General"\]/.test(dash));
+  ok("there is a note field", /cpdForm\.note/.test(dash));
+  ok("...and it reaches the database", /note:cpdForm\.note/.test(dash));
+  ok("existing entries are not rewritten", /rewriting history/.test(sql));
+
+  // A person's own log, with the split that matters to them.
+  ok("a person can read their own log", /cpd_my_log/.test(sql));
+  ok("...with structured against general", /structured_hours/.test(sql));
+
+  // TWO MISTAKES I MADE IN THIS FILE AND CAUGHT BY TESTING RATHER THAN READING.
+  // Adding a parameter creates an OVERLOAD rather than replacing the function,
+  // so the old cpd_add would have sat alongside the new one silently discarding
+  // the note. And CREATE OR REPLACE cannot change a return type, so cpd_list
+  // was rejected outright and the old version stayed — the third time in this
+  // build that a fix did not apply for that reason.
+  ok("the old cpd_add signature is dropped",
+     /DROP FUNCTION IF EXISTS cpd_add\(text, text, text, numeric, date\)/.test(sql));
+  ok("cpd_list is dropped before replacing", /DROP FUNCTION IF EXISTS cpd_list\(\)/.test(sql));
+  ok("the reason is recorded for the next person",
+     /cannot change a function's\s*\n?-- return type|cannot change a function/.test(sql));
+}
+
 // ── report ─────────────────────────────────────────────────────────────────
 console.log("");
 for (const r of results) {

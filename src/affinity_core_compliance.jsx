@@ -140,6 +140,22 @@ export default function AffinityIOMCompliance() {
   const [rvBusy, setRvBusy] = useState(false);
   const [jur, setJur] = useState("Isle of Man");
   const [cpdRows, setCpdRows] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    cpdList().then((r) => {
+      const rows = (r && r.data) || (Array.isArray(r) ? r : null);
+      if (!alive || !Array.isArray(rows)) return;
+      setCpdRows(rows.map((x) => [
+        x.staff_user || x.staff || "",
+        x.activity || x.title || "",
+        x.category || "",
+        x.hours != null ? Number(x.hours).toFixed(1) : "",
+        x.activity_date || x.recorded_at || "",
+        x.verified ? "Verified" : "Unverified",
+      ]));
+    }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
   const [liveReg, setLiveReg] = useState({});   // register id -> array of live row-arrays
   const [addForm, setAddForm] = useState({});
   const [addSaving, setAddSaving] = useState(false);

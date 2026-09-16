@@ -258,7 +258,7 @@ export default function Dashboard({userId, onNav, userName}) {
     if(!cpdForm.activity.trim()) return;
     setCpdSaving(true);
     try {
-      await cpdAdd({ staff:cpdStaff, activity:cpdForm.activity, category:cpdForm.category, hours:cpdForm.hours, date:cpdForm.date });
+      await cpdAdd({ staff:cpdStaff, activity:cpdForm.activity, category:cpdForm.category, hours:cpdForm.hours, note:cpdForm.note, date:cpdForm.date });
       const { data } = await cpdList();
       if(data) setCpd(data);
       setCpdForm({activity:"",category:"Compliance",hours:"",date:""});
@@ -476,9 +476,14 @@ export default function Dashboard({userId, onNav, userName}) {
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:8}}>
             <input value={cpdForm.activity} onChange={e=>setCpdForm(f=>({...f,activity:e.target.value}))} placeholder="Activity / course" style={{gridColumn:"1 / -1",padding:"7px 9px",border:"0.5px solid #ccc",borderRadius:5,fontSize:12,boxSizing:"border-box"}}/>
             <select value={cpdForm.category} onChange={e=>setCpdForm(f=>({...f,category:e.target.value}))} style={{padding:"7px 9px",border:"0.5px solid #ccc",borderRadius:5,fontSize:12}}>
-              {["Compliance","Technical","Regulatory","Ethics","Leadership","General"].map(o=><option key={o}>{o}</option>)}
+              {["Structured","General"].map(o=><option key={o}>{o}</option>)}
             </select>
             <input type="number" value={cpdForm.hours} onChange={e=>setCpdForm(f=>({...f,hours:e.target.value}))} placeholder="Hours" style={{padding:"7px 9px",border:"0.5px solid #ccc",borderRadius:5,fontSize:12,boxSizing:"border-box"}}/>
+                <input value={cpdForm.note||""}
+                       onChange={e=>setCpdForm(f=>({...f,note:e.target.value}))}
+                       placeholder="Notes — what it covered, who ran it"
+                       style={{gridColumn:"1 / -1",padding:"7px 9px",border:"0.5px solid #ccc",
+                               borderRadius:5,fontSize:12,boxSizing:"border-box"}}/>
             <input type="date" value={cpdForm.date} onChange={e=>setCpdForm(f=>({...f,date:e.target.value}))} style={{padding:"7px 9px",border:"0.5px solid #ccc",borderRadius:5,fontSize:12,boxSizing:"border-box"}}/>
             <button onClick={logCpd} disabled={cpdSaving||!cpdForm.activity.trim()} style={{padding:"7px 9px",border:"none",borderRadius:5,background:CY,color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer",opacity:(cpdSaving||!cpdForm.activity.trim())?0.5:1}}>{cpdSaving?"Saving…":"Log CPD"}</button>
           </div>
